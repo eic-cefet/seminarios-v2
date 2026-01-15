@@ -1,0 +1,45 @@
+services:
+  mysql:
+    image: mariadb:10.11
+    container_name: seminarios_db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: seminarios_eic
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_USER: seminarios
+      MYSQL_PASSWORD: seminarios
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      start_period: 10s
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: seminarios_phpmyadmin
+    restart: unless-stopped
+    environment:
+      PMA_HOST: mysql
+      PMA_USER: root
+      PMA_PASSWORD: root
+    ports:
+      - "8080:80"
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: seminarios_mailhog
+    restart: unless-stopped
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+
+volumes:
+  mysql_data:

@@ -1,0 +1,111 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\User;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Str;
+use Laravel\Socialite\Facades\Socialite;
+
+class SocialAuthController extends Controller
+{
+    /**
+     * Supported OAuth providers
+     */
+    private const PROVIDERS = ['google', 'github'];
+
+    /**
+     * Redirect to OAuth provider
+     */
+    public function redirect(string $provider): RedirectResponse
+    {
+        if (! in_array($provider, self::PROVIDERS)) {
+            abort(404, 'Provider not supported');
+        }
+
+        return Socialite::driver($provider)->redirect();
+    }
+
+    /**
+     * Handle OAuth provider callback
+     */
+    public function callback(string $provider): RedirectResponse
+    {
+        if (! in_array($provider, self::PROVIDERS)) {
+            abort(404, 'Provider not supported');
+        }
+
+        try {
+            $socialUser = Socialite::driver($provider)->user();
+
+            // Find or create user
+            $user = User::where('email', $socialUser->getEmail())->first();
+
+            if (! $user) {
+                $user = User::create([
+                    'name' => $socialUser->getName() ?? $socialUser->getNickname() ?? 'User',
+                    'email' => $socialUser->getEmail(),
+                    'password' => bcrypt(Str::random(32)),
+                    'email_verified_at' => now(),
+                ]);
+            }
+
+            // Generate one-time code
+            $code = Str::random(64);
+
+            // Store in cache with 5-minute expiration
+            Cache::put("auth_code:{$code}", $user->id, now()->addMinutes(5));
+
+            // Redirect to frontend callback with code
+            return redirect("/auth/callback?code={$code}");
+
+        } catch (\Exception $e) {
+            return redirect('/auth/callback?error=authentication_failed');
+        }
+    }
+
+    /**
+     * Exchange one-time code for session
+     */
+    public function exchange(Request $request): JsonResponse
+    {
+        $request->validate([
+            'code' => 'required|string',
+        ]);
+
+        $code = $request->input('code');
+
+        // Pull (get and delete) the user ID from cache
+        $userId = Cache::pull("auth_code:{$code}");
+
+        if (! $userId) {
+            return response()->json([
+                'message' => 'Código inválido ou expirado',
+            ], 401);
+        }
+
+        $user = User::find($userId);
+
+        if (! $user) {
+            return response()->json([
+                'message' => 'Usuário não encontrado',
+            ], 404);
+        }
+
+        // Log the user in
+        Auth::login($user, remember: true);
+
+        return response()->json([
+            'message' => 'Autenticação realizada com sucesso',
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+            ],
+        ]);
+    }
+}
