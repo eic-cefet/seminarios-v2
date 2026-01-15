@@ -9,16 +9,19 @@ Route::get('/certificado/{code}', [CertificateController::class, 'show'])->name(
 Route::get('/certificado/{code}/jpg', [CertificateController::class, 'showJpg'])->name('certificate.show.jpg');
 
 // OAuth routes
-Route::get('/auth/{provider}', [SocialAuthController::class, 'redirect'])->name('auth.redirect');
-Route::get('/auth/{provider}/callback', [SocialAuthController::class, 'callback'])->name('auth.callback');
+Route::get('/auth/{provider}', [SocialAuthController::class, 'redirect'])
+    ->where('provider', 'google|github')
+    ->name('auth.redirect');
+Route::get('/auth/{provider}/callback', [SocialAuthController::class, 'callback'])
+    ->where('provider', 'google|github')
+    ->name('auth.callback');
 
 // System SPA (public/student)
 Route::get('/{any?}', fn () => view('system'))
     ->where('any', '^(?!admin|api|sanctum|certificado|auth/(?:google|github)(?:/callback)?).*$')
     ->name('system');
 
-// Admin SPA
+// Admin SPA (auth handled by React SPA via API)
 Route::get('/admin/{any?}', fn () => view('admin'))
     ->where('any', '.*')
-    ->middleware(['auth'])
     ->name('admin');

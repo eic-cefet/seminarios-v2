@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { BookOpen } from 'lucide-react';
 import { Layout } from '../components/Layout';
+import { PageTitle } from '@shared/components/PageTitle';
 import { subjectsApi } from '@shared/api/client';
 
 export default function Subjects() {
@@ -13,7 +14,9 @@ export default function Subjects() {
     const subjects = subjectsData?.data ?? [];
 
     return (
-        <Layout>
+        <>
+            <PageTitle title="Tópicos" />
+            <Layout>
             <div className="bg-white border-b border-gray-200">
                 <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
                     <h1 className="text-3xl font-bold text-gray-900">Disciplinas</h1>
@@ -67,5 +70,6 @@ export default function Subjects() {
                 )}
             </div>
         </Layout>
+        </>
     );
 }

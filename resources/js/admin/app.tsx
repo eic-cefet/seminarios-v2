@@ -2,7 +2,16 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { HelmetProvider } from 'react-helmet-async';
+import { AuthProvider } from '@shared/contexts/AuthContext';
+import { AdminLayout } from './components/layout/AdminLayout';
 import Dashboard from './pages/Dashboard';
+import LocationList from './pages/locations/LocationList';
+import SubjectList from './pages/subjects/SubjectList';
+import UserList from './pages/users/UserList';
+import RegistrationList from './pages/registrations/RegistrationList';
+import { SeminarList, SeminarForm } from './pages/seminars';
+import SemestralReport from './pages/reports/SemestralReport';
 
 const queryClient = new QueryClient({
     defaultOptions: {
@@ -15,13 +24,27 @@ const queryClient = new QueryClient({
 
 function App() {
     return (
-        <QueryClientProvider client={queryClient}>
-            <BrowserRouter basename="/admin">
-                <Routes>
-                    <Route path="/" element={<Dashboard />} />
-                </Routes>
-            </BrowserRouter>
-        </QueryClientProvider>
+        <HelmetProvider>
+            <QueryClientProvider client={queryClient}>
+                <AuthProvider>
+                    <BrowserRouter basename="/admin">
+                        <Routes>
+                            <Route element={<AdminLayout />}>
+                                <Route path="/" element={<Dashboard />} />
+                                <Route path="/users" element={<UserList />} />
+                                <Route path="/locations" element={<LocationList />} />
+                                <Route path="/subjects" element={<SubjectList />} />
+                                <Route path="/seminars" element={<SeminarList />} />
+                                <Route path="/seminars/new" element={<SeminarForm />} />
+                                <Route path="/seminars/:id/edit" element={<SeminarForm />} />
+                                <Route path="/registrations" element={<RegistrationList />} />
+                                <Route path="/reports/semestral" element={<SemestralReport />} />
+                            </Route>
+                        </Routes>
+                    </BrowserRouter>
+                </AuthProvider>
+            </QueryClientProvider>
+        </HelmetProvider>
     );
 }
 

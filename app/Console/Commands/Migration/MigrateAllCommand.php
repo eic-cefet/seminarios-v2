@@ -30,6 +30,7 @@ class MigrateAllCommand extends Command
             'migrate:seminar-types',
             'migrate:subjects',
             'migrate:workshops',
+            'migrate:courses',
             'migrate:users',
             'migrate:seminars',
             'migrate:seminar-speakers',
@@ -46,6 +47,7 @@ class MigrateAllCommand extends Command
         }
 
         $this->info('Legacy migration completed!');
+
         return Command::SUCCESS;
     }
 }

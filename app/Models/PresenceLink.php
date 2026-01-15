@@ -13,12 +13,14 @@ class PresenceLink extends Model
     protected $fillable = [
         'seminar_id',
         'uuid',
+        'active',
         'expires_at',
     ];
 
     protected function casts(): array
     {
         return [
+            'active' => 'boolean',
             'expires_at' => 'datetime',
         ];
     }
@@ -42,5 +44,10 @@ class PresenceLink extends Model
     public function isExpired(): bool
     {
         return $this->expires_at && $this->expires_at->isPast();
+    }
+
+    public function isValid(): bool
+    {
+        return $this->active && ! $this->isExpired();
     }
 }

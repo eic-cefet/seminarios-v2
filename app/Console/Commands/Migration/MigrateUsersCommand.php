@@ -12,13 +12,14 @@ class MigrateUsersCommand extends Command
     use MigratesData;
 
     protected $signature = 'migrate:users {--dry-run : Show what would be migrated}';
+
     protected $description = 'Migrate and consolidate users, speakers, and students';
 
     public function handle(): int
     {
         $this->info('Migrating users (admins, speakers, students)...');
 
-        if (!$this->option('dry-run')) {
+        if (! $this->option('dry-run')) {
             DB::statement('SET FOREIGN_KEY_CHECKS=0');
             $this->newTable('users')->truncate();
             $this->newTable('user_student_data')->truncate();
@@ -55,6 +56,7 @@ class MigrateUsersCommand extends Command
                     if ($this->option('dry-run')) {
                         $this->line("Would migrate admin: {$admin->email}");
                         $count++;
+
                         continue;
                     }
 
@@ -88,6 +90,7 @@ class MigrateUsersCommand extends Command
                     if ($this->option('dry-run')) {
                         $this->line("Would migrate speaker: {$speaker->email}");
                         $count++;
+
                         continue;
                     }
 
@@ -100,7 +103,7 @@ class MigrateUsersCommand extends Command
                             ->where('user_id', $existing->id)
                             ->exists();
 
-                        if (!$existingSpeakerData) {
+                        if (! $existingSpeakerData) {
                             $this->newTable('user_speaker_data')->insert([
                                 'user_id' => $existing->id,
                                 'slug' => $speaker->url ? Str::slug($speaker->url) : null,
@@ -152,10 +155,9 @@ class MigrateUsersCommand extends Command
                     if ($this->option('dry-run')) {
                         $this->line("Would migrate student: {$student->email}");
                         $count++;
+
                         continue;
                     }
-
-                    $courseName = $this->getCourseName($student->course_id);
 
                     $existing = $this->newTable('users')
                         ->where('email', $student->email)
@@ -166,10 +168,10 @@ class MigrateUsersCommand extends Command
                             ->where('user_id', $existing->id)
                             ->exists();
 
-                        if (!$existingStudentData) {
+                        if (! $existingStudentData) {
                             $this->newTable('user_student_data')->insert([
                                 'user_id' => $existing->id,
-                                'course_name' => $courseName,
+                                'course_id' => $student->course_id,
                                 'course_situation' => $student->course_situation ? 'graduated' : 'studying',
                                 'course_role' => $student->type,
                                 'created_at' => now(),
@@ -191,7 +193,7 @@ class MigrateUsersCommand extends Command
 
                         $this->newTable('user_student_data')->insert([
                             'user_id' => $newId,
-                            'course_name' => $courseName,
+                            'course_id' => $student->course_id,
                             'course_situation' => $student->course_situation ? 'graduated' : 'studying',
                             'course_role' => $student->type,
                             'created_at' => now(),
@@ -207,19 +209,9 @@ class MigrateUsersCommand extends Command
         return $count;
     }
 
-    protected function getCourseName(?int $courseId): ?string
-    {
-        if (!$courseId) {
-            return null;
-        }
-
-        $course = $this->legacyTable('courses')->find($courseId);
-        return $course?->name;
-    }
-
     protected function storeMapping(string $oldTable, int $oldId, int $newId, string $role): void
     {
-        if (!$this->option('dry-run')) {
+        if (! $this->option('dry-run')) {
             $this->newTable('user_id_mappings')->insert([
                 'legacy_table' => $oldTable,
                 'legacy_id' => $oldId,
@@ -240,10 +232,10 @@ class MigrateUsersCommand extends Command
 
         $adminRole = DB::table('roles')->where('name', 'admin')->first();
         $teacherRole = DB::table('roles')->where('name', 'teacher')->first();
-        $studentRole = DB::table('roles')->where('name', 'student')->first();
 
-        if (!$adminRole || !$teacherRole || !$studentRole) {
+        if (! $adminRole || ! $teacherRole) {
             $this->warn('Roles not found. Run db:seed first.');
+
             return;
         }
 
@@ -253,7 +245,7 @@ class MigrateUsersCommand extends Command
             $roleId = match ($map->role) {
                 'admin' => $adminRole->id,
                 'teacher' => $teacherRole->id,
-                'student' => $studentRole->id,
+                'student' => null, // Students don't need a role - they're just regular users
                 default => null,
             };
 

@@ -1,21 +1,42 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import * as Label from '@radix-ui/react-label';
+import { useQuery } from '@tanstack/react-query';
 import { Layout } from '../components/Layout';
+import { PageTitle } from '@shared/components/PageTitle';
 import { cn } from '@shared/lib/utils';
+import { useAuth } from '@shared/contexts/AuthContext';
+import { getErrorMessage } from '@shared/lib/errors';
+import { coursesApi } from '@shared/api/client';
 
 export default function Register() {
+    const navigate = useNavigate();
+    const { register, isAuthenticated } = useAuth();
     const [formData, setFormData] = useState({
         name: '',
         email: '',
         password: '',
         passwordConfirmation: '',
-        courseSituation: '',
-        courseRole: '',
-        courseName: '',
+        courseSituation: '' as '' | 'studying' | 'graduated',
+        courseRole: '' as '' | 'Aluno' | 'Professor' | 'Outro',
+        courseId: '',
     });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+
+    const { data: coursesData } = useQuery({
+        queryKey: ['courses'],
+        queryFn: () => coursesApi.list(),
+    });
+
+    const courses = coursesData?.data ?? [];
+
+    // Redirect if already authenticated
+    useEffect(() => {
+        if (isAuthenticated) {
+            navigate('/', { replace: true });
+        }
+    }, [isAuthenticated, navigate]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         setFormData((prev) => ({
@@ -38,15 +59,26 @@ export default function Register() {
             return;
         }
 
+        if (!formData.courseSituation || !formData.courseRole) {
+            setError('Preencha todos os campos obrigatórios');
+            return;
+        }
+
         setLoading(true);
 
         try {
-            // TODO: Implement actual registration
-            console.log('Register:', formData);
-            await new Promise((resolve) => setTimeout(resolve, 1000));
-            // Redirect to login or home after success
-        } catch {
-            setError('Erro ao criar conta. Tente novamente.');
+            await register({
+                name: formData.name,
+                email: formData.email,
+                password: formData.password,
+                passwordConfirmation: formData.passwordConfirmation,
+                courseSituation: formData.courseSituation,
+                courseRole: formData.courseRole,
+                courseId: formData.courseId ? parseInt(formData.courseId) : undefined,
+            });
+            navigate('/');
+        } catch (err) {
+            setError(getErrorMessage(err));
         } finally {
             setLoading(false);
         }
@@ -57,7 +89,9 @@ export default function Register() {
     };
 
     return (
-        <Layout>
+        <>
+            <PageTitle title="Cadastro" />
+            <Layout>
             <div className="flex min-h-[calc(100vh-4rem-4rem)] items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
                 <div className="w-full max-w-md space-y-8">
                     <div>
@@ -192,20 +226,25 @@ export default function Register() {
 
                         <div>
                             <Label.Root
-                                htmlFor="courseName"
+                                htmlFor="courseId"
                                 className="block text-sm font-medium text-gray-700"
                             >
                                 Curso
                             </Label.Root>
-                            <input
-                                id="courseName"
-                                name="courseName"
-                                type="text"
-                                value={formData.courseName}
+                            <select
+                                id="courseId"
+                                name="courseId"
+                                value={formData.courseId}
                                 onChange={handleChange}
                                 className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
-                                placeholder="Ex: Ciência da Computação"
-                            />
+                            >
+                                <option value="">Selecione um curso (opcional)</option>
+                                {courses.map((course) => (
+                                    <option key={course.id} value={course.id}>
+                                        {course.name}
+                                    </option>
+                                ))}
+                            </select>
                         </div>
 
                         <div>
@@ -270,6 +309,7 @@ export default function Register() {
                 </div>
             </div>
         </Layout>
+        </>
     );
 }
 

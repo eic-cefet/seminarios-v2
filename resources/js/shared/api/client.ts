@@ -1,27 +1,76 @@
 import type {
+    Course,
     PaginatedResponse,
     Seminar,
     SeminarType,
     Subject,
+    User,
     Workshop,
 } from "@shared/types";
 
-const API_BASE = window.API_URL || "/api";
+
+export interface ApiError {
+    error: string;
+    message: string;
+    errors?: Record<string, string[]>;
+}
+
+export class ApiRequestError extends Error {
+    constructor(
+        public readonly code: string,
+        message: string,
+        public readonly status: number,
+        public readonly errors?: Record<string, string[]>
+    ) {
+        super(message);
+        this.name = "ApiRequestError";
+    }
+}
+
+function getCookie(name: string): string | null {
+    const match = document.cookie.match(new RegExp(`(^|;\\s*)${name}=([^;]*)`));
+    return match ? decodeURIComponent(match[2]) : null;
+}
+
+async function getCsrfCookie(): Promise<void> {
+    const basePath = app.BASE_PATH || "";
+    await fetch(`${basePath}/sanctum/csrf-cookie`, {
+        credentials: "same-origin",
+    });
+}
 
 async function fetchApi<T>(
     endpoint: string,
     options?: RequestInit
 ): Promise<T> {
-    const response = await fetch(`${API_BASE}${endpoint}`, {
-        headers: {
-            Accept: "application/json",
-            "Content-Type": "application/json",
-        },
+    const headers: Record<string, string> = {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+    };
+
+    // Include XSRF token for non-GET requests
+    const xsrfToken = getCookie("XSRF-TOKEN");
+    if (xsrfToken) {
+        headers["X-XSRF-TOKEN"] = xsrfToken;
+    }
+
+    const response = await fetch(`${app.API_URL}${endpoint}`, {
+        headers,
+        credentials: "same-origin",
         ...options,
     });
 
     if (!response.ok) {
-        throw new Error(`API error: ${response.status} ${response.statusText}`);
+        const data: ApiError = await response.json().catch(() => ({
+            error: "unknown_error",
+            message: response.statusText,
+        }));
+        throw new ApiRequestError(
+            data.error,
+            data.message,
+            response.status,
+            data.errors
+        );
     }
 
     return response.json();
@@ -95,7 +144,9 @@ export const subjectsApi = {
         if (params?.sort) searchParams.set("sort", params.sort);
         if (params?.limit) searchParams.set("limit", params.limit.toString());
         const query = searchParams.toString();
-        return fetchApi<{ data: Subject[] }>(`/subjects${query ? `?${query}` : ""}`);
+        return fetchApi<{ data: Subject[] }>(
+            `/subjects${query ? `?${query}` : ""}`
+        );
     },
 
     get: (id: number) => {
@@ -143,11 +194,229 @@ export const seminarTypesApi = {
     },
 };
 
+// Courses
+export const coursesApi = {
+    list: () => {
+        return fetchApi<{ data: Course[] }>("/courses");
+    },
+};
+
 // Stats
 export const statsApi = {
     get: () => {
         return fetchApi<{
             data: { subjects: number; seminars: number; workshops: number };
         }>("/stats");
+    },
+};
+
+// Auth
+export const authApi = {
+    login: async (data: {
+        email: string;
+        password: string;
+        remember?: boolean;
+    }) => {
+        await getCsrfCookie();
+        return fetchApi<{ user: User }>("/auth/login", {
+            method: "POST",
+            body: JSON.stringify(data),
+        });
+    },
+
+    register: async (data: {
+        name: string;
+        email: string;
+        password: string;
+        password_confirmation: string;
+        course_situation: "studying" | "graduated";
+        course_role: "Aluno" | "Professor" | "Outro";
+        course_id?: number;
+    }) => {
+        await getCsrfCookie();
+        return fetchApi<{ user: User }>("/auth/register", {
+            method: "POST",
+            body: JSON.stringify(data),
+        });
+    },
+
+    logout: async () => {
+        await getCsrfCookie();
+        return fetchApi<{ message: string }>("/auth/logout", {
+            method: "POST",
+        });
+    },
+
+    me: () => {
+        return fetchApi<{ user: User }>("/auth/me");
+    },
+
+    forgotPassword: async (email: string) => {
+        await getCsrfCookie();
+        return fetchApi<{ message: string }>("/auth/forgot-password", {
+            method: "POST",
+            body: JSON.stringify({ email }),
+        });
+    },
+
+    resetPassword: async (data: {
+        token: string;
+        email: string;
+        password: string;
+        password_confirmation: string;
+    }) => {
+        await getCsrfCookie();
+        return fetchApi<{ message: string }>("/auth/reset-password", {
+            method: "POST",
+            body: JSON.stringify(data),
+        });
+    },
+
+    exchangeCode: async (code: string) => {
+        await getCsrfCookie();
+        return fetchApi<{ user: User }>("/auth/exchange", {
+            method: "POST",
+            body: JSON.stringify({ code }),
+        });
+    },
+};
+
+// Registration
+export interface RegistrationStatus {
+    registered: boolean;
+    registration?: {
+        id: number;
+        created_at: string;
+    } | null;
+}
+
+export const registrationApi = {
+    status: (slug: string) => {
+        return fetchApi<RegistrationStatus>(`/seminars/${slug}/registration`);
+    },
+
+    register: async (slug: string) => {
+        await getCsrfCookie();
+        return fetchApi<{
+            message: string;
+            registration: {
+                id: number;
+                seminar_id: number;
+                created_at: string;
+            };
+        }>(`/seminars/${slug}/register`, {
+            method: "POST",
+        });
+    },
+
+    unregister: async (slug: string) => {
+        await getCsrfCookie();
+        return fetchApi<{ message: string }>(`/seminars/${slug}/register`, {
+            method: "DELETE",
+        });
+    },
+};
+
+// Profile
+export interface UserRegistration {
+    id: number;
+    present: boolean;
+    certificate_code: string | null;
+    created_at: string;
+    seminar: {
+        id: number;
+        name: string;
+        slug: string;
+        scheduled_at: string | null;
+        is_expired: boolean;
+        seminar_type: { id: number; name: string } | null;
+        location: { id: number; name: string } | null;
+    };
+}
+
+export interface UserCertificate {
+    id: number;
+    certificate_code: string;
+    seminar: {
+        id: number;
+        name: string;
+        slug: string;
+        scheduled_at: string | null;
+        seminar_type: { id: number; name: string } | null;
+    };
+}
+
+export const profileApi = {
+    get: () => {
+        return fetchApi<{ user: User }>("/profile");
+    },
+
+    update: async (data: { name: string; email: string }) => {
+        await getCsrfCookie();
+        return fetchApi<{ message: string; user: User }>("/profile", {
+            method: "PUT",
+            body: JSON.stringify(data),
+        });
+    },
+
+    updatePassword: async (data: {
+        current_password: string;
+        password: string;
+        password_confirmation: string;
+    }) => {
+        await getCsrfCookie();
+        return fetchApi<{ message: string }>("/profile/password", {
+            method: "PUT",
+            body: JSON.stringify(data),
+        });
+    },
+
+    registrations: (params?: { page?: number; per_page?: number }) => {
+        const searchParams = new URLSearchParams();
+        if (params?.page) searchParams.set("page", params.page.toString());
+        if (params?.per_page)
+            searchParams.set("per_page", params.per_page.toString());
+        const query = searchParams.toString();
+        return fetchApi<{
+            data: UserRegistration[];
+            meta: {
+                current_page: number;
+                last_page: number;
+                per_page: number;
+                total: number;
+            };
+        }>(`/profile/registrations${query ? `?${query}` : ""}`);
+    },
+
+    certificates: (params?: { page?: number; per_page?: number }) => {
+        const searchParams = new URLSearchParams();
+        if (params?.page) searchParams.set("page", params.page.toString());
+        if (params?.per_page)
+            searchParams.set("per_page", params.per_page.toString());
+        const query = searchParams.toString();
+        return fetchApi<{
+            data: UserCertificate[];
+            meta: {
+                current_page: number;
+                last_page: number;
+                per_page: number;
+                total: number;
+            };
+        }>(`/profile/certificates${query ? `?${query}` : ""}`);
+    },
+
+    updateStudentData: async (data: {
+        course_id?: number | null;
+        course_situation: string;
+        course_role: string;
+    }) => {
+        await getCsrfCookie();
+        return fetchApi<{ message: string; user: User }>(
+            "/profile/student-data",
+            {
+                method: "PUT",
+                body: JSON.stringify(data),
+            }
+        );
     },
 };

@@ -5,9 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ config('app.name', 'Laravel') }}</title>
-    <script type="text/javascript">
-        window.API_URL = '{{ url('/api') }}';
-    </script>
+    @include('partials.head-scripts')
     @viteReactRefresh
     @vite(['resources/css/app.css', 'resources/js/system/app.tsx'])
 </head>

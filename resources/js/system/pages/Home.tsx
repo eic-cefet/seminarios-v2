@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { ArrowRight, BookOpen, Presentation, Wrench } from 'lucide-react';
 import { Layout } from '../components/Layout';
 import { SeminarCard } from '../components/SeminarCard';
+import { PageTitle } from '@shared/components/PageTitle';
 import { seminarsApi, subjectsApi, statsApi } from '@shared/api/client';
 
 export default function Home() {
@@ -26,7 +27,9 @@ export default function Home() {
     const stats = statsData?.data;
 
     return (
-        <Layout>
+        <>
+            <PageTitle title="Início" />
+            <Layout>
             {/* Hero Section */}
             <section className="bg-primary-600">
                 <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 lg:py-24">
@@ -216,5 +219,6 @@ export default function Home() {
                 </div>
             </section>
         </Layout>
+        </>
     );
 }

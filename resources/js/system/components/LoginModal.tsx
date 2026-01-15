@@ -4,6 +4,9 @@ import * as Dialog from '@radix-ui/react-dialog';
 import * as Label from '@radix-ui/react-label';
 import { X } from 'lucide-react';
 import { cn } from '@shared/lib/utils';
+import { useAuth } from '@shared/contexts/AuthContext';
+import { authApi } from '@shared/api/client';
+import { getErrorMessage } from '@shared/lib/errors';
 
 interface LoginModalProps {
     open: boolean;
@@ -11,6 +14,7 @@ interface LoginModalProps {
 }
 
 export function LoginModal({ open, onOpenChange }: LoginModalProps) {
+    const { login } = useAuth();
     const [view, setView] = useState<'login' | 'forgot'>('login');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -25,12 +29,10 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
         setError(null);
 
         try {
-            // TODO: Implement actual login
-            console.log('Login:', { email, password });
-            await new Promise((resolve) => setTimeout(resolve, 1000));
+            await login(email, password, true);
             onOpenChange(false);
-        } catch {
-            setError('E-mail ou senha inválidos');
+        } catch (err) {
+            setError(getErrorMessage(err));
         } finally {
             setLoading(false);
         }
@@ -42,19 +44,16 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
         setError(null);
 
         try {
-            // TODO: Implement actual forgot password
-            console.log('Forgot password:', { forgotEmail });
-            await new Promise((resolve) => setTimeout(resolve, 1000));
+            await authApi.forgotPassword(forgotEmail);
             setForgotSuccess(true);
-        } catch {
-            setError('Erro ao enviar e-mail de recuperação');
+        } catch (err) {
+            setError(getErrorMessage(err));
         } finally {
             setLoading(false);
         }
     };
 
     const handleSocialLogin = (provider: 'google' | 'github') => {
-        // TODO: Implement OAuth redirect
         window.location.href = `/auth/${provider}`;
     };
 
@@ -80,7 +79,7 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
                 <Dialog.Content className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-white rounded-lg shadow-xl p-6 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%]">
                     <Dialog.Close asChild>
                         <button
-                            className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-white transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-primary-400 focus:ring-offset-2"
+                            className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-white transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-primary-400 focus:ring-offset-2 cursor-pointer"
                             aria-label="Fechar"
                         >
                             <X className="h-4 w-4" />
@@ -101,7 +100,7 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
                                 <button
                                     type="button"
                                     onClick={() => handleSocialLogin('google')}
-                                    className="flex w-full items-center justify-center gap-3 rounded-md border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 transition-colors"
+                                    className="flex w-full items-center justify-center gap-3 rounded-md border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 transition-colors cursor-pointer"
                                 >
                                     <GoogleIcon className="h-5 w-5" />
                                     Continuar com Google
@@ -109,7 +108,7 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
                                 <button
                                     type="button"
                                     onClick={() => handleSocialLogin('github')}
-                                    className="flex w-full items-center justify-center gap-3 rounded-md border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 transition-colors"
+                                    className="flex w-full items-center justify-center gap-3 rounded-md border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 transition-colors cursor-pointer"
                                 >
                                     <GithubIcon className="h-5 w-5" />
                                     Continuar com GitHub
@@ -162,7 +161,7 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
                                         <button
                                             type="button"
                                             onClick={() => setView('forgot')}
-                                            className="text-sm text-primary-600 hover:text-primary-700"
+                                            className="text-sm text-primary-600 hover:text-primary-700 cursor-pointer"
                                         >
                                             Esqueci minha senha
                                         </button>
@@ -182,7 +181,7 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
                                     type="submit"
                                     disabled={loading}
                                     className={cn(
-                                        'w-full rounded-md bg-primary-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors',
+                                        'w-full rounded-md bg-primary-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors cursor-pointer',
                                         loading && 'opacity-70 cursor-not-allowed'
                                     )}
                                 >
@@ -195,7 +194,7 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
                                 <Link
                                     to="/cadastro"
                                     onClick={() => onOpenChange(false)}
-                                    className="font-medium text-primary-600 hover:text-primary-700"
+                                    className="font-medium text-primary-600 hover:text-primary-700 cursor-pointer"
                                 >
                                     Cadastre-se
                                 </Link>
@@ -222,7 +221,7 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
                                             setView('login');
                                             setForgotSuccess(false);
                                         }}
-                                        className="w-full rounded-md border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 transition-colors"
+                                        className="w-full rounded-md border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 transition-colors cursor-pointer"
                                     >
                                         Voltar para login
                                     </button>
@@ -257,7 +256,7 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
                                         <button
                                             type="button"
                                             onClick={() => setView('login')}
-                                            className="flex-1 rounded-md border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 transition-colors"
+                                            className="flex-1 rounded-md border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 transition-colors cursor-pointer"
                                         >
                                             Voltar
                                         </button>
@@ -265,7 +264,7 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
                                             type="submit"
                                             disabled={loading}
                                             className={cn(
-                                                'flex-1 rounded-md bg-primary-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors',
+                                                'flex-1 rounded-md bg-primary-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors cursor-pointer',
                                                 loading && 'opacity-70 cursor-not-allowed'
                                             )}
                                         >

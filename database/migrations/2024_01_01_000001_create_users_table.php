@@ -20,17 +20,6 @@ return new class extends Migration
             $table->softDeletes();
         });
 
-        Schema::create('user_student_data', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
-            $table->string('course_name')->nullable();
-            $table->string('course_situation')->nullable(); // 'studying', 'graduated'
-            $table->string('course_role')->nullable(); // previously student_type
-            $table->timestamps();
-
-            $table->unique('user_id');
-        });
-
         Schema::create('user_speaker_data', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
@@ -63,7 +52,6 @@ return new class extends Migration
         Schema::dropIfExists('sessions');
         Schema::dropIfExists('password_reset_tokens');
         Schema::dropIfExists('user_speaker_data');
-        Schema::dropIfExists('user_student_data');
         Schema::dropIfExists('users');
     }
 };

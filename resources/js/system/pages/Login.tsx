@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import * as Label from '@radix-ui/react-label';
 import { Layout } from '../components/Layout';
+import { PageTitle } from '@shared/components/PageTitle';
 import { cn } from '@shared/lib/utils';
 
 export default function Login() {
@@ -41,7 +42,9 @@ export default function Login() {
     };
 
     return (
-        <Layout>
+        <>
+            <PageTitle title="Login" />
+            <Layout>
             <div className="flex min-h-[calc(100vh-4rem-4rem)] items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
                 <div className="w-full max-w-md space-y-8">
                     <div>
@@ -161,6 +164,7 @@ export default function Login() {
                 </div>
             </div>
         </Layout>
+        </>
     );
 }
 

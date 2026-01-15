@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Exceptions\ApiException;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -52,6 +53,8 @@ class SocialAuthController extends Controller
                     'password' => bcrypt(Str::random(32)),
                     'email_verified_at' => now(),
                 ]);
+
+                $user->assignRole('user');
             }
 
             // Generate one-time code
@@ -83,28 +86,31 @@ class SocialAuthController extends Controller
         $userId = Cache::pull("auth_code:{$code}");
 
         if (! $userId) {
-            return response()->json([
-                'message' => 'Código inválido ou expirado',
-            ], 401);
+            throw ApiException::invalidToken();
         }
 
         $user = User::find($userId);
 
         if (! $user) {
-            return response()->json([
-                'message' => 'Usuário não encontrado',
-            ], 404);
+            throw ApiException::notFound('Usuário');
         }
+
+        $user->load('studentData');
 
         // Log the user in
         Auth::login($user, remember: true);
 
         return response()->json([
-            'message' => 'Autenticação realizada com sucesso',
             'user' => [
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
+                'email_verified_at' => $user->email_verified_at?->toISOString(),
+                'student_data' => $user->studentData ? [
+                    'course_situation' => $user->studentData->course_situation,
+                    'course_role' => $user->studentData->course_role,
+                    'course_name' => $user->studentData->course->name,
+                ] : null,
             ],
         ]);
     }

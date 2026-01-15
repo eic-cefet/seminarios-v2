@@ -11,6 +11,7 @@ class MigratePresenceLinksCommand extends Command
     use MigratesData;
 
     protected $signature = 'migrate:presence-links';
+
     protected $description = 'Migrate presence links from legacy database';
 
     public function handle(): int
@@ -30,6 +31,7 @@ class MigratePresenceLinksCommand extends Command
                     'id' => $data['seminary_id'],
                     'seminar_id' => $data['seminary_id'],
                     'uuid' => $data['uuid'],
+                    'active' => $data['active'] ?? false,
                     'expires_at' => $data['expires_at'] ?? null,
                     'created_at' => $data['created_at'],
                     'updated_at' => $data['updated_at'],
@@ -39,6 +41,7 @@ class MigratePresenceLinksCommand extends Command
         );
 
         $this->info("Migrated {$count} presence links.");
+
         return Command::SUCCESS;
     }
 }

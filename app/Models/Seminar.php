@@ -23,6 +23,7 @@ class Seminar extends Model
         'scheduled_at',
         'link',
         'active',
+        'created_by',
     ];
 
     protected function casts(): array
@@ -31,6 +32,11 @@ class Seminar extends Model
             'scheduled_at' => 'datetime',
             'active' => 'boolean',
         ];
+    }
+
+    public function creator(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by');
     }
 
     public function seminarLocation(): BelongsTo

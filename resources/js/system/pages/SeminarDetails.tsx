@@ -1,24 +1,34 @@
+import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
     ArrowLeft,
     Calendar,
     MapPin,
     Users,
-    Star,
     ExternalLink,
     User,
     Linkedin,
     Github,
+    Loader2,
+    Check,
 } from 'lucide-react';
 import { Layout } from '../components/Layout';
 import { Badge } from '../components/Badge';
-import { seminarsApi } from '@shared/api/client';
+import { LoginModal } from '../components/LoginModal';
+import { PageTitle } from '@shared/components/PageTitle';
+import { seminarsApi, registrationApi } from '@shared/api/client';
 import { formatDateTime, cn, containsHTML } from '@shared/lib/utils';
+import { getErrorMessage } from '@shared/lib/errors';
+import { useAuth } from '@shared/contexts/AuthContext';
 import DOMPurify from 'dompurify';
 
 export default function SeminarDetails() {
     const { slug } = useParams<{ slug: string }>();
+    const { user } = useAuth();
+    const queryClient = useQueryClient();
+    const [loginModalOpen, setLoginModalOpen] = useState(false);
+    const [registrationError, setRegistrationError] = useState<string | null>(null);
 
     const { data: seminarData, isLoading, error } = useQuery({
         queryKey: ['seminar', slug],
@@ -26,58 +36,110 @@ export default function SeminarDetails() {
         enabled: !!slug,
     });
 
+    const { data: registrationData, isLoading: isLoadingRegistration } = useQuery({
+        queryKey: ['registration', slug],
+        queryFn: () => registrationApi.status(slug!),
+        enabled: !!slug && !!user,
+    });
+
+    const registerMutation = useMutation({
+        mutationFn: () => registrationApi.register(slug!),
+        onSuccess: () => {
+            setRegistrationError(null);
+            queryClient.invalidateQueries({ queryKey: ['registration', slug] });
+            queryClient.invalidateQueries({ queryKey: ['seminar', slug] });
+        },
+        onError: (error) => {
+            setRegistrationError(getErrorMessage(error));
+        },
+    });
+
+    const unregisterMutation = useMutation({
+        mutationFn: () => registrationApi.unregister(slug!),
+        onSuccess: () => {
+            setRegistrationError(null);
+            queryClient.invalidateQueries({ queryKey: ['registration', slug] });
+            queryClient.invalidateQueries({ queryKey: ['seminar', slug] });
+        },
+        onError: (error) => {
+            setRegistrationError(getErrorMessage(error));
+        },
+    });
+
     const seminar = seminarData?.data;
+    const isRegistered = registrationData?.registered ?? false;
+    const isProcessing = registerMutation.isPending || unregisterMutation.isPending;
+
+    const handleRegisterClick = () => {
+        if (!user) {
+            setLoginModalOpen(true);
+            return;
+        }
+        registerMutation.mutate();
+    };
+
+    const handleUnregisterClick = () => {
+        unregisterMutation.mutate();
+    };
 
     if (isLoading) {
         return (
-            <Layout>
-                <div className="bg-white border-b border-gray-200">
-                    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-                        <div className="h-4 w-32 animate-pulse rounded bg-gray-200 mb-4" />
-                        <div className="h-10 w-96 animate-pulse rounded bg-gray-200" />
-                        <div className="h-4 w-64 animate-pulse rounded bg-gray-200 mt-4" />
+            <>
+                <PageTitle title="Carregando..." />
+                <Layout>
+                    <div className="bg-white border-b border-gray-200">
+                        <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+                            <div className="h-4 w-32 animate-pulse rounded bg-gray-200 mb-4" />
+                            <div className="h-10 w-96 animate-pulse rounded bg-gray-200" />
+                            <div className="h-4 w-64 animate-pulse rounded bg-gray-200 mt-4" />
+                        </div>
                     </div>
-                </div>
-                <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-                    <div className="h-64 animate-pulse rounded-lg bg-gray-200" />
-                </div>
-            </Layout>
+                    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+                        <div className="h-64 animate-pulse rounded-lg bg-gray-200" />
+                    </div>
+                </Layout>
+            </>
         );
     }
 
     if (error || !seminar) {
         return (
-            <Layout>
-                <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 text-center">
-                    <Calendar className="mx-auto h-12 w-12 text-gray-400" />
-                    <h1 className="mt-4 text-2xl font-bold text-gray-900">
-                        Seminário não encontrado
-                    </h1>
-                    <p className="mt-2 text-gray-500">
-                        O seminário que você está procurando não existe ou foi removido.
-                    </p>
-                    <Link
-                        to="/apresentacoes"
-                        className="mt-6 inline-flex items-center text-primary-600 hover:text-primary-700"
-                    >
-                        <ArrowLeft className="mr-2 h-4 w-4" />
-                        Voltar para apresentações
-                    </Link>
-                </div>
-            </Layout>
+            <>
+                <PageTitle title="Seminário não encontrado" />
+                <Layout>
+                    <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 text-center">
+                        <Calendar className="mx-auto h-12 w-12 text-gray-400" />
+                        <h1 className="mt-4 text-2xl font-bold text-gray-900">
+                            Seminário não encontrado
+                        </h1>
+                        <p className="mt-2 text-gray-500">
+                            O seminário que você está procurando não existe ou foi removido.
+                        </p>
+                        <Link
+                            to="/apresentacoes"
+                            className="mt-6 inline-flex items-center text-primary-600 hover:text-primary-700 cursor-pointer"
+                        >
+                            <ArrowLeft className="mr-2 h-4 w-4" />
+                            Voltar para apresentações
+                        </Link>
+                    </div>
+                </Layout>
+            </>
         );
     }
 
     const isExpired = seminar.isExpired;
 
     return (
-        <Layout>
-            {/* Header */}
-            <div className={cn('border-b border-gray-200', isExpired ? 'bg-gray-100' : 'bg-white')}>
-                <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-                    <Link
-                        to="/apresentacoes"
-                        className="inline-flex items-center text-sm text-gray-500 hover:text-gray-700 mb-4"
+        <>
+            <PageTitle title={seminar.name} />
+            <Layout>
+                {/* Header */}
+                <div className={cn('border-b border-gray-200', isExpired ? 'bg-gray-100' : 'bg-white')}>
+                    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+                        <Link
+                            to="/apresentacoes"
+                        className="inline-flex items-center text-sm text-gray-500 hover:text-gray-700 mb-4 cursor-pointer"
                     >
                         <ArrowLeft className="mr-1 h-4 w-4" />
                         Todas as apresentações
@@ -121,12 +183,6 @@ export default function SeminarDetails() {
                             <span className="flex items-center gap-2">
                                 <Users className="h-5 w-5" />
                                 {seminar.registrationsCount} inscritos
-                            </span>
-                        )}
-                        {seminar.averageRating && (
-                            <span className="flex items-center gap-2">
-                                <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
-                                {seminar.averageRating.toFixed(1)}
                             </span>
                         )}
                     </div>
@@ -196,7 +252,7 @@ export default function SeminarDetails() {
                                                             href={speaker.speakerData.linkedin}
                                                             target="_blank"
                                                             rel="noopener noreferrer"
-                                                            className="text-gray-400 hover:text-primary-600"
+                                                            className="text-gray-400 hover:text-primary-600 cursor-pointer"
                                                         >
                                                             <Linkedin className="h-5 w-5" />
                                                         </a>
@@ -206,7 +262,7 @@ export default function SeminarDetails() {
                                                             href={speaker.speakerData.github}
                                                             target="_blank"
                                                             rel="noopener noreferrer"
-                                                            className="text-gray-400 hover:text-primary-600"
+                                                            className="text-gray-400 hover:text-primary-600 cursor-pointer"
                                                         >
                                                             <Github className="h-5 w-5" />
                                                         </a>
@@ -225,17 +281,69 @@ export default function SeminarDetails() {
                         {/* Action Card */}
                         <div className="rounded-lg border border-gray-200 bg-white p-6">
                             {!isExpired ? (
-                                <>
-                                    <h3 className="font-semibold text-gray-900 mb-4">
-                                        Inscreva-se neste seminário
-                                    </h3>
-                                    <button className="w-full rounded-md bg-primary-600 px-4 py-3 text-sm font-medium text-white shadow-sm hover:bg-primary-700 transition-colors">
-                                        Realizar inscrição
-                                    </button>
-                                    <p className="mt-3 text-xs text-gray-500 text-center">
-                                        Você receberá um lembrete por e-mail antes do evento
-                                    </p>
-                                </>
+                                isRegistered ? (
+                                    <>
+                                        <div className="flex items-center gap-2 mb-4">
+                                            <div className="rounded-full bg-green-100 p-1">
+                                                <Check className="h-4 w-4 text-green-600" />
+                                            </div>
+                                            <h3 className="font-semibold text-green-700">
+                                                Você está inscrito!
+                                            </h3>
+                                        </div>
+                                        <p className="text-sm text-gray-600 mb-4">
+                                            Você receberá um lembrete por e-mail antes do evento.
+                                        </p>
+                                        <button
+                                            onClick={handleUnregisterClick}
+                                            disabled={isProcessing}
+                                            className={cn(
+                                                'w-full rounded-md border border-gray-300 bg-white px-4 py-3 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 transition-colors cursor-pointer',
+                                                isProcessing && 'opacity-70 cursor-not-allowed'
+                                            )}
+                                        >
+                                            {isProcessing ? (
+                                                <span className="flex items-center justify-center gap-2">
+                                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                                    Processando...
+                                                </span>
+                                            ) : (
+                                                'Cancelar inscrição'
+                                            )}
+                                        </button>
+                                    </>
+                                ) : (
+                                    <>
+                                        <h3 className="font-semibold text-gray-900 mb-4">
+                                            Inscreva-se neste seminário
+                                        </h3>
+                                        {registrationError && (
+                                            <div className="mb-4 rounded-md bg-red-50 p-3 text-sm text-red-700">
+                                                {registrationError}
+                                            </div>
+                                        )}
+                                        <button
+                                            onClick={handleRegisterClick}
+                                            disabled={isProcessing || isLoadingRegistration}
+                                            className={cn(
+                                                'w-full rounded-md bg-primary-600 px-4 py-3 text-sm font-medium text-white shadow-sm hover:bg-primary-700 transition-colors cursor-pointer',
+                                                (isProcessing || isLoadingRegistration) && 'opacity-70 cursor-not-allowed'
+                                            )}
+                                        >
+                                            {isProcessing ? (
+                                                <span className="flex items-center justify-center gap-2">
+                                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                                    Processando...
+                                                </span>
+                                            ) : (
+                                                'Realizar inscrição'
+                                            )}
+                                        </button>
+                                        <p className="mt-3 text-xs text-gray-500 text-center">
+                                            Você receberá um lembrete por e-mail antes do evento
+                                        </p>
+                                    </>
+                                )
                             ) : (
                                 <>
                                     <h3 className="font-semibold text-gray-500 mb-2">
@@ -254,7 +362,7 @@ export default function SeminarDetails() {
                                 href={seminar.link}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="flex items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white p-4 text-sm font-medium text-primary-600 hover:bg-gray-50 transition-colors"
+                                className="flex items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white p-4 text-sm font-medium text-primary-600 hover:bg-gray-50 transition-colors cursor-pointer"
                             >
                                 <ExternalLink className="h-4 w-4" />
                                 Link do evento
@@ -269,7 +377,7 @@ export default function SeminarDetails() {
                                 </p>
                                 <Link
                                     to={`/workshop/${seminar.workshop.id}`}
-                                    className="font-semibold text-primary-600 hover:text-primary-700"
+                                    className="font-semibold text-primary-600 hover:text-primary-700 cursor-pointer"
                                 >
                                     {seminar.workshop.name}
                                 </Link>
@@ -287,6 +395,9 @@ export default function SeminarDetails() {
                     </div>
                 </div>
             </div>
-        </Layout>
+
+            <LoginModal open={loginModalOpen} onOpenChange={setLoginModalOpen} />
+            </Layout>
+        </>
     );
 }

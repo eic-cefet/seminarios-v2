@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { ArrowLeft, Wrench, Calendar } from 'lucide-react';
 import { Layout } from '../components/Layout';
 import { SeminarCard } from '../components/SeminarCard';
+import { PageTitle } from '@shared/components/PageTitle';
 import { workshopsApi } from '@shared/api/client';
 
 export default function WorkshopDetails() {
@@ -28,59 +29,67 @@ export default function WorkshopDetails() {
 
     if (isLoading) {
         return (
-            <Layout>
-                <div className="bg-primary-600">
+            <>
+                <PageTitle title="Carregando..." />
+                <Layout>
+                    <div className="bg-primary-600">
+                        <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+                            <div className="h-8 w-48 animate-pulse rounded bg-white/30" />
+                            <div className="mt-2 h-4 w-72 animate-pulse rounded bg-white/20" />
+                        </div>
+                    </div>
                     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-                        <div className="h-8 w-48 animate-pulse rounded bg-white/30" />
-                        <div className="mt-2 h-4 w-72 animate-pulse rounded bg-white/20" />
+                        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                            {[1, 2, 3].map((i) => (
+                                <div key={i} className="h-48 animate-pulse rounded-lg bg-gray-200" />
+                            ))}
+                        </div>
                     </div>
-                </div>
-                <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                        {[1, 2, 3].map((i) => (
-                            <div key={i} className="h-48 animate-pulse rounded-lg bg-gray-200" />
-                        ))}
-                    </div>
-                </div>
-            </Layout>
+                </Layout>
+            </>
         );
     }
 
     if (!workshop) {
         return (
-            <Layout>
-                <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 text-center">
-                    <Wrench className="mx-auto h-12 w-12 text-gray-400" />
-                    <h1 className="mt-4 text-2xl font-bold text-gray-900">
-                        Workshop não encontrado
-                    </h1>
-                    <p className="mt-2 text-gray-500">
-                        O workshop que você está procurando não existe ou foi removido.
-                    </p>
-                    <Link
-                        to="/workshops"
-                        className="mt-6 inline-flex items-center text-primary-600 hover:text-primary-700"
-                    >
-                        <ArrowLeft className="mr-2 h-4 w-4" />
-                        Voltar para workshops
-                    </Link>
-                </div>
-            </Layout>
+            <>
+                <PageTitle title="Workshop não encontrado" />
+                <Layout>
+                    <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 text-center">
+                        <Wrench className="mx-auto h-12 w-12 text-gray-400" />
+                        <h1 className="mt-4 text-2xl font-bold text-gray-900">
+                            Workshop não encontrado
+                        </h1>
+                        <p className="mt-2 text-gray-500">
+                            O workshop que você está procurando não existe ou foi removido.
+                        </p>
+                        <Link
+                            to="/workshops"
+                            className="mt-6 inline-flex items-center text-primary-600 hover:text-primary-700"
+                        >
+                            <ArrowLeft className="mr-2 h-4 w-4" />
+                            Voltar para workshops
+                        </Link>
+                    </div>
+                </Layout>
+            </>
         );
     }
 
     return (
-        <Layout>
-            {/* Header */}
-            <div className="bg-primary-600">
-                <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-                    <Link
-                        to="/workshops"
-                        className="inline-flex items-center text-sm text-primary-100 hover:text-white mb-4"
-                    >
-                        <ArrowLeft className="mr-1 h-4 w-4" />
-                        Todos os workshops
-                    </Link>
+        <>
+            <PageTitle title={workshop.name} />
+            <Layout>
+                {/* Header */}
+                <div className="bg-primary-600">
+                    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+                        <Link
+                            to="/workshops"
+                            className="inline-flex items-center text-sm text-primary-100 hover:text-white mb-4"
+                        >
+                            <ArrowLeft className="mr-1 h-4 w-4" />
+                            Todos os workshops
+                        </Link>
                     <div className="flex items-center gap-4">
                         <div className="rounded-full bg-white/20 p-3">
                             <Wrench className="h-8 w-8 text-white" />
@@ -121,6 +130,7 @@ export default function WorkshopDetails() {
                     </div>
                 )}
             </div>
-        </Layout>
+            </Layout>
+        </>
     );
 }

@@ -5,6 +5,7 @@ import * as Select from '@radix-ui/react-select';
 import { ChevronDown, Check, Presentation, Filter } from 'lucide-react';
 import { Layout } from '../components/Layout';
 import { SeminarCard } from '../components/SeminarCard';
+import { PageTitle } from '@shared/components/PageTitle';
 import { seminarsApi, seminarTypesApi } from '@shared/api/client';
 import { cn } from '@shared/lib/utils';
 
@@ -38,7 +39,9 @@ export default function Presentations() {
     const pagination = seminarsData?.meta;
 
     return (
-        <Layout>
+        <>
+            <PageTitle title="Apresentações" />
+            <Layout>
             <div className="bg-white border-b border-gray-200">
                 <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
                     <h1 className="text-3xl font-bold text-gray-900">Apresentações</h1>
@@ -201,5 +204,6 @@ export default function Presentations() {
                 </div>
             </div>
         </Layout>
+        </>
     );
 }

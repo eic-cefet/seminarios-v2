@@ -1,53 +1,51 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import { Layout } from '../components/Layout';
+import { useAuth } from '@shared/contexts/AuthContext';
+import { getErrorMessage } from '@shared/lib/errors';
 
 export default function AuthCallback() {
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
+    const { exchangeCode, user } = useAuth();
     const [error, setError] = useState<string | null>(null);
+    const [exchangeComplete, setExchangeComplete] = useState(false);
+    const hasRun = useRef(false);
+
+    // Navigate once exchange is complete and user is set
+    useEffect(() => {
+        if (exchangeComplete && user) {
+            navigate('/', { replace: true });
+        }
+    }, [exchangeComplete, user, navigate]);
 
     useEffect(() => {
+        if (hasRun.current) return;
+        hasRun.current = true;
+
         const code = searchParams.get('code');
         const errorParam = searchParams.get('error');
 
         if (errorParam) {
-            setError('Ocorreu um erro durante a autenticacao. Tente novamente.');
+            setError('Ocorreu um erro durante a autenticação. Tente novamente.');
             return;
         }
 
         if (!code) {
-            setError('Codigo de autenticacao nao encontrado.');
+            setError('Código de autenticação não encontrado.');
             return;
         }
 
-        // Exchange code for session
-        exchangeCode(code);
+        handleExchange(code);
     }, [searchParams]);
 
-    const exchangeCode = async (code: string) => {
+    const handleExchange = async (code: string) => {
         try {
-            const response = await fetch('/api/auth/exchange', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                },
-                credentials: 'include', // Important for cookies
-                body: JSON.stringify({ code }),
-            });
-
-            if (!response.ok) {
-                const data = await response.json();
-                throw new Error(data.message || 'Falha na autenticacao');
-            }
-
-            // Success - redirect to home
-            // The session cookie is automatically set by Laravel
-            navigate('/', { replace: true });
+            await exchangeCode(code);
+            setExchangeComplete(true);
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Erro ao autenticar');
+            setError(getErrorMessage(err));
         }
     };
 
@@ -60,12 +58,12 @@ export default function AuthCallback() {
                             <span className="text-2xl">!</span>
                         </div>
                         <h1 className="mt-4 text-xl font-semibold text-gray-900">
-                            Erro na autenticacao
+                            Erro na autenticação
                         </h1>
                         <p className="mt-2 text-gray-500">{error}</p>
                         <button
                             onClick={() => navigate('/login')}
-                            className="mt-6 inline-flex items-center rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700"
+                            className="mt-6 inline-flex items-center rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700 cursor-pointer"
                         >
                             Voltar para login
                         </button>

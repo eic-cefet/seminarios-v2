@@ -1,0 +1,119 @@
+<?php
+
+namespace App\Http\Controllers\Api;
+
+use App\Http\Controllers\Controller;
+use App\Models\PresenceLink;
+use App\Models\Registration;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+
+class PresenceController extends Controller
+{
+    public function show(string $uuid): JsonResponse
+    {
+        $presenceLink = PresenceLink::where('uuid', $uuid)
+            ->with('seminar')
+            ->first();
+
+        if (! $presenceLink) {
+            return response()->json([
+                'message' => 'Link de presença não encontrado',
+            ], 404);
+        }
+
+        if (! $presenceLink->isValid()) {
+            return response()->json([
+                'message' => 'Link de presença inválido ou expirado',
+                'is_valid' => false,
+                'is_expired' => $presenceLink->isExpired(),
+                'is_active' => $presenceLink->active,
+            ], 400);
+        }
+
+        return response()->json([
+            'data' => [
+                'seminar' => [
+                    'id' => $presenceLink->seminar->id,
+                    'name' => $presenceLink->seminar->name,
+                    'scheduled_at' => $presenceLink->seminar->scheduled_at?->toISOString(),
+                ],
+                'is_valid' => true,
+                'expires_at' => $presenceLink->expires_at?->toISOString(),
+            ],
+        ]);
+    }
+
+    public function register(Request $request, string $uuid): JsonResponse
+    {
+        // Check if user is authenticated
+        if (! $request->user()) {
+            return response()->json([
+                'message' => 'Você precisa estar autenticado para registrar presença',
+                'requires_auth' => true,
+            ], 401);
+        }
+
+        $presenceLink = PresenceLink::where('uuid', $uuid)
+            ->with('seminar')
+            ->first();
+
+        if (! $presenceLink) {
+            return response()->json([
+                'message' => 'Link de presença não encontrado',
+            ], 404);
+        }
+
+        // Check if link is valid (active and not expired)
+        if (! $presenceLink->isValid()) {
+            return response()->json([
+                'message' => 'Link de presença inválido ou expirado',
+                'is_valid' => false,
+                'is_expired' => $presenceLink->isExpired(),
+                'is_active' => $presenceLink->active,
+            ], 400);
+        }
+
+        $user = $request->user();
+        $seminar = $presenceLink->seminar;
+
+        // Check if user is registered for this seminar
+        $registration = Registration::where('seminar_id', $seminar->id)
+            ->where('user_id', $user->id)
+            ->first();
+
+        if (! $registration) {
+            return response()->json([
+                'message' => 'Você não está inscrito neste seminário',
+            ], 403);
+        }
+
+        // If already present, return success (idempotent)
+        if ($registration->present) {
+            return response()->json([
+                'message' => 'Presença já registrada com sucesso',
+                'data' => [
+                    'present' => true,
+                    'seminar' => [
+                        'id' => $seminar->id,
+                        'name' => $seminar->name,
+                    ],
+                ],
+            ]);
+        }
+
+        // Mark as present
+        $registration->update(['present' => true]);
+
+        return response()->json([
+            'message' => 'Presença registrada com sucesso!',
+            'data' => [
+                'present' => true,
+                'seminar' => [
+                    'id' => $seminar->id,
+                    'name' => $seminar->name,
+                ],
+            ],
+        ]);
+    }
+}

@@ -2,13 +2,20 @@ export interface User {
     id: number;
     name: string;
     email: string;
-    studentData?: UserStudentData;
+    email_verified_at?: string;
+    student_data?: UserStudentData;
+    roles?: string[];
 }
 
 export interface UserStudentData {
-    courseSituation: 'studying' | 'graduated';
-    courseRole: 'Aluno' | 'Professor' | 'Outro';
-    courseName?: string;
+    course_situation: 'studying' | 'graduated';
+    course_role: 'Aluno' | 'Professor' | 'Outro';
+    course?: Course;
+}
+
+export interface Course {
+    id: number;
+    name: string;
 }
 
 export interface Subject {
@@ -63,7 +70,6 @@ export interface Seminar {
     speakers?: Speaker[];
     location?: SeminarLocation;
     registrationsCount?: number;
-    averageRating?: number;
 }
 
 export interface Registration {
