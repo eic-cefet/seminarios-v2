@@ -13,5 +13,6 @@ if [ "$APP_ENV" = "production" ]; then
     php artisan view:cache
 fi
 
-# Start Octane with FrankenPHP (HTTPS with auto-generated certs)
-exec php artisan octane:frankenphp --host=0.0.0.0 --port=443 --https
+# Start Octane with FrankenPHP
+# TLS should be handled by reverse proxy/load balancer in production
+exec php artisan octane:frankenphp --host=0.0.0.0 --port=8000
