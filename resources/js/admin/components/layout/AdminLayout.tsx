@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { Outlet } from "react-router-dom";
 import { useAuth } from "@shared/contexts/AuthContext";
+import { Favicon } from "@shared/components/Favicon";
 import { Sidebar } from "./Sidebar";
 import { Toaster } from "sonner";
 
@@ -40,6 +41,7 @@ export function AdminLayout() {
 
     return (
         <div className="flex h-screen bg-background">
+            <Favicon />
             {/* Sidebar - hidden on mobile */}
             <div className="hidden lg:block">
                 <Sidebar />
