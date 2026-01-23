@@ -15,7 +15,7 @@ class SeminarResource extends JsonResource
             'slug' => $this->slug,
             'description' => $this->description,
             'scheduledAt' => $this->scheduled_at?->toIso8601String(),
-            'link' => $this->link,
+            'roomLink' => $this->room_link,
             'active' => $this->active,
             'isExpired' => $this->scheduled_at?->isPast() ?? false,
 

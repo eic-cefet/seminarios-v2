@@ -109,7 +109,7 @@ export default function SeminarForm() {
             name: "",
             description: "",
             scheduled_at: "",
-            link: "",
+            room_link: "",
             active: true,
             seminar_location_id: undefined,
             seminar_type_id: undefined,
@@ -138,14 +138,15 @@ export default function SeminarForm() {
             if (seminar.scheduled_at) {
                 const date = new Date(seminar.scheduled_at);
                 scheduledAt = new Date(
-                    date.getTime() - date.getTimezoneOffset() * 60000
+                    date.getTime() - date.getTimezoneOffset() * 60000,
                 )
                     .toISOString()
                     .slice(0, 16);
             }
 
             // Handle IDs - try both flat and nested structures
-            const locationId = seminar.seminar_location_id ?? seminar.location?.id;
+            const locationId =
+                seminar.seminar_location_id ?? seminar.location?.id;
             const typeId = seminar.seminar_type_id ?? seminar.seminar_type?.id;
             const workshopId = seminar.workshop_id ?? seminar.workshop?.id;
 
@@ -154,7 +155,7 @@ export default function SeminarForm() {
                 name: seminar.name || "",
                 description: seminar.description || "",
                 scheduled_at: scheduledAt,
-                link: seminar.link || "",
+                room_link: seminar.room_link || "",
                 active: seminar.active ?? true,
                 seminar_location_id: locationId,
                 seminar_type_id: typeId,
@@ -212,7 +213,9 @@ export default function SeminarForm() {
 
     return (
         <>
-            <PageTitle title={isEditMode ? "Editar Seminário" : "Novo Seminário"} />
+            <PageTitle
+                title={isEditMode ? "Editar Seminário" : "Novo Seminário"}
+            />
             <div className="space-y-6">
                 <div className="flex items-center justify-between">
                     <div>
@@ -227,302 +230,309 @@ export default function SeminarForm() {
                     </div>
                 </div>
 
-            <form onSubmit={handleSubmit(onSubmit)}>
-                {/* Grid Layout for Desktop */}
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-                    {/* Basic Information - 8 cols on desktop */}
-                    <Card className="lg:col-span-8">
-                        <CardHeader>
-                            <CardTitle>Informações Básicas</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="name">Nome *</Label>
-                                <Input
-                                    id="name"
-                                    {...register("name")}
-                                    placeholder="Ex: Inteligência Artificial na Prática"
-                                />
-                                {errors.name && (
-                                    <p className="text-sm text-red-500">
-                                        {errors.name.message}
-                                    </p>
-                                )}
-                            </div>
-
-                            {/* Slug display (read-only) */}
-                            {name && (
+                <form onSubmit={handleSubmit(onSubmit)}>
+                    {/* Grid Layout for Desktop */}
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                        {/* Basic Information - 8 cols on desktop */}
+                        <Card className="lg:col-span-8">
+                            <CardHeader>
+                                <CardTitle>Informações Básicas</CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
                                 <div className="space-y-2">
-                                    <Label>Slug (gerado automaticamente)</Label>
-                                    <div className="px-3 py-2 bg-muted rounded-md text-sm text-muted-foreground">
-                                        {generatedSlug}
-                                    </div>
+                                    <Label htmlFor="name">Nome *</Label>
+                                    <Input
+                                        id="name"
+                                        {...register("name")}
+                                        placeholder="Ex: Inteligência Artificial na Prática"
+                                    />
+                                    {errors.name && (
+                                        <p className="text-sm text-red-500">
+                                            {errors.name.message}
+                                        </p>
+                                    )}
                                 </div>
-                            )}
 
-                            <div className="space-y-2">
-                                <MarkdownEditor
-                                    label="Descrição"
-                                    value={watch("description") || ""}
-                                    onChange={(value) =>
-                                        setValue("description", value)
-                                    }
-                                    error={errors.description?.message}
-                                />
-                            </div>
-
-                            <div className="flex items-center gap-2">
-                                <Switch
-                                    checked={watch("active")}
-                                    onCheckedChange={(checked) =>
-                                        setValue("active", checked)
-                                    }
-                                />
-                                <Label>Seminário ativo</Label>
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    {/* Schedule & Links - 4 cols on desktop */}
-                    <Card className="lg:col-span-4">
-                        <CardHeader>
-                            <CardTitle>Agendamento</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="scheduled_at">
-                                    Data e Hora *
-                                </Label>
-                                <Input
-                                    id="scheduled_at"
-                                    type="datetime-local"
-                                    {...register("scheduled_at")}
-                                />
-                                {errors.scheduled_at && (
-                                    <p className="text-sm text-red-500">
-                                        {errors.scheduled_at.message}
-                                    </p>
+                                {/* Slug display (read-only) */}
+                                {name && (
+                                    <div className="space-y-2">
+                                        <Label>
+                                            Slug (gerado automaticamente)
+                                        </Label>
+                                        <div className="px-3 py-2 bg-muted rounded-md text-sm text-muted-foreground">
+                                            {generatedSlug}
+                                        </div>
+                                    </div>
                                 )}
-                            </div>
 
-                            <div className="space-y-2">
-                                <Label htmlFor="link">Link (opcional)</Label>
-                                <Input
-                                    id="link"
-                                    type="url"
-                                    {...register("link")}
-                                    placeholder="https://exemplo.com/seminario"
-                                />
-                                {errors.link && (
-                                    <p className="text-sm text-red-500">
-                                        {errors.link.message}
-                                    </p>
-                                )}
-                            </div>
-                        </CardContent>
-                    </Card>
+                                <div className="space-y-2">
+                                    <MarkdownEditor
+                                        label="Descrição"
+                                        value={watch("description") || ""}
+                                        onChange={(value) =>
+                                            setValue("description", value)
+                                        }
+                                        error={errors.description?.message}
+                                    />
+                                </div>
 
-                    {/* Location & Category - 4 cols on desktop */}
-                    <Card className="lg:col-span-4">
-                        <CardHeader>
-                            <CardTitle>Localização e Categoria</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="location">Local *</Label>
-                                <Select
-                                    value={
-                                        watch(
-                                            "seminar_location_id"
-                                        )?.toString() || ""
-                                    }
-                                    onValueChange={(value) =>
-                                        setValue(
-                                            "seminar_location_id",
-                                            Number(value)
-                                        )
-                                    }
-                                >
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Selecione um local" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {locations.map((loc: any) => (
-                                            <SelectItem
-                                                key={loc.id}
-                                                value={loc.id.toString()}
-                                            >
-                                                {loc.name} (Cap:{" "}
-                                                {loc.max_vacancies})
+                                <div className="flex items-center gap-2">
+                                    <Switch
+                                        checked={watch("active")}
+                                        onCheckedChange={(checked) =>
+                                            setValue("active", checked)
+                                        }
+                                    />
+                                    <Label>Seminário ativo</Label>
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        {/* Schedule & Links - 4 cols on desktop */}
+                        <Card className="lg:col-span-4">
+                            <CardHeader>
+                                <CardTitle>Agendamento</CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="scheduled_at">
+                                        Data e Hora *
+                                    </Label>
+                                    <Input
+                                        id="scheduled_at"
+                                        type="datetime-local"
+                                        {...register("scheduled_at")}
+                                    />
+                                    {errors.scheduled_at && (
+                                        <p className="text-sm text-red-500">
+                                            {errors.scheduled_at.message}
+                                        </p>
+                                    )}
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label htmlFor="room_link">
+                                        Link da Sala (opcional)
+                                    </Label>
+                                    <Input
+                                        id="room_link"
+                                        type="url"
+                                        {...register("room_link")}
+                                        placeholder="https://exemplo.com/seminario"
+                                    />
+                                    {errors.room_link && (
+                                        <p className="text-sm text-red-500">
+                                            {errors.room_link.message}
+                                        </p>
+                                    )}
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        {/* Location & Category - 4 cols on desktop */}
+                        <Card className="lg:col-span-4">
+                            <CardHeader>
+                                <CardTitle>Localização e Categoria</CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="location">Local *</Label>
+                                    <Select
+                                        value={
+                                            watch(
+                                                "seminar_location_id",
+                                            )?.toString() || ""
+                                        }
+                                        onValueChange={(value) =>
+                                            setValue(
+                                                "seminar_location_id",
+                                                Number(value),
+                                            )
+                                        }
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Selecione um local" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {locations.map((loc: any) => (
+                                                <SelectItem
+                                                    key={loc.id}
+                                                    value={loc.id.toString()}
+                                                >
+                                                    {loc.name} (Cap:{" "}
+                                                    {loc.max_vacancies})
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    {errors.seminar_location_id && (
+                                        <p className="text-sm text-red-500">
+                                            {errors.seminar_location_id.message}
+                                        </p>
+                                    )}
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label htmlFor="type">Tipo</Label>
+                                    <Select
+                                        value={
+                                            watch(
+                                                "seminar_type_id",
+                                            )?.toString() || "none"
+                                        }
+                                        onValueChange={(value) =>
+                                            setValue(
+                                                "seminar_type_id",
+                                                value === "none"
+                                                    ? undefined
+                                                    : Number(value),
+                                            )
+                                        }
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Nenhum tipo" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="none">
+                                                Nenhum tipo
                                             </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                                {errors.seminar_location_id && (
+                                            {types.map((type: any) => (
+                                                <SelectItem
+                                                    key={type.id}
+                                                    value={type.id.toString()}
+                                                >
+                                                    {type.name}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label htmlFor="workshop">Workshop</Label>
+                                    <Select
+                                        value={
+                                            watch("workshop_id")?.toString() ||
+                                            "none"
+                                        }
+                                        onValueChange={(value) =>
+                                            setValue(
+                                                "workshop_id",
+                                                value === "none"
+                                                    ? undefined
+                                                    : Number(value),
+                                            )
+                                        }
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Nenhum workshop" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="none">
+                                                Nenhum workshop
+                                            </SelectItem>
+                                            {workshops.map((workshop: any) => (
+                                                <SelectItem
+                                                    key={workshop.id}
+                                                    value={workshop.id.toString()}
+                                                >
+                                                    {workshop.name}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        {/* Subjects - 4 cols on desktop */}
+                        <Card className="lg:col-span-4">
+                            <CardHeader>
+                                <CardTitle>Disciplinas *</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <SubjectMultiSelect
+                                    value={watch("subject_names")}
+                                    onChange={(values) =>
+                                        setValue("subject_names", values)
+                                    }
+                                    error={errors.subject_names?.message}
+                                />
+                            </CardContent>
+                        </Card>
+
+                        {/* Speakers - 4 cols on desktop */}
+                        <Card className="lg:col-span-4">
+                            <CardHeader>
+                                <CardTitle>Palestrantes *</CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                                <div className="flex flex-wrap gap-2">
+                                    {selectedSpeakers.length > 0 ? (
+                                        selectedSpeakers.map((speaker) => (
+                                            <Badge
+                                                key={speaker.id}
+                                                variant="secondary"
+                                            >
+                                                {speaker.name}
+                                            </Badge>
+                                        ))
+                                    ) : (
+                                        <p className="text-sm text-muted-foreground">
+                                            Nenhum palestrante selecionado
+                                        </p>
+                                    )}
+                                </div>
+
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={() => setIsSpeakerModalOpen(true)}
+                                >
+                                    Selecionar Palestrantes
+                                </Button>
+
+                                {errors.speaker_ids && (
                                     <p className="text-sm text-red-500">
-                                        {errors.seminar_location_id.message}
+                                        {errors.speaker_ids.message}
                                     </p>
                                 )}
-                            </div>
+                            </CardContent>
+                        </Card>
+                    </div>
 
-                            <div className="space-y-2">
-                                <Label htmlFor="type">Tipo</Label>
-                                <Select
-                                    value={
-                                        watch("seminar_type_id")?.toString() ||
-                                        "none"
-                                    }
-                                    onValueChange={(value) =>
-                                        setValue(
-                                            "seminar_type_id",
-                                            value === "none"
-                                                ? undefined
-                                                : Number(value)
-                                        )
-                                    }
-                                >
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Nenhum tipo" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="none">
-                                            Nenhum tipo
-                                        </SelectItem>
-                                        {types.map((type: any) => (
-                                            <SelectItem
-                                                key={type.id}
-                                                value={type.id.toString()}
-                                            >
-                                                {type.name}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
+                    {/* Form Actions */}
+                    <div className="flex items-center gap-4 mt-6">
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => navigate("/admin/seminars")}
+                        >
+                            Cancelar
+                        </Button>
+                        <Button
+                            type="submit"
+                            disabled={
+                                createMutation.isPending ||
+                                updateMutation.isPending
+                            }
+                        >
+                            {createMutation.isPending ||
+                            updateMutation.isPending
+                                ? "Salvando..."
+                                : isEditMode
+                                  ? "Atualizar Seminário"
+                                  : "Criar Seminário"}
+                        </Button>
+                    </div>
+                </form>
 
-                            <div className="space-y-2">
-                                <Label htmlFor="workshop">Workshop</Label>
-                                <Select
-                                    value={
-                                        watch("workshop_id")?.toString() ||
-                                        "none"
-                                    }
-                                    onValueChange={(value) =>
-                                        setValue(
-                                            "workshop_id",
-                                            value === "none"
-                                                ? undefined
-                                                : Number(value)
-                                        )
-                                    }
-                                >
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Nenhum workshop" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="none">
-                                            Nenhum workshop
-                                        </SelectItem>
-                                        {workshops.map((workshop: any) => (
-                                            <SelectItem
-                                                key={workshop.id}
-                                                value={workshop.id.toString()}
-                                            >
-                                                {workshop.name}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    {/* Subjects - 4 cols on desktop */}
-                    <Card className="lg:col-span-4">
-                        <CardHeader>
-                            <CardTitle>Disciplinas *</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <SubjectMultiSelect
-                                value={watch("subject_names")}
-                                onChange={(values) =>
-                                    setValue("subject_names", values)
-                                }
-                                error={errors.subject_names?.message}
-                            />
-                        </CardContent>
-                    </Card>
-
-                    {/* Speakers - 4 cols on desktop */}
-                    <Card className="lg:col-span-4">
-                        <CardHeader>
-                            <CardTitle>Palestrantes *</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="flex flex-wrap gap-2">
-                                {selectedSpeakers.length > 0 ? (
-                                    selectedSpeakers.map((speaker) => (
-                                        <Badge
-                                            key={speaker.id}
-                                            variant="secondary"
-                                        >
-                                            {speaker.name}
-                                        </Badge>
-                                    ))
-                                ) : (
-                                    <p className="text-sm text-muted-foreground">
-                                        Nenhum palestrante selecionado
-                                    </p>
-                                )}
-                            </div>
-
-                            <Button
-                                type="button"
-                                variant="outline"
-                                onClick={() => setIsSpeakerModalOpen(true)}
-                            >
-                                Selecionar Palestrantes
-                            </Button>
-
-                            {errors.speaker_ids && (
-                                <p className="text-sm text-red-500">
-                                    {errors.speaker_ids.message}
-                                </p>
-                            )}
-                        </CardContent>
-                    </Card>
-                </div>
-
-                {/* Form Actions */}
-                <div className="flex items-center gap-4 mt-6">
-                    <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => navigate("/admin/seminars")}
-                    >
-                        Cancelar
-                    </Button>
-                    <Button
-                        type="submit"
-                        disabled={
-                            createMutation.isPending || updateMutation.isPending
-                        }
-                    >
-                        {createMutation.isPending || updateMutation.isPending
-                            ? "Salvando..."
-                            : isEditMode
-                            ? "Atualizar Seminário"
-                            : "Criar Seminário"}
-                    </Button>
-                </div>
-            </form>
-
-            <SpeakerSelectionModal
-                open={isSpeakerModalOpen}
-                onClose={() => setIsSpeakerModalOpen(false)}
-                selectedIds={watch("speaker_ids")}
-                onConfirm={handleSpeakerConfirm}
-            />
+                <SpeakerSelectionModal
+                    open={isSpeakerModalOpen}
+                    onClose={() => setIsSpeakerModalOpen(false)}
+                    selectedIds={watch("speaker_ids")}
+                    onConfirm={handleSpeakerConfirm}
+                />
             </div>
         </>
     );

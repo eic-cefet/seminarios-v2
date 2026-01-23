@@ -41,9 +41,14 @@ class ApiException extends Exception
         return new self('mismatched_credentials', 'Credenciais inválidas', 401);
     }
 
-    public static function forbidden(): self
+    public static function forbidden(string $message = 'Acesso negado'): self
     {
-        return new self('forbidden', 'Acesso negado', 403);
+        return new self('forbidden', $message, 403);
+    }
+
+    public static function conflict(string $message = 'Conflito'): self
+    {
+        return new self('conflict', $message, 409);
     }
 
     public static function notFound(string $resource = 'Recurso'): self

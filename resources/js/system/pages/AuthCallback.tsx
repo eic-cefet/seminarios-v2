@@ -1,9 +1,9 @@
-import { useEffect, useState, useRef } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
-import { Loader2 } from 'lucide-react';
-import { Layout } from '../components/Layout';
-import { useAuth } from '@shared/contexts/AuthContext';
-import { getErrorMessage } from '@shared/lib/errors';
+import { useEffect, useState, useRef } from "react";
+import { useSearchParams, useNavigate } from "react-router-dom";
+import { Loader2 } from "lucide-react";
+import { Layout } from "../components/Layout";
+import { useAuth } from "@shared/contexts/AuthContext";
+import { getErrorMessage } from "@shared/lib/errors";
 
 export default function AuthCallback() {
     const [searchParams] = useSearchParams();
@@ -16,7 +16,7 @@ export default function AuthCallback() {
     // Navigate once exchange is complete and user is set
     useEffect(() => {
         if (exchangeComplete && user) {
-            navigate('/', { replace: true });
+            navigate("/", { replace: true });
         }
     }, [exchangeComplete, user, navigate]);
 
@@ -24,16 +24,18 @@ export default function AuthCallback() {
         if (hasRun.current) return;
         hasRun.current = true;
 
-        const code = searchParams.get('code');
-        const errorParam = searchParams.get('error');
+        const code = searchParams.get("code");
+        const errorParam = searchParams.get("error");
 
         if (errorParam) {
-            setError('Ocorreu um erro durante a autenticação. Tente novamente.');
+            setError(
+                "Ocorreu um erro durante a autenticação. Tente novamente.",
+            );
             return;
         }
 
         if (!code) {
-            setError('Código de autenticação não encontrado.');
+            setError("Código de autenticação não encontrado.");
             return;
         }
 
@@ -62,7 +64,7 @@ export default function AuthCallback() {
                         </h1>
                         <p className="mt-2 text-gray-500">{error}</p>
                         <button
-                            onClick={() => navigate('/login')}
+                            onClick={() => navigate("/login")}
                             className="mt-6 inline-flex items-center rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700 cursor-pointer"
                         >
                             Voltar para login

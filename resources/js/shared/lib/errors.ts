@@ -42,7 +42,7 @@ export function getErrorMessage(error: unknown): string {
 }
 
 export function getFieldErrors(
-    error: unknown
+    error: unknown,
 ): Record<string, string> | undefined {
     if (error instanceof ApiRequestError && error.errors) {
         const fieldErrors: Record<string, string> = {};

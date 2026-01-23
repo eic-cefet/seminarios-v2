@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link } from "react-router-dom";
 
 export function Footer() {
     const currentYear = new Date().getFullYear();
@@ -29,8 +29,9 @@ export function Footer() {
                     </div>
                     <div className="mt-8 md:order-1 md:mt-0">
                         <p className="text-center text-sm text-gray-500">
-                            &copy; {currentYear} CEFET-RJ - Escola de Informática e Computação.
-                            Todos os direitos reservados.
+                            &copy; {currentYear} CEFET-RJ - Escola de
+                            Informática e Computação. Todos os direitos
+                            reservados.
                         </p>
                     </div>
                 </div>

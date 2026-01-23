@@ -8,7 +8,6 @@ import type {
     Workshop,
 } from "@shared/types";
 
-
 export interface ApiError {
     error: string;
     message: string;
@@ -20,7 +19,7 @@ export class ApiRequestError extends Error {
         public readonly code: string,
         message: string,
         public readonly status: number,
-        public readonly errors?: Record<string, string[]>
+        public readonly errors?: Record<string, string[]>,
     ) {
         super(message);
         this.name = "ApiRequestError";
@@ -41,7 +40,7 @@ async function getCsrfCookie(): Promise<void> {
 
 async function fetchApi<T>(
     endpoint: string,
-    options?: RequestInit
+    options?: RequestInit,
 ): Promise<T> {
     const headers: Record<string, string> = {
         Accept: "application/json",
@@ -69,7 +68,7 @@ async function fetchApi<T>(
             data.error,
             data.message,
             response.status,
-            data.errors
+            data.errors,
         );
     }
 
@@ -102,7 +101,7 @@ export const seminarsApi = {
 
         const query = searchParams.toString();
         return fetchApi<PaginatedResponse<Seminar>>(
-            `/seminars${query ? `?${query}` : ""}`
+            `/seminars${query ? `?${query}` : ""}`,
         );
     },
 
@@ -121,7 +120,7 @@ export const seminarsApi = {
             direction?: "asc" | "desc";
             page?: number;
             per_page?: number;
-        }
+        },
     ) => {
         const searchParams = new URLSearchParams();
         if (params?.upcoming) searchParams.set("upcoming", "1");
@@ -132,7 +131,7 @@ export const seminarsApi = {
 
         const query = searchParams.toString();
         return fetchApi<PaginatedResponse<Seminar>>(
-            `/subjects/${subjectId}/seminars${query ? `?${query}` : ""}`
+            `/subjects/${subjectId}/seminars${query ? `?${query}` : ""}`,
         );
     },
 };
@@ -145,7 +144,7 @@ export const subjectsApi = {
         if (params?.limit) searchParams.set("limit", params.limit.toString());
         const query = searchParams.toString();
         return fetchApi<{ data: Subject[] }>(
-            `/subjects${query ? `?${query}` : ""}`
+            `/subjects${query ? `?${query}` : ""}`,
         );
     },
 
@@ -171,7 +170,7 @@ export const workshopsApi = {
             direction?: "asc" | "desc";
             page?: number;
             per_page?: number;
-        }
+        },
     ) => {
         const searchParams = new URLSearchParams();
         if (params?.upcoming) searchParams.set("upcoming", "1");
@@ -182,7 +181,7 @@ export const workshopsApi = {
 
         const query = searchParams.toString();
         return fetchApi<PaginatedResponse<Seminar>>(
-            `/workshops/${workshopId}/seminars${query ? `?${query}` : ""}`
+            `/workshops/${workshopId}/seminars${query ? `?${query}` : ""}`,
         );
     },
 };
@@ -416,7 +415,40 @@ export const profileApi = {
             {
                 method: "PUT",
                 body: JSON.stringify(data),
-            }
+            },
         );
     },
+
+    pendingEvaluations: () => {
+        return fetchApi<{
+            data: PendingEvaluation[];
+        }>("/profile/pending-evaluations");
+    },
+
+    submitRating: async (
+        seminarId: number,
+        data: { score: number; comment?: string },
+    ) => {
+        await getCsrfCookie();
+        return fetchApi<{
+            message: string;
+            rating: { id: number; score: number; comment: string | null };
+        }>(`/profile/ratings/${seminarId}`, {
+            method: "POST",
+            body: JSON.stringify(data),
+        });
+    },
 };
+
+// Pending Evaluation type
+export interface PendingEvaluation {
+    id: number;
+    seminar: {
+        id: number;
+        name: string;
+        slug: string;
+        scheduled_at: string | null;
+        seminar_type: { id: number; name: string } | null;
+        location: { id: number; name: string } | null;
+    };
+}

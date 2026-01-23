@@ -7,6 +7,7 @@ import {
     LogOut,
     Menu,
     Shield,
+    Star,
     User,
     X,
 } from "lucide-react";
@@ -98,7 +99,7 @@ export function Navbar() {
                 <div
                     className={cn(
                         "sm:hidden",
-                        mobileMenuOpen ? "block" : "hidden"
+                        mobileMenuOpen ? "block" : "hidden",
                     )}
                 >
                     <div className="space-y-1 pb-3 pt-2">
@@ -220,6 +221,15 @@ function UserDropdown({ user, onLogout }: UserDropdownProps) {
                     </DropdownMenu.Item>
                     <DropdownMenu.Item asChild>
                         <Link
+                            to="/avaliar"
+                            className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded cursor-pointer outline-none"
+                        >
+                            <Star className="h-4 w-4" />
+                            Avaliar seminarios
+                        </Link>
+                    </DropdownMenu.Item>
+                    <DropdownMenu.Item asChild>
+                        <Link
                             to="/certificados"
                             className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded cursor-pointer outline-none"
                         >
@@ -272,6 +282,13 @@ function MobileUserMenu({ user, onLogout }: MobileUserMenuProps) {
                     className="block py-2 text-base font-medium text-gray-500 hover:text-gray-700 cursor-pointer"
                 >
                     Meu perfil
+                </Link>
+                <Link
+                    to="/avaliar"
+                    className="flex items-center gap-2 py-2 text-base font-medium text-gray-500 hover:text-gray-700 cursor-pointer"
+                >
+                    <Star className="h-4 w-4" />
+                    Avaliar seminarios
                 </Link>
                 <Link
                     to="/certificados"

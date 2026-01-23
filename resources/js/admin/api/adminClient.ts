@@ -14,7 +14,7 @@ export class AdminApiError extends Error {
         public readonly code: string,
         message: string,
         public readonly status: number,
-        public readonly errors?: Record<string, string[]>
+        public readonly errors?: Record<string, string[]>,
     ) {
         super(message);
         this.name = "AdminApiError";
@@ -35,7 +35,7 @@ async function getCsrfCookie(): Promise<void> {
 
 async function fetchAdminApi<T>(
     endpoint: string,
-    options?: RequestInit
+    options?: RequestInit,
 ): Promise<T> {
     const headers: Record<string, string> = {
         Accept: "application/json",
@@ -62,7 +62,7 @@ async function fetchAdminApi<T>(
             data.error,
             data.message,
             response.status,
-            data.errors
+            data.errors,
         );
     }
 
@@ -98,7 +98,7 @@ export interface AdminSeminar {
     slug: string;
     description?: string;
     scheduled_at: string;
-    link?: string;
+    room_link?: string;
     active: boolean;
     created_by?: number;
     creator?: { id: number; name: string };
@@ -189,7 +189,7 @@ export const usersApi = {
         if (params?.role) searchParams.set("role", params.role);
         const query = searchParams.toString();
         return fetchAdminApi<PaginatedResponse<AdminUser>>(
-            `/users${query ? `?${query}` : ""}`
+            `/users${query ? `?${query}` : ""}`,
         );
     },
 
@@ -231,7 +231,7 @@ export const usersApi = {
                 institution?: string;
                 description?: string;
             } | null;
-        }
+        },
     ) => {
         await getCsrfCookie();
         return fetchAdminApi<{ message: string; data: AdminUser }>(
@@ -239,7 +239,7 @@ export const usersApi = {
             {
                 method: "PUT",
                 body: JSON.stringify(data),
-            }
+            },
         );
     },
 
@@ -256,7 +256,7 @@ export const usersApi = {
             `/users/${id}/restore`,
             {
                 method: "POST",
-            }
+            },
         );
     },
 };
@@ -268,7 +268,7 @@ export const locationsApi = {
         if (params?.page) searchParams.set("page", params.page.toString());
         const query = searchParams.toString();
         return fetchAdminApi<PaginatedResponse<AdminLocation>>(
-            `/locations${query ? `?${query}` : ""}`
+            `/locations${query ? `?${query}` : ""}`,
         );
     },
 
@@ -282,13 +282,13 @@ export const locationsApi = {
             {
                 method: "POST",
                 body: JSON.stringify(data),
-            }
+            },
         );
     },
 
     update: async (
         id: number,
-        data: { name?: string; max_vacancies?: number }
+        data: { name?: string; max_vacancies?: number },
     ) => {
         await getCsrfCookie();
         return fetchAdminApi<{ message: string; data: AdminLocation }>(
@@ -296,7 +296,7 @@ export const locationsApi = {
             {
                 method: "PUT",
                 body: JSON.stringify(data),
-            }
+            },
         );
     },
 
@@ -316,7 +316,7 @@ export const subjectsApi = {
         if (params?.search) searchParams.set("search", params.search);
         const query = searchParams.toString();
         return fetchAdminApi<PaginatedResponse<AdminSubject>>(
-            `/subjects${query ? `?${query}` : ""}`
+            `/subjects${query ? `?${query}` : ""}`,
         );
     },
 
@@ -330,7 +330,7 @@ export const subjectsApi = {
             {
                 method: "POST",
                 body: JSON.stringify(data),
-            }
+            },
         );
     },
 
@@ -341,7 +341,7 @@ export const subjectsApi = {
             {
                 method: "PUT",
                 body: JSON.stringify(data),
-            }
+            },
         );
     },
 
@@ -363,7 +363,7 @@ export const subjectsApi = {
             {
                 method: "POST",
                 body: JSON.stringify(data),
-            }
+            },
         );
     },
 };
@@ -382,7 +382,7 @@ export const registrationsApi = {
         if (params?.search) searchParams.set("search", params.search);
         const query = searchParams.toString();
         return fetchAdminApi<PaginatedResponse<AdminRegistration>>(
-            `/registrations${query ? `?${query}` : ""}`
+            `/registrations${query ? `?${query}` : ""}`,
         );
     },
 
@@ -392,7 +392,7 @@ export const registrationsApi = {
             `/registrations/${id}/presence`,
             {
                 method: "PATCH",
-            }
+            },
         );
     },
 };
@@ -413,17 +413,18 @@ export const seminarsApi = {
         if (params?.upcoming) searchParams.set("upcoming", "1");
         const query = searchParams.toString();
         return fetchAdminApi<PaginatedResponse<AdminSeminar>>(
-            `/seminars${query ? `?${query}` : ""}`
+            `/seminars${query ? `?${query}` : ""}`,
         );
     },
 
-    get: (id: number) => fetchAdminApi<{ data: AdminSeminar }>(`/seminars/${id}`),
+    get: (id: number) =>
+        fetchAdminApi<{ data: AdminSeminar }>(`/seminars/${id}`),
 
     create: async (data: {
         name: string;
         description?: string;
         scheduled_at: string;
-        link?: string;
+        room_link?: string;
         active: boolean;
         seminar_location_id?: number;
         seminar_type_id?: number;
@@ -437,7 +438,7 @@ export const seminarsApi = {
             {
                 method: "POST",
                 body: JSON.stringify(data),
-            }
+            },
         );
     },
 
@@ -447,14 +448,14 @@ export const seminarsApi = {
             name?: string;
             description?: string;
             scheduled_at?: string;
-            link?: string;
+            room_link?: string;
             active?: boolean;
             seminar_location_id?: number;
             seminar_type_id?: number;
             workshop_id?: number;
             subject_names?: string[];
             speaker_ids?: number[];
-        }
+        },
     ) => {
         await getCsrfCookie();
         return fetchAdminApi<{ message: string; data: AdminSeminar }>(
@@ -462,7 +463,7 @@ export const seminarsApi = {
             {
                 method: "PUT",
                 body: JSON.stringify(data),
-            }
+            },
         );
     },
 
@@ -486,6 +487,7 @@ export const presenceLinkApi = {
                 is_expired: boolean;
                 is_valid: boolean;
                 url: string;
+                png_url: string;
                 qr_code: string;
             } | null;
         }>(`/seminars/${seminarId}/presence-link`),
@@ -502,6 +504,7 @@ export const presenceLinkApi = {
                 is_expired: boolean;
                 is_valid: boolean;
                 url: string;
+                png_url: string;
                 qr_code: string;
             };
         }>(`/seminars/${seminarId}/presence-link`, {

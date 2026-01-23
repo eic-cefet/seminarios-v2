@@ -21,7 +21,7 @@ class WelcomeUser extends Mailable implements ShouldQueue
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Bem-vindo(a) ao '.config('app.name'),
+            subject: 'Bem-vindo(a) ao '.config('mail.name'),
         );
     }
 

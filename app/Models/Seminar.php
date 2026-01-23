@@ -21,7 +21,7 @@ class Seminar extends Model
         'workshop_id',
         'seminar_type_id',
         'scheduled_at',
-        'link',
+        'room_link',
         'active',
         'created_by',
     ];

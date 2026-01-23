@@ -14,6 +14,12 @@ return [
     |
     */
 
+    'name' => env('MAIL_NAME', 'Sistema de Seminários da EIC/CEFET-RJ'),
+    'team_name' => env('MAIL_TEAM_NAME', 'Time EIC'),
+    'logo_path' => env('MAIL_LOGO_URL', 'images/email-logo.png'),
+    'brand_color' => env('MAIL_BRAND_COLOR', '#354f87'),
+    'test_mail' => env('MAIL_TEST_MAIL', 'test@eic-seminarios.com'),
+
     'default' => env('MAIL_MAILER', 'log'),
 
     /*

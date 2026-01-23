@@ -70,4 +70,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/profile/password', [ProfileController::class, 'updatePassword']);
     Route::get('/profile/registrations', [ProfileController::class, 'registrations']);
     Route::get('/profile/certificates', [ProfileController::class, 'certificates']);
+    Route::get('/profile/pending-evaluations', [ProfileController::class, 'pendingEvaluations']);
+    Route::post('/profile/ratings/{seminar}', [ProfileController::class, 'submitRating']);
 });

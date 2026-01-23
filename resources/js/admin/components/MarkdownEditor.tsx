@@ -1,7 +1,7 @@
-import { Tabs, TabsList, TabsTrigger, TabsContent } from './ui/tabs';
-import { Label } from './ui/label';
-import ReactMarkdown from 'react-markdown';
-import rehypeSanitize from 'rehype-sanitize';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "./ui/tabs";
+import { Label } from "./ui/label";
+import ReactMarkdown from "react-markdown";
+import rehypeSanitize from "rehype-sanitize";
 
 interface MarkdownEditorProps {
     value: string;
@@ -10,7 +10,12 @@ interface MarkdownEditorProps {
     error?: string;
 }
 
-export function MarkdownEditor({ value, onChange, label, error }: MarkdownEditorProps) {
+export function MarkdownEditor({
+    value,
+    onChange,
+    label,
+    error,
+}: MarkdownEditorProps) {
     return (
         <div className="space-y-2">
             {label && <Label>{label}</Label>}
@@ -28,9 +33,9 @@ export function MarkdownEditor({ value, onChange, label, error }: MarkdownEditor
                     />
                 </TabsContent>
                 <TabsContent value="preview">
-                    <div className="w-full min-h-[200px] px-3 py-2 border border-border rounded-md prose prose-sm max-w-none dark:prose-invert bg-background">
+                    <div className="w-full min-h-[200px] px-3 py-2 border border-border rounded-md prose prose-sm max-w-none bg-background">
                         <ReactMarkdown rehypePlugins={[rehypeSanitize]}>
-                            {value || '*Nenhuma descrição*'}
+                            {value || "*Nenhuma descrição*"}
                         </ReactMarkdown>
                     </div>
                 </TabsContent>

@@ -1,29 +1,29 @@
-import { useState } from 'react';
-import { useQuery, useMutation } from '@tanstack/react-query';
-import { Link, Navigate } from 'react-router-dom';
+import { coursesApi, profileApi } from "@shared/api/client";
+import { PageTitle } from "@shared/components/PageTitle";
+import { useAuth } from "@shared/contexts/AuthContext";
+import { getErrorMessage, getFieldErrors } from "@shared/lib/errors";
+import { cn, formatDateTime } from "@shared/lib/utils";
+import type { User as UserType } from "@shared/types";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import {
-    User,
-    Mail,
-    Lock,
     Calendar,
-    MapPin,
-    FileText,
-    Download,
     Check,
-    X,
-    Loader2,
-    ChevronRight,
     ChevronLeft,
+    ChevronRight,
+    Download,
+    FileText,
     GraduationCap,
-} from 'lucide-react';
-import { Layout } from '../components/Layout';
-import { Badge } from '../components/Badge';
-import { PageTitle } from '@shared/components/PageTitle';
-import { useAuth } from '@shared/contexts/AuthContext';
-import { profileApi, coursesApi } from '@shared/api/client';
-import { getErrorMessage, getFieldErrors } from '@shared/lib/errors';
-import { formatDateTime, cn } from '@shared/lib/utils';
-import type { User as UserType } from '@shared/types';
+    Loader2,
+    Lock,
+    Mail,
+    MapPin,
+    User,
+    X,
+} from "lucide-react";
+import { useState } from "react";
+import { Link, Navigate } from "react-router-dom";
+import { Badge } from "../components/Badge";
+import { Layout } from "../components/Layout";
 
 export default function Profile() {
     const { user, isLoading: authLoading, refreshUser } = useAuth();
@@ -47,23 +47,25 @@ export default function Profile() {
         <>
             <PageTitle title="Perfil" />
             <Layout>
-            <div className="bg-white border-b border-gray-200">
-                <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
-                    <h1 className="text-2xl font-bold text-gray-900">Meu Perfil</h1>
-                    <p className="mt-1 text-sm text-gray-500">
-                        Gerencie suas informações pessoais e configurações
-                    </p>
+                <div className="bg-white border-b border-gray-200">
+                    <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
+                        <h1 className="text-2xl font-bold text-gray-900">
+                            Meu Perfil
+                        </h1>
+                        <p className="mt-1 text-sm text-gray-500">
+                            Gerencie suas informações pessoais e configurações
+                        </p>
+                    </div>
                 </div>
-            </div>
 
-            <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8 space-y-8">
-                <ProfileInfoSection user={user!} onUpdate={refreshUser} />
-                <StudentDataSection user={user!} onUpdate={refreshUser} />
-                <PasswordSection />
-                <RegistrationsSection />
-                <CertificatesSection />
-            </div>
-        </Layout>
+                <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8 space-y-8">
+                    <ProfileInfoSection user={user!} onUpdate={refreshUser} />
+                    <StudentDataSection user={user!} onUpdate={refreshUser} />
+                    <PasswordSection />
+                    <RegistrationsSection />
+                    <CertificatesSection />
+                </div>
+            </Layout>
         </>
     );
 }
@@ -161,14 +163,16 @@ function ProfileInfoSection({ user, onUpdate }: ProfileInfoSectionProps) {
                                 onChange={(e) => setName(e.target.value)}
                                 required
                                 className={cn(
-                                    'mt-1 block w-full rounded-md border px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1',
+                                    "mt-1 block w-full rounded-md border px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1",
                                     fieldErrors.name
-                                        ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
-                                        : 'border-gray-300 focus:border-primary-500 focus:ring-primary-500'
+                                        ? "border-red-300 focus:border-red-500 focus:ring-red-500"
+                                        : "border-gray-300 focus:border-primary-500 focus:ring-primary-500",
                                 )}
                             />
                             {fieldErrors.name && (
-                                <p className="mt-1 text-sm text-red-600">{fieldErrors.name}</p>
+                                <p className="mt-1 text-sm text-red-600">
+                                    {fieldErrors.name}
+                                </p>
                             )}
                         </div>
 
@@ -186,14 +190,16 @@ function ProfileInfoSection({ user, onUpdate }: ProfileInfoSectionProps) {
                                 onChange={(e) => setEmail(e.target.value)}
                                 required
                                 className={cn(
-                                    'mt-1 block w-full rounded-md border px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1',
+                                    "mt-1 block w-full rounded-md border px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1",
                                     fieldErrors.email
-                                        ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
-                                        : 'border-gray-300 focus:border-primary-500 focus:ring-primary-500'
+                                        ? "border-red-300 focus:border-red-500 focus:ring-red-500"
+                                        : "border-gray-300 focus:border-primary-500 focus:ring-primary-500",
                                 )}
                             />
                             {fieldErrors.email && (
-                                <p className="mt-1 text-sm text-red-600">{fieldErrors.email}</p>
+                                <p className="mt-1 text-sm text-red-600">
+                                    {fieldErrors.email}
+                                </p>
                             )}
                         </div>
 
@@ -209,11 +215,12 @@ function ProfileInfoSection({ user, onUpdate }: ProfileInfoSectionProps) {
                                 type="submit"
                                 disabled={mutation.isPending}
                                 className={cn(
-                                    'flex-1 rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-primary-700 transition-colors cursor-pointer',
-                                    mutation.isPending && 'opacity-70 cursor-not-allowed'
+                                    "flex-1 rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-primary-700 transition-colors cursor-pointer",
+                                    mutation.isPending &&
+                                        "opacity-70 cursor-not-allowed",
                                 )}
                             >
-                                {mutation.isPending ? 'Salvando...' : 'Salvar'}
+                                {mutation.isPending ? "Salvando..." : "Salvar"}
                             </button>
                         </div>
                     </form>
@@ -224,14 +231,18 @@ function ProfileInfoSection({ user, onUpdate }: ProfileInfoSectionProps) {
                                 <User className="h-4 w-4" />
                                 Nome
                             </dt>
-                            <dd className="text-sm text-gray-900">{user.name}</dd>
+                            <dd className="text-sm text-gray-900">
+                                {user.name}
+                            </dd>
                         </div>
                         <div className="flex items-center gap-3">
                             <dt className="flex items-center gap-2 text-sm text-gray-500 w-24">
                                 <Mail className="h-4 w-4" />
                                 E-mail
                             </dt>
-                            <dd className="text-sm text-gray-900">{user.email}</dd>
+                            <dd className="text-sm text-gray-900">
+                                {user.email}
+                            </dd>
                         </div>
                     </dl>
                 )}
@@ -247,26 +258,33 @@ interface StudentDataSectionProps {
 
 function StudentDataSection({ user, onUpdate }: StudentDataSectionProps) {
     const [isEditing, setIsEditing] = useState(false);
-    const [courseId, setCourseId] = useState(user.student_data?.course?.id?.toString() || '');
-    const [courseSituation, setCourseSituation] = useState<'studying' | 'graduated'>(user.student_data?.course_situation || 'studying');
-    const [courseRole, setCourseRole] = useState<'Aluno' | 'Professor' | 'Outro'>(user.student_data?.course_role || 'Aluno');
+    const [courseId, setCourseId] = useState(
+        user.student_data?.course?.id?.toString() || "",
+    );
+    const [courseSituation, setCourseSituation] = useState<
+        "studying" | "graduated"
+    >(user.student_data?.course_situation || "studying");
+    const [courseRole, setCourseRole] = useState<
+        "Aluno" | "Professor" | "Outro"
+    >(user.student_data?.course_role || "Aluno");
     const [error, setError] = useState<string | null>(null);
     const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
     const [success, setSuccess] = useState(false);
 
     const { data: coursesData } = useQuery({
-        queryKey: ['courses'],
+        queryKey: ["courses"],
         queryFn: () => coursesApi.list(),
     });
 
     const courses = coursesData?.data ?? [];
 
     const mutation = useMutation({
-        mutationFn: () => profileApi.updateStudentData({
-            course_id: courseId ? parseInt(courseId) : null,
-            course_situation: courseSituation,
-            course_role: courseRole,
-        }),
+        mutationFn: () =>
+            profileApi.updateStudentData({
+                course_id: courseId ? parseInt(courseId) : null,
+                course_situation: courseSituation,
+                course_role: courseRole,
+            }),
         onSuccess: async () => {
             setError(null);
             setFieldErrors({});
@@ -287,9 +305,9 @@ function StudentDataSection({ user, onUpdate }: StudentDataSectionProps) {
     };
 
     const handleCancel = () => {
-        setCourseId(user.student_data?.course?.id?.toString() || '');
-        setCourseSituation(user.student_data?.course_situation || 'studying');
-        setCourseRole(user.student_data?.course_role || 'Aluno');
+        setCourseId(user.student_data?.course?.id?.toString() || "");
+        setCourseSituation(user.student_data?.course_situation || "studying");
+        setCourseRole(user.student_data?.course_role || "Aluno");
         setError(null);
         setFieldErrors({});
         setIsEditing(false);
@@ -344,13 +362,15 @@ function StudentDataSection({ user, onUpdate }: StudentDataSectionProps) {
                                 value={courseId}
                                 onChange={(e) => setCourseId(e.target.value)}
                                 className={cn(
-                                    'mt-1 block w-full rounded-md border px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1',
+                                    "mt-1 block w-full rounded-md border px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1",
                                     fieldErrors.course_id
-                                        ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
-                                        : 'border-gray-300 focus:border-primary-500 focus:ring-primary-500'
+                                        ? "border-red-300 focus:border-red-500 focus:ring-red-500"
+                                        : "border-gray-300 focus:border-primary-500 focus:ring-primary-500",
                                 )}
                             >
-                                <option value="">Selecione um curso (opcional)</option>
+                                <option value="">
+                                    Selecione um curso (opcional)
+                                </option>
                                 {courses.map((course) => (
                                     <option key={course.id} value={course.id}>
                                         {course.name}
@@ -358,7 +378,9 @@ function StudentDataSection({ user, onUpdate }: StudentDataSectionProps) {
                                 ))}
                             </select>
                             {fieldErrors.course_id && (
-                                <p className="mt-1 text-sm text-red-600">{fieldErrors.course_id}</p>
+                                <p className="mt-1 text-sm text-red-600">
+                                    {fieldErrors.course_id}
+                                </p>
                             )}
                         </div>
 
@@ -373,20 +395,28 @@ function StudentDataSection({ user, onUpdate }: StudentDataSectionProps) {
                                 <select
                                     id="courseSituation"
                                     value={courseSituation}
-                                    onChange={(e) => setCourseSituation(e.target.value as 'studying' | 'graduated')}
+                                    onChange={(e) =>
+                                        setCourseSituation(
+                                            e.target.value as
+                                                | "studying"
+                                                | "graduated",
+                                        )
+                                    }
                                     required
                                     className={cn(
-                                        'mt-1 block w-full rounded-md border px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1',
+                                        "mt-1 block w-full rounded-md border px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1",
                                         fieldErrors.course_situation
-                                            ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
-                                            : 'border-gray-300 focus:border-primary-500 focus:ring-primary-500'
+                                            ? "border-red-300 focus:border-red-500 focus:ring-red-500"
+                                            : "border-gray-300 focus:border-primary-500 focus:ring-primary-500",
                                     )}
                                 >
                                     <option value="studying">Cursando</option>
                                     <option value="graduated">Formado</option>
                                 </select>
                                 {fieldErrors.course_situation && (
-                                    <p className="mt-1 text-sm text-red-600">{fieldErrors.course_situation}</p>
+                                    <p className="mt-1 text-sm text-red-600">
+                                        {fieldErrors.course_situation}
+                                    </p>
                                 )}
                             </div>
 
@@ -400,13 +430,20 @@ function StudentDataSection({ user, onUpdate }: StudentDataSectionProps) {
                                 <select
                                     id="courseRole"
                                     value={courseRole}
-                                    onChange={(e) => setCourseRole(e.target.value as 'Aluno' | 'Professor' | 'Outro')}
+                                    onChange={(e) =>
+                                        setCourseRole(
+                                            e.target.value as
+                                                | "Aluno"
+                                                | "Professor"
+                                                | "Outro",
+                                        )
+                                    }
                                     required
                                     className={cn(
-                                        'mt-1 block w-full rounded-md border px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1',
+                                        "mt-1 block w-full rounded-md border px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1",
                                         fieldErrors.course_role
-                                            ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
-                                            : 'border-gray-300 focus:border-primary-500 focus:ring-primary-500'
+                                            ? "border-red-300 focus:border-red-500 focus:ring-red-500"
+                                            : "border-gray-300 focus:border-primary-500 focus:ring-primary-500",
                                     )}
                                 >
                                     <option value="Aluno">Aluno</option>
@@ -414,7 +451,9 @@ function StudentDataSection({ user, onUpdate }: StudentDataSectionProps) {
                                     <option value="Outro">Outro</option>
                                 </select>
                                 {fieldErrors.course_role && (
-                                    <p className="mt-1 text-sm text-red-600">{fieldErrors.course_role}</p>
+                                    <p className="mt-1 text-sm text-red-600">
+                                        {fieldErrors.course_role}
+                                    </p>
                                 )}
                             </div>
                         </div>
@@ -431,11 +470,12 @@ function StudentDataSection({ user, onUpdate }: StudentDataSectionProps) {
                                 type="submit"
                                 disabled={mutation.isPending}
                                 className={cn(
-                                    'flex-1 rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-primary-700 transition-colors cursor-pointer',
-                                    mutation.isPending && 'opacity-70 cursor-not-allowed'
+                                    "flex-1 rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-primary-700 transition-colors cursor-pointer",
+                                    mutation.isPending &&
+                                        "opacity-70 cursor-not-allowed",
                                 )}
                             >
-                                {mutation.isPending ? 'Salvando...' : 'Salvar'}
+                                {mutation.isPending ? "Salvando..." : "Salvar"}
                             </button>
                         </div>
                     </form>
@@ -447,7 +487,8 @@ function StudentDataSection({ user, onUpdate }: StudentDataSectionProps) {
                                 Curso
                             </dt>
                             <dd className="text-sm text-gray-900">
-                                {user.student_data?.course?.name || 'Não informado'}
+                                {user.student_data?.course?.name ||
+                                    "Não informado"}
                             </dd>
                         </div>
                         <div className="flex items-center gap-3">
@@ -455,7 +496,10 @@ function StudentDataSection({ user, onUpdate }: StudentDataSectionProps) {
                                 Situação
                             </dt>
                             <dd className="text-sm text-gray-900">
-                                {user.student_data?.course_situation === 'studying' ? 'Cursando' : 'Formado'}
+                                {user.student_data?.course_situation ===
+                                "studying"
+                                    ? "Cursando"
+                                    : "Formado"}
                             </dd>
                         </div>
                         <div className="flex items-center gap-3">
@@ -463,7 +507,8 @@ function StudentDataSection({ user, onUpdate }: StudentDataSectionProps) {
                                 Vínculo
                             </dt>
                             <dd className="text-sm text-gray-900">
-                                {user.student_data?.course_role || 'Não informado'}
+                                {user.student_data?.course_role ||
+                                    "Não informado"}
                             </dd>
                         </div>
                     </dl>
@@ -475,9 +520,9 @@ function StudentDataSection({ user, onUpdate }: StudentDataSectionProps) {
 
 function PasswordSection() {
     const [isEditing, setIsEditing] = useState(false);
-    const [currentPassword, setCurrentPassword] = useState('');
-    const [password, setPassword] = useState('');
-    const [passwordConfirmation, setPasswordConfirmation] = useState('');
+    const [currentPassword, setCurrentPassword] = useState("");
+    const [password, setPassword] = useState("");
+    const [passwordConfirmation, setPasswordConfirmation] = useState("");
     const [error, setError] = useState<string | null>(null);
     const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
     const [success, setSuccess] = useState(false);
@@ -494,9 +539,9 @@ function PasswordSection() {
             setFieldErrors({});
             setSuccess(true);
             setIsEditing(false);
-            setCurrentPassword('');
-            setPassword('');
-            setPasswordConfirmation('');
+            setCurrentPassword("");
+            setPassword("");
+            setPasswordConfirmation("");
             setTimeout(() => setSuccess(false), 3000);
         },
         onError: (err) => {
@@ -511,9 +556,9 @@ function PasswordSection() {
     };
 
     const handleCancel = () => {
-        setCurrentPassword('');
-        setPassword('');
-        setPasswordConfirmation('');
+        setCurrentPassword("");
+        setPassword("");
+        setPasswordConfirmation("");
         setError(null);
         setFieldErrors({});
         setIsEditing(false);
@@ -525,7 +570,9 @@ function PasswordSection() {
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                         <Lock className="h-5 w-5 text-gray-400" />
-                        <h2 className="text-lg font-semibold text-gray-900">Senha</h2>
+                        <h2 className="text-lg font-semibold text-gray-900">
+                            Senha
+                        </h2>
                     </div>
                     {!isEditing && (
                         <button
@@ -565,13 +612,15 @@ function PasswordSection() {
                                 id="current-password"
                                 type="password"
                                 value={currentPassword}
-                                onChange={(e) => setCurrentPassword(e.target.value)}
+                                onChange={(e) =>
+                                    setCurrentPassword(e.target.value)
+                                }
                                 required
                                 className={cn(
-                                    'mt-1 block w-full rounded-md border px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1',
+                                    "mt-1 block w-full rounded-md border px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1",
                                     fieldErrors.current_password
-                                        ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
-                                        : 'border-gray-300 focus:border-primary-500 focus:ring-primary-500'
+                                        ? "border-red-300 focus:border-red-500 focus:ring-red-500"
+                                        : "border-gray-300 focus:border-primary-500 focus:ring-primary-500",
                                 )}
                             />
                             {fieldErrors.current_password && (
@@ -595,14 +644,16 @@ function PasswordSection() {
                                 onChange={(e) => setPassword(e.target.value)}
                                 required
                                 className={cn(
-                                    'mt-1 block w-full rounded-md border px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1',
+                                    "mt-1 block w-full rounded-md border px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1",
                                     fieldErrors.password
-                                        ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
-                                        : 'border-gray-300 focus:border-primary-500 focus:ring-primary-500'
+                                        ? "border-red-300 focus:border-red-500 focus:ring-red-500"
+                                        : "border-gray-300 focus:border-primary-500 focus:ring-primary-500",
                                 )}
                             />
                             {fieldErrors.password && (
-                                <p className="mt-1 text-sm text-red-600">{fieldErrors.password}</p>
+                                <p className="mt-1 text-sm text-red-600">
+                                    {fieldErrors.password}
+                                </p>
                             )}
                         </div>
 
@@ -617,7 +668,9 @@ function PasswordSection() {
                                 id="password-confirmation"
                                 type="password"
                                 value={passwordConfirmation}
-                                onChange={(e) => setPasswordConfirmation(e.target.value)}
+                                onChange={(e) =>
+                                    setPasswordConfirmation(e.target.value)
+                                }
                                 required
                                 className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
                             />
@@ -635,11 +688,14 @@ function PasswordSection() {
                                 type="submit"
                                 disabled={mutation.isPending}
                                 className={cn(
-                                    'flex-1 rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-primary-700 transition-colors cursor-pointer',
-                                    mutation.isPending && 'opacity-70 cursor-not-allowed'
+                                    "flex-1 rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-primary-700 transition-colors cursor-pointer",
+                                    mutation.isPending &&
+                                        "opacity-70 cursor-not-allowed",
                                 )}
                             >
-                                {mutation.isPending ? 'Salvando...' : 'Alterar senha'}
+                                {mutation.isPending
+                                    ? "Salvando..."
+                                    : "Alterar senha"}
                             </button>
                         </div>
                     </form>
@@ -659,7 +715,7 @@ function RegistrationsSection() {
     const [page, setPage] = useState(1);
 
     const { data, isLoading } = useQuery({
-        queryKey: ['profile', 'registrations', page],
+        queryKey: ["profile", "registrations", page],
         queryFn: () => profileApi.registrations({ page, per_page: 10 }),
     });
 
@@ -678,7 +734,7 @@ function RegistrationsSection() {
                     </div>
                     {meta && meta.total > 0 && (
                         <span className="text-sm text-gray-500">
-                            {meta.total} inscrição{meta.total !== 1 ? 'ões' : ''}
+                            {meta.total} inscriç{meta.total > 1 ? "ões" : "ão"}
                         </span>
                     )}
                 </div>
@@ -721,63 +777,82 @@ function RegistrationsSection() {
                                         {registration.seminar.scheduled_at && (
                                             <span className="flex items-center gap-1">
                                                 <Calendar className="h-3.5 w-3.5" />
-                                                {formatDateTime(registration.seminar.scheduled_at)}
+                                                {formatDateTime(
+                                                    registration.seminar
+                                                        .scheduled_at,
+                                                )}
                                             </span>
                                         )}
                                         {registration.seminar.location && (
                                             <span className="flex items-center gap-1">
                                                 <MapPin className="h-3.5 w-3.5" />
-                                                {registration.seminar.location.name}
+                                                {
+                                                    registration.seminar
+                                                        .location.name
+                                                }
                                             </span>
                                         )}
                                     </div>
                                 </div>
                                 <div className="ml-4 flex items-center gap-2">
-                                    {registration.seminar.is_expired ? (
-                                        registration.present ? (
-                                            <Badge variant="default">
-                                                <Check className="mr-1 h-3 w-3" />
-                                                Presente
-                                            </Badge>
-                                        ) : (
+                                    {registration.seminar.is_expired &&
+                                        !registration.present && (
                                             <Badge variant="expired">
                                                 <X className="mr-1 h-3 w-3" />
                                                 Ausente
                                             </Badge>
-                                        )
-                                    ) : (
-                                        <Badge variant="default">Inscrito</Badge>
+                                        )}
+
+                                    {registration.present && (
+                                        <Badge variant="default">
+                                            <Check className="mr-1 h-3 w-3" />
+                                            Presente
+                                        </Badge>
                                     )}
+
+                                    {!registration.seminar.is_expired &&
+                                        !registration.present && (
+                                            <Badge variant="default">
+                                                Inscrito
+                                            </Badge>
+                                        )}
                                 </div>
                             </div>
                         ))}
                         {meta && meta.last_page > 1 && (
                             <div className="flex items-center justify-between px-6 py-3 bg-gray-50">
                                 <span className="text-sm text-gray-500">
-                                    Página {meta.current_page} de {meta.last_page}
+                                    Página {meta.current_page} de{" "}
+                                    {meta.last_page}
                                 </span>
                                 <div className="flex items-center gap-2">
                                     <button
-                                        onClick={() => setPage((p) => Math.max(1, p - 1))}
+                                        onClick={() =>
+                                            setPage((p) => Math.max(1, p - 1))
+                                        }
                                         disabled={page === 1}
                                         className={cn(
-                                            'inline-flex items-center gap-1 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium shadow-sm transition-colors cursor-pointer',
+                                            "inline-flex items-center gap-1 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium shadow-sm transition-colors cursor-pointer",
                                             page === 1
-                                                ? 'text-gray-300 cursor-not-allowed'
-                                                : 'text-gray-700 hover:bg-gray-50'
+                                                ? "text-gray-300 cursor-not-allowed"
+                                                : "text-gray-700 hover:bg-gray-50",
                                         )}
                                     >
                                         <ChevronLeft className="h-4 w-4" />
                                         Anterior
                                     </button>
                                     <button
-                                        onClick={() => setPage((p) => Math.min(meta.last_page, p + 1))}
+                                        onClick={() =>
+                                            setPage((p) =>
+                                                Math.min(meta.last_page, p + 1),
+                                            )
+                                        }
                                         disabled={page === meta.last_page}
                                         className={cn(
-                                            'inline-flex items-center gap-1 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium shadow-sm transition-colors cursor-pointer',
+                                            "inline-flex items-center gap-1 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium shadow-sm transition-colors cursor-pointer",
                                             page === meta.last_page
-                                                ? 'text-gray-300 cursor-not-allowed'
-                                                : 'text-gray-700 hover:bg-gray-50'
+                                                ? "text-gray-300 cursor-not-allowed"
+                                                : "text-gray-700 hover:bg-gray-50",
                                         )}
                                     >
                                         Próximo
@@ -797,7 +872,7 @@ function CertificatesSection() {
     const [page, setPage] = useState(1);
 
     const { data, isLoading } = useQuery({
-        queryKey: ['profile', 'certificates', page],
+        queryKey: ["profile", "certificates", page],
         queryFn: () => profileApi.certificates({ page, per_page: 10 }),
     });
 
@@ -816,7 +891,8 @@ function CertificatesSection() {
                     </div>
                     {meta && meta.total > 0 && (
                         <span className="text-sm text-gray-500">
-                            {meta.total} certificado{meta.total !== 1 ? 's' : ''}
+                            {meta.total} certificado
+                            {meta.total !== 1 ? "s" : ""}
                         </span>
                     )}
                 </div>
@@ -834,8 +910,8 @@ function CertificatesSection() {
                             Você ainda não possui certificados.
                         </p>
                         <p className="mt-1 text-xs text-gray-400">
-                            Certificados são gerados após a confirmação de presença em um
-                            seminário.
+                            Certificados são gerados após a confirmação de
+                            presença em um seminário.
                         </p>
                     </div>
                 ) : (
@@ -855,12 +931,18 @@ function CertificatesSection() {
                                     <div className="mt-1 flex items-center gap-2 text-sm text-gray-500">
                                         {certificate.seminar.seminar_type && (
                                             <Badge variant="default">
-                                                {certificate.seminar.seminar_type.name}
+                                                {
+                                                    certificate.seminar
+                                                        .seminar_type.name
+                                                }
                                             </Badge>
                                         )}
                                         {certificate.seminar.scheduled_at && (
                                             <span>
-                                                {formatDateTime(certificate.seminar.scheduled_at)}
+                                                {formatDateTime(
+                                                    certificate.seminar
+                                                        .scheduled_at,
+                                                )}
                                             </span>
                                         )}
                                     </div>
@@ -881,30 +963,37 @@ function CertificatesSection() {
                         {meta && meta.last_page > 1 && (
                             <div className="flex items-center justify-between px-6 py-3 bg-gray-50">
                                 <span className="text-sm text-gray-500">
-                                    Página {meta.current_page} de {meta.last_page}
+                                    Página {meta.current_page} de{" "}
+                                    {meta.last_page}
                                 </span>
                                 <div className="flex items-center gap-2">
                                     <button
-                                        onClick={() => setPage((p) => Math.max(1, p - 1))}
+                                        onClick={() =>
+                                            setPage((p) => Math.max(1, p - 1))
+                                        }
                                         disabled={page === 1}
                                         className={cn(
-                                            'inline-flex items-center gap-1 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium shadow-sm transition-colors cursor-pointer',
+                                            "inline-flex items-center gap-1 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium shadow-sm transition-colors cursor-pointer",
                                             page === 1
-                                                ? 'text-gray-300 cursor-not-allowed'
-                                                : 'text-gray-700 hover:bg-gray-50'
+                                                ? "text-gray-300 cursor-not-allowed"
+                                                : "text-gray-700 hover:bg-gray-50",
                                         )}
                                     >
                                         <ChevronLeft className="h-4 w-4" />
                                         Anterior
                                     </button>
                                     <button
-                                        onClick={() => setPage((p) => Math.min(meta.last_page, p + 1))}
+                                        onClick={() =>
+                                            setPage((p) =>
+                                                Math.min(meta.last_page, p + 1),
+                                            )
+                                        }
                                         disabled={page === meta.last_page}
                                         className={cn(
-                                            'inline-flex items-center gap-1 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium shadow-sm transition-colors cursor-pointer',
+                                            "inline-flex items-center gap-1 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium shadow-sm transition-colors cursor-pointer",
                                             page === meta.last_page
-                                                ? 'text-gray-300 cursor-not-allowed'
-                                                : 'text-gray-700 hover:bg-gray-50'
+                                                ? "text-gray-300 cursor-not-allowed"
+                                                : "text-gray-700 hover:bg-gray-50",
                                         )}
                                     >
                                         Próximo

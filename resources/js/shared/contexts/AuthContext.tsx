@@ -27,7 +27,7 @@ interface AuthContextValue {
     login: (
         email: string,
         password: string,
-        remember?: boolean
+        remember?: boolean,
     ) => Promise<void>;
     register: (data: RegisterData) => Promise<void>;
     logout: () => Promise<void>;
@@ -63,7 +63,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setUser(response.user);
             queryClient.invalidateQueries();
         },
-        [queryClient]
+        [queryClient],
     );
 
     const register = useCallback(
@@ -80,7 +80,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setUser(response.user);
             queryClient.invalidateQueries();
         },
-        [queryClient]
+        [queryClient],
     );
 
     const logout = useCallback(async () => {
@@ -97,7 +97,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             await refreshUser();
             queryClient.invalidateQueries();
         },
-        [queryClient, refreshUser]
+        [queryClient, refreshUser],
     );
 
     return (

@@ -1,12 +1,12 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import * as Dialog from '@radix-ui/react-dialog';
-import * as Label from '@radix-ui/react-label';
-import { X } from 'lucide-react';
-import { cn } from '@shared/lib/utils';
-import { useAuth } from '@shared/contexts/AuthContext';
-import { authApi } from '@shared/api/client';
-import { getErrorMessage } from '@shared/lib/errors';
+import { useState } from "react";
+import { Link } from "react-router-dom";
+import * as Dialog from "@radix-ui/react-dialog";
+import * as Label from "@radix-ui/react-label";
+import { X } from "lucide-react";
+import { cn } from "@shared/lib/utils";
+import { useAuth } from "@shared/contexts/AuthContext";
+import { authApi } from "@shared/api/client";
+import { getErrorMessage } from "@shared/lib/errors";
 
 interface LoginModalProps {
     open: boolean;
@@ -15,10 +15,10 @@ interface LoginModalProps {
 
 export function LoginModal({ open, onOpenChange }: LoginModalProps) {
     const { login } = useAuth();
-    const [view, setView] = useState<'login' | 'forgot'>('login');
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [forgotEmail, setForgotEmail] = useState('');
+    const [view, setView] = useState<"login" | "forgot">("login");
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
+    const [forgotEmail, setForgotEmail] = useState("");
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [forgotSuccess, setForgotSuccess] = useState(false);
@@ -53,15 +53,15 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
         }
     };
 
-    const handleSocialLogin = (provider: 'google' | 'github') => {
+    const handleSocialLogin = (provider: "google" | "github") => {
         window.location.href = `/auth/${provider}`;
     };
 
     const resetModal = () => {
-        setView('login');
-        setEmail('');
-        setPassword('');
-        setForgotEmail('');
+        setView("login");
+        setEmail("");
+        setPassword("");
+        setForgotEmail("");
         setError(null);
         setForgotSuccess(false);
     };
@@ -86,7 +86,7 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
                         </button>
                     </Dialog.Close>
 
-                    {view === 'login' ? (
+                    {view === "login" ? (
                         <>
                             <Dialog.Title className="text-xl font-semibold text-gray-900">
                                 Entrar
@@ -99,7 +99,7 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
                             <div className="mt-6 space-y-3">
                                 <button
                                     type="button"
-                                    onClick={() => handleSocialLogin('google')}
+                                    onClick={() => handleSocialLogin("google")}
                                     className="flex w-full items-center justify-center gap-3 rounded-md border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 transition-colors cursor-pointer"
                                 >
                                     <GoogleIcon className="h-5 w-5" />
@@ -107,7 +107,7 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
                                 </button>
                                 <button
                                     type="button"
-                                    onClick={() => handleSocialLogin('github')}
+                                    onClick={() => handleSocialLogin("github")}
                                     className="flex w-full items-center justify-center gap-3 rounded-md border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 transition-colors cursor-pointer"
                                 >
                                     <GithubIcon className="h-5 w-5" />
@@ -120,7 +120,9 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
                                     <div className="w-full border-t border-gray-200" />
                                 </div>
                                 <div className="relative flex justify-center text-sm">
-                                    <span className="bg-white px-2 text-gray-500">ou</span>
+                                    <span className="bg-white px-2 text-gray-500">
+                                        ou
+                                    </span>
                                 </div>
                             </div>
 
@@ -143,7 +145,9 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
                                         id="email"
                                         type="email"
                                         value={email}
-                                        onChange={(e) => setEmail(e.target.value)}
+                                        onChange={(e) =>
+                                            setEmail(e.target.value)
+                                        }
                                         required
                                         className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
                                         placeholder="seu@email.com"
@@ -160,7 +164,7 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
                                         </Label.Root>
                                         <button
                                             type="button"
-                                            onClick={() => setView('forgot')}
+                                            onClick={() => setView("forgot")}
                                             className="text-sm text-primary-600 hover:text-primary-700 cursor-pointer"
                                         >
                                             Esqueci minha senha
@@ -170,7 +174,9 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
                                         id="password"
                                         type="password"
                                         value={password}
-                                        onChange={(e) => setPassword(e.target.value)}
+                                        onChange={(e) =>
+                                            setPassword(e.target.value)
+                                        }
                                         required
                                         className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
                                         placeholder="••••••••"
@@ -181,16 +187,17 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
                                     type="submit"
                                     disabled={loading}
                                     className={cn(
-                                        'w-full rounded-md bg-primary-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors cursor-pointer',
-                                        loading && 'opacity-70 cursor-not-allowed'
+                                        "w-full rounded-md bg-primary-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors cursor-pointer",
+                                        loading &&
+                                            "opacity-70 cursor-not-allowed",
                                     )}
                                 >
-                                    {loading ? 'Entrando...' : 'Entrar'}
+                                    {loading ? "Entrando..." : "Entrar"}
                                 </button>
                             </form>
 
                             <p className="mt-4 text-center text-sm text-gray-500">
-                                Não tem uma conta?{' '}
+                                Não tem uma conta?{" "}
                                 <Link
                                     to="/cadastro"
                                     onClick={() => onOpenChange(false)}
@@ -206,19 +213,21 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
                                 Recuperar senha
                             </Dialog.Title>
                             <Dialog.Description className="mt-1 text-sm text-gray-500">
-                                Digite seu e-mail para receber um link de recuperação
+                                Digite seu e-mail para receber um link de
+                                recuperação
                             </Dialog.Description>
 
                             {forgotSuccess ? (
                                 <div className="mt-6 space-y-4">
                                     <div className="rounded-md bg-green-50 p-4 text-sm text-green-700">
-                                        Se o e-mail informado estiver cadastrado, você receberá um
-                                        link para redefinir sua senha.
+                                        Se o e-mail informado estiver
+                                        cadastrado, você receberá um link para
+                                        redefinir sua senha.
                                     </div>
                                     <button
                                         type="button"
                                         onClick={() => {
-                                            setView('login');
+                                            setView("login");
                                             setForgotSuccess(false);
                                         }}
                                         className="w-full rounded-md border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 transition-colors cursor-pointer"
@@ -227,7 +236,10 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
                                     </button>
                                 </div>
                             ) : (
-                                <form onSubmit={handleForgotPassword} className="mt-6 space-y-4">
+                                <form
+                                    onSubmit={handleForgotPassword}
+                                    className="mt-6 space-y-4"
+                                >
                                     {error && (
                                         <div className="rounded-md bg-red-50 p-3 text-sm text-red-700">
                                             {error}
@@ -245,7 +257,9 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
                                             id="forgot-email"
                                             type="email"
                                             value={forgotEmail}
-                                            onChange={(e) => setForgotEmail(e.target.value)}
+                                            onChange={(e) =>
+                                                setForgotEmail(e.target.value)
+                                            }
                                             required
                                             className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
                                             placeholder="seu@email.com"
@@ -255,7 +269,7 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
                                     <div className="flex gap-3">
                                         <button
                                             type="button"
-                                            onClick={() => setView('login')}
+                                            onClick={() => setView("login")}
                                             className="flex-1 rounded-md border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 transition-colors cursor-pointer"
                                         >
                                             Voltar
@@ -264,11 +278,12 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
                                             type="submit"
                                             disabled={loading}
                                             className={cn(
-                                                'flex-1 rounded-md bg-primary-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors cursor-pointer',
-                                                loading && 'opacity-70 cursor-not-allowed'
+                                                "flex-1 rounded-md bg-primary-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors cursor-pointer",
+                                                loading &&
+                                                    "opacity-70 cursor-not-allowed",
                                             )}
                                         >
-                                            {loading ? 'Enviando...' : 'Enviar'}
+                                            {loading ? "Enviando..." : "Enviar"}
                                         </button>
                                     </div>
                                 </form>

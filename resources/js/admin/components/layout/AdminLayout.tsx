@@ -1,22 +1,23 @@
-import { useEffect } from 'react';
-import { Outlet } from 'react-router-dom';
-import { useAuth } from '@shared/contexts/AuthContext';
-import { Sidebar } from './Sidebar';
-import { Toaster } from 'sonner';
+import { useEffect } from "react";
+import { Outlet } from "react-router-dom";
+import { useAuth } from "@shared/contexts/AuthContext";
+import { Sidebar } from "./Sidebar";
+import { Toaster } from "sonner";
 
 export function AdminLayout() {
     const { user, isLoading, isAuthenticated } = useAuth();
 
     // Check if user has admin or teacher role
-    const hasAdminAccess = user?.roles?.includes('admin') || user?.roles?.includes('teacher');
+    const hasAdminAccess =
+        user?.roles?.includes("admin") || user?.roles?.includes("teacher");
 
     useEffect(() => {
         if (!isLoading && !isAuthenticated) {
             // Redirect to system SPA login (full page redirect since it's a different SPA)
-            window.location.href = '/login';
+            window.location.href = "/login";
         } else if (!isLoading && isAuthenticated && !hasAdminAccess) {
             // User is authenticated but doesn't have admin access
-            window.location.href = '/';
+            window.location.href = "/";
         }
     }, [isLoading, isAuthenticated, hasAdminAccess]);
 
@@ -51,7 +52,7 @@ export function AdminLayout() {
                 </div>
             </main>
 
-            <Toaster richColors position="top-right" theme="dark" />
+            <Toaster richColors position="top-right" theme="light" />
         </div>
     );
 }

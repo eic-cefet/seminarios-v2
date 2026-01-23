@@ -15,7 +15,7 @@ class AdminSeminarResource extends JsonResource
             'slug' => $this->slug,
             'description' => $this->description,
             'scheduled_at' => $this->scheduled_at,
-            'link' => $this->link,
+            'room_link' => $this->room_link,
             'active' => $this->active,
             'created_by' => $this->created_by,
             'creator' => $this->whenLoaded('creator', fn () => [

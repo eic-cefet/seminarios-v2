@@ -1,5 +1,5 @@
 <x-mail::message>
-# Bem-vindo(a) ao {{ config('app.name') }}!
+# Bem-vindo(a) ao {{ config('mail.name') }}!
 
 Olá, **{{ $userName }}**!
 
@@ -17,7 +17,7 @@ Acessar o Sistema
 Esperamos você nos próximos eventos!
 
 Atenciosamente,<br>
-Equipe {{ config('app.name') }}
+{{ config('mail.team_name') }}
 
 <x-mail::subcopy>
 Este é um e-mail automático. Por favor, não responda.

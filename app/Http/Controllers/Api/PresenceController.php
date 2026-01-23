@@ -5,11 +5,17 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\PresenceLink;
 use App\Models\Registration;
+use App\Services\QrCodeService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 
 class PresenceController extends Controller
 {
+    public function __construct(
+        protected QrCodeService $qrCodeService,
+    ) {}
+
     public function show(string $uuid): JsonResponse
     {
         $presenceLink = PresenceLink::where('uuid', $uuid)
@@ -77,21 +83,21 @@ class PresenceController extends Controller
         $user = $request->user();
         $seminar = $presenceLink->seminar;
 
-        // Check if user is registered for this seminar
-        $registration = Registration::where('seminar_id', $seminar->id)
-            ->where('user_id', $user->id)
-            ->first();
-
-        if (! $registration) {
-            return response()->json([
-                'message' => 'Você não está inscrito neste seminário',
-            ], 403);
-        }
+        // Find or create registration for this seminar
+        $registration = Registration::firstOrCreate(
+            [
+                'seminar_id' => $seminar->id,
+                'user_id' => $user->id,
+            ],
+            [
+                'present' => true,
+            ]
+        );
 
         // If already present, return success (idempotent)
-        if ($registration->present) {
+        if ($registration->wasRecentlyCreated || $registration->present) {
             return response()->json([
-                'message' => 'Presença já registrada com sucesso',
+                'message' => 'Presença registrada com sucesso!',
                 'data' => [
                     'present' => true,
                     'seminar' => [
@@ -102,7 +108,7 @@ class PresenceController extends Controller
             ]);
         }
 
-        // Mark as present
+        // Mark as present if not already
         $registration->update(['present' => true]);
 
         return response()->json([
@@ -115,5 +121,24 @@ class PresenceController extends Controller
                 ],
             ],
         ]);
+    }
+
+    public function qrCodePng(string $uuid): Response
+    {
+        $presenceLink = PresenceLink::where('uuid', $uuid)->first();
+
+        if (! $presenceLink) {
+            abort(404, 'Link de presença não encontrado');
+        }
+
+        // Only allow PNG download for active and non-expired links
+        if (! $presenceLink->isValid()) {
+            abort(400, 'Link de presença inválido ou expirado');
+        }
+
+        $url = url("/p/{$presenceLink->uuid}");
+        $pngData = $this->qrCodeService->toPng($url);
+
+        return response($pngData)->header('Content-Type', 'image/png');
     }
 }

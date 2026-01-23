@@ -81,7 +81,7 @@ class AdminSeminarController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
             'scheduled_at' => ['required', 'date'],
-            'link' => ['nullable', 'url', 'max:500'],
+            'room_link' => ['nullable', 'url', 'max:500'],
             'active' => ['required', 'boolean'],
             'seminar_location_id' => ['required', 'integer', 'exists:seminar_locations,id'],
             'seminar_type_id' => ['nullable', 'integer', 'exists:seminar_types,id'],
@@ -102,7 +102,7 @@ class AdminSeminarController extends Controller
                 'slug' => $slug,
                 'description' => $validated['description'] ?? null,
                 'scheduled_at' => $validated['scheduled_at'],
-                'link' => $validated['link'] ?? null,
+                'room_link' => $validated['room_link'] ?? null,
                 'active' => $validated['active'],
                 'seminar_location_id' => $validated['seminar_location_id'],
                 'seminar_type_id' => $validated['seminar_type_id'] ?? null,
@@ -147,7 +147,7 @@ class AdminSeminarController extends Controller
             'name' => ['sometimes', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
             'scheduled_at' => ['sometimes', 'date'],
-            'link' => ['nullable', 'url', 'max:500'],
+            'room_link' => ['nullable', 'url', 'max:500'],
             'active' => ['sometimes', 'boolean'],
             'seminar_location_id' => ['sometimes', 'integer', 'exists:seminar_locations,id'],
             'seminar_type_id' => ['nullable', 'integer', 'exists:seminar_types,id'],
@@ -171,8 +171,8 @@ class AdminSeminarController extends Controller
             if (isset($validated['scheduled_at'])) {
                 $seminar->scheduled_at = $validated['scheduled_at'];
             }
-            if (array_key_exists('link', $validated)) {
-                $seminar->link = $validated['link'];
+            if (array_key_exists('room_link', $validated)) {
+                $seminar->room_link = $validated['room_link'];
             }
             if (isset($validated['active'])) {
                 $seminar->active = $validated['active'];

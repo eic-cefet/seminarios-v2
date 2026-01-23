@@ -5,14 +5,16 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\PresenceLink;
 use App\Models\Seminar;
-use chillerlan\QRCode\Output\QRGdImagePNG;
-use chillerlan\QRCode\QRCode;
-use chillerlan\QRCode\QROptions;
+use App\Services\QrCodeService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Gate;
 
 class AdminPresenceLinkController extends Controller
 {
+    public function __construct(
+        protected QrCodeService $qrCodeService,
+    ) {}
+
     public function show(Seminar $seminar): JsonResponse
     {
         Gate::authorize('viewAny', Seminar::class);
@@ -26,17 +28,7 @@ class AdminPresenceLinkController extends Controller
         }
 
         $url = url("/p/{$presenceLink->uuid}");
-
-        // Generate QR code
-        $options = new QROptions([
-            'level' => 7,
-            'outputInterface' => QRGdImagePNG::class,
-            'scale' => 20,
-            'outputBase64' => true,
-        ]);
-
-        $qrcode = new QRCode($options);
-        $qrCodeBase64 = $qrcode->render($url);
+        $qrCodeBase64 = $this->qrCodeService->toBase64($url, scale: 20);
 
         return response()->json([
             'data' => [
@@ -47,6 +39,7 @@ class AdminPresenceLinkController extends Controller
                 'is_expired' => $presenceLink->isExpired(),
                 'is_valid' => $presenceLink->isValid(),
                 'url' => $url,
+                'png_url' => url("/p/{$presenceLink->uuid}.png"),
                 'qr_code' => $qrCodeBase64,
             ],
         ]);
@@ -73,16 +66,7 @@ class AdminPresenceLinkController extends Controller
         ]);
 
         $url = url("/p/{$presenceLink->uuid}");
-
-        // Generate QR code
-        $options = new QROptions([
-            'outputType' => QRCode::OUTPUT_IMAGE_PNG,
-            'eccLevel' => QRCode::ECC_L,
-            'scale' => 8,
-        ]);
-
-        $qrcode = new QRCode($options);
-        $qrCodeBase64 = base64_encode($qrcode->render($url));
+        $qrCodeBase64 = $this->qrCodeService->toBase64($url);
 
         return response()->json([
             'message' => 'Presence link created successfully',
@@ -94,7 +78,8 @@ class AdminPresenceLinkController extends Controller
                 'is_expired' => $presenceLink->isExpired(),
                 'is_valid' => $presenceLink->isValid(),
                 'url' => $url,
-                'qr_code' => "$qrCodeBase64",
+                'png_url' => url("/p/{$presenceLink->uuid}.png"),
+                'qr_code' => $qrCodeBase64,
             ],
         ], 201);
     }

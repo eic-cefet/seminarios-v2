@@ -91,7 +91,7 @@ export function PresenceLinkModal({
 
     return (
         <Dialog open={open} onOpenChange={onClose}>
-            <DialogContent className="max-w-2xl">
+            <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col">
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
                         <QrCode className="h-5 w-5" />
@@ -103,127 +103,161 @@ export function PresenceLinkModal({
                     </DialogDescription>
                 </DialogHeader>
 
-                {isLoading ? (
-                    <div className="py-8 text-center text-muted-foreground">
-                        Carregando...
-                    </div>
-                ) : !hasLink || !presenceLink ? (
-                    <div className="space-y-4 py-4">
-                        <p className="text-sm text-muted-foreground">
-                            Nenhum link de presença foi criado para este
-                            seminário ainda.
-                        </p>
-                        <Button
-                            onClick={() => createMutation.mutate()}
-                            disabled={createMutation.isPending}
-                        >
-                            {createMutation.isPending
-                                ? "Criando..."
-                                : "Criar Link de Presença"}
-                        </Button>
-                    </div>
-                ) : (
-                    <div className="space-y-6">
-                        {/* Status and Toggle */}
-                        <div className="flex items-center justify-between p-4 border rounded-md">
-                            <div className="space-y-1">
-                                <Label htmlFor="link-active">
-                                    Status do Link
-                                </Label>
-                                <p className="text-sm text-muted-foreground">
-                                    {presenceLink.active
-                                        ? "Link ativo - usuários podem registrar presença"
-                                        : "Link inativo - presença não pode ser registrada"}
-                                </p>
-                            </div>
-                            <Switch
-                                id="link-active"
-                                checked={presenceLink.active}
-                                onCheckedChange={() => toggleMutation.mutate()}
-                                disabled={toggleMutation.isPending}
-                            />
+                <div className="flex-1 overflow-y-auto">
+                    {isLoading ? (
+                        <div className="py-8 text-center text-muted-foreground">
+                            Carregando...
                         </div>
-
-                        {/* Expiration Info */}
-                        <div className="space-y-2">
-                            <Label>Informações</Label>
-                            <div className="grid grid-cols-2 gap-4 text-sm">
-                                <div>
-                                    <span className="text-muted-foreground">
-                                        Expira em:
-                                    </span>
-                                    <p className="font-medium">
-                                        {formatExpiresAt(
-                                            presenceLink.expires_at
-                                        )}
-                                    </p>
-                                </div>
-                                <div>
-                                    <span className="text-muted-foreground">
-                                        Status:
-                                    </span>
-                                    <p
-                                        className={`font-medium ${
-                                            presenceLink.is_valid
-                                                ? "text-green-600"
-                                                : "text-red-600"
-                                        }`}
-                                    >
-                                        {presenceLink.is_valid
-                                            ? "Válido"
-                                            : presenceLink.is_expired
-                                            ? "Expirado"
-                                            : "Inativo"}
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <Separator />
-
-                        {/* QR Code */}
-                        {presenceLink.active && (
-                            <div className="space-y-4">
-                                <Label>QR Code</Label>
-                                <div className="flex justify-center p-4 bg-white rounded-md border">
-                                    <img
-                                        src={presenceLink.qr_code}
-                                        alt="QR Code de Presença"
-                                        className="w-64 h-64"
-                                    />
-                                </div>
-                                <p className="text-xs text-center text-muted-foreground">
-                                    Usuários podem escanear este QR code para
-                                    registrar presença
-                                </p>
-                            </div>
-                        )}
-
-                        <Separator />
-
-                        {/* Raw Link */}
-                        <div className="space-y-2">
-                            <Label>Link Direto</Label>
-                            <div className="flex items-center gap-2">
-                                <div className="flex-1 px-3 py-2 bg-muted rounded-md text-sm font-mono overflow-x-auto">
-                                    {presenceLink.url}
-                                </div>
-                                <Button
-                                    variant="outline"
-                                    size="icon"
-                                    onClick={() =>
-                                        copyToClipboard(presenceLink.url)
-                                    }
-                                >
-                                    <Copy className="h-4 w-4" />
-                                </Button>
-                            </div>
-                            <p className="text-xs text-muted-foreground">
-                                Compartilhe este link diretamente se preferir
+                    ) : !hasLink || !presenceLink ? (
+                        <div className="space-y-4 py-4">
+                            <p className="text-sm text-muted-foreground">
+                                Nenhum link de presença foi criado para este
+                                seminário ainda.
                             </p>
+                            <Button
+                                onClick={() => createMutation.mutate()}
+                                disabled={createMutation.isPending}
+                            >
+                                {createMutation.isPending
+                                    ? "Criando..."
+                                    : "Criar Link de Presença"}
+                            </Button>
                         </div>
-                    </div>
-                )}
+                    ) : (
+                        <div className="space-y-6">
+                            {/* Status and Toggle */}
+                            <div className="flex items-center justify-between p-4 border rounded-md">
+                                <div className="space-y-1">
+                                    <Label htmlFor="link-active">
+                                        Status do Link
+                                    </Label>
+                                    <p className="text-sm text-muted-foreground">
+                                        {presenceLink.active
+                                            ? "Link ativo - usuários podem registrar presença"
+                                            : "Link inativo - presença não pode ser registrada"}
+                                    </p>
+                                </div>
+                                <Switch
+                                    id="link-active"
+                                    checked={presenceLink.active}
+                                    onCheckedChange={() =>
+                                        toggleMutation.mutate()
+                                    }
+                                    disabled={toggleMutation.isPending}
+                                />
+                            </div>
+
+                            {/* Expiration Info */}
+                            <div className="space-y-2">
+                                <Label>Informações</Label>
+                                <div className="grid grid-cols-2 gap-4 text-sm">
+                                    <div>
+                                        <span className="text-muted-foreground">
+                                            Expira em:
+                                        </span>
+                                        <p className="font-medium">
+                                            {formatExpiresAt(
+                                                presenceLink.expires_at,
+                                            )}
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <span className="text-muted-foreground">
+                                            Status:
+                                        </span>
+                                        <p
+                                            className={`font-medium ${
+                                                presenceLink.is_valid
+                                                    ? "text-green-600"
+                                                    : "text-red-600"
+                                            }`}
+                                        >
+                                            {presenceLink.is_valid
+                                                ? "Válido"
+                                                : presenceLink.is_expired
+                                                  ? "Expirado"
+                                                  : "Inativo"}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <Separator />
+
+                            {/* Raw Links */}
+                            <div className="space-y-4">
+                                <div className="space-y-2">
+                                    <Label>Link da Página</Label>
+                                    <div className="flex items-center gap-2">
+                                        <div className="flex-1 px-3 py-2 bg-muted rounded-md text-sm font-mono overflow-x-auto">
+                                            {presenceLink.url}
+                                        </div>
+                                        <Button
+                                            variant="outline"
+                                            size="icon"
+                                            onClick={() =>
+                                                copyToClipboard(
+                                                    presenceLink.url,
+                                                )
+                                            }
+                                        >
+                                            <Copy className="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                    <p className="text-xs text-muted-foreground">
+                                        Compartilhe este link para a página de
+                                        registro
+                                    </p>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label>Link da Imagem PNG</Label>
+                                    <div className="flex items-center gap-2">
+                                        <div className="flex-1 px-3 py-2 bg-muted rounded-md text-sm font-mono overflow-x-auto">
+                                            {presenceLink.png_url}
+                                        </div>
+                                        <Button
+                                            variant="outline"
+                                            size="icon"
+                                            onClick={() =>
+                                                copyToClipboard(
+                                                    presenceLink.png_url,
+                                                )
+                                            }
+                                        >
+                                            <Copy className="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                    <p className="text-xs text-muted-foreground">
+                                        Use este link para baixar o QR code em
+                                        PNG
+                                    </p>
+                                </div>
+                            </div>
+
+                            {/* QR Code */}
+                            {presenceLink.active && (
+                                <>
+                                    <Separator />
+                                    <div className="space-y-4">
+                                        <Label>QR Code</Label>
+                                        <div className="flex justify-center p-4 bg-white rounded-md border">
+                                            <img
+                                                src={presenceLink.qr_code}
+                                                alt="QR Code de Presença"
+                                                className="w-64 h-64"
+                                            />
+                                        </div>
+                                        <p className="text-xs text-center text-muted-foreground">
+                                            Usuários podem escanear este QR code
+                                            para registrar presença
+                                        </p>
+                                    </div>
+                                </>
+                            )}
+                        </div>
+                    )}
+                </div>
             </DialogContent>
         </Dialog>
     );

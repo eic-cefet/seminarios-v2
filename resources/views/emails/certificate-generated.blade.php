@@ -21,7 +21,7 @@ Acessar Certificado
 </x-mail::panel>
 
 Atenciosamente,<br>
-{{ config('app.name') }}
+{{ config('mail.team_name') }}
 
 <x-mail::subcopy>
 Este é um e-mail automático. Por favor, não responda.

@@ -14,6 +14,7 @@ class Registration extends Model
         'reminder_sent',
         'certificate_code',
         'certificate_sent',
+        'evaluation_sent_at',
     ];
 
     protected function casts(): array
@@ -22,6 +23,7 @@ class Registration extends Model
             'present' => 'boolean',
             'reminder_sent' => 'boolean',
             'certificate_sent' => 'boolean',
+            'evaluation_sent_at' => 'datetime',
         ];
     }
 

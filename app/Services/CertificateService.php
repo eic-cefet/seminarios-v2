@@ -16,7 +16,7 @@ class CertificateService
 
     public function __construct()
     {
-        $this->assetsPath = storage_path('app/assets/certificate');
+        $this->assetsPath = resource_path('assets/certificates');
     }
 
     public function getCertificatePath(Registration $registration): string
@@ -29,12 +29,12 @@ class CertificateService
 
     public function getJpgPath(Registration $registration): string
     {
-        return $this->getCertificatePath($registration) . '.jpg';
+        return $this->getCertificatePath($registration).'.jpg';
     }
 
     public function getPdfPath(Registration $registration): string
     {
-        return $this->getCertificatePath($registration) . '.pdf';
+        return $this->getCertificatePath($registration).'.pdf';
     }
 
     public function jpgExists(Registration $registration): bool
@@ -109,12 +109,12 @@ class CertificateService
 
         $cp = $this->assetsPath;
 
-        $certificate = Image::read($cp . '/Border.png')->resize(1100, 809);
+        $certificate = Image::read($cp.'/Border.png')->resize(1100, 809);
         $centerW = $certificate->width() / 2;
 
         // Certificate Header
         $certificate->text('Certificado', $centerW, $positions['header'], function (FontFactory $font) use ($cp) {
-            $font->filename($cp . '/cac_champagne.ttf');
+            $font->filename($cp.'/cac_champagne.ttf');
             $font->size(120);
             $font->color('#222222');
             $font->align('center');
@@ -126,7 +126,7 @@ class CertificateService
             $centerW,
             $positions['title'],
             function (FontFactory $font) use ($cp) {
-                $font->filename($cp . '/Montserrat-Light.otf');
+                $font->filename($cp.'/Montserrat-Light.otf');
                 $font->size(19);
                 $font->color('#444444');
                 $font->align('center');
@@ -134,21 +134,21 @@ class CertificateService
         );
 
         // Name lines
-        $nameLine = Image::read($cp . '/NameLine.png')->resize(890, 271);
+        $nameLine = Image::read($cp.'/NameLine.png')->resize(890, 271);
         $certificate->place($nameLine, 'top-center', 0, $positions['f_line']);
         $certificate->place($nameLine, 'top-center', 0, $positions['s_line']);
 
         // Medal
-        $medal = Image::read($cp . '/Medal.png');
+        $medal = Image::read($cp.'/Medal.png');
         $certificate->place($medal, 'top-left', $widths['medal'], $positions['medal']);
 
         // Watermark
-        $watermark = Image::read($cp . '/Watermark.png')->resize(140, 95);
+        $watermark = Image::read($cp.'/Watermark.png')->resize(140, 95);
         $certificate->place($watermark, 'top-left', $widths['watermark'], $positions['watermark']);
 
         // Digital certificate text
         $certificate->text('Certificado digital', $widths['code_title'], $positions['code_title'], function (FontFactory $font) use ($cp) {
-            $font->filename($cp . '/Montserrat-Regular.otf');
+            $font->filename($cp.'/Montserrat-Regular.otf');
             $font->size(15);
             $font->color('#222222');
             $font->align('center');
@@ -159,14 +159,14 @@ class CertificateService
         $fontSize = $this->calculateFontSize(strlen($studentName), [34 => 55, 42 => 46], 39);
 
         $certificate->text($studentName, $centerW, $positions['student'], function (FontFactory $font) use ($cp, $fontSize) {
-            $font->filename($cp . '/cac_champagne.ttf');
+            $font->filename($cp.'/cac_champagne.ttf');
             $font->size($fontSize);
             $font->color('#222222');
             $font->align('center');
         });
 
         // Seminary date and type
-        $date = $registration->seminar->scheduled_at->format('d/m/Y') . ' às ' . $registration->seminar->scheduled_at->format('H:i');
+        $date = $registration->seminar->scheduled_at->format('d/m/Y').' às '.$registration->seminar->scheduled_at->format('H:i');
         $typeName = $registration->seminar->seminarType->name;
         $typeDisplay = $typeName === mb_strtoupper($typeName) ? $typeName : mb_strtolower($typeName);
 
@@ -175,7 +175,7 @@ class CertificateService
             $centerW,
             $positions['seminary_date'],
             function (FontFactory $font) use ($cp) {
-                $font->filename($cp . '/Montserrat-Light.otf');
+                $font->filename($cp.'/Montserrat-Light.otf');
                 $font->size(19);
                 $font->color('#444444');
                 $font->align('center');
@@ -187,7 +187,7 @@ class CertificateService
         $seminarFontSize = $this->calculateFontSize(strlen($seminarName), [76 => 18, 82 => 17, 90 => 16, 103 => 14], 12);
 
         $certificate->text($seminarName, $centerW, $positions['seminary'], function (FontFactory $font) use ($cp, $seminarFontSize) {
-            $font->filename($cp . '/Montserrat-Light.otf');
+            $font->filename($cp.'/Montserrat-Light.otf');
             $font->size($seminarFontSize);
             $font->color('#222222');
             $font->align('center');
@@ -195,7 +195,7 @@ class CertificateService
 
         // Certificate code
         $certificate->text($registration->certificate_code, $widths['code'], $positions['code'], function (FontFactory $font) use ($cp) {
-            $font->filename($cp . '/Montserrat-Regular.otf');
+            $font->filename($cp.'/Montserrat-Regular.otf');
             $font->size(13);
             $font->color('#222222');
             $font->align('center');
@@ -220,7 +220,7 @@ class CertificateService
     {
         $jpgPath = $this->getJpgPath($registration);
 
-        if (!Storage::disk('s3')->exists($jpgPath)) {
+        if (! Storage::disk('s3')->exists($jpgPath)) {
             $this->generateJpg($registration);
         }
 

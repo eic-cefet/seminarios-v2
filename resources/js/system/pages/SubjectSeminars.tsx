@@ -1,24 +1,24 @@
-import { useParams, Link } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import { ArrowLeft, BookOpen } from 'lucide-react';
-import { Layout } from '../components/Layout';
-import { SeminarCard } from '../components/SeminarCard';
-import { PageTitle } from '@shared/components/PageTitle';
-import { subjectsApi, seminarsApi } from '@shared/api/client';
+import { useParams, Link } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { ArrowLeft, BookOpen } from "lucide-react";
+import { Layout } from "../components/Layout";
+import { SeminarCard } from "../components/SeminarCard";
+import { PageTitle } from "@shared/components/PageTitle";
+import { subjectsApi, seminarsApi } from "@shared/api/client";
 
 export default function SubjectSeminars() {
     const { id } = useParams<{ id: string }>();
     const subjectId = Number(id);
 
     const { data: subjectData, isLoading: loadingSubject } = useQuery({
-        queryKey: ['subject', subjectId],
+        queryKey: ["subject", subjectId],
         queryFn: () => subjectsApi.get(subjectId),
         enabled: !isNaN(subjectId),
     });
 
     const { data: seminarsData, isLoading: loadingSeminars } = useQuery({
-        queryKey: ['subjectSeminars', subjectId],
-        queryFn: () => seminarsApi.bySubject(subjectId, { direction: 'desc' }),
+        queryKey: ["subjectSeminars", subjectId],
+        queryFn: () => seminarsApi.bySubject(subjectId, { direction: "desc" }),
         enabled: !isNaN(subjectId),
     });
 
@@ -41,7 +41,10 @@ export default function SubjectSeminars() {
                     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
                         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                             {[1, 2, 3].map((i) => (
-                                <div key={i} className="h-48 animate-pulse rounded-lg bg-gray-200" />
+                                <div
+                                    key={i}
+                                    className="h-48 animate-pulse rounded-lg bg-gray-200"
+                                />
                             ))}
                         </div>
                     </div>
@@ -61,7 +64,8 @@ export default function SubjectSeminars() {
                             Disciplina não encontrada
                         </h1>
                         <p className="mt-2 text-gray-500">
-                            A disciplina que você está procurando não existe ou foi removida.
+                            A disciplina que você está procurando não existe ou
+                            foi removida.
                         </p>
                         <Link
                             to="/disciplinas"
@@ -89,32 +93,40 @@ export default function SubjectSeminars() {
                             <ArrowLeft className="mr-1 h-4 w-4" />
                             Todas as disciplinas
                         </Link>
-                        <h1 className="text-3xl font-bold text-gray-900">{subject.name}</h1>
-                    <p className="mt-2 text-gray-500">
-                        {subject.seminarsCount ?? 0} seminários nesta disciplina
-                    </p>
-                </div>
-            </div>
-
-            <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-                {seminars.length > 0 ? (
-                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                        {seminars.map((seminar) => (
-                            <SeminarCard key={seminar.id} seminar={seminar} showSubject={false} />
-                        ))}
-                    </div>
-                ) : (
-                    <div className="rounded-lg border border-dashed border-gray-300 p-12 text-center">
-                        <BookOpen className="mx-auto h-12 w-12 text-gray-400" />
-                        <h3 className="mt-4 text-lg font-medium text-gray-900">
-                            Nenhum seminário encontrado
-                        </h3>
+                        <h1 className="text-3xl font-bold text-gray-900">
+                            {subject.name}
+                        </h1>
                         <p className="mt-2 text-gray-500">
-                            Esta disciplina ainda não possui seminários cadastrados.
+                            {subject.seminarsCount ?? 0} seminários nesta
+                            disciplina
                         </p>
                     </div>
-                )}
-            </div>
+                </div>
+
+                <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+                    {seminars.length > 0 ? (
+                        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                            {seminars.map((seminar) => (
+                                <SeminarCard
+                                    key={seminar.id}
+                                    seminar={seminar}
+                                    showSubject={false}
+                                />
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="rounded-lg border border-dashed border-gray-300 p-12 text-center">
+                            <BookOpen className="mx-auto h-12 w-12 text-gray-400" />
+                            <h3 className="mt-4 text-lg font-medium text-gray-900">
+                                Nenhum seminário encontrado
+                            </h3>
+                            <p className="mt-2 text-gray-500">
+                                Esta disciplina ainda não possui seminários
+                                cadastrados.
+                            </p>
+                        </div>
+                    )}
+                </div>
             </Layout>
         </>
     );

@@ -12,6 +12,7 @@ class MigrateSeminarsCommand extends Command
     use MigratesData;
 
     protected $signature = 'migrate:seminars';
+
     protected $description = 'Migrate seminars from legacy database';
 
     public function handle(): int
@@ -29,7 +30,7 @@ class MigrateSeminarsCommand extends Command
             function ($data) {
                 $slug = $data['url'] ?? null;
                 if (empty($slug)) {
-                    $slug = Str::slug($data['name']) . '-' . $data['id'];
+                    $slug = Str::slug($data['name']).'-'.$data['id'];
                 }
 
                 return [
@@ -41,7 +42,7 @@ class MigrateSeminarsCommand extends Command
                     'workshop_id' => $data['workshop_id'] ?? null,
                     'seminar_type_id' => $data['type'] ?? null,
                     'scheduled_at' => $data['combined_date'] ?? null,
-                    'link' => $data['link'] ?? null,
+                    'room_link' => $data['link'] ?? null,
                     'active' => $data['active'] ?? false,
                     'created_at' => $data['created_at'],
                     'updated_at' => $data['updated_at'],
@@ -51,6 +52,7 @@ class MigrateSeminarsCommand extends Command
         );
 
         $this->info("Migrated {$count} seminars.");
+
         return Command::SUCCESS;
     }
 }

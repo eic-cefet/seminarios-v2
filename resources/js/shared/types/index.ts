@@ -8,8 +8,8 @@ export interface User {
 }
 
 export interface UserStudentData {
-    course_situation: 'studying' | 'graduated';
-    course_role: 'Aluno' | 'Professor' | 'Outro';
+    course_situation: "studying" | "graduated";
+    course_role: "Aluno" | "Professor" | "Outro";
     course?: Course;
 }
 
@@ -61,7 +61,7 @@ export interface Seminar {
     slug: string;
     description?: string;
     scheduledAt: string;
-    link?: string;
+    roomLink?: string;
     active: boolean;
     isExpired: boolean;
     seminarType?: SeminarType;

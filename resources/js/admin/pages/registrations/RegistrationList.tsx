@@ -1,82 +1,115 @@
-import { useState, useRef, useEffect } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Search, Calendar, User, Mail } from 'lucide-react';
-import { toast } from 'sonner';
-import { debounce } from 'lodash';
-import { registrationsApi, dashboardApi, type AdminRegistration } from '../../api/adminClient';
-import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../components/ui/table';
-import { Skeleton } from '../../components/ui/skeleton';
-import { Switch } from '../../components/ui/switch';
-import { Input } from '../../components/ui/input';
-import { Label } from '../../components/ui/label';
+import { useState, useRef, useEffect } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Search, Calendar, User, Mail } from "lucide-react";
+import { toast } from "sonner";
+import { debounce } from "lodash";
+import {
+    registrationsApi,
+    dashboardApi,
+    type AdminRegistration,
+} from "../../api/adminClient";
+import {
+    Card,
+    CardContent,
+    CardHeader,
+    CardTitle,
+} from "../../components/ui/card";
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "../../components/ui/table";
+import { Skeleton } from "../../components/ui/skeleton";
+import { Switch } from "../../components/ui/switch";
+import { Input } from "../../components/ui/input";
+import { Label } from "../../components/ui/label";
 import {
     Select,
     SelectContent,
     SelectItem,
     SelectTrigger,
     SelectValue,
-} from '../../components/ui/select';
-import { Badge } from '../../components/ui/badge';
-import { Button } from '../../components/ui/button';
-import { PageTitle } from '@shared/components/PageTitle';
+} from "../../components/ui/select";
+import { Badge } from "../../components/ui/badge";
+import { Button } from "../../components/ui/button";
+import { PageTitle } from "@shared/components/PageTitle";
 
 function formatDate(dateString: string): string {
     const date = new Date(dateString);
-    return date.toLocaleDateString('pt-BR', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
+    return date.toLocaleDateString("pt-BR", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
     });
 }
 
 export default function RegistrationList() {
     const queryClient = useQueryClient();
-    const [selectedSeminarId, setSelectedSeminarId] = useState<string>('');
-    const [searchInput, setSearchInput] = useState('');
-    const [searchTerm, setSearchTerm] = useState('');
+    const [selectedSeminarId, setSelectedSeminarId] = useState<string>("");
+    const [searchInput, setSearchInput] = useState("");
+    const [searchTerm, setSearchTerm] = useState("");
     const [page, setPage] = useState(1);
 
     // Fetch seminars for dropdown
     const { data: seminarsData, isLoading: isLoadingSeminars } = useQuery({
-        queryKey: ['admin-seminars-list'],
+        queryKey: ["admin-seminars-list"],
         queryFn: () => dashboardApi.seminars(),
     });
 
     // Fetch registrations
-    const { data: registrationsData, isLoading: isLoadingRegistrations } = useQuery({
-        queryKey: ['admin-registrations', selectedSeminarId, searchTerm, page],
-        queryFn: () =>
-            registrationsApi.list({
+    const { data: registrationsData, isLoading: isLoadingRegistrations } =
+        useQuery({
+            queryKey: [
+                "admin-registrations",
+                selectedSeminarId,
+                searchTerm,
                 page,
-                seminar_id: selectedSeminarId ? parseInt(selectedSeminarId, 10) : undefined,
-                search: searchTerm || undefined,
-            }),
-    });
+            ],
+            queryFn: () =>
+                registrationsApi.list({
+                    page,
+                    seminar_id: selectedSeminarId
+                        ? parseInt(selectedSeminarId, 10)
+                        : undefined,
+                    search: searchTerm || undefined,
+                }),
+        });
 
     const togglePresenceMutation = useMutation({
         mutationFn: (id: number) => registrationsApi.togglePresence(id),
         onMutate: async (id) => {
             // Cancel outgoing refetches
-            await queryClient.cancelQueries({ queryKey: ['admin-registrations'] });
+            await queryClient.cancelQueries({
+                queryKey: ["admin-registrations"],
+            });
 
             // Snapshot previous value
-            const previousData = queryClient.getQueryData(['admin-registrations', selectedSeminarId, searchTerm, page]);
+            const previousData = queryClient.getQueryData([
+                "admin-registrations",
+                selectedSeminarId,
+                searchTerm,
+                page,
+            ]);
 
             // Optimistically update
             queryClient.setQueryData(
-                ['admin-registrations', selectedSeminarId, searchTerm, page],
+                ["admin-registrations", selectedSeminarId, searchTerm, page],
                 (old: typeof registrationsData) => {
                     if (!old) return old;
                     return {
                         ...old,
                         data: old.data.map((reg: AdminRegistration) =>
-                            reg.id === id ? { ...reg, present: !reg.present } : reg
+                            reg.id === id
+                                ? { ...reg, present: !reg.present }
+                                : reg,
                         ),
                     };
-                }
+                },
             );
 
             return { previousData };
@@ -85,18 +118,27 @@ export default function RegistrationList() {
             // Rollback on error
             if (context?.previousData) {
                 queryClient.setQueryData(
-                    ['admin-registrations', selectedSeminarId, searchTerm, page],
-                    context.previousData
+                    [
+                        "admin-registrations",
+                        selectedSeminarId,
+                        searchTerm,
+                        page,
+                    ],
+                    context.previousData,
                 );
             }
-            toast.error('Erro ao atualizar presenca');
+            toast.error("Erro ao atualizar presenca");
         },
         onSuccess: (data) => {
             const isPresent = data.data.present;
-            toast.success(isPresent ? 'Presenca confirmada' : 'Presenca removida');
+            toast.success(
+                isPresent ? "Presenca confirmada" : "Presenca removida",
+            );
         },
         onSettled: () => {
-            queryClient.invalidateQueries({ queryKey: ['admin-registrations'] });
+            queryClient.invalidateQueries({
+                queryKey: ["admin-registrations"],
+            });
         },
     });
 
@@ -106,11 +148,13 @@ export default function RegistrationList() {
 
     // Sort seminars by scheduled_at DESC for dropdown
     const sortedSeminars = [...seminars].sort(
-        (a, b) => new Date(b.scheduled_at).getTime() - new Date(a.scheduled_at).getTime()
+        (a, b) =>
+            new Date(b.scheduled_at).getTime() -
+            new Date(a.scheduled_at).getTime(),
     );
 
     const handleSeminarChange = (value: string) => {
-        setSelectedSeminarId(value === 'all' ? '' : value);
+        setSelectedSeminarId(value === "all" ? "" : value);
         setPage(1);
     };
 
@@ -119,7 +163,7 @@ export default function RegistrationList() {
         debounce((value: string) => {
             setSearchTerm(value);
             setPage(1);
-        }, 500)
+        }, 500),
     ).current;
 
     // Cleanup debounce on unmount
@@ -135,9 +179,9 @@ export default function RegistrationList() {
     };
 
     const clearFilters = () => {
-        setSelectedSeminarId('');
-        setSearchInput('');
-        setSearchTerm('');
+        setSelectedSeminarId("");
+        setSearchInput("");
+        setSearchTerm("");
         setPage(1);
     };
 
@@ -145,8 +189,12 @@ export default function RegistrationList() {
         <div className="space-y-6">
             <PageTitle title="Inscrições" />
             <div>
-                <h1 className="text-2xl font-bold text-foreground">Inscricoes</h1>
-                <p className="text-muted-foreground">Gerenciar inscricoes e presencas dos seminarios</p>
+                <h1 className="text-2xl font-bold text-foreground">
+                    Inscricoes
+                </h1>
+                <p className="text-muted-foreground">
+                    Gerenciar inscricoes e presencas dos seminarios
+                </p>
             </div>
 
             {/* Filters */}
@@ -158,20 +206,31 @@ export default function RegistrationList() {
                     <div className="flex flex-wrap items-end gap-4">
                         <div className="space-y-2 min-w-[280px]">
                             <Label htmlFor="seminar-filter">Seminario</Label>
-                            <Select value={selectedSeminarId || 'all'} onValueChange={handleSeminarChange}>
+                            <Select
+                                value={selectedSeminarId || "all"}
+                                onValueChange={handleSeminarChange}
+                            >
                                 <SelectTrigger id="seminar-filter">
                                     <SelectValue placeholder="Todos os seminarios" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="all">Todos os seminarios</SelectItem>
+                                    <SelectItem value="all">
+                                        Todos os seminarios
+                                    </SelectItem>
                                     {isLoadingSeminars ? (
                                         <SelectItem value="loading" disabled>
                                             Carregando...
                                         </SelectItem>
                                     ) : (
                                         sortedSeminars.map((seminar) => (
-                                            <SelectItem key={seminar.id} value={seminar.id.toString()}>
-                                                {seminar.name} - {formatDate(seminar.scheduled_at)}
+                                            <SelectItem
+                                                key={seminar.id}
+                                                value={seminar.id.toString()}
+                                            >
+                                                {seminar.name} -{" "}
+                                                {formatDate(
+                                                    seminar.scheduled_at,
+                                                )}
                                             </SelectItem>
                                         ))
                                     )}
@@ -186,7 +245,9 @@ export default function RegistrationList() {
                                     id="search"
                                     placeholder="Nome ou email..."
                                     value={searchInput}
-                                    onChange={(e) => handleSearch(e.target.value)}
+                                    onChange={(e) =>
+                                        handleSearch(e.target.value)
+                                    }
                                     className="pl-9"
                                 />
                             </div>
@@ -221,9 +282,15 @@ export default function RegistrationList() {
                         </div>
                     ) : registrations.length === 0 ? (
                         <div className="text-center py-12">
-                            <p className="text-muted-foreground">Nenhuma inscricao encontrada</p>
+                            <p className="text-muted-foreground">
+                                Nenhuma inscricao encontrada
+                            </p>
                             {(selectedSeminarId || searchTerm) && (
-                                <Button variant="link" onClick={clearFilters} className="mt-2">
+                                <Button
+                                    variant="link"
+                                    onClick={clearFilters}
+                                    className="mt-2"
+                                >
                                     Limpar filtros
                                 </Button>
                             )}
@@ -252,37 +319,65 @@ export default function RegistrationList() {
                                                 Data Inscricao
                                             </div>
                                         </TableHead>
-                                        <TableHead className="text-center">Presente</TableHead>
+                                        <TableHead className="text-center">
+                                            Presente
+                                        </TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
                                     {registrations.map((registration) => (
                                         <TableRow key={registration.id}>
                                             <TableCell className="font-medium">
-                                                {registration.user?.name ?? 'Usuario removido'}
+                                                {registration.user?.name ??
+                                                    "Usuario removido"}
                                             </TableCell>
                                             <TableCell className="text-muted-foreground">
-                                                {registration.user?.email ?? '-'}
+                                                {registration.user?.email ??
+                                                    "-"}
                                             </TableCell>
                                             <TableCell>
-                                                <div className="max-w-xs truncate" title={registration.seminar?.name}>
-                                                    {registration.seminar?.name ?? 'Seminario removido'}
+                                                <div
+                                                    className="max-w-xs truncate"
+                                                    title={
+                                                        registration.seminar
+                                                            ?.name
+                                                    }
+                                                >
+                                                    {registration.seminar
+                                                        ?.name ??
+                                                        "Seminario removido"}
                                                 </div>
                                             </TableCell>
                                             <TableCell className="text-muted-foreground">
-                                                {formatDate(registration.created_at)}
+                                                {formatDate(
+                                                    registration.created_at,
+                                                )}
                                             </TableCell>
                                             <TableCell className="text-center">
                                                 <div className="flex items-center justify-center gap-2">
                                                     <Switch
-                                                        checked={registration.present}
-                                                        onCheckedChange={() => togglePresenceMutation.mutate(registration.id)}
-                                                        disabled={togglePresenceMutation.isPending}
+                                                        checked={
+                                                            registration.present
+                                                        }
+                                                        onCheckedChange={() =>
+                                                            togglePresenceMutation.mutate(
+                                                                registration.id,
+                                                            )
+                                                        }
+                                                        disabled={
+                                                            togglePresenceMutation.isPending
+                                                        }
                                                     />
                                                     <Badge
-                                                        variant={registration.present ? 'success' : 'secondary'}
+                                                        variant={
+                                                            registration.present
+                                                                ? "success"
+                                                                : "secondary"
+                                                        }
                                                     >
-                                                        {registration.present ? 'Sim' : 'Nao'}
+                                                        {registration.present
+                                                            ? "Sim"
+                                                            : "Nao"}
                                                     </Badge>
                                                 </div>
                                             </TableCell>
@@ -295,13 +390,18 @@ export default function RegistrationList() {
                             {meta && meta.last_page > 1 && (
                                 <div className="flex items-center justify-between mt-4 pt-4 border-t border-border">
                                     <div className="text-sm text-muted-foreground">
-                                        Mostrando {meta.from} a {meta.to} de {meta.total} inscricoes
+                                        Mostrando {meta.from} a {meta.to} de{" "}
+                                        {meta.total} inscricoes
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <Button
                                             variant="outline"
                                             size="sm"
-                                            onClick={() => setPage((p) => Math.max(1, p - 1))}
+                                            onClick={() =>
+                                                setPage((p) =>
+                                                    Math.max(1, p - 1),
+                                                )
+                                            }
                                             disabled={page === 1}
                                         >
                                             Anterior
@@ -312,7 +412,14 @@ export default function RegistrationList() {
                                         <Button
                                             variant="outline"
                                             size="sm"
-                                            onClick={() => setPage((p) => Math.min(meta.last_page, p + 1))}
+                                            onClick={() =>
+                                                setPage((p) =>
+                                                    Math.min(
+                                                        meta.last_page,
+                                                        p + 1,
+                                                    ),
+                                                )
+                                            }
                                             disabled={page === meta.last_page}
                                         >
                                             Proxima

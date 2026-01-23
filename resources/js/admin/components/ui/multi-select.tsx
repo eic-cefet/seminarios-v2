@@ -54,7 +54,7 @@ export function MultiSelect({
                     aria-expanded={open}
                     className={cn(
                         "w-full justify-between min-h-10 h-auto",
-                        className
+                        className,
                     )}
                 >
                     <div className="flex flex-wrap gap-1 flex-1">
@@ -72,7 +72,9 @@ export function MultiSelect({
                                     {label}
                                     <X
                                         className="h-3 w-3 cursor-pointer hover:text-destructive"
-                                        onClick={(e) => handleRemove(selected[index], e)}
+                                        onClick={(e) =>
+                                            handleRemove(selected[index], e)
+                                        }
                                     />
                                 </Badge>
                             ))
@@ -89,7 +91,8 @@ export function MultiSelect({
                                 key={option.value}
                                 className={cn(
                                     "flex items-center space-x-2 rounded-sm px-2 py-1.5 cursor-pointer hover:bg-accent",
-                                    selected.includes(option.value) && "bg-accent"
+                                    selected.includes(option.value) &&
+                                        "bg-accent",
                                 )}
                                 onClick={() => handleSelect(option.value)}
                             >
@@ -98,7 +101,7 @@ export function MultiSelect({
                                         "flex h-4 w-4 items-center justify-center rounded-sm border border-primary",
                                         selected.includes(option.value)
                                             ? "bg-primary text-primary-foreground"
-                                            : "opacity-50"
+                                            : "opacity-50",
                                     )}
                                 >
                                     {selected.includes(option.value) && (

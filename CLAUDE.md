@@ -2,6 +2,8 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+> NEVER RUN `pnpm run build` by your own. During the development of the solution I always will be watching using the dev command by my own.
+
 ## Project Overview
 
 CEFET-RJ Seminários - A seminar and workshop management system for the School of Informatics & Computing (EIC). Built with Laravel 12 backend and dual React 19 SPAs (public system + admin panel).
