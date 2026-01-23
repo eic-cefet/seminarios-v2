@@ -56,6 +56,6 @@ RUN chmod +x /usr/local/bin/entrypoint.sh /usr/local/bin/scheduler.sh /usr/local
 # Set permissions
 RUN chown -R www-data:www-data /app/storage /app/bootstrap/cache
 
-EXPOSE 8000
+EXPOSE 443
 
 ENTRYPOINT ["entrypoint.sh"]
