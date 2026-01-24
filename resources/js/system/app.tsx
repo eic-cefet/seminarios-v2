@@ -21,6 +21,8 @@ import WorkshopDetails from "./pages/WorkshopDetails";
 import Presence from "./pages/Presence";
 import Evaluations from "./pages/Evaluations";
 import BugReport from "./pages/BugReport";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 
 const queryClient = new QueryClient({
     defaultOptions: {
@@ -41,6 +43,14 @@ function App() {
                             <Route path="/" element={<Home />} />
                             <Route path="/login" element={<Login />} />
                             <Route path="/cadastro" element={<Register />} />
+                            <Route
+                                path="/recuperar-senha"
+                                element={<ForgotPassword />}
+                            />
+                            <Route
+                                path="/redefinir-senha"
+                                element={<ResetPassword />}
+                            />
                             <Route
                                 path="/auth/callback"
                                 element={<AuthCallback />}
