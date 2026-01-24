@@ -448,7 +448,7 @@ export default function SeminarForm() {
                         {/* Subjects - 4 cols on desktop */}
                         <Card className="lg:col-span-4">
                             <CardHeader>
-                                <CardTitle>Disciplinas *</CardTitle>
+                                <CardTitle>Tópicos *</CardTitle>
                             </CardHeader>
                             <CardContent>
                                 <SubjectMultiSelect

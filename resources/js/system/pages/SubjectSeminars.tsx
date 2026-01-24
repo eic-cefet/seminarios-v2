@@ -56,23 +56,23 @@ export default function SubjectSeminars() {
     if (!subject) {
         return (
             <>
-                <PageTitle title="Disciplina não encontrada" />
+                <PageTitle title="Tópico não encontrado" />
                 <Layout>
                     <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 text-center">
                         <BookOpen className="mx-auto h-12 w-12 text-gray-400" />
                         <h1 className="mt-4 text-2xl font-bold text-gray-900">
-                            Disciplina não encontrada
+                            Tópico não encontrado
                         </h1>
                         <p className="mt-2 text-gray-500">
-                            A disciplina que você está procurando não existe ou
-                            foi removida.
+                            O tópico que você está procurando não existe ou
+                            foi removido.
                         </p>
                         <Link
-                            to="/disciplinas"
+                            to="/topicos"
                             className="mt-6 inline-flex items-center text-primary-600 hover:text-primary-700"
                         >
                             <ArrowLeft className="mr-2 h-4 w-4" />
-                            Voltar para disciplinas
+                            Voltar para tópicos
                         </Link>
                     </div>
                 </Layout>
@@ -87,18 +87,18 @@ export default function SubjectSeminars() {
                 <div className="bg-white border-b border-gray-200">
                     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
                         <Link
-                            to="/disciplinas"
+                            to="/topicos"
                             className="inline-flex items-center text-sm text-gray-500 hover:text-gray-700 mb-4"
                         >
                             <ArrowLeft className="mr-1 h-4 w-4" />
-                            Todas as disciplinas
+                            Todos os tópicos
                         </Link>
                         <h1 className="text-3xl font-bold text-gray-900">
                             {subject.name}
                         </h1>
                         <p className="mt-2 text-gray-500">
-                            {subject.seminarsCount ?? 0} seminários nesta
-                            disciplina
+                            {subject.seminarsCount ?? 0} seminários neste
+                            tópico
                         </p>
                     </div>
                 </div>
@@ -121,7 +121,7 @@ export default function SubjectSeminars() {
                                 Nenhum seminário encontrado
                             </h3>
                             <p className="mt-2 text-gray-500">
-                                Esta disciplina ainda não possui seminários
+                                Este tópico ainda não possui seminários
                                 cadastrados.
                             </p>
                         </div>

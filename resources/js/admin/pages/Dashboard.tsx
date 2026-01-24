@@ -153,7 +153,7 @@ export default function Dashboard() {
                     icon={ClipboardList}
                 />
                 <StatsCard
-                    title="Disciplinas"
+                    title="Tópicos"
                     value={stats?.counts.subjects ?? 0}
                     icon={BookOpen}
                 />

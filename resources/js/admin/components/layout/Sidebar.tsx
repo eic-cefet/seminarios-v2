@@ -32,7 +32,7 @@ const navigation: NavItem[] = [
         children: [
             { label: "Lista", href: "/seminars" },
             { label: "Locais", href: "/locations", adminOnly: true },
-            { label: "Disciplinas", href: "/subjects", adminOnly: true },
+            { label: "Tópicos", href: "/subjects", adminOnly: true },
         ],
     },
     {

@@ -183,7 +183,7 @@ export function SubjectMultiSelect({
             <p className="text-xs text-muted-foreground">
                 {showSuggestions && suggestions.length > 0
                     ? "Use ↑↓ para navegar, Enter para selecionar, ou continue digitando para criar nova."
-                    : "Digite para buscar ou pressione Enter para adicionar nova disciplina."}
+                    : "Digite para buscar ou pressione Enter para adicionar novo tópico."}
             </p>
         </div>
     );

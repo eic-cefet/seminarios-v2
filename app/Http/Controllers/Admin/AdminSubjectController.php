@@ -51,7 +51,7 @@ class AdminSubjectController extends Controller
         $subject->loadCount('seminars');
 
         return response()->json([
-            'message' => 'Disciplina criada com sucesso',
+            'message' => 'Tópico criado com sucesso',
             'data' => new AdminSubjectResource($subject),
         ], 201);
     }
@@ -68,7 +68,7 @@ class AdminSubjectController extends Controller
         $subject->loadCount('seminars');
 
         return response()->json([
-            'message' => 'Disciplina atualizada com sucesso',
+            'message' => 'Tópico atualizado com sucesso',
             'data' => new AdminSubjectResource($subject),
         ]);
     }
@@ -85,7 +85,7 @@ class AdminSubjectController extends Controller
         $subject->delete();
 
         return response()->json([
-            'message' => 'Disciplina excluída com sucesso',
+            'message' => 'Tópico excluído com sucesso',
         ]);
     }
 
@@ -155,7 +155,7 @@ class AdminSubjectController extends Controller
             $target->loadCount('seminars');
 
             return response()->json([
-                'message' => 'Disciplinas mescladas com sucesso',
+                'message' => 'Tópicos mesclados com sucesso',
                 'data' => new AdminSubjectResource($target),
             ]);
         } catch (\Exception $e) {

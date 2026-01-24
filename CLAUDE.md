@@ -36,7 +36,7 @@ php artisan migrate:legacy --fresh --seed
 The application has two separate React SPAs served by Laravel:
 
 - **System SPA** (`resources/js/system/`) - Public-facing for students/attendees
-  - Routes: `/`, `/login`, `/cadastro`, `/disciplinas`, `/apresentacoes`, `/seminario/:slug`, `/workshops`, `/workshop/:id`
+  - Routes: `/`, `/login`, `/cadastro`, `/topicos`, `/apresentacoes`, `/seminario/:slug`, `/workshops`, `/workshop/:id`
   - Served at `/*` (catch-all except admin/api paths)
 
 - **Admin SPA** (`resources/js/admin/`) - Protected dashboard for administrators

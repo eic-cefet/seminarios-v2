@@ -9,10 +9,10 @@ export function Footer() {
                 <div className="md:flex md:items-center md:justify-between">
                     <div className="flex justify-center space-x-6 md:order-2">
                         <Link
-                            to="/disciplinas"
+                            to="/topicos"
                             className="text-sm text-gray-500 hover:text-gray-700"
                         >
-                            Disciplinas
+                            Tópicos
                         </Link>
                         <Link
                             to="/apresentacoes"

@@ -60,9 +60,9 @@ function App() {
                                 path="/certificados"
                                 element={<Certificates />}
                             />
-                            <Route path="/disciplinas" element={<Subjects />} />
+                            <Route path="/topicos" element={<Subjects />} />
                             <Route
-                                path="/disciplina/:id"
+                                path="/topico/:id"
                                 element={<SubjectSeminars />}
                             />
                             <Route

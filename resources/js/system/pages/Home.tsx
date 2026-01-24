@@ -76,7 +76,7 @@ export default function Home() {
                                         {stats?.subjects ?? 0}
                                     </p>
                                     <p className="text-sm text-gray-500">
-                                        Disciplinas
+                                        Tópicos
                                     </p>
                                 </div>
                             </div>
@@ -176,17 +176,17 @@ export default function Home() {
                         <div className="flex items-center justify-between">
                             <div>
                                 <h2 className="text-2xl font-bold text-gray-900">
-                                    Disciplinas
+                                    Tópicos
                                 </h2>
                                 <p className="mt-1 text-gray-500">
-                                    Explore os seminários por disciplina
+                                    Explore os seminários por tópico
                                 </p>
                             </div>
                             <Link
-                                to="/disciplinas"
+                                to="/topicos"
                                 className="hidden sm:inline-flex items-center text-sm font-medium text-primary-600 hover:text-primary-700"
                             >
-                                Ver todas
+                                Ver todos
                                 <ArrowRight className="ml-1 h-4 w-4" />
                             </Link>
                         </div>
@@ -205,7 +205,7 @@ export default function Home() {
                                 {subjects.map((subject) => (
                                     <Link
                                         key={subject.id}
-                                        to={`/disciplina/${subject.id}`}
+                                        to={`/topico/${subject.id}`}
                                         className="group rounded-lg border border-gray-200 bg-white p-4 shadow-sm transition-all hover:border-primary-300 hover:shadow-md"
                                     >
                                         <div className="flex items-center justify-between">
@@ -224,10 +224,10 @@ export default function Home() {
 
                         <div className="mt-6 sm:hidden">
                             <Link
-                                to="/disciplinas"
+                                to="/topicos"
                                 className="inline-flex w-full items-center justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
                             >
-                                Ver todas as disciplinas
+                                Ver todos os tópicos
                                 <ArrowRight className="ml-1 h-4 w-4" />
                             </Link>
                         </div>

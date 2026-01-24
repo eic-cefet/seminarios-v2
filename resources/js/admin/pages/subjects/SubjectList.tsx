@@ -80,11 +80,11 @@ export default function SubjectList() {
         mutationFn: (data: { name: string }) => subjectsApi.create(data),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["admin-subjects"] });
-            toast.success("Disciplina criada com sucesso");
+            toast.success("Tópico criado com sucesso");
             closeDialog();
         },
         onError: () => {
-            toast.error("Erro ao criar disciplina");
+            toast.error("Erro ao criar tópico");
         },
     });
 
@@ -93,11 +93,11 @@ export default function SubjectList() {
             subjectsApi.update(id, data),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["admin-subjects"] });
-            toast.success("Disciplina atualizada com sucesso");
+            toast.success("Tópico atualizado com sucesso");
             closeDialog();
         },
         onError: () => {
-            toast.error("Erro ao atualizar disciplina");
+            toast.error("Erro ao atualizar tópico");
         },
     });
 
@@ -105,15 +105,15 @@ export default function SubjectList() {
         mutationFn: (id: number) => subjectsApi.delete(id),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["admin-subjects"] });
-            toast.success("Disciplina excluida com sucesso");
+            toast.success("Tópico excluído com sucesso");
             setIsDeleteDialogOpen(false);
             setDeletingSubject(null);
         },
         onError: (error: Error) => {
             if (error.message.includes("associado")) {
-                toast.error("Esta disciplina possui seminarios associados");
+                toast.error("Este tópico possui seminários associados");
             } else {
-                toast.error("Erro ao excluir disciplina");
+                toast.error("Erro ao excluir tópico");
             }
         },
     });
@@ -126,11 +126,11 @@ export default function SubjectList() {
         }) => subjectsApi.merge(data),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["admin-subjects"] });
-            toast.success("Disciplinas mescladas com sucesso");
+            toast.success("Tópicos mesclados com sucesso");
             closeMergeDialog();
         },
         onError: () => {
-            toast.error("Erro ao mesclar disciplinas");
+            toast.error("Erro ao mesclar tópicos");
         },
     });
 
@@ -247,10 +247,10 @@ export default function SubjectList() {
             <div className="flex items-center justify-between">
                 <div>
                     <h1 className="text-2xl font-bold text-foreground">
-                        Disciplinas
+                        Tópicos
                     </h1>
                     <p className="text-muted-foreground">
-                        Gerenciar disciplinas dos seminarios
+                        Gerenciar tópicos dos seminários
                     </p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -262,7 +262,7 @@ export default function SubjectList() {
                     )}
                     <Button onClick={openCreateDialog}>
                         <Plus className="h-4 w-4 mr-2" />
-                        Nova Disciplina
+                        Novo Tópico
                     </Button>
                 </div>
             </div>
@@ -294,10 +294,10 @@ export default function SubjectList() {
             <Card>
                 <CardHeader>
                     <div className="flex items-center justify-between">
-                        <CardTitle>Lista de Disciplinas</CardTitle>
+                        <CardTitle>Lista de Tópicos</CardTitle>
                         {meta && (
                             <span className="text-sm text-muted-foreground">
-                                {meta.total} disciplinas encontradas
+                                {meta.total} tópicos encontrados
                             </span>
                         )}
                     </div>
@@ -311,7 +311,7 @@ export default function SubjectList() {
                         </div>
                     ) : subjects.length === 0 ? (
                         <p className="text-center text-muted-foreground py-8">
-                            Nenhuma disciplina cadastrada
+                            Nenhum tópico cadastrado
                         </p>
                     ) : (
                         <>
@@ -399,7 +399,7 @@ export default function SubjectList() {
                                 <div className="flex items-center justify-between mt-4 pt-4 border-t border-border">
                                     <div className="text-sm text-muted-foreground">
                                         Mostrando {meta.from} a {meta.to} de{" "}
-                                        {meta.total} disciplinas
+                                        {meta.total} tópicos
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <Button
@@ -446,13 +446,13 @@ export default function SubjectList() {
                     <DialogHeader>
                         <DialogTitle>
                             {editingSubject
-                                ? "Editar Disciplina"
-                                : "Nova Disciplina"}
+                                ? "Editar Tópico"
+                                : "Novo Tópico"}
                         </DialogTitle>
                         <DialogDescription>
                             {editingSubject
-                                ? "Edite os dados da disciplina abaixo"
-                                : "Preencha os dados da nova disciplina"}
+                                ? "Edite os dados do tópico abaixo"
+                                : "Preencha os dados do novo tópico"}
                         </DialogDescription>
                     </DialogHeader>
                     <form onSubmit={handleSubmit}>
@@ -502,24 +502,24 @@ export default function SubjectList() {
             >
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>Mesclar Disciplinas</DialogTitle>
+                        <DialogTitle>Mesclar Tópicos</DialogTitle>
                         <DialogDescription>
-                            Selecione a disciplina destino e o nome final. As
-                            outras disciplinas serao removidas.
+                            Selecione o tópico destino e o nome final. Os
+                            outros tópicos serão removidos.
                         </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4 py-4">
                         <div className="rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-4">
                             <p className="text-sm text-yellow-500">
                                 <strong>{selectedIds.length}</strong>{" "}
-                                disciplinas serao mescladas, afetando{" "}
+                                tópicos serão mesclados, afetando{" "}
                                 <strong>{totalSeminarsAffected}</strong>{" "}
-                                seminarios.
+                                seminários.
                             </p>
                         </div>
 
                         <div className="space-y-2">
-                            <Label>Disciplinas selecionadas</Label>
+                            <Label>Tópicos selecionados</Label>
                             <div className="flex flex-wrap gap-2">
                                 {selectedSubjects.map((s) => (
                                     <Badge key={s.id} variant="secondary">
@@ -531,14 +531,14 @@ export default function SubjectList() {
 
                         <div className="space-y-2">
                             <Label htmlFor="target">
-                                Disciplina destino (sera mantida)
+                                Tópico destino (será mantido)
                             </Label>
                             <Select
                                 value={targetId}
                                 onValueChange={setTargetId}
                             >
                                 <SelectTrigger>
-                                    <SelectValue placeholder="Selecione a disciplina destino" />
+                                    <SelectValue placeholder="Selecione o tópico destino" />
                                 </SelectTrigger>
                                 <SelectContent>
                                     {selectedSubjects.map((s) => (
@@ -594,9 +594,9 @@ export default function SubjectList() {
             >
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Excluir disciplina?</AlertDialogTitle>
+                        <AlertDialogTitle>Excluir tópico?</AlertDialogTitle>
                         <AlertDialogDescription>
-                            Tem certeza que deseja excluir a disciplina "
+                            Tem certeza que deseja excluir o tópico "
                             {deletingSubject?.name}"? Esta acao nao pode ser
                             desfeita.
                         </AlertDialogDescription>

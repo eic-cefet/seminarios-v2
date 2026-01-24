@@ -11,7 +11,7 @@ export const seminarSchema = z.object({
     workshop_id: z.number().optional(),
     subject_names: z
         .array(z.string())
-        .min(1, "Selecione pelo menos uma disciplina"),
+        .min(1, "Selecione pelo menos um tópico"),
     speaker_ids: z
         .array(z.number())
         .min(1, "Selecione pelo menos um palestrante"),

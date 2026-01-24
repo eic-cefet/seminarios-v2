@@ -20,10 +20,10 @@ export default function Subjects() {
                 <div className="bg-white border-b border-gray-200">
                     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
                         <h1 className="text-3xl font-bold text-gray-900">
-                            Disciplinas
+                            Tópicos
                         </h1>
                         <p className="mt-2 text-gray-500">
-                            Explore os seminários organizados por disciplina
+                            Explore os seminários organizados por tópico
                         </p>
                     </div>
                 </div>
@@ -43,7 +43,7 @@ export default function Subjects() {
                             {subjects.map((subject) => (
                                 <Link
                                     key={subject.id}
-                                    to={`/disciplina/${subject.id}`}
+                                    to={`/topico/${subject.id}`}
                                     className="group rounded-lg border border-gray-200 bg-white p-6 shadow-sm transition-all hover:border-primary-300 hover:shadow-md"
                                 >
                                     <div className="flex items-start gap-4">
@@ -67,10 +67,10 @@ export default function Subjects() {
                         <div className="rounded-lg border border-dashed border-gray-300 p-12 text-center">
                             <BookOpen className="mx-auto h-12 w-12 text-gray-400" />
                             <h3 className="mt-4 text-lg font-medium text-gray-900">
-                                Nenhuma disciplina encontrada
+                                Nenhum tópico encontrado
                             </h3>
                             <p className="mt-2 text-gray-500">
-                                As disciplinas serão exibidas aqui quando
+                                Os tópicos serão exibidos aqui quando
                                 disponíveis.
                             </p>
                         </div>

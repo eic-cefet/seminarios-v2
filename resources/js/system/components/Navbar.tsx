@@ -17,7 +17,7 @@ import { LoginModal } from "./LoginModal";
 
 const navigation = [
     { name: "Início", href: "/" },
-    { name: "Disciplinas", href: "/disciplinas" },
+    { name: "Tópicos", href: "/topicos" },
     { name: "Apresentações", href: "/apresentacoes" },
     { name: "Workshops", href: "/workshops" },
 ];
