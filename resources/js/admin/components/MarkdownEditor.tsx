@@ -33,7 +33,7 @@ export function MarkdownEditor({
                     />
                 </TabsContent>
                 <TabsContent value="preview">
-                    <div className="w-full min-h-[200px] px-3 py-2 border border-border rounded-md prose prose-sm max-w-none bg-background">
+                    <div className="w-full min-h-[200px] px-3 py-2 border border-border rounded-md bg-background html-content">
                         <ReactMarkdown rehypePlugins={[rehypeSanitize]}>
                             {value || "*Nenhuma descrição*"}
                         </ReactMarkdown>

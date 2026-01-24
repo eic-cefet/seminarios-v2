@@ -22,6 +22,8 @@ import { formatDateTime, cn, containsHTML } from "@shared/lib/utils";
 import { getErrorMessage } from "@shared/lib/errors";
 import { useAuth } from "@shared/contexts/AuthContext";
 import DOMPurify from "dompurify";
+import ReactMarkdown from "react-markdown";
+import rehypeSanitize from "rehype-sanitize";
 
 export default function SeminarDetails() {
     const { slug } = useParams<{ slug: string }>();
@@ -228,9 +230,13 @@ export default function SeminarDetails() {
                                             }}
                                         />
                                     ) : (
-                                        <p className="text-gray-600 whitespace-pre-line">
-                                            {seminar.description}
-                                        </p>
+                                        <div className="html-content">
+                                            <ReactMarkdown
+                                                rehypePlugins={[rehypeSanitize]}
+                                            >
+                                                {seminar.description}
+                                            </ReactMarkdown>
+                                        </div>
                                     )}
                                 </section>
                             )}
