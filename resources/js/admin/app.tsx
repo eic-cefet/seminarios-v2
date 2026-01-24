@@ -13,6 +13,7 @@ import RegistrationList from "./pages/registrations/RegistrationList";
 import { SeminarList, SeminarForm } from "./pages/seminars";
 import { WorkshopList } from "./pages/workshops";
 import SemestralReport from "./pages/reports/SemestralReport";
+import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
     defaultOptions: {
@@ -65,6 +66,7 @@ function App() {
                                     path="/reports/semestral"
                                     element={<SemestralReport />}
                                 />
+                                <Route path="*" element={<NotFound />} />
                             </Route>
                         </Routes>
                     </BrowserRouter>

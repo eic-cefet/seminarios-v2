@@ -23,6 +23,7 @@ import Evaluations from "./pages/Evaluations";
 import BugReport from "./pages/BugReport";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
+import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
     defaultOptions: {
@@ -84,6 +85,7 @@ function App() {
                                 path="/reportar-bug"
                                 element={<BugReport />}
                             />
+                            <Route path="*" element={<NotFound />} />
                         </Routes>
                     </BrowserRouter>
                 </AuthProvider>
