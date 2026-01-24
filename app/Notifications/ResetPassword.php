@@ -34,6 +34,6 @@ class ResetPassword extends Notification implements ShouldQueue
             ->action('Redefinir Senha', $url)
             ->line('Este link de redefinição de senha expirará em 60 minutos.')
             ->line('Se você não solicitou uma redefinição de senha, nenhuma ação adicional é necessária.')
-            ->salutation('Atenciosamente, Equipe '.config('app.name'));
+            ->salutation('Atenciosamente, '.config('mail.team_name'));
     }
 }
