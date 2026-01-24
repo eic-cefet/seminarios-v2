@@ -3,6 +3,7 @@ import { Outlet } from "react-router-dom";
 import { useAuth } from "@shared/contexts/AuthContext";
 import { Favicon } from "@shared/components/Favicon";
 import { Sidebar } from "./Sidebar";
+import { MobileHeader } from "./MobileHeader";
 import { Toaster } from "sonner";
 
 export function AdminLayout() {
@@ -40,19 +41,24 @@ export function AdminLayout() {
     }
 
     return (
-        <div className="flex h-screen bg-background">
+        <div className="flex h-screen flex-col bg-background">
             <Favicon />
-            {/* Sidebar - hidden on mobile */}
-            <div className="hidden lg:block">
-                <Sidebar />
-            </div>
+            {/* Mobile header - visible on mobile only */}
+            <MobileHeader />
 
-            {/* Main content */}
-            <main className="flex-1 overflow-auto">
-                <div className="container mx-auto p-6">
-                    <Outlet />
+            <div className="flex flex-1 overflow-hidden">
+                {/* Sidebar - hidden on mobile */}
+                <div className="hidden lg:block">
+                    <Sidebar />
                 </div>
-            </main>
+
+                {/* Main content */}
+                <main className="flex-1 min-w-0 overflow-auto">
+                    <div className="w-full max-w-7xl mx-auto p-6">
+                        <Outlet />
+                    </div>
+                </main>
+            </div>
 
             <Toaster richColors position="top-right" theme="light" />
         </div>

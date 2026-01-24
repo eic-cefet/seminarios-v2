@@ -1,60 +1,11 @@
+import { useState } from "react";
 import { NavLink } from "react-router-dom";
-import {
-    LayoutDashboard,
-    Users,
-    Presentation,
-    ClipboardList,
-    ChevronDown,
-    LogOut,
-    ArrowLeft,
-    FileBarChart,
-} from "lucide-react";
+import { ChevronDown, LogOut, ArrowLeft } from "lucide-react";
+import * as Collapsible from "@radix-ui/react-collapsible";
 import { cn } from "@shared/lib/utils";
 import { useAuth } from "@shared/contexts/AuthContext";
 import { Separator } from "../ui/separator";
-import * as Collapsible from "@radix-ui/react-collapsible";
-import { useState } from "react";
-
-interface NavItem {
-    label: string;
-    href?: string;
-    icon: React.ComponentType<{ className?: string }>;
-    adminOnly?: boolean;
-    children?: { label: string; href: string; adminOnly?: boolean }[];
-}
-
-const navigation: NavItem[] = [
-    { label: "Dashboard", href: "/", icon: LayoutDashboard },
-    { label: "Usuários", href: "/users", icon: Users, adminOnly: true },
-    {
-        label: "Seminários",
-        icon: Presentation,
-        children: [
-            { label: "Lista", href: "/seminars" },
-            { label: "Workshops", href: "/workshops", adminOnly: true },
-            { label: "Locais", href: "/locations", adminOnly: true },
-            { label: "Tópicos", href: "/subjects", adminOnly: true },
-        ],
-    },
-    {
-        label: "Inscrições",
-        href: "/registrations",
-        icon: ClipboardList,
-        adminOnly: true,
-    },
-    {
-        label: "Relatórios",
-        icon: FileBarChart,
-        adminOnly: true,
-        children: [
-            {
-                label: "Relatório Semestral",
-                href: "/reports/semestral",
-                adminOnly: true,
-            },
-        ],
-    },
-];
+import { adminNavigation, filterNavigation } from "../../config/navigation";
 
 export function Sidebar() {
     const { user, logout } = useAuth();
@@ -69,10 +20,7 @@ export function Sidebar() {
         );
     };
 
-    const filteredNav = navigation.filter((item) => {
-        if (item.adminOnly && !isAdmin) return false;
-        return true;
-    });
+    const filteredNav = filterNavigation(adminNavigation, isAdmin ?? false);
 
     return (
         <aside className="flex h-screen w-64 flex-col border-r border-border bg-muted/50">
@@ -95,11 +43,6 @@ export function Sidebar() {
             <nav className="flex-1 space-y-1 px-3 py-4">
                 {filteredNav.map((item) => {
                     if (item.children) {
-                        const visibleChildren = item.children.filter(
-                            (child) => !child.adminOnly || isAdmin,
-                        );
-                        if (visibleChildren.length === 0) return null;
-
                         return (
                             <Collapsible.Root
                                 key={item.label}
@@ -120,7 +63,7 @@ export function Sidebar() {
                                     />
                                 </Collapsible.Trigger>
                                 <Collapsible.Content className="mt-1 space-y-1 pl-11">
-                                    {visibleChildren.map((child) => (
+                                    {item.children.map((child) => (
                                         <NavLink
                                             key={child.href}
                                             to={child.href}

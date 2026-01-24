@@ -183,7 +183,7 @@ export default function Dashboard() {
                                             <p className="truncate font-medium text-foreground">
                                                 {seminar.name}
                                             </p>
-                                            <p className="text-sm text-muted-foreground">
+                                            <p className="truncate text-sm text-muted-foreground">
                                                 {seminar.scheduled_at &&
                                                     formatDateTime(
                                                         seminar.scheduled_at,
@@ -193,7 +193,7 @@ export default function Dashboard() {
                                         {seminar.seminar_type && (
                                             <Badge
                                                 variant="secondary"
-                                                className="ml-2"
+                                                className="ml-2 shrink-0 whitespace-nowrap"
                                             >
                                                 {seminar.seminar_type.name}
                                             </Badge>
@@ -233,11 +233,11 @@ export default function Dashboard() {
                                             <p className="truncate font-medium text-foreground">
                                                 {seminar.name}
                                             </p>
-                                            <p className="text-sm text-muted-foreground">
+                                            <p className="truncate text-sm text-muted-foreground">
                                                 {seminar.location?.name}
                                             </p>
                                         </div>
-                                        <Badge variant="warning">
+                                        <Badge variant="warning" className="shrink-0 ml-2 whitespace-nowrap">
                                             {seminar.registrations_count}/
                                             {seminar.location?.max_vacancies}
                                         </Badge>
@@ -272,7 +272,7 @@ export default function Dashboard() {
                                         key={rating.id}
                                         className="flex items-start gap-3 rounded-lg border border-border p-3"
                                     >
-                                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-yellow-500/20">
+                                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-yellow-500/20">
                                             <span className="font-bold text-yellow-500">
                                                 {rating.score}
                                             </span>
@@ -281,11 +281,11 @@ export default function Dashboard() {
                                             <p className="truncate font-medium text-foreground">
                                                 {rating.seminar?.name}
                                             </p>
-                                            <p className="text-sm text-muted-foreground">
+                                            <p className="truncate text-sm text-muted-foreground">
                                                 por {rating.user?.name}
                                             </p>
                                             {rating.comment && (
-                                                <p className="mt-1 text-sm text-muted-foreground line-clamp-2">
+                                                <p className="mt-1 text-sm text-muted-foreground line-clamp-2 wrap-break-word">
                                                     {rating.comment}
                                                 </p>
                                             )}
@@ -330,7 +330,7 @@ export default function Dashboard() {
                                                     {registration.seminar?.name}
                                                 </p>
                                             </div>
-                                            <span className="text-xs text-muted-foreground">
+                                            <span className="shrink-0 text-xs text-muted-foreground whitespace-nowrap ml-2">
                                                 {formatDateTime(
                                                     registration.created_at,
                                                 )}
