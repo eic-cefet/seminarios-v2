@@ -11,6 +11,7 @@ import SubjectList from "./pages/subjects/SubjectList";
 import UserList from "./pages/users/UserList";
 import RegistrationList from "./pages/registrations/RegistrationList";
 import { SeminarList, SeminarForm } from "./pages/seminars";
+import { WorkshopList } from "./pages/workshops";
 import SemestralReport from "./pages/reports/SemestralReport";
 
 const queryClient = new QueryClient({
@@ -51,6 +52,10 @@ function App() {
                                 <Route
                                     path="/seminars/:id/edit"
                                     element={<SeminarForm />}
+                                />
+                                <Route
+                                    path="/workshops"
+                                    element={<WorkshopList />}
                                 />
                                 <Route
                                     path="/registrations"

@@ -133,6 +133,29 @@ export interface AdminSubject {
     updated_at: string;
 }
 
+export interface AdminWorkshop {
+    id: number;
+    name: string;
+    description?: string;
+    seminars_count?: number;
+    seminars?: {
+        id: number;
+        name: string;
+        slug: string;
+        scheduled_at: string;
+    }[];
+    created_at: string;
+    updated_at: string;
+}
+
+export interface SeminarSearchResult {
+    id: number;
+    name: string;
+    slug: string;
+    scheduled_at: string;
+    workshop_id: number | null;
+}
+
 export interface AdminRegistration {
     id: number;
     present: boolean;
@@ -364,6 +387,73 @@ export const subjectsApi = {
                 method: "POST",
                 body: JSON.stringify(data),
             },
+        );
+    },
+};
+
+// Workshops
+export const workshopsApi = {
+    list: (params?: { page?: number; search?: string }) => {
+        const searchParams = new URLSearchParams();
+        if (params?.page) searchParams.set("page", params.page.toString());
+        if (params?.search) searchParams.set("search", params.search);
+        const query = searchParams.toString();
+        return fetchAdminApi<PaginatedResponse<AdminWorkshop>>(
+            `/workshops${query ? `?${query}` : ""}`,
+        );
+    },
+
+    get: (id: number) =>
+        fetchAdminApi<{ data: AdminWorkshop }>(`/workshops/${id}`),
+
+    create: async (data: {
+        name: string;
+        description?: string;
+        seminar_ids?: number[];
+    }) => {
+        await getCsrfCookie();
+        return fetchAdminApi<{ message: string; data: AdminWorkshop }>(
+            "/workshops",
+            {
+                method: "POST",
+                body: JSON.stringify(data),
+            },
+        );
+    },
+
+    update: async (
+        id: number,
+        data: {
+            name?: string;
+            description?: string;
+            seminar_ids?: number[];
+        },
+    ) => {
+        await getCsrfCookie();
+        return fetchAdminApi<{ message: string; data: AdminWorkshop }>(
+            `/workshops/${id}`,
+            {
+                method: "PUT",
+                body: JSON.stringify(data),
+            },
+        );
+    },
+
+    delete: async (id: number) => {
+        await getCsrfCookie();
+        return fetchAdminApi<{ message: string }>(`/workshops/${id}`, {
+            method: "DELETE",
+        });
+    },
+
+    searchSeminars: (params: { search?: string; workshop_id?: number }) => {
+        const searchParams = new URLSearchParams();
+        if (params.search) searchParams.set("search", params.search);
+        if (params.workshop_id)
+            searchParams.set("workshop_id", params.workshop_id.toString());
+        const query = searchParams.toString();
+        return fetchAdminApi<{ data: SeminarSearchResult[] }>(
+            `/workshops/search-seminars${query ? `?${query}` : ""}`,
         );
     },
 };

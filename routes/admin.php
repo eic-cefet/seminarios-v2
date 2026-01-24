@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\AdminRegistrationController;
 use App\Http\Controllers\Admin\AdminSeminarController;
 use App\Http\Controllers\Admin\AdminSubjectController;
 use App\Http\Controllers\Admin\AdminUserController;
+use App\Http\Controllers\Admin\AdminWorkshopController;
 use App\Http\Controllers\Admin\ReportController;
 use Illuminate\Support\Facades\Route;
 
@@ -48,10 +49,18 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function ()
     Route::put('/seminars/{seminar}', [AdminSeminarController::class, 'update']);
     Route::delete('/seminars/{seminar}', [AdminSeminarController::class, 'destroy']);
 
+    // Workshops CRUD
+    Route::get('/workshops/search-seminars', [AdminWorkshopController::class, 'searchSeminars']);
+    Route::get('/workshops', [AdminWorkshopController::class, 'index']);
+    Route::post('/workshops', [AdminWorkshopController::class, 'store']);
+    Route::get('/workshops/{workshop}', [AdminWorkshopController::class, 'show']);
+    Route::put('/workshops/{workshop}', [AdminWorkshopController::class, 'update']);
+    Route::delete('/workshops/{workshop}', [AdminWorkshopController::class, 'destroy']);
+
     // Helper endpoints for dropdowns
     Route::get('/seminar-types', [AdminSeminarController::class, 'listTypes']);
-    Route::get('/workshops', [AdminSeminarController::class, 'listWorkshops']);
-    Route::get('/locations', [AdminSeminarController::class, 'listLocations']);
+    Route::get('/workshops-dropdown', [AdminSeminarController::class, 'listWorkshops']);
+    Route::get('/locations-dropdown', [AdminSeminarController::class, 'listLocations']);
 
     // Presence Links (QR Code)
     Route::get('/seminars/{seminar}/presence-link', [AdminPresenceLinkController::class, 'show']);

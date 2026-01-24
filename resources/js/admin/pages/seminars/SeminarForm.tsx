@@ -51,7 +51,7 @@ const listTypes = async () => {
 };
 
 const listWorkshops = async () => {
-    const response = await fetch(`${API_BASE}/workshops`, {
+    const response = await fetch(`${API_BASE}/workshops-dropdown`, {
         headers: { Accept: "application/json" },
         credentials: "same-origin",
     });
@@ -59,7 +59,7 @@ const listWorkshops = async () => {
 };
 
 const listLocations = async () => {
-    const response = await fetch(`${API_BASE}/locations`, {
+    const response = await fetch(`${API_BASE}/locations-dropdown`, {
         headers: { Accept: "application/json" },
         credentials: "same-origin",
     });

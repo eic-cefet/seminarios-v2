@@ -31,6 +31,7 @@ const navigation: NavItem[] = [
         icon: Presentation,
         children: [
             { label: "Lista", href: "/seminars" },
+            { label: "Workshops", href: "/workshops", adminOnly: true },
             { label: "Locais", href: "/locations", adminOnly: true },
             { label: "Tópicos", href: "/subjects", adminOnly: true },
         ],
