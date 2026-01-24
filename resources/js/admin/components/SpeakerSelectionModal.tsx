@@ -267,23 +267,6 @@ export function SpeakerSelectionModal({
                             />
                         </div>
 
-                        <div className="space-y-2">
-                            <Label htmlFor="create-password">Senha *</Label>
-                            <Input
-                                id="create-password"
-                                type="password"
-                                value={createFormData.password}
-                                onChange={(e) =>
-                                    setCreateFormData({
-                                        ...createFormData,
-                                        password: e.target.value,
-                                    })
-                                }
-                                required
-                                minLength={8}
-                            />
-                        </div>
-
                         <Separator />
 
                         <div className="space-y-2">
@@ -318,6 +301,30 @@ export function SpeakerSelectionModal({
                                 className="w-full min-h-[100px] px-3 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                                 placeholder="Breve descrição do palestrante..."
                             />
+                        </div>
+
+                        <Separator />
+
+                        <div className="space-y-2">
+                            <Label htmlFor="create-password">Senha</Label>
+                            <Input
+                                id="create-password"
+                                type="password"
+                                value={createFormData.password}
+                                onChange={(e) =>
+                                    setCreateFormData({
+                                        ...createFormData,
+                                        password: e.target.value,
+                                    })
+                                }
+                                minLength={8}
+                                placeholder="Deixe em branco para gerar automaticamente"
+                            />
+                            <p className="text-xs text-muted-foreground">
+                                Se deixar em branco, uma senha aleatória será
+                                gerada. O palestrante poderá usar "Esqueci minha
+                                senha" para definir uma nova.
+                            </p>
                         </div>
 
                         <DialogFooter>

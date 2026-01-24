@@ -1,10 +1,10 @@
+import { Favicon } from "@shared/components/Favicon";
+import { useAuth } from "@shared/contexts/AuthContext";
 import { useEffect } from "react";
 import { Outlet } from "react-router-dom";
-import { useAuth } from "@shared/contexts/AuthContext";
-import { Favicon } from "@shared/components/Favicon";
-import { Sidebar } from "./Sidebar";
-import { MobileHeader } from "./MobileHeader";
 import { Toaster } from "sonner";
+import { MobileHeader } from "./MobileHeader";
+import { Sidebar } from "./Sidebar";
 
 export function AdminLayout() {
     const { user, isLoading, isAuthenticated } = useAuth();
@@ -41,7 +41,7 @@ export function AdminLayout() {
     }
 
     return (
-        <div className="flex h-screen flex-col bg-background">
+        <div className="flex min-h-screen flex-col bg-background">
             <Favicon />
             {/* Mobile header - visible on mobile only */}
             <MobileHeader />

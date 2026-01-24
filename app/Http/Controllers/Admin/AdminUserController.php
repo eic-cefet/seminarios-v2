@@ -62,7 +62,7 @@ class AdminUserController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
-            'password' => ['required', 'string', 'min:8'],
+            'password' => ['nullable', 'string', 'min:8'],
             'role' => ['nullable', 'string', Rule::in(['admin', 'teacher'])],
             'student_data' => ['nullable', 'array'],
             'student_data.course_name' => ['nullable', 'string', 'max:255'],
@@ -73,11 +73,14 @@ class AdminUserController extends Controller
             'speaker_data.description' => ['nullable', 'string'],
         ]);
 
-        $user = DB::transaction(function () use ($validated) {
+        // Generate random 24-char password if not provided
+        $password = $validated['password'] ?? Str::random(24);
+
+        $user = DB::transaction(function () use ($validated, $password) {
             $user = User::create([
                 'name' => $validated['name'],
                 'email' => $validated['email'],
-                'password' => Hash::make($validated['password']),
+                'password' => Hash::make($password),
             ]);
 
             if (isset($validated['role'])) {
