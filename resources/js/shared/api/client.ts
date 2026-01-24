@@ -452,3 +452,57 @@ export interface PendingEvaluation {
         location: { id: number; name: string } | null;
     };
 }
+
+// Bug Report
+export const bugReportApi = {
+    submit: async (data: {
+        subject: string;
+        message: string;
+        name?: string;
+        email?: string;
+        files?: File[];
+    }) => {
+        await getCsrfCookie();
+
+        const formData = new FormData();
+        formData.append("subject", data.subject);
+        formData.append("message", data.message);
+        if (data.name) formData.append("name", data.name);
+        if (data.email) formData.append("email", data.email);
+        if (data.files) {
+            data.files.forEach((file) => {
+                formData.append("files[]", file);
+            });
+        }
+
+        const xsrfToken = getCookie("XSRF-TOKEN");
+        const headers: Record<string, string> = {
+            Accept: "application/json",
+        };
+        if (xsrfToken) {
+            headers["X-XSRF-TOKEN"] = xsrfToken;
+        }
+
+        const response = await fetch(`${app.API_URL}/bug-report`, {
+            method: "POST",
+            headers,
+            credentials: "same-origin",
+            body: formData,
+        });
+
+        if (!response.ok) {
+            const errorData: ApiError = await response.json().catch(() => ({
+                error: "unknown_error",
+                message: response.statusText,
+            }));
+            throw new ApiRequestError(
+                errorData.error,
+                errorData.message,
+                response.status,
+                errorData.errors,
+            );
+        }
+
+        return response.json() as Promise<{ message: string }>;
+    },
+};

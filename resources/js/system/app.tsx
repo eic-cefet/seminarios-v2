@@ -20,6 +20,7 @@ import Workshops from "./pages/Workshops";
 import WorkshopDetails from "./pages/WorkshopDetails";
 import Presence from "./pages/Presence";
 import Evaluations from "./pages/Evaluations";
+import BugReport from "./pages/BugReport";
 
 const queryClient = new QueryClient({
     defaultOptions: {
@@ -69,6 +70,10 @@ function App() {
                             />
                             <Route path="/p/:uuid" element={<Presence />} />
                             <Route path="/avaliar" element={<Evaluations />} />
+                            <Route
+                                path="/reportar-bug"
+                                element={<BugReport />}
+                            />
                         </Routes>
                     </BrowserRouter>
                 </AuthProvider>

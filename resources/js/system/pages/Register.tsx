@@ -1,9 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import * as Label from "@radix-ui/react-label";
 import { useQuery } from "@tanstack/react-query";
+import ReCAPTCHA from "react-google-recaptcha";
 import { Layout } from "../components/Layout";
 import { PageTitle } from "@shared/components/PageTitle";
+import { ReCaptcha, isRecaptchaEnabled } from "@shared/components/ReCaptcha";
 import { cn } from "@shared/lib/utils";
 import { useAuth } from "@shared/contexts/AuthContext";
 import { getErrorMessage } from "@shared/lib/errors";
@@ -12,6 +14,8 @@ import { coursesApi } from "@shared/api/client";
 export default function Register() {
     const navigate = useNavigate();
     const { register, isAuthenticated } = useAuth();
+    const recaptchaRef = useRef<ReCAPTCHA>(null);
+    const [captchaToken, setCaptchaToken] = useState<string | null>(null);
     const [formData, setFormData] = useState({
         name: "",
         email: "",
@@ -51,6 +55,11 @@ export default function Register() {
         e.preventDefault();
         setError(null);
 
+        if (isRecaptchaEnabled() && !captchaToken) {
+            setError("Por favor, complete o captcha");
+            return;
+        }
+
         if (formData.password !== formData.passwordConfirmation) {
             setError("As senhas não coincidem");
             return;
@@ -83,6 +92,8 @@ export default function Register() {
             navigate("/");
         } catch (err) {
             setError(getErrorMessage(err));
+            recaptchaRef.current?.reset();
+            setCaptchaToken(null);
         } finally {
             setLoading(false);
         }
@@ -300,12 +311,24 @@ export default function Register() {
                                 />
                             </div>
 
+                            <ReCaptcha
+                                ref={recaptchaRef}
+                                onVerify={setCaptchaToken}
+                                onExpire={() => setCaptchaToken(null)}
+                            />
+
                             <button
                                 type="submit"
-                                disabled={loading}
+                                disabled={
+                                    loading ||
+                                    (isRecaptchaEnabled() && !captchaToken)
+                                }
                                 className={cn(
                                     "w-full rounded-md bg-primary-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors",
-                                    loading && "opacity-70 cursor-not-allowed",
+                                    (loading ||
+                                        (isRecaptchaEnabled() &&
+                                            !captchaToken)) &&
+                                        "opacity-70 cursor-not-allowed",
                                 )}
                             >
                                 {loading ? "Criando conta..." : "Criar conta"}

@@ -19,6 +19,7 @@ return [
     'logo_path' => env('MAIL_LOGO_URL', 'images/email-logo.png'),
     'brand_color' => env('MAIL_BRAND_COLOR', '#354f87'),
     'test_mail' => env('MAIL_TEST_MAIL', 'test@eic-seminarios.com'),
+    'bug_report_email' => env('BUG_REPORT_EMAIL', 'bugs@eic-seminarios.com'),
 
     'default' => env('MAIL_MAILER', 'log'),
 

@@ -47,4 +47,8 @@ return [
         'redirect' => env('APP_URL').'/auth/github/callback',
     ],
 
+    'recaptcha' => [
+        'site_key' => env('RECAPTCHA_SITE_KEY'),
+    ],
+
 ];

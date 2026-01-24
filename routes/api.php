@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\BugReportController;
 use App\Http\Controllers\Api\CourseController;
 use App\Http\Controllers\Api\PresenceController;
 use App\Http\Controllers\Api\ProfileController;
@@ -54,6 +55,9 @@ Route::get('/courses', [CourseController::class, 'index']);
 
 // Stats
 Route::get('/stats', [StatsController::class, 'index']);
+
+// Bug Report
+Route::post('/bug-report', [BugReportController::class, 'store'])->middleware('throttle:3,1');
 
 // Presence Links (QR Code)
 Route::get('/presence/{uuid}', [PresenceController::class, 'show']);
