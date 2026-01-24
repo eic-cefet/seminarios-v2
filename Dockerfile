@@ -58,4 +58,4 @@ RUN chown -R www-data:www-data /app/storage /app/bootstrap/cache
 
 EXPOSE 8000
 
-ENTRYPOINT ["entrypoint.sh"]
+CMD ["entrypoint.sh"]
