@@ -1,0 +1,33 @@
+name: Deploy
+
+on:
+  workflow_run:
+    workflows: ["Tests"]
+    types:
+      - completed
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+
+    steps:
+      - name: Trigger deployments
+        env:
+          DEPLOYMENT_TRIGGERS: ${{ secrets.DEPLOYMENT_TRIGGERS }}
+        run: |
+          IFS=';' read -ra TRIGGERS <<< "$DEPLOYMENT_TRIGGERS"
+          for trigger in "${TRIGGERS[@]}"; do
+            if [ -n "$trigger" ]; then
+              echo "Triggering deployment for: $trigger"
+              response=$(curl -s -o /dev/null -w "%{http_code}" -X POST "https://dns.jorgejunior.dev/api/deploy/$trigger")
+              if [ "$response" -ge 200 ] && [ "$response" -lt 300 ]; then
+                echo "Success: HTTP $response"
+              else
+                echo "Failed: HTTP $response"
+                exit 1
+              fi
+            fi
+          done
