@@ -29,7 +29,7 @@ function App() {
         <HelmetProvider>
             <QueryClientProvider client={queryClient}>
                 <AuthProvider>
-                    <BrowserRouter basename="/admin">
+                    <BrowserRouter basename={`${app.ROUTER_BASE || ""}/admin`}>
                         <Routes>
                             <Route element={<AdminLayout />}>
                                 <Route path="/" element={<Dashboard />} />

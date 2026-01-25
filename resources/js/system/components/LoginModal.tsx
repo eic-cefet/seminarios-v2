@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import * as Dialog from "@radix-ui/react-dialog";
 import * as Label from "@radix-ui/react-label";
 import { X } from "lucide-react";
-import { cn } from "@shared/lib/utils";
+import { buildUrl, cn } from "@shared/lib/utils";
 import { useAuth } from "@shared/contexts/AuthContext";
 import { authApi } from "@shared/api/client";
 import { getErrorMessage } from "@shared/lib/errors";
@@ -55,7 +55,7 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
     };
 
     const handleSocialLogin = (provider: "google" | "github") => {
-        window.location.href = `/auth/${provider}`;
+        window.location.href = buildUrl(`/auth/${provider}`);
     };
 
     const resetModal = () => {

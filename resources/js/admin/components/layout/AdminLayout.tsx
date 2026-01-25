@@ -1,5 +1,6 @@
 import { Favicon } from "@shared/components/Favicon";
 import { useAuth } from "@shared/contexts/AuthContext";
+import { buildUrl } from "@shared/lib/utils";
 import { useEffect } from "react";
 import { Outlet } from "react-router-dom";
 import { Toaster } from "sonner";
@@ -16,10 +17,10 @@ export function AdminLayout() {
     useEffect(() => {
         if (!isLoading && !isAuthenticated) {
             // Redirect to system SPA login (full page redirect since it's a different SPA)
-            window.location.href = "/login";
+            window.location.href = buildUrl("/login");
         } else if (!isLoading && isAuthenticated && !hasAdminAccess) {
             // User is authenticated but doesn't have admin access
-            window.location.href = "/";
+            window.location.href = buildUrl("/");
         }
     }, [isLoading, isAuthenticated, hasAdminAccess]);
 

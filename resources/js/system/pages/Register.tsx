@@ -6,7 +6,7 @@ import ReCAPTCHA from "react-google-recaptcha";
 import { Layout } from "../components/Layout";
 import { PageTitle } from "@shared/components/PageTitle";
 import { ReCaptcha, isRecaptchaEnabled } from "@shared/components/ReCaptcha";
-import { cn } from "@shared/lib/utils";
+import { buildUrl, cn } from "@shared/lib/utils";
 import { useAuth } from "@shared/contexts/AuthContext";
 import { getErrorMessage } from "@shared/lib/errors";
 import { coursesApi } from "@shared/api/client";
@@ -100,7 +100,7 @@ export default function Register() {
     };
 
     const handleSocialLogin = (provider: "google" | "github") => {
-        window.location.href = `/auth/${provider}`;
+        window.location.href = buildUrl(`/auth/${provider}`);
     };
 
     return (

@@ -39,7 +39,7 @@ function App() {
         <HelmetProvider>
             <QueryClientProvider client={queryClient}>
                 <AuthProvider>
-                    <BrowserRouter>
+                    <BrowserRouter basename={app.ROUTER_BASE || undefined}>
                         <Routes>
                             <Route path="/" element={<Home />} />
                             <Route path="/login" element={<Login />} />

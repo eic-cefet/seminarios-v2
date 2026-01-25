@@ -4,7 +4,7 @@ import * as Label from "@radix-ui/react-label";
 import { Layout } from "../components/Layout";
 import { PageTitle } from "@shared/components/PageTitle";
 import { GoogleIcon, GithubIcon } from "@shared/components/icons/SocialIcons";
-import { cn } from "@shared/lib/utils";
+import { buildUrl, cn } from "@shared/lib/utils";
 
 export default function Login() {
     const [formData, setFormData] = useState({
@@ -39,7 +39,7 @@ export default function Login() {
     };
 
     const handleSocialLogin = (provider: "google" | "github") => {
-        window.location.href = `/auth/${provider}`;
+        window.location.href = buildUrl(`/auth/${provider}`);
     };
 
     return (

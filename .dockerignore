@@ -1,0 +1,53 @@
+# Dependencies
+node_modules
+vendor
+
+# Build artifacts (will be built inside container)
+public/build
+public/hot
+
+# Environment files
+.env
+.env.backup
+.env.production
+
+# IDE and editor files
+.idea
+.vscode
+*.swp
+*.swo
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Tests
+tests
+phpunit.xml
+.phpunit.result.cache
+
+# Development tools
+.php-cs-fixer.cache
+.php-cs-fixer.php
+docker-compose.yml
+
+# Documentation
+*.md
+CLAUDE.md
+
+# Storage (will be created fresh or mounted)
+storage/app/*
+storage/framework/cache/*
+storage/framework/sessions/*
+storage/framework/views/*
+storage/logs/*
+!storage/app/.gitignore
+!storage/framework/.gitignore
+!storage/logs/.gitignore
+
+# Misc
+.DS_Store
+Thumbs.db
+npm-debug.log
+yarn-error.log
