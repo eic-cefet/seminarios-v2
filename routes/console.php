@@ -32,3 +32,33 @@ Schedule::command('certificates:process-pending')
     ->timezone('America/Sao_Paulo')
     ->withoutOverlapping()
     ->onOneServer();
+
+/*
+|--------------------------------------------------------------------------
+| Maintenance Commands
+|--------------------------------------------------------------------------
+*/
+
+// Flush expired password reset tokens daily at 3:00 AM
+Schedule::command('auth:clear-resets')
+    ->dailyAt('03:00')
+    ->timezone('America/Sao_Paulo')
+    ->onOneServer();
+
+// Prune failed queue jobs older than 7 days, daily at 3:15 AM
+Schedule::command('queue:prune-failed --hours=168')
+    ->dailyAt('03:30')
+    ->timezone('America/Sao_Paulo')
+    ->onOneServer();
+
+// Prune stale queue batch entries older than 48 hours, daily at 3:45 AM
+Schedule::command('queue:prune-batches --hours=48')
+    ->dailyAt('03:45')
+    ->timezone('America/Sao_Paulo')
+    ->onOneServer();
+
+// Clear scheduler mutex cache files weekly on Sunday at 4:00 AM
+Schedule::command('schedule:clear-cache')
+    ->weeklyOn(0, '04:00')
+    ->timezone('America/Sao_Paulo')
+    ->onOneServer();
