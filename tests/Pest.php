@@ -1,5 +1,8 @@
 <?php
 
+use App\Models\User;
+use Spatie\Permission\Models\Role;
+
 /*
 |--------------------------------------------------------------------------
 | Test Case
@@ -12,7 +15,13 @@
 */
 
 pest()->extend(Tests\TestCase::class)
- // ->use(Illuminate\Foundation\Testing\RefreshDatabase::class)
+    ->use(Illuminate\Foundation\Testing\RefreshDatabase::class)
+    ->beforeEach(function () {
+        // Ensure roles exist for permission tests
+        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+        Role::findOrCreate('admin');
+        Role::findOrCreate('teacher');
+    })
     ->in('Feature');
 
 /*
@@ -41,7 +50,37 @@ expect()->extend('toBeOne', function () {
 |
 */
 
-function something()
+/**
+ * Create a user and authenticate as them.
+ */
+function actingAsUser(?User $user = null): User
 {
-    // ..
+    $user ??= User::factory()->create();
+    test()->actingAs($user, 'sanctum');
+
+    return $user;
+}
+
+/**
+ * Create an admin user and authenticate as them.
+ */
+function actingAsAdmin(?User $user = null): User
+{
+    $user ??= User::factory()->create();
+    $user->assignRole('admin');
+    test()->actingAs($user, 'sanctum');
+
+    return $user;
+}
+
+/**
+ * Create a teacher user and authenticate as them.
+ */
+function actingAsTeacher(?User $user = null): User
+{
+    $user ??= User::factory()->create();
+    $user->assignRole('teacher');
+    test()->actingAs($user, 'sanctum');
+
+    return $user;
 }
