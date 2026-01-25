@@ -41,7 +41,7 @@ export function AdminLayout() {
     }
 
     return (
-        <div className="flex min-h-screen flex-col bg-background">
+        <div className="flex h-screen flex-col overflow-hidden bg-background">
             <Favicon />
             {/* Mobile header - visible on mobile only */}
             <MobileHeader />
