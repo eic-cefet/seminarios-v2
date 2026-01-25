@@ -16,7 +16,7 @@ class SeminarController extends Controller
         $query = Seminar::query()
             ->with(['seminarType', 'subjects', 'speakers.speakerData'])
             ->withCount('registrations')
-            ->where('active', true);
+            ->active();
 
         // Filter by seminar type
         if ($request->has('type')) {
@@ -34,12 +34,12 @@ class SeminarController extends Controller
 
         // Filter upcoming only
         if ($request->boolean('upcoming')) {
-            $query->where('scheduled_at', '>=', now());
+            $query->upcoming();
         }
 
         // Filter expired only
         if ($request->boolean('expired')) {
-            $query->where('scheduled_at', '<', now());
+            $query->expired();
         }
 
         // Sorting
@@ -60,8 +60,8 @@ class SeminarController extends Controller
         $seminars = Seminar::query()
             ->with(['seminarType', 'subjects', 'speakers.speakerData'])
             ->withCount('registrations')
-            ->where('active', true)
-            ->where('scheduled_at', '>=', now())
+            ->active()
+            ->upcoming()
             ->orderBy('scheduled_at', 'asc')
             ->limit(6)
             ->get();
@@ -76,7 +76,7 @@ class SeminarController extends Controller
             ->withCount('registrations')
             ->withAvg('ratings', 'score')
             ->where('slug', $slug)
-            ->where('active', true)
+            ->active()
             ->firstOrFail();
 
         return new SeminarResource($seminar);
@@ -87,11 +87,11 @@ class SeminarController extends Controller
         $query = $subject->seminars()
             ->with(['seminarType', 'speakers.speakerData'])
             ->withCount('registrations')
-            ->where('active', true);
+            ->active();
 
         // Filter upcoming only
         if ($request->boolean('upcoming')) {
-            $query->where('scheduled_at', '>=', now());
+            $query->upcoming();
         }
 
         $sortDirection = $request->input('direction', 'desc');

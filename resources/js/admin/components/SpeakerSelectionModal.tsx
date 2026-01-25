@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { debounce } from "lodash";
 import { ArrowLeft, Plus, Search } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
+import { useDebouncedSearch } from "@shared/hooks/useDebouncedSearch";
 import { toast } from "sonner";
 import { usersApi, type AdminUser } from "../api/adminClient";
 import { Button } from "./ui/button";
@@ -31,8 +31,6 @@ export function SpeakerSelectionModal({
     onConfirm,
 }: SpeakerSelectionModalProps) {
     const queryClient = useQueryClient();
-    const [search, setSearch] = useState("");
-    const [searchTerm, setSearchTerm] = useState("");
     const [tempSelected, setTempSelected] = useState<number[]>(selectedIds);
     const [showCreateForm, setShowCreateForm] = useState(false);
     const [createFormData, setCreateFormData] = useState({
@@ -43,19 +41,12 @@ export function SpeakerSelectionModal({
         description: "",
     });
 
-    // Debounced search handler
-    const debouncedSearch = useRef(
-        debounce((value: string) => {
-            setSearchTerm(value);
-        }, 500),
-    ).current;
-
-    // Cleanup debounce on unmount
-    useEffect(() => {
-        return () => {
-            debouncedSearch.cancel();
-        };
-    }, [debouncedSearch]);
+    const {
+        inputValue: search,
+        debouncedValue: searchTerm,
+        setInputValue: setSearch,
+        clear: clearSearch,
+    } = useDebouncedSearch();
 
     // Sync temp selected when modal opens or selectedIds change
     useEffect(() => {
@@ -107,7 +98,6 @@ export function SpeakerSelectionModal({
 
     const handleSearchChange = (value: string) => {
         setSearch(value);
-        debouncedSearch(value);
     };
 
     const handleConfirm = () => {
@@ -124,8 +114,7 @@ export function SpeakerSelectionModal({
     };
 
     const handleClose = () => {
-        setSearch("");
-        setSearchTerm("");
+        clearSearch();
         setShowCreateForm(false);
         setCreateFormData({
             name: "",

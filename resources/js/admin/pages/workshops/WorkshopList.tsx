@@ -1,9 +1,10 @@
-import { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, Pencil, Trash2 } from "lucide-react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { debounce } from "lodash";
 import { workshopsApi, type AdminWorkshop } from "../../api/adminClient";
+import { useCRUDListState } from "../../hooks/useCRUDListState";
+import { useDebouncedSearch } from "@shared/hooks/useDebouncedSearch";
 import { SeminarMultiSelect } from "../../components/SeminarMultiSelect";
 import { Button } from "../../components/ui/button";
 import {
@@ -51,22 +52,54 @@ interface WorkshopFormData {
     seminar_ids: number[];
 }
 
+const initialFormData: WorkshopFormData = {
+    name: "",
+    description: "",
+    seminar_ids: [],
+};
+
 export default function WorkshopList() {
     const queryClient = useQueryClient();
     const [page, setPage] = useState(1);
-    const [searchInput, setSearchInput] = useState("");
-    const [searchTerm, setSearchTerm] = useState("");
-    const [isDialogOpen, setIsDialogOpen] = useState(false);
-    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-    const [editingWorkshop, setEditingWorkshop] =
-        useState<AdminWorkshop | null>(null);
-    const [deletingWorkshop, setDeletingWorkshop] =
-        useState<AdminWorkshop | null>(null);
-    const [formData, setFormData] = useState<WorkshopFormData>({
-        name: "",
-        description: "",
-        seminar_ids: [],
+
+    const {
+        inputValue: searchInput,
+        debouncedValue: searchTerm,
+        setInputValue: setSearchInput,
+        clear: clearSearch,
+    } = useDebouncedSearch({
+        onDebouncedChange: () => setPage(1),
     });
+
+    const {
+        isDialogOpen,
+        setIsDialogOpen,
+        isDeleteDialogOpen,
+        setIsDeleteDialogOpen,
+        editingItem: editingWorkshop,
+        deletingItem: deletingWorkshop,
+        formData,
+        setFormData,
+        openCreateDialog,
+        openEditDialog,
+        openDeleteDialog,
+        closeDialog,
+        closeDeleteDialog,
+    } = useCRUDListState<AdminWorkshop, WorkshopFormData>({
+        initialFormData,
+        populateForm: (workshop) => ({
+            name: workshop.name,
+            description: workshop.description || "",
+            seminar_ids: [],
+        }),
+    });
+
+    const handleClearFilters = () => {
+        clearSearch();
+        setPage(1);
+    };
+
+    const hasFilters = searchTerm !== "";
 
     const { data, isLoading } = useQuery({
         queryKey: ["admin-workshops", { search: searchTerm, page }],
@@ -124,8 +157,7 @@ export default function WorkshopList() {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["admin-workshops"] });
             toast.success("Workshop excluido com sucesso");
-            setIsDeleteDialogOpen(false);
-            setDeletingWorkshop(null);
+            closeDeleteDialog();
         },
         onError: (error: Error) => {
             if (
@@ -142,33 +174,6 @@ export default function WorkshopList() {
     const workshops = data?.data ?? [];
     const meta = data?.meta;
 
-    const openCreateDialog = () => {
-        setEditingWorkshop(null);
-        setFormData({ name: "", description: "", seminar_ids: [] });
-        setIsDialogOpen(true);
-    };
-
-    const openEditDialog = (workshop: AdminWorkshop) => {
-        setEditingWorkshop(workshop);
-        setFormData({
-            name: workshop.name,
-            description: workshop.description || "",
-            seminar_ids: [],
-        });
-        setIsDialogOpen(true);
-    };
-
-    const openDeleteDialog = (workshop: AdminWorkshop) => {
-        setDeletingWorkshop(workshop);
-        setIsDeleteDialogOpen(true);
-    };
-
-    const closeDialog = () => {
-        setIsDialogOpen(false);
-        setEditingWorkshop(null);
-        setFormData({ name: "", description: "", seminar_ids: [] });
-    };
-
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (editingWorkshop) {
@@ -177,34 +182,6 @@ export default function WorkshopList() {
             createMutation.mutate(formData);
         }
     };
-
-    // Debounced search handler
-    const debouncedSearch = useRef(
-        debounce((value: string) => {
-            setSearchTerm(value);
-            setPage(1);
-        }, 500),
-    ).current;
-
-    // Cleanup debounce on unmount
-    useEffect(() => {
-        return () => {
-            debouncedSearch.cancel();
-        };
-    }, [debouncedSearch]);
-
-    const handleSearch = (value: string) => {
-        setSearchInput(value);
-        debouncedSearch(value);
-    };
-
-    const handleClearFilters = () => {
-        setSearchInput("");
-        setSearchTerm("");
-        setPage(1);
-    };
-
-    const hasFilters = searchTerm !== "";
 
     return (
         <div className="space-y-6">
@@ -232,7 +209,7 @@ export default function WorkshopList() {
                             <Input
                                 placeholder="Pesquisar por nome..."
                                 value={searchInput}
-                                onChange={(e) => handleSearch(e.target.value)}
+                                onChange={(e) => setSearchInput(e.target.value)}
                                 className="max-w-sm"
                             />
                         </div>

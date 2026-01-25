@@ -7,6 +7,7 @@ import type {
     User,
     Workshop,
 } from "@shared/types";
+import { getCookie, getCsrfCookie } from "./httpUtils";
 
 export interface ApiError {
     error: string;
@@ -26,17 +27,7 @@ export class ApiRequestError extends Error {
     }
 }
 
-function getCookie(name: string): string | null {
-    const match = document.cookie.match(new RegExp(`(^|;\\s*)${name}=([^;]*)`));
-    return match ? decodeURIComponent(match[2]) : null;
-}
-
-async function getCsrfCookie(): Promise<void> {
-    const basePath = app.BASE_PATH || "";
-    await fetch(`${basePath}/sanctum/csrf-cookie`, {
-        credentials: "same-origin",
-    });
-}
+export { getCsrfCookie };
 
 async function fetchApi<T>(
     endpoint: string,

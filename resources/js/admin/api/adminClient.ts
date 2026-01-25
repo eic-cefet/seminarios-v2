@@ -1,7 +1,7 @@
 import type { PaginatedResponse } from "@shared/types";
+import { getCookie, getCsrfCookie } from "@shared/api/httpUtils";
 
 const API_BASE = () => app.API_URL + "/admin";
-const BASE_PATH = () => app.BASE_PATH || "";
 
 interface ApiError {
     error: string;
@@ -21,17 +21,7 @@ export class AdminApiError extends Error {
     }
 }
 
-function getCookie(name: string): string | null {
-    const match = document.cookie.match(new RegExp(`(^|;\\s*)${name}=([^;]*)`));
-    return match ? decodeURIComponent(match[2]) : null;
-}
-
-async function getCsrfCookie(): Promise<void> {
-    const basePath = BASE_PATH();
-    await fetch(`${basePath}/sanctum/csrf-cookie`, {
-        credentials: "same-origin",
-    });
-}
+export { getCsrfCookie };
 
 async function fetchAdminApi<T>(
     endpoint: string,
@@ -131,6 +121,31 @@ export interface AdminSubject {
     seminars_count?: number;
     created_at: string;
     updated_at: string;
+}
+
+export interface AdminSeminarType {
+    id: number;
+    name: string;
+    seminars_count?: number;
+    created_at: string;
+    updated_at: string;
+}
+
+// Simplified types for dropdown lists
+export interface LocationDropdownItem {
+    id: number;
+    name: string;
+    max_vacancies: number;
+}
+
+export interface SeminarTypeDropdownItem {
+    id: number;
+    name: string;
+}
+
+export interface WorkshopDropdownItem {
+    id: number;
+    name: string;
 }
 
 export interface AdminWorkshop {

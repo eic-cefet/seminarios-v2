@@ -1,11 +1,12 @@
-import { useState, useRef, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { debounce } from "lodash";
-import { X, Check } from "lucide-react";
-import { Input } from "./ui/input";
-import { Badge } from "./ui/badge";
-import { Label } from "./ui/label";
+import { Check, X } from "lucide-react";
+import { useCallback } from "react";
+import { useDebouncedSearch } from "@shared/hooks/useDebouncedSearch";
+import { useDropdownNavigation } from "@shared/hooks/useDropdownNavigation";
 import { subjectsApi } from "../api/adminClient";
+import { Badge } from "./ui/badge";
+import { Input } from "./ui/input";
+import { Label } from "./ui/label";
 
 interface SubjectMultiSelectProps {
     value: string[]; // Array of subject names
@@ -20,25 +21,12 @@ export function SubjectMultiSelect({
     label,
     error,
 }: SubjectMultiSelectProps) {
-    const [inputValue, setInputValue] = useState("");
-    const [searchTerm, setSearchTerm] = useState("");
-    const [showSuggestions, setShowSuggestions] = useState(false);
-    const [highlightedIndex, setHighlightedIndex] = useState(-1);
-    const inputRef = useRef<HTMLInputElement>(null);
-    const dropdownRef = useRef<HTMLDivElement>(null);
-
-    // Debounced search
-    const debouncedSearch = useRef(
-        debounce((value: string) => {
-            setSearchTerm(value);
-        }, 300),
-    ).current;
-
-    useEffect(() => {
-        return () => {
-            debouncedSearch.cancel();
-        };
-    }, [debouncedSearch]);
+    const {
+        inputValue,
+        debouncedValue: searchTerm,
+        setInputValue,
+        clear: clearSearch,
+    } = useDebouncedSearch({ delay: 300 });
 
     // Fetch subjects for suggestions
     const { data: subjectsData } = useQuery({
@@ -52,75 +40,42 @@ export function SubjectMultiSelect({
         .filter((subject) => !value.includes(subject.name))
         .map((subject) => subject.name);
 
+    const addSubject = useCallback(
+        (subjectName: string) => {
+            if (subjectName.trim() && !value.includes(subjectName.trim())) {
+                onChange([...value, subjectName.trim()]);
+            }
+            clearSearch();
+        },
+        [value, onChange, clearSearch],
+    );
+
+    const {
+        isOpen: showSuggestions,
+        setIsOpen: setShowSuggestions,
+        highlightedIndex,
+        setHighlightedIndex,
+        inputRef,
+        dropdownRef,
+        handleKeyDown,
+        focusInput,
+    } = useDropdownNavigation({
+        onSelect: (index) => {
+            addSubject(suggestions[index]);
+            focusInput();
+        },
+        onClose: clearSearch,
+    });
+
     const handleInputChange = (newValue: string) => {
         setInputValue(newValue);
-        debouncedSearch(newValue);
         setShowSuggestions(newValue.trim().length > 0);
         setHighlightedIndex(-1);
-    };
-
-    const addSubject = (subjectName: string) => {
-        if (subjectName.trim() && !value.includes(subjectName.trim())) {
-            onChange([...value, subjectName.trim()]);
-        }
-        setInputValue("");
-        setSearchTerm("");
-        setShowSuggestions(false);
-        setHighlightedIndex(-1);
-        inputRef.current?.focus();
-    };
-
-    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-        if (e.key === "Enter") {
-            e.preventDefault();
-            if (
-                highlightedIndex >= 0 &&
-                highlightedIndex < suggestions.length
-            ) {
-                // Add highlighted suggestion
-                addSubject(suggestions[highlightedIndex]);
-            } else if (inputValue.trim()) {
-                // Add new subject (will be auto-created on backend)
-                addSubject(inputValue);
-            }
-        } else if (e.key === "Escape") {
-            setShowSuggestions(false);
-            setHighlightedIndex(-1);
-        } else if (e.key === "ArrowDown") {
-            e.preventDefault();
-            setHighlightedIndex((prev) =>
-                prev < suggestions.length - 1 ? prev + 1 : prev,
-            );
-        } else if (e.key === "ArrowUp") {
-            e.preventDefault();
-            setHighlightedIndex((prev) => (prev > 0 ? prev - 1 : -1));
-        } else if (e.key === "Backspace" && !inputValue && value.length > 0) {
-            // Remove last item when backspace is pressed on empty input
-            onChange(value.slice(0, -1));
-        }
     };
 
     const removeSubject = (subject: string) => {
         onChange(value.filter((s) => s !== subject));
     };
-
-    // Close dropdown when clicking outside
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (
-                dropdownRef.current &&
-                !dropdownRef.current.contains(event.target as Node) &&
-                inputRef.current &&
-                !inputRef.current.contains(event.target as Node)
-            ) {
-                setShowSuggestions(false);
-            }
-        };
-
-        document.addEventListener("mousedown", handleClickOutside);
-        return () =>
-            document.removeEventListener("mousedown", handleClickOutside);
-    }, []);
 
     return (
         <div className="space-y-2">
@@ -144,7 +99,20 @@ export function SubjectMultiSelect({
                         ref={inputRef}
                         value={inputValue}
                         onChange={(e) => handleInputChange(e.target.value)}
-                        onKeyDown={handleKeyDown}
+                        onKeyDown={(e) =>
+                            handleKeyDown(e, suggestions.length, {
+                                onEnterWithNoSelection: () => {
+                                    if (inputValue.trim()) {
+                                        addSubject(inputValue);
+                                    }
+                                },
+                                onBackspaceEmpty: () => {
+                                    if (value.length > 0) {
+                                        onChange(value.slice(0, -1));
+                                    }
+                                },
+                            })
+                        }
                         placeholder={
                             value.length === 0
                                 ? "Digite e pressione Enter..."
@@ -163,7 +131,10 @@ export function SubjectMultiSelect({
                         {suggestions.map((suggestion, index) => (
                             <div
                                 key={suggestion}
-                                onClick={() => addSubject(suggestion)}
+                                onClick={() => {
+                                    addSubject(suggestion);
+                                    focusInput();
+                                }}
                                 className={`px-3 py-2 cursor-pointer flex items-center justify-between ${
                                     index === highlightedIndex
                                         ? "bg-accent text-accent-foreground"

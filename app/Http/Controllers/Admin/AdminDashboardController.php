@@ -20,8 +20,8 @@ class AdminDashboardController extends Controller
     public function stats(): JsonResponse
     {
         $upcomingSeminars = Seminar::with(['seminarType', 'seminarLocation'])
-            ->where('scheduled_at', '>=', now())
-            ->where('active', true)
+            ->upcoming()
+            ->active()
             ->orderBy('scheduled_at')
             ->limit(5)
             ->get();
@@ -33,19 +33,15 @@ class AdminDashboardController extends Controller
 
         $nearCapacitySeminars = Seminar::with(['seminarLocation'])
             ->withCount('registrations')
-            ->whereHas('seminarLocation', function ($q) {
-                $q->whereNotNull('max_vacancies');
-            })
-            ->where('scheduled_at', '>=', now())
-            ->where('active', true)
-            ->get()
-            ->filter(function ($seminar) {
-                $maxVacancies = $seminar->seminarLocation->max_vacancies;
-
-                return $maxVacancies > 0 && $seminar->registrations_count >= ($maxVacancies * 0.8);
-            })
-            ->take(5)
-            ->values();
+            ->join('seminar_locations', 'seminars.seminar_location_id', '=', 'seminar_locations.id')
+            ->whereNotNull('seminar_locations.max_vacancies')
+            ->where('seminar_locations.max_vacancies', '>', 0)
+            ->upcoming()
+            ->active()
+            ->whereRaw('(SELECT COUNT(*) FROM registrations WHERE registrations.seminar_id = seminars.id) >= (seminar_locations.max_vacancies * 0.8)')
+            ->select('seminars.*')
+            ->limit(5)
+            ->get();
 
         $latestRegistrations = Registration::with(['user:id,name,email', 'seminar:id,name,slug'])
             ->orderByDesc('created_at')

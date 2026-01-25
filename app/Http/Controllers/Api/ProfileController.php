@@ -4,10 +4,11 @@ namespace App\Http\Controllers\Api;
 
 use App\Exceptions\ApiException;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\ProfileUpdateRequest;
+use App\Http\Requests\StudentDataUpdateRequest;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 
 class ProfileController extends Controller
@@ -47,24 +48,10 @@ class ProfileController extends Controller
     /**
      * Update the authenticated user's profile
      */
-    public function update(Request $request): JsonResponse
+    public function update(ProfileUpdateRequest $request): JsonResponse
     {
         $user = $request->user();
-
-        if (! $user) {
-            throw ApiException::unauthenticated();
-        }
-
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'email' => [
-                'required',
-                'string',
-                'email',
-                'max:255',
-                Rule::unique('users')->ignore($user->id),
-            ],
-        ]);
+        $validated = $request->validated();
 
         $emailChanged = $user->email !== $validated['email'];
 
@@ -102,19 +89,10 @@ class ProfileController extends Controller
     /**
      * Update the authenticated user's student data
      */
-    public function updateStudentData(Request $request): JsonResponse
+    public function updateStudentData(StudentDataUpdateRequest $request): JsonResponse
     {
         $user = $request->user();
-
-        if (! $user) {
-            throw ApiException::unauthenticated();
-        }
-
-        $validated = $request->validate([
-            'course_id' => ['nullable', 'integer', 'exists:courses,id'],
-            'course_situation' => ['required', 'in:studying,graduated'],
-            'course_role' => ['required', 'in:Aluno,Professor,Outro'],
-        ]);
+        $validated = $request->validated();
 
         if ($user->studentData) {
             $user->studentData->update($validated);
@@ -184,7 +162,7 @@ class ProfileController extends Controller
             throw ApiException::unauthenticated();
         }
 
-        $perPage = min((int) $request->query('per_page', 10), 50);
+        $perPage = $this->getPerPage($request);
 
         $paginator = $user->registrations()
             ->whereHas('seminar')
@@ -346,7 +324,7 @@ class ProfileController extends Controller
             throw ApiException::unauthenticated();
         }
 
-        $perPage = min((int) $request->query('per_page', 10), 50);
+        $perPage = $this->getPerPage($request);
 
         $paginator = $user->registrations()
             ->whereHas('seminar')

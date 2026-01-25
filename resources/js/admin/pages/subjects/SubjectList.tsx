@@ -1,9 +1,10 @@
-import { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, Pencil, Trash2, Merge } from "lucide-react";
+import { useState } from "react";
 import { toast } from "sonner";
-import { debounce } from "lodash";
 import { subjectsApi, type AdminSubject } from "../../api/adminClient";
+import { useCRUDListState } from "../../hooks/useCRUDListState";
+import { useDebouncedSearch } from "@shared/hooks/useDebouncedSearch";
 import { Button } from "../../components/ui/button";
 import {
     Card,
@@ -51,24 +52,52 @@ import {
 } from "../../components/ui/select";
 import { PageTitle } from "@shared/components/PageTitle";
 
+const initialFormData = { name: "" };
+
 export default function SubjectList() {
     const queryClient = useQueryClient();
     const [page, setPage] = useState(1);
-    const [searchInput, setSearchInput] = useState("");
-    const [searchTerm, setSearchTerm] = useState("");
-    const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+    const {
+        inputValue: searchInput,
+        debouncedValue: searchTerm,
+        setInputValue: setSearchInput,
+        clear: clearSearch,
+    } = useDebouncedSearch({
+        onDebouncedChange: () => setPage(1),
+    });
+
+    const handleClearFilters = () => {
+        clearSearch();
+        setPage(1);
+    };
+
+    const hasFilters = searchTerm !== "";
+
+    const {
+        isDialogOpen,
+        setIsDialogOpen,
+        isDeleteDialogOpen,
+        setIsDeleteDialogOpen,
+        editingItem: editingSubject,
+        deletingItem: deletingSubject,
+        formData,
+        setFormData,
+        openCreateDialog,
+        openEditDialog,
+        openDeleteDialog,
+        closeDialog,
+        closeDeleteDialog,
+    } = useCRUDListState<AdminSubject, typeof initialFormData>({
+        initialFormData,
+        populateForm: (subject) => ({ name: subject.name }),
+    });
+
+    // Merge-specific state
     const [isMergeDialogOpen, setIsMergeDialogOpen] = useState(false);
-    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-    const [editingSubject, setEditingSubject] = useState<AdminSubject | null>(
-        null,
-    );
-    const [deletingSubject, setDeletingSubject] = useState<AdminSubject | null>(
-        null,
-    );
     const [selectedIds, setSelectedIds] = useState<number[]>([]);
     const [targetId, setTargetId] = useState<string>("");
     const [newMergeName, setNewMergeName] = useState("");
-    const [formData, setFormData] = useState({ name: "" });
 
     const { data, isLoading } = useQuery({
         queryKey: ["admin-subjects", { search: searchTerm, page }],
@@ -106,8 +135,7 @@ export default function SubjectList() {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["admin-subjects"] });
             toast.success("Tópico excluído com sucesso");
-            setIsDeleteDialogOpen(false);
-            setDeletingSubject(null);
+            closeDeleteDialog();
         },
         onError: (error: Error) => {
             if (error.message.includes("associado")) {
@@ -136,29 +164,6 @@ export default function SubjectList() {
 
     const subjects = data?.data ?? [];
     const meta = data?.meta;
-
-    const openCreateDialog = () => {
-        setEditingSubject(null);
-        setFormData({ name: "" });
-        setIsDialogOpen(true);
-    };
-
-    const openEditDialog = (subject: AdminSubject) => {
-        setEditingSubject(subject);
-        setFormData({ name: subject.name });
-        setIsDialogOpen(true);
-    };
-
-    const openDeleteDialog = (subject: AdminSubject) => {
-        setDeletingSubject(subject);
-        setIsDeleteDialogOpen(true);
-    };
-
-    const closeDialog = () => {
-        setIsDialogOpen(false);
-        setEditingSubject(null);
-        setFormData({ name: "" });
-    };
 
     const openMergeDialog = () => {
         const firstSelected = subjects.find((s) => selectedIds.includes(s.id));
@@ -208,38 +213,11 @@ export default function SubjectList() {
         }
     };
 
-    // Debounced search handler
-    const debouncedSearch = useRef(
-        debounce((value: string) => {
-            setSearchTerm(value);
-            setPage(1);
-        }, 500),
-    ).current;
-
-    // Cleanup debounce on unmount
-    useEffect(() => {
-        return () => {
-            debouncedSearch.cancel();
-        };
-    }, [debouncedSearch]);
-
-    const handleSearch = (value: string) => {
-        setSearchInput(value);
-        debouncedSearch(value);
-    };
-
-    const handleClearFilters = () => {
-        setSearchInput("");
-        setSearchTerm("");
-        setPage(1);
-    };
-
     const selectedSubjects = subjects.filter((s) => selectedIds.includes(s.id));
     const totalSeminarsAffected = selectedSubjects.reduce(
         (acc, s) => acc + (s.seminars_count ?? 0),
         0,
     );
-    const hasFilters = searchTerm !== "";
 
     return (
         <div className="space-y-6">
@@ -275,7 +253,7 @@ export default function SubjectList() {
                             <Input
                                 placeholder="Pesquisar por nome..."
                                 value={searchInput}
-                                onChange={(e) => handleSearch(e.target.value)}
+                                onChange={(e) => setSearchInput(e.target.value)}
                                 className="max-w-sm"
                             />
                         </div>

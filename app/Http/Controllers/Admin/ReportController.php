@@ -6,13 +6,14 @@ use App\Exports\SemestralReportExport;
 use App\Http\Controllers\Controller;
 use App\Models\Course;
 use App\Models\User;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Maatwebsite\Excel\Facades\Excel;
 
 class ReportController extends Controller
 {
-    public function courses()
+    public function courses(): JsonResponse
     {
         $courses = Course::orderBy('name')->get(['id', 'name']);
 
@@ -24,7 +25,7 @@ class ReportController extends Controller
         ]);
     }
 
-    public function semestral(Request $request)
+    public function semestral(Request $request): JsonResponse
     {
         $validated = $request->validate([
             'semester' => 'required|string',

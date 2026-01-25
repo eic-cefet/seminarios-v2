@@ -2,11 +2,14 @@
 
 namespace App\Http\Resources\Admin;
 
+use App\Http\Resources\Concerns\FormatsDates;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 class AdminRatingResource extends JsonResource
 {
+    use FormatsDates;
+
     public function toArray(Request $request): array
     {
         return [
@@ -22,8 +25,8 @@ class AdminRatingResource extends JsonResource
                 'name' => $this->seminar->name,
                 'slug' => $this->seminar->slug,
             ]),
-            'created_at' => $this->created_at,
-            'updated_at' => $this->updated_at,
+            'created_at' => $this->formatDate($this->created_at),
+            'updated_at' => $this->formatDate($this->updated_at),
         ];
     }
 }

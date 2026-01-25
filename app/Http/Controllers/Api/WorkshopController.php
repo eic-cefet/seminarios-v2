@@ -14,8 +14,8 @@ class WorkshopController extends Controller
     public function index(): AnonymousResourceCollection
     {
         $workshops = Workshop::query()
+            ->whereHas('seminars')
             ->withCount('seminars')
-            ->having('seminars_count', '>', 0)
             ->orderByDesc('created_at')
             ->get();
 

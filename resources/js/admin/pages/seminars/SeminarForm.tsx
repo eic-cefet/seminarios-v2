@@ -5,7 +5,12 @@ import { useForm } from "react-hook-form";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import { PageTitle } from "@shared/components/PageTitle";
-import type { AdminUser } from "../../api/adminClient";
+import type {
+    AdminUser,
+    LocationDropdownItem,
+    SeminarTypeDropdownItem,
+    WorkshopDropdownItem,
+} from "../../api/adminClient";
 import { seminarsApi } from "../../api/adminClient";
 import { MarkdownEditor } from "../../components/MarkdownEditor";
 import { SpeakerSelectionModal } from "../../components/SpeakerSelectionModal";
@@ -160,8 +165,12 @@ export default function SeminarForm() {
                 seminar_location_id: locationId,
                 seminar_type_id: typeId,
                 workshop_id: workshopId,
-                subject_names: seminar.subjects?.map((s: any) => s.name) || [],
-                speaker_ids: seminar.speakers?.map((s: any) => s.id) || [],
+                subject_names:
+                    seminar.subjects?.map(
+                        (s: { id: number; name: string }) => s.name,
+                    ) || [],
+                speaker_ids:
+                    seminar.speakers?.map((s: { id: number }) => s.id) || [],
             });
 
             setSelectedSpeakers(seminar.speakers || []);
@@ -207,9 +216,9 @@ export default function SeminarForm() {
         setSelectedSpeakers(users);
     };
 
-    const locations = locationsData?.data ?? [];
-    const types = typesData?.data ?? [];
-    const workshops = workshopsData?.data ?? [];
+    const locations = (locationsData?.data ?? []) as LocationDropdownItem[];
+    const types = (typesData?.data ?? []) as SeminarTypeDropdownItem[];
+    const workshops = (workshopsData?.data ?? []) as WorkshopDropdownItem[];
 
     return (
         <>
@@ -354,7 +363,7 @@ export default function SeminarForm() {
                                             <SelectValue placeholder="Selecione um local" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            {locations.map((loc: any) => (
+                                            {locations.map((loc) => (
                                                 <SelectItem
                                                     key={loc.id}
                                                     value={loc.id.toString()}
@@ -396,7 +405,7 @@ export default function SeminarForm() {
                                             <SelectItem value="none">
                                                 Nenhum tipo
                                             </SelectItem>
-                                            {types.map((type: any) => (
+                                            {types.map((type) => (
                                                 <SelectItem
                                                     key={type.id}
                                                     value={type.id.toString()}
@@ -431,7 +440,7 @@ export default function SeminarForm() {
                                             <SelectItem value="none">
                                                 Nenhum workshop
                                             </SelectItem>
-                                            {workshops.map((workshop: any) => (
+                                            {workshops.map((workshop) => (
                                                 <SelectItem
                                                     key={workshop.id}
                                                     value={workshop.id.toString()}

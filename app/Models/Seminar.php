@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -78,5 +79,29 @@ class Seminar extends Model
     public function ratings(): HasMany
     {
         return $this->hasMany(Rating::class);
+    }
+
+    /**
+     * Scope a query to only include active seminars.
+     */
+    public function scopeActive(Builder $query): Builder
+    {
+        return $query->where('active', true);
+    }
+
+    /**
+     * Scope a query to only include upcoming seminars.
+     */
+    public function scopeUpcoming(Builder $query): Builder
+    {
+        return $query->where('scheduled_at', '>=', now());
+    }
+
+    /**
+     * Scope a query to only include expired seminars.
+     */
+    public function scopeExpired(Builder $query): Builder
+    {
+        return $query->where('scheduled_at', '<', now());
     }
 }

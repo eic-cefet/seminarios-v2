@@ -38,4 +38,11 @@ class RegistrationFactory extends Factory
             'certificate_code' => fake()->uuid(),
         ]);
     }
+
+    public function evaluated(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'evaluation_sent_at' => now(),
+        ]);
+    }
 }

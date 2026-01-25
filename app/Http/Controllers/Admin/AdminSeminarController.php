@@ -3,21 +3,27 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\SeminarStoreRequest;
+use App\Http\Requests\Admin\SeminarUpdateRequest;
 use App\Http\Resources\Admin\AdminSeminarResource;
 use App\Models\Seminar;
 use App\Models\SeminarLocation;
 use App\Models\SeminarType;
 use App\Models\Subject;
 use App\Models\Workshop;
+use App\Services\SlugService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Str;
 
 class AdminSeminarController extends Controller
 {
+    public function __construct(
+        private readonly SlugService $slugService
+    ) {}
+
     public function index(Request $request): AnonymousResourceCollection
     {
         Gate::authorize('viewAny', Seminar::class);
@@ -73,28 +79,13 @@ class AdminSeminarController extends Controller
         return new AdminSeminarResource($seminar);
     }
 
-    public function store(Request $request): JsonResponse
+    public function store(SeminarStoreRequest $request): JsonResponse
     {
-        Gate::authorize('create', Seminar::class);
-
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'description' => ['nullable', 'string'],
-            'scheduled_at' => ['required', 'date'],
-            'room_link' => ['nullable', 'url', 'max:500'],
-            'active' => ['required', 'boolean'],
-            'seminar_location_id' => ['required', 'integer', 'exists:seminar_locations,id'],
-            'seminar_type_id' => ['nullable', 'integer', 'exists:seminar_types,id'],
-            'workshop_id' => ['nullable', 'integer', 'exists:workshops,id'],
-            'subject_names' => ['required', 'array', 'min:1'],
-            'subject_names.*' => ['required', 'string', 'max:255'],
-            'speaker_ids' => ['required', 'array', 'min:1'],
-            'speaker_ids.*' => ['required', 'integer', 'exists:users,id'],
-        ]);
+        $validated = $request->validated();
 
         $seminar = DB::transaction(function () use ($validated, $request) {
             // Auto-generate slug from name
-            $slug = $this->generateUniqueSlug($validated['name']);
+            $slug = $this->slugService->generateUnique($validated['name'], Seminar::class);
 
             // Create seminar
             $seminar = Seminar::create([
@@ -139,31 +130,16 @@ class AdminSeminarController extends Controller
         ], 201);
     }
 
-    public function update(Request $request, Seminar $seminar): JsonResponse
+    public function update(SeminarUpdateRequest $request, Seminar $seminar): JsonResponse
     {
-        Gate::authorize('update', $seminar);
-
-        $validated = $request->validate([
-            'name' => ['sometimes', 'string', 'max:255'],
-            'description' => ['nullable', 'string'],
-            'scheduled_at' => ['sometimes', 'date'],
-            'room_link' => ['nullable', 'url', 'max:500'],
-            'active' => ['sometimes', 'boolean'],
-            'seminar_location_id' => ['sometimes', 'integer', 'exists:seminar_locations,id'],
-            'seminar_type_id' => ['nullable', 'integer', 'exists:seminar_types,id'],
-            'workshop_id' => ['nullable', 'integer', 'exists:workshops,id'],
-            'subject_names' => ['sometimes', 'array', 'min:1'],
-            'subject_names.*' => ['required', 'string', 'max:255'],
-            'speaker_ids' => ['sometimes', 'array', 'min:1'],
-            'speaker_ids.*' => ['required', 'integer', 'exists:users,id'],
-        ]);
+        $validated = $request->validated();
 
         DB::transaction(function () use ($validated, $seminar) {
             // Update basic fields
             if (isset($validated['name'])) {
                 $seminar->name = $validated['name'];
                 // Regenerate slug if name changed
-                $seminar->slug = $this->generateUniqueSlug($validated['name'], $seminar->id);
+                $seminar->slug = $this->slugService->generateUnique($validated['name'], Seminar::class, 'slug', $seminar->id);
             }
             if (array_key_exists('description', $validated)) {
                 $seminar->description = $validated['description'];
@@ -266,31 +242,5 @@ class AdminSeminarController extends Controller
         return response()->json([
             'data' => $locations,
         ]);
-    }
-
-    /**
-     * Generate a unique slug from name
-     */
-    private function generateUniqueSlug(string $name, ?int $excludeId = null): string
-    {
-        $baseSlug = Str::slug($name);
-        $slug = $baseSlug;
-        $counter = 1;
-
-        $query = Seminar::where('slug', $slug);
-        if ($excludeId) {
-            $query->where('id', '!=', $excludeId);
-        }
-
-        while ($query->exists()) {
-            $slug = $baseSlug.'-'.$counter;
-            $counter++;
-            $query = Seminar::where('slug', $slug);
-            if ($excludeId) {
-                $query->where('id', '!=', $excludeId);
-            }
-        }
-
-        return $slug;
     }
 }

@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\CourseSituation;
 use App\Exceptions\ApiException;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Admin\AdminUserResource;
 use App\Models\User;
 use App\Models\UserSpeakerData;
+use App\Services\SlugService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -18,6 +20,10 @@ use Illuminate\Validation\Rule;
 
 class AdminUserController extends Controller
 {
+    public function __construct(
+        private readonly SlugService $slugService
+    ) {}
+
     public function index(Request $request): AnonymousResourceCollection
     {
         Gate::authorize('viewAny', User::class);
@@ -66,7 +72,7 @@ class AdminUserController extends Controller
             'role' => ['nullable', 'string', Rule::in(['admin', 'teacher'])],
             'student_data' => ['nullable', 'array'],
             'student_data.course_name' => ['nullable', 'string', 'max:255'],
-            'student_data.course_situation' => ['nullable', 'string', Rule::in(['studying', 'graduated'])],
+            'student_data.course_situation' => ['nullable', 'string', Rule::enum(CourseSituation::class)],
             'student_data.course_role' => ['nullable', 'string'],
             'speaker_data' => ['nullable', 'array'],
             'speaker_data.institution' => ['nullable', 'string', 'max:255'],
@@ -93,7 +99,7 @@ class AdminUserController extends Controller
 
             if (! empty($validated['speaker_data'])) {
                 $speakerData = $validated['speaker_data'];
-                $speakerData['slug'] = $this->generateSpeakerSlug($user->name);
+                $speakerData['slug'] = $this->slugService->generateUnique($user->name, UserSpeakerData::class);
                 $user->speakerData()->create($speakerData);
             }
 
@@ -119,7 +125,7 @@ class AdminUserController extends Controller
             'role' => ['sometimes', 'string', Rule::in(['admin', 'teacher', 'user'])],
             'student_data' => ['nullable', 'array'],
             'student_data.course_name' => ['nullable', 'string', 'max:255'],
-            'student_data.course_situation' => ['nullable', 'string', Rule::in(['studying', 'graduated'])],
+            'student_data.course_situation' => ['nullable', 'string', Rule::enum(CourseSituation::class)],
             'student_data.course_role' => ['nullable', 'string'],
             'speaker_data' => ['nullable', 'array'],
             'speaker_data.slug' => ['nullable', 'string', 'max:255'],
@@ -160,7 +166,7 @@ class AdminUserController extends Controller
                 } else {
                     $speakerData = $validated['speaker_data'];
                     if (empty($speakerData['slug'])) {
-                        $speakerData['slug'] = $this->generateSpeakerSlug($user->name);
+                        $speakerData['slug'] = $this->slugService->generateUnique($user->name, UserSpeakerData::class);
                     }
                     $user->speakerData()->updateOrCreate(
                         ['user_id' => $user->id],
@@ -204,19 +210,5 @@ class AdminUserController extends Controller
             'message' => 'Usuário restaurado com sucesso',
             'data' => new AdminUserResource($user),
         ]);
-    }
-
-    private function generateSpeakerSlug(string $name): string
-    {
-        $baseSlug = Str::slug($name);
-        $slug = $baseSlug;
-        $counter = 1;
-
-        while (UserSpeakerData::where('slug', $slug)->exists()) {
-            $slug = $baseSlug.'-'.$counter;
-            $counter++;
-        }
-
-        return $slug;
     }
 }

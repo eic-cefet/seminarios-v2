@@ -1,8 +1,8 @@
-import { useState, useRef, useEffect } from "react";
+import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, Pencil, Trash2, RotateCcw, Archive, Search } from "lucide-react";
 import { toast } from "sonner";
-import { debounce } from "lodash";
+import { useDebouncedSearch } from "@shared/hooks/useDebouncedSearch";
 import { usersApi, type AdminUser } from "../../api/adminClient";
 import { Button } from "../../components/ui/button";
 import {
@@ -81,10 +81,17 @@ const initialFormData: UserFormData = {
 export default function UserList() {
     const queryClient = useQueryClient();
     const [showTrashed, setShowTrashed] = useState(false);
-    const [searchInput, setSearchInput] = useState("");
-    const [searchTerm, setSearchTerm] = useState("");
     const [roleFilter, setRoleFilter] = useState("");
     const [page, setPage] = useState(1);
+
+    const {
+        inputValue: searchInput,
+        debouncedValue: searchTerm,
+        setInputValue: setSearchInput,
+        clear: clearSearch,
+    } = useDebouncedSearch({
+        onDebouncedChange: () => setPage(1),
+    });
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [editingUser, setEditingUser] = useState<AdminUser | null>(null);
@@ -168,26 +175,6 @@ export default function UserList() {
     const users = data?.data ?? [];
     const meta = data?.meta;
 
-    // Debounced search handler
-    const debouncedSearch = useRef(
-        debounce((value: string) => {
-            setSearchTerm(value);
-            setPage(1);
-        }, 500),
-    ).current;
-
-    // Cleanup debounce on unmount
-    useEffect(() => {
-        return () => {
-            debouncedSearch.cancel();
-        };
-    }, [debouncedSearch]);
-
-    const handleSearch = (value: string) => {
-        setSearchInput(value);
-        debouncedSearch(value);
-    };
-
     const handleRoleFilter = (value: string) => {
         setRoleFilter(value === "all" ? "" : value);
         setPage(1);
@@ -199,8 +186,7 @@ export default function UserList() {
     };
 
     const clearFilters = () => {
-        setSearchInput("");
-        setSearchTerm("");
+        clearSearch();
         setRoleFilter("");
         setPage(1);
     };
@@ -351,7 +337,7 @@ export default function UserList() {
                                     placeholder="Nome, email ou username..."
                                     value={searchInput}
                                     onChange={(e) =>
-                                        handleSearch(e.target.value)
+                                        setSearchInput(e.target.value)
                                     }
                                     className="pl-9"
                                 />

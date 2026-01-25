@@ -51,4 +51,20 @@ class SeminarFactory extends Factory
             'scheduled_at' => fake()->dateTimeBetween('+1 day', '+1 month'),
         ]);
     }
+
+    public function withSpeakers(int $count = 1): static
+    {
+        return $this->afterCreating(function ($seminar) use ($count) {
+            $speakers = User::factory()->count($count)->speaker()->create();
+            $seminar->speakers()->attach($speakers->pluck('id'));
+        });
+    }
+
+    public function withSubjects(int $count = 2): static
+    {
+        return $this->afterCreating(function ($seminar) use ($count) {
+            $subjects = \App\Models\Subject::factory()->count($count)->create();
+            $seminar->subjects()->attach($subjects->pluck('id'));
+        });
+    }
 }

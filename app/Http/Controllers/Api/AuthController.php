@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Exceptions\ApiException;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\UserRegistrationRequest;
 use App\Mail\WelcomeUser;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
@@ -92,16 +93,9 @@ class AuthController extends Controller
     /**
      * Register a new user
      */
-    public function register(Request $request): JsonResponse
+    public function register(UserRegistrationRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'unique:users,email'],
-            'password' => ['required', 'confirmed', PasswordRule::min(8)],
-            'course_situation' => ['required', 'in:studying,graduated'],
-            'course_role' => ['required', 'in:Aluno,Professor,Outro'],
-            'course_id' => ['nullable', 'integer', 'exists:courses,id'],
-        ]);
+        $validated = $request->validated();
 
         $user = User::create([
             'name' => $validated['name'],

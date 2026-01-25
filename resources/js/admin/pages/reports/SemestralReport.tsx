@@ -33,6 +33,7 @@ import {
 } from "../../components/ui/collapsible";
 import { toast } from "sonner";
 import { FileDown, Eye, ChevronDown, Users, Clock } from "lucide-react";
+import type { SeminarTypeDropdownItem } from "../../api/adminClient";
 
 interface Presentation {
     name: string;
@@ -135,7 +136,9 @@ export default function SemestralReport() {
         queryFn: fetchCourses,
     });
 
-    const seminarTypes = (typesData?.data ?? []).map((type: any) => ({
+    const seminarTypes = (
+        (typesData?.data ?? []) as SeminarTypeDropdownItem[]
+    ).map((type) => ({
         value: type.id,
         label: type.name,
     }));

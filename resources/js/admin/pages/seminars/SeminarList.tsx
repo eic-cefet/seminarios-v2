@@ -1,12 +1,12 @@
 import { formatDateTime } from "@shared/lib/utils";
+import { useDebouncedSearch } from "@shared/hooks/useDebouncedSearch";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { debounce } from "lodash";
 import { Calendar, Pencil, Plus, QrCode, Search, Trash2 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { PageTitle } from "@shared/components/PageTitle";
-import { seminarsApi } from "../../api/adminClient";
+import { seminarsApi, type AdminSeminar } from "../../api/adminClient";
 import { PresenceLinkModal } from "../../components/PresenceLinkModal";
 import {
     AlertDialog,
@@ -42,18 +42,29 @@ import {
 export default function SeminarList() {
     const queryClient = useQueryClient();
     const navigate = useNavigate();
-    const [searchInput, setSearchInput] = useState("");
-    const [searchTerm, setSearchTerm] = useState("");
     const [activeFilter, setActiveFilter] = useState<boolean | undefined>(
         undefined,
     );
     const [upcomingFilter, setUpcomingFilter] = useState(false);
     const [page, setPage] = useState(1);
+
+    const {
+        inputValue: searchInput,
+        debouncedValue: searchTerm,
+        setInputValue: setSearchInput,
+        clear: clearSearch,
+    } = useDebouncedSearch({
+        onDebouncedChange: () => setPage(1),
+    });
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-    const [deletingSeminar, setDeletingSeminar] = useState<any | null>(null);
+    const [deletingSeminar, setDeletingSeminar] = useState<AdminSeminar | null>(
+        null,
+    );
     const [isPresenceLinkModalOpen, setIsPresenceLinkModalOpen] =
         useState(false);
-    const [selectedSeminar, setSelectedSeminar] = useState<any | null>(null);
+    const [selectedSeminar, setSelectedSeminar] = useState<AdminSeminar | null>(
+        null,
+    );
 
     const { data, isLoading } = useQuery({
         queryKey: [
@@ -90,25 +101,6 @@ export default function SeminarList() {
     const seminars = data?.data ?? [];
     const meta = data?.meta;
 
-    // Debounced search handler
-    const debouncedSearch = useRef(
-        debounce((value: string) => {
-            setSearchTerm(value);
-            setPage(1);
-        }, 500),
-    ).current;
-
-    // Cleanup debounce on unmount
-    useEffect(() => {
-        return () => {
-            debouncedSearch.cancel();
-        };
-    }, [debouncedSearch]);
-
-    const handleSearch = (value: string) => {
-        setSearchInput(value);
-        debouncedSearch(value);
-    };
 
     const handleActiveFilterChange = (checked: boolean) => {
         setActiveFilter(checked ? true : undefined);
@@ -121,19 +113,18 @@ export default function SeminarList() {
     };
 
     const clearFilters = () => {
-        setSearchInput("");
-        setSearchTerm("");
+        clearSearch();
         setActiveFilter(undefined);
         setUpcomingFilter(false);
         setPage(1);
     };
 
-    const openDeleteDialog = (seminar: any) => {
+    const openDeleteDialog = (seminar: AdminSeminar) => {
         setDeletingSeminar(seminar);
         setIsDeleteDialogOpen(true);
     };
 
-    const openPresenceLinkModal = (seminar: any) => {
+    const openPresenceLinkModal = (seminar: AdminSeminar) => {
         setSelectedSeminar(seminar);
         setIsPresenceLinkModalOpen(true);
     };
@@ -173,7 +164,7 @@ export default function SeminarList() {
                                         placeholder="Nome do seminário..."
                                         value={searchInput}
                                         onChange={(e) =>
-                                            handleSearch(e.target.value)
+                                            setSearchInput(e.target.value)
                                         }
                                         className="pl-9"
                                     />
@@ -261,7 +252,7 @@ export default function SeminarList() {
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
-                                        {seminars.map((seminar: any) => (
+                                        {seminars.map((seminar) => (
                                             <TableRow key={seminar.id}>
                                                 <TableCell className="font-medium">
                                                     {seminar.name}

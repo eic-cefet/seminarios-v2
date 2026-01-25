@@ -1,8 +1,9 @@
-import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, Pencil, Trash2 } from "lucide-react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { locationsApi, type AdminLocation } from "../../api/adminClient";
+import { useCRUDListState } from "../../hooks/useCRUDListState";
 import { Button } from "../../components/ui/button";
 import {
     Card,
@@ -41,16 +42,33 @@ import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
 import { PageTitle } from "@shared/components/PageTitle";
 
+const initialFormData = { name: "", max_vacancies: "" };
+
 export default function LocationList() {
     const queryClient = useQueryClient();
     const [page, setPage] = useState(1);
-    const [isDialogOpen, setIsDialogOpen] = useState(false);
-    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-    const [editingLocation, setEditingLocation] =
-        useState<AdminLocation | null>(null);
-    const [deletingLocation, setDeletingLocation] =
-        useState<AdminLocation | null>(null);
-    const [formData, setFormData] = useState({ name: "", max_vacancies: "" });
+
+    const {
+        isDialogOpen,
+        setIsDialogOpen,
+        isDeleteDialogOpen,
+        setIsDeleteDialogOpen,
+        editingItem: editingLocation,
+        deletingItem: deletingLocation,
+        formData,
+        setFormData,
+        openCreateDialog,
+        openEditDialog,
+        openDeleteDialog,
+        closeDialog,
+        closeDeleteDialog,
+    } = useCRUDListState<AdminLocation, typeof initialFormData>({
+        initialFormData,
+        populateForm: (location) => ({
+            name: location.name,
+            max_vacancies: location.max_vacancies.toString(),
+        }),
+    });
 
     const { data, isLoading } = useQuery({
         queryKey: ["admin-locations", page],
@@ -93,39 +111,12 @@ export default function LocationList() {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["admin-locations"] });
             toast.success("Local excluido com sucesso");
-            setIsDeleteDialogOpen(false);
-            setDeletingLocation(null);
+            closeDeleteDialog();
         },
         onError: () => {
             toast.error("Erro ao excluir local");
         },
     });
-
-    const openCreateDialog = () => {
-        setEditingLocation(null);
-        setFormData({ name: "", max_vacancies: "" });
-        setIsDialogOpen(true);
-    };
-
-    const openEditDialog = (location: AdminLocation) => {
-        setEditingLocation(location);
-        setFormData({
-            name: location.name,
-            max_vacancies: location.max_vacancies.toString(),
-        });
-        setIsDialogOpen(true);
-    };
-
-    const openDeleteDialog = (location: AdminLocation) => {
-        setDeletingLocation(location);
-        setIsDeleteDialogOpen(true);
-    };
-
-    const closeDialog = () => {
-        setIsDialogOpen(false);
-        setEditingLocation(null);
-        setFormData({ name: "", max_vacancies: "" });
-    };
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();

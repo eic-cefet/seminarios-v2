@@ -12,6 +12,13 @@ class SeminarLocation extends Model
 
     protected $fillable = ['name', 'max_vacancies'];
 
+    protected function casts(): array
+    {
+        return [
+            'max_vacancies' => 'integer',
+        ];
+    }
+
     public function seminars(): HasMany
     {
         return $this->hasMany(Seminar::class);
