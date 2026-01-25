@@ -3,6 +3,7 @@ import { PageTitle } from "@shared/components/PageTitle";
 import { useAuth } from "@shared/contexts/AuthContext";
 import { getErrorMessage } from "@shared/lib/errors";
 import { cn, formatDateTime } from "@shared/lib/utils";
+import { analytics } from "@shared/lib/analytics";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
     Calendar,
@@ -155,6 +156,10 @@ function EvaluationItem({ evaluation, onRated }: EvaluationItemProps) {
         onSuccess: () => {
             setError(null);
             setSuccess(true);
+            analytics.event("evaluation_submit", {
+                seminar_id: evaluation.seminar.id,
+                score,
+            });
             // Invalidate and refetch
             queryClient.invalidateQueries({
                 queryKey: ["profile", "pending-evaluations"],

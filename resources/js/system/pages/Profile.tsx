@@ -3,6 +3,7 @@ import { PageTitle } from "@shared/components/PageTitle";
 import { useAuth } from "@shared/contexts/AuthContext";
 import { getErrorMessage, getFieldErrors } from "@shared/lib/errors";
 import { cn, formatDateTime } from "@shared/lib/utils";
+import { analytics } from "@shared/lib/analytics";
 import type { User as UserType } from "@shared/types";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import {
@@ -90,6 +91,7 @@ function ProfileInfoSection({ user, onUpdate }: ProfileInfoSectionProps) {
             setFieldErrors({});
             setSuccess(true);
             setIsEditing(false);
+            analytics.event("profile_info_update");
             await onUpdate();
             setTimeout(() => setSuccess(false), 3000);
         },
@@ -290,6 +292,7 @@ function StudentDataSection({ user, onUpdate }: StudentDataSectionProps) {
             setFieldErrors({});
             setSuccess(true);
             setIsEditing(false);
+            analytics.event("profile_student_data_update");
             await onUpdate();
             setTimeout(() => setSuccess(false), 3000);
         },
@@ -542,6 +545,7 @@ function PasswordSection() {
             setCurrentPassword("");
             setPassword("");
             setPasswordConfirmation("");
+            analytics.event("profile_password_change");
             setTimeout(() => setSuccess(false), 3000);
         },
         onError: (err) => {
@@ -952,6 +956,11 @@ function CertificatesSection() {
                                         href={`/certificado/${certificate.certificate_code}`}
                                         target="_blank"
                                         rel="noopener noreferrer"
+                                        onClick={() =>
+                                            analytics.event("certificate_download", {
+                                                seminar_id: certificate.seminar.id,
+                                            })
+                                        }
                                         className="inline-flex items-center gap-1.5 rounded-md bg-primary-600 px-3 py-1.5 text-sm font-medium text-white shadow-sm hover:bg-primary-700 transition-colors cursor-pointer"
                                     >
                                         <Download className="h-3.5 w-3.5" />

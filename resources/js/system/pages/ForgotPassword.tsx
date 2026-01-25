@@ -7,6 +7,7 @@ import { PageTitle } from "@shared/components/PageTitle";
 import { cn } from "@shared/lib/utils";
 import { authApi } from "@shared/api/client";
 import { getErrorMessage } from "@shared/lib/errors";
+import { analytics } from "@shared/lib/analytics";
 
 export default function ForgotPassword() {
     const [email, setEmail] = useState("");
@@ -21,6 +22,7 @@ export default function ForgotPassword() {
 
         try {
             await authApi.forgotPassword(email);
+            analytics.event("forgot_password_submit");
             setSuccess(true);
         } catch (err) {
             setError(getErrorMessage(err));

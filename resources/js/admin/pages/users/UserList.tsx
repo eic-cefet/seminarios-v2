@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, Pencil, Trash2, RotateCcw, Archive, Search } from "lucide-react";
 import { toast } from "sonner";
+import { analytics } from "@shared/lib/analytics";
 import { useDebouncedSearch } from "@shared/hooks/useDebouncedSearch";
 import { usersApi, type AdminUser } from "../../api/adminClient";
 import { Button } from "../../components/ui/button";
@@ -120,9 +121,10 @@ export default function UserList() {
     const createMutation = useMutation({
         mutationFn: (data: Parameters<typeof usersApi.create>[0]) =>
             usersApi.create(data),
-        onSuccess: () => {
+        onSuccess: (response) => {
             queryClient.invalidateQueries({ queryKey: ["admin-users"] });
             toast.success("Usuario criado com sucesso");
+            analytics.event("admin_user_create", { user_id: response?.data?.id });
             closeDialog();
         },
         onError: () => {
@@ -138,9 +140,10 @@ export default function UserList() {
             id: number;
             data: Parameters<typeof usersApi.update>[1];
         }) => usersApi.update(id, data),
-        onSuccess: () => {
+        onSuccess: (_, variables) => {
             queryClient.invalidateQueries({ queryKey: ["admin-users"] });
             toast.success("Usuario atualizado com sucesso");
+            analytics.event("admin_user_update", { user_id: variables.id });
             closeDialog();
         },
         onError: () => {
@@ -150,9 +153,10 @@ export default function UserList() {
 
     const deleteMutation = useMutation({
         mutationFn: (id: number) => usersApi.delete(id),
-        onSuccess: () => {
+        onSuccess: (_, id) => {
             queryClient.invalidateQueries({ queryKey: ["admin-users"] });
             toast.success("Usuario excluido com sucesso");
+            analytics.event("admin_user_archive", { user_id: id });
             setIsDeleteDialogOpen(false);
             setDeletingUser(null);
         },
@@ -163,9 +167,10 @@ export default function UserList() {
 
     const restoreMutation = useMutation({
         mutationFn: (id: number) => usersApi.restore(id),
-        onSuccess: () => {
+        onSuccess: (_, id) => {
             queryClient.invalidateQueries({ queryKey: ["admin-users"] });
             toast.success("Usuario restaurado com sucesso");
+            analytics.event("admin_user_restore", { user_id: id });
         },
         onError: () => {
             toast.error("Erro ao restaurar usuario");

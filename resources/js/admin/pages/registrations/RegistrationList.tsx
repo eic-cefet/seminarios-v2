@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Search, Calendar, User, Mail } from "lucide-react";
 import { toast } from "sonner";
 import { debounce } from "lodash";
+import { analytics } from "@shared/lib/analytics";
 import {
     registrationsApi,
     dashboardApi,
@@ -124,6 +125,10 @@ export default function RegistrationList() {
             toast.success(
                 isPresent ? "Presenca confirmada" : "Presenca removida",
             );
+            analytics.event("admin_registration_toggle_presence", {
+                registration_id: data.data.id,
+                present: isPresent,
+            });
         },
         onSettled: () => {
             queryClient.invalidateQueries({

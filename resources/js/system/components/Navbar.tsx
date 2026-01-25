@@ -1,6 +1,7 @@
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { useAuth } from "@shared/contexts/AuthContext";
 import { cn } from "@shared/lib/utils";
+import { analytics } from "@shared/lib/analytics";
 import {
     ChevronDown,
     FileText,
@@ -70,7 +71,10 @@ export function Navbar() {
                                 <UserDropdown user={user} onLogout={logout} />
                             ) : (
                                 <AuthDropdown
-                                    onLoginClick={() => setLoginModalOpen(true)}
+                                    onLoginClick={() => {
+                                        analytics.event("login_modal_open");
+                                        setLoginModalOpen(true);
+                                    }}
                                 />
                             )}
                         </div>
@@ -79,9 +83,12 @@ export function Navbar() {
                         <div className="flex items-center sm:hidden">
                             <button
                                 type="button"
-                                onClick={() =>
-                                    setMobileMenuOpen(!mobileMenuOpen)
-                                }
+                                onClick={() => {
+                                    if (!mobileMenuOpen) {
+                                        analytics.event("navbar_menu_open");
+                                    }
+                                    setMobileMenuOpen(!mobileMenuOpen);
+                                }}
                                 className="inline-flex items-center justify-center rounded-md p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-500 cursor-pointer"
                             >
                                 <span className="sr-only">Abrir menu</span>
@@ -132,6 +139,9 @@ export function Navbar() {
                                 <button
                                     onClick={() => {
                                         setMobileMenuOpen(false);
+                                        analytics.event("login_modal_open", {
+                                            source: "mobile_menu",
+                                        });
                                         setLoginModalOpen(true);
                                     }}
                                     className="block w-full text-left py-2 text-base font-medium text-gray-500 hover:text-gray-700 cursor-pointer"
@@ -240,7 +250,10 @@ function UserDropdown({ user, onLogout }: UserDropdownProps) {
                     <DropdownMenu.Separator className="h-px bg-gray-100 my-1" />
                     <DropdownMenu.Item asChild>
                         <button
-                            onClick={onLogout}
+                            onClick={() => {
+                                analytics.event("logout");
+                                onLogout();
+                            }}
                             className="flex w-full items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded cursor-pointer outline-none"
                         >
                             <LogOut className="h-4 w-4" />
@@ -298,7 +311,10 @@ function MobileUserMenu({ user, onLogout }: MobileUserMenuProps) {
                     Meus certificados
                 </Link>
                 <button
-                    onClick={onLogout}
+                    onClick={() => {
+                        analytics.event("logout", { source: "mobile_menu" });
+                        onLogout();
+                    }}
                     className="block w-full text-left py-2 text-base font-medium text-red-600 hover:text-red-700 cursor-pointer"
                 >
                     Sair

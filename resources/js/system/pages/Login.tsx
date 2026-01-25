@@ -5,6 +5,7 @@ import { Layout } from "../components/Layout";
 import { PageTitle } from "@shared/components/PageTitle";
 import { GoogleIcon, GithubIcon } from "@shared/components/icons/SocialIcons";
 import { buildUrl, cn } from "@shared/lib/utils";
+import { analytics } from "@shared/lib/analytics";
 
 export default function Login() {
     const [formData, setFormData] = useState({
@@ -30,15 +31,18 @@ export default function Login() {
             // TODO: Implement actual login
             console.log("Login:", formData);
             await new Promise((resolve) => setTimeout(resolve, 1000));
+            analytics.event("login_email");
             // Redirect to home after success
         } catch {
             setError("E-mail ou senha incorretos");
+            analytics.event("login_failed", { method: "email" });
         } finally {
             setLoading(false);
         }
     };
 
     const handleSocialLogin = (provider: "google" | "github") => {
+        analytics.event("login_social", { provider });
         window.location.href = buildUrl(`/auth/${provider}`);
     };
 

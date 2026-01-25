@@ -21,6 +21,7 @@ import { seminarsApi, registrationApi } from "@shared/api/client";
 import { formatDateTime, cn, containsHTML } from "@shared/lib/utils";
 import { getErrorMessage } from "@shared/lib/errors";
 import { useAuth } from "@shared/contexts/AuthContext";
+import { analytics } from "@shared/lib/analytics";
 import DOMPurify from "dompurify";
 import ReactMarkdown from "react-markdown";
 import rehypeSanitize from "rehype-sanitize";
@@ -55,11 +56,13 @@ export default function SeminarDetails() {
         mutationFn: () => registrationApi.register(slug!),
         onSuccess: () => {
             setRegistrationError(null);
+            analytics.event("seminar_register", { seminar_slug: slug });
             queryClient.invalidateQueries({ queryKey: ["registration", slug] });
             queryClient.invalidateQueries({ queryKey: ["seminar", slug] });
         },
         onError: (error) => {
             setRegistrationError(getErrorMessage(error));
+            analytics.event("seminar_register_error", { seminar_slug: slug });
         },
     });
 
@@ -67,6 +70,7 @@ export default function SeminarDetails() {
         mutationFn: () => registrationApi.unregister(slug!),
         onSuccess: () => {
             setRegistrationError(null);
+            analytics.event("seminar_unregister", { seminar_slug: slug });
             queryClient.invalidateQueries({ queryKey: ["registration", slug] });
             queryClient.invalidateQueries({ queryKey: ["seminar", slug] });
         },
@@ -82,6 +86,9 @@ export default function SeminarDetails() {
 
     const handleRegisterClick = () => {
         if (!user) {
+            analytics.event("seminar_register_attempt_unauthenticated", {
+                seminar_slug: slug,
+            });
             setLoginModalOpen(true);
             return;
         }

@@ -10,6 +10,7 @@ import { buildUrl, cn } from "@shared/lib/utils";
 import { useAuth } from "@shared/contexts/AuthContext";
 import { getErrorMessage } from "@shared/lib/errors";
 import { coursesApi } from "@shared/api/client";
+import { analytics } from "@shared/lib/analytics";
 
 export default function Register() {
     const navigate = useNavigate();
@@ -89,6 +90,10 @@ export default function Register() {
                     ? parseInt(formData.courseId)
                     : undefined,
             });
+            analytics.event("register_account", {
+                course_situation: formData.courseSituation,
+                course_role: formData.courseRole,
+            });
             navigate("/");
         } catch (err) {
             setError(getErrorMessage(err));
@@ -100,6 +105,7 @@ export default function Register() {
     };
 
     const handleSocialLogin = (provider: "google" | "github") => {
+        analytics.event("register_social", { provider });
         window.location.href = buildUrl(`/auth/${provider}`);
     };
 

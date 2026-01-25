@@ -1,4 +1,5 @@
 import { formatDateTime } from "@shared/lib/utils";
+import { analytics } from "@shared/lib/analytics";
 import { useDebouncedSearch } from "@shared/hooks/useDebouncedSearch";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Calendar, Pencil, Plus, QrCode, Search, Trash2 } from "lucide-react";
@@ -87,9 +88,10 @@ export default function SeminarList() {
 
     const deleteMutation = useMutation({
         mutationFn: (id: number) => seminarsApi.delete(id),
-        onSuccess: () => {
+        onSuccess: (_, id) => {
             queryClient.invalidateQueries({ queryKey: ["admin-seminars"] });
             toast.success("Seminário excluído com sucesso");
+            analytics.event("admin_seminar_delete", { seminar_id: id });
             setIsDeleteDialogOpen(false);
             setDeletingSeminar(null);
         },

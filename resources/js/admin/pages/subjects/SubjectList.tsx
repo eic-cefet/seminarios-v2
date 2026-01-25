@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, Pencil, Trash2, Merge } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { analytics } from "@shared/lib/analytics";
 import { subjectsApi, type AdminSubject } from "../../api/adminClient";
 import { useCRUDListState } from "../../hooks/useCRUDListState";
 import { useDebouncedSearch } from "@shared/hooks/useDebouncedSearch";
@@ -107,9 +108,12 @@ export default function SubjectList() {
 
     const createMutation = useMutation({
         mutationFn: (data: { name: string }) => subjectsApi.create(data),
-        onSuccess: () => {
+        onSuccess: (response) => {
             queryClient.invalidateQueries({ queryKey: ["admin-subjects"] });
             toast.success("Tópico criado com sucesso");
+            analytics.event("admin_subject_create", {
+                subject_id: response?.data?.id,
+            });
             closeDialog();
         },
         onError: () => {
@@ -120,9 +124,10 @@ export default function SubjectList() {
     const updateMutation = useMutation({
         mutationFn: ({ id, data }: { id: number; data: { name: string } }) =>
             subjectsApi.update(id, data),
-        onSuccess: () => {
+        onSuccess: (_, variables) => {
             queryClient.invalidateQueries({ queryKey: ["admin-subjects"] });
             toast.success("Tópico atualizado com sucesso");
+            analytics.event("admin_subject_update", { subject_id: variables.id });
             closeDialog();
         },
         onError: () => {
@@ -132,9 +137,10 @@ export default function SubjectList() {
 
     const deleteMutation = useMutation({
         mutationFn: (id: number) => subjectsApi.delete(id),
-        onSuccess: () => {
+        onSuccess: (_, id) => {
             queryClient.invalidateQueries({ queryKey: ["admin-subjects"] });
             toast.success("Tópico excluído com sucesso");
+            analytics.event("admin_subject_delete", { subject_id: id });
             closeDeleteDialog();
         },
         onError: (error: Error) => {
@@ -152,9 +158,13 @@ export default function SubjectList() {
             source_ids: number[];
             new_name?: string;
         }) => subjectsApi.merge(data),
-        onSuccess: () => {
+        onSuccess: (_, variables) => {
             queryClient.invalidateQueries({ queryKey: ["admin-subjects"] });
             toast.success("Tópicos mesclados com sucesso");
+            analytics.event("admin_subject_merge", {
+                target_id: variables.target_id,
+                merged_count: variables.source_ids.length,
+            });
             closeMergeDialog();
         },
         onError: () => {
