@@ -1,0 +1,99 @@
+# Ubuntu 22.04 + Apache2 + PHP 8.4
+# Simulates CEFET-RJ EIC server environment
+FROM ubuntu:22.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+ENV TZ=America/Sao_Paulo
+
+# Install base packages and add PHP 8.4 repository
+RUN apt-get update && apt-get install -y \
+    software-properties-common \
+    curl \
+    gnupg2 \
+    ca-certificates \
+    lsb-release \
+    apt-transport-https \
+    && add-apt-repository ppa:ondrej/php -y \
+    && apt-get update
+
+# Install Apache2 and PHP 8.4 with required extensions
+RUN apt-get install -y \
+    apache2 \
+    libapache2-mod-php8.4 \
+    php8.4 \
+    php8.4-cli \
+    php8.4-common \
+    php8.4-mysql \
+    php8.4-pdo \
+    php8.4-mbstring \
+    php8.4-xml \
+    php8.4-dom \
+    php8.4-curl \
+    php8.4-gd \
+    php8.4-zip \
+    php8.4-intl \
+    php8.4-bcmath \
+    php8.4-exif \
+    php8.4-opcache \
+    php8.4-fileinfo \
+    unzip \
+    git \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Node.js 22 LTS for asset building
+RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
+    && apt-get install -y nodejs \
+    && npm install -g pnpm
+
+# Install Composer
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+
+# Enable Apache modules
+RUN a2enmod rewrite headers
+
+# Create directory structure
+RUN mkdir -p /var/www/sites/eic-seminarios.com \
+    && mkdir -p /var/www/html
+
+# Set working directory
+WORKDIR /var/www/sites/eic-seminarios.com
+
+# Copy composer files first for better caching
+COPY composer.json composer.lock ./
+RUN composer install --no-dev --no-scripts --no-autoloader --prefer-dist
+
+# Copy package files for npm
+COPY package.json pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile
+
+# Copy application code
+COPY . .
+
+# Build frontend assets
+RUN pnpm run build
+
+# Complete composer install
+RUN composer install --no-dev --optimize-autoloader --prefer-dist
+
+# Create symlink as requested
+RUN ln -sf /var/www/sites/eic-seminarios.com/public /var/www/html/seminarios
+
+# Copy Apache configuration
+COPY docker/eic/apache-seminarios.conf /etc/apache2/sites-available/seminarios.conf
+
+# Enable the site and disable default
+RUN a2dissite 000-default.conf \
+    && a2ensite seminarios.conf
+
+# Set permissions
+RUN chown -R www-data:www-data /var/www/sites/eic-seminarios.com/storage \
+    /var/www/sites/eic-seminarios.com/bootstrap/cache
+
+# Copy entrypoint
+COPY docker/eic/entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
+EXPOSE 80
+
+CMD ["/usr/local/bin/entrypoint.sh"]
