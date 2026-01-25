@@ -1,15 +1,16 @@
 import {
-    LayoutDashboard,
-    Users,
-    Presentation,
     ClipboardList,
     FileBarChart,
+    LayoutDashboard,
+    Presentation,
+    Users,
 } from "lucide-react";
 
 export interface NavChild {
     label: string;
     href: string;
     adminOnly?: boolean;
+    end?: boolean; // Exact match only (for NavLink)
 }
 
 export interface NavItem {
@@ -27,8 +28,7 @@ export const adminNavigation: NavItem[] = [
         label: "Seminários",
         icon: Presentation,
         children: [
-            { label: "Lista", href: "/seminars" },
-            { label: "Novo Seminário", href: "/seminars/new" },
+            { label: "Seminários", href: "/seminars" },
             { label: "Workshops", href: "/workshops", adminOnly: true },
             { label: "Locais", href: "/locations", adminOnly: true },
             { label: "Tópicos", href: "/subjects", adminOnly: true },
@@ -57,7 +57,10 @@ export const adminNavigation: NavItem[] = [
 /**
  * Filters navigation items based on user's admin status
  */
-export function filterNavigation(items: NavItem[], isAdmin: boolean): NavItem[] {
+export function filterNavigation(
+    items: NavItem[],
+    isAdmin: boolean,
+): NavItem[] {
     return items
         .filter((item) => !item.adminOnly || isAdmin)
         .map((item) => {

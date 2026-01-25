@@ -67,6 +67,7 @@ export function Sidebar() {
                                         <NavLink
                                             key={child.href}
                                             to={child.href}
+                                            end={child.end}
                                             className={({ isActive }) =>
                                                 cn(
                                                     "block rounded-lg px-3 py-2 text-sm",

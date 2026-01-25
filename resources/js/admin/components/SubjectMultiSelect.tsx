@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Check, X } from "lucide-react";
-import { useCallback } from "react";
+import { useCallback, useRef } from "react";
+import { DropdownPortal } from "@shared/components/DropdownPortal";
 import { useDebouncedSearch } from "@shared/hooks/useDebouncedSearch";
 import { useDropdownNavigation } from "@shared/hooks/useDropdownNavigation";
 import { subjectsApi } from "../api/adminClient";
@@ -77,11 +78,16 @@ export function SubjectMultiSelect({
         onChange(value.filter((s) => s !== subject));
     };
 
+    const wrapperRef = useRef<HTMLDivElement>(null);
+
     return (
         <div className="space-y-2">
             {label && <Label>{label}</Label>}
-            <div className="relative">
-                <div className="flex flex-wrap gap-2 p-2 border border-border rounded-md min-h-[42px] bg-background focus-within:ring-2 focus-within:ring-ring">
+            <div>
+                <div
+                    ref={wrapperRef}
+                    className="flex flex-wrap gap-2 p-2 border border-border rounded-md min-h-[42px] bg-background focus-within:ring-2 focus-within:ring-ring"
+                >
                     {value.map((subject) => (
                         <Badge
                             key={subject}
@@ -123,10 +129,13 @@ export function SubjectMultiSelect({
                 </div>
 
                 {/* Suggestions Dropdown */}
-                {showSuggestions && suggestions.length > 0 && (
+                <DropdownPortal
+                    anchorRef={wrapperRef}
+                    isOpen={showSuggestions && suggestions.length > 0}
+                >
                     <div
                         ref={dropdownRef}
-                        className="absolute z-50 w-full mt-1 bg-popover border border-border rounded-md shadow-md max-h-[200px] overflow-y-auto"
+                        className="bg-popover border border-border rounded-md shadow-md max-h-[200px] overflow-y-auto"
                     >
                         {suggestions.map((suggestion, index) => (
                             <div
@@ -148,7 +157,7 @@ export function SubjectMultiSelect({
                             </div>
                         ))}
                     </div>
-                )}
+                </DropdownPortal>
             </div>
             {error && <p className="text-sm text-red-500">{error}</p>}
             <p className="text-xs text-muted-foreground">

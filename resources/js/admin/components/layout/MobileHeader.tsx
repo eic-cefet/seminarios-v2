@@ -88,6 +88,7 @@ export function MobileHeader() {
                                                 <NavLink
                                                     key={child.href}
                                                     to={child.href}
+                                                    end={child.end}
                                                     onClick={closeMenu}
                                                     className={({ isActive }) =>
                                                         cn(

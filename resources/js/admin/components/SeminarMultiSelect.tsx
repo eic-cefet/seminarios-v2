@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Calendar, Check, X } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { DropdownPortal } from "@shared/components/DropdownPortal";
 import { useDebouncedSearch } from "@shared/hooks/useDebouncedSearch";
 import { useDropdownNavigation } from "@shared/hooks/useDropdownNavigation";
 import { formatDateTime } from "@shared/lib/utils";
@@ -124,11 +125,16 @@ export function SeminarMultiSelect({
         return seminar?.name ?? `Seminário #${id}`;
     };
 
+    const wrapperRef = useRef<HTMLDivElement>(null);
+
     return (
         <div className="space-y-2">
             {label && <Label>{label}</Label>}
-            <div className="relative">
-                <div className="flex flex-wrap gap-2 p-2 border border-border rounded-md min-h-[42px] bg-background focus-within:ring-2 focus-within:ring-ring">
+            <div>
+                <div
+                    ref={wrapperRef}
+                    className="flex flex-wrap gap-2 p-2 border border-border rounded-md min-h-[42px] bg-background focus-within:ring-2 focus-within:ring-ring"
+                >
                     {value.map((seminarId) => (
                         <Badge
                             key={seminarId}
@@ -164,10 +170,13 @@ export function SeminarMultiSelect({
                 </div>
 
                 {/* Suggestions Dropdown */}
-                {showSuggestions && suggestions.length > 0 && (
+                <DropdownPortal
+                    anchorRef={wrapperRef}
+                    isOpen={showSuggestions && suggestions.length > 0}
+                >
                     <div
                         ref={dropdownRef}
-                        className="absolute z-50 w-full mt-1 bg-popover border border-border rounded-md shadow-md max-h-[250px] overflow-y-auto"
+                        className="bg-popover border border-border rounded-md shadow-md max-h-[250px] overflow-y-auto"
                     >
                         {suggestions.map((seminar, index) => (
                             <div
@@ -197,20 +206,25 @@ export function SeminarMultiSelect({
                             </div>
                         ))}
                     </div>
-                )}
+                </DropdownPortal>
 
-                {showSuggestions &&
-                    suggestions.length === 0 &&
-                    allSeminars.length === 0 && (
-                        <div
-                            ref={dropdownRef}
-                            className="absolute z-50 w-full mt-1 bg-popover border border-border rounded-md shadow-md p-3"
-                        >
-                            <p className="text-sm text-muted-foreground text-center">
-                                Nenhum seminário disponível
-                            </p>
-                        </div>
-                    )}
+                <DropdownPortal
+                    anchorRef={wrapperRef}
+                    isOpen={
+                        showSuggestions &&
+                        suggestions.length === 0 &&
+                        allSeminars.length === 0
+                    }
+                >
+                    <div
+                        ref={dropdownRef}
+                        className="bg-popover border border-border rounded-md shadow-md p-3"
+                    >
+                        <p className="text-sm text-muted-foreground text-center">
+                            Nenhum seminário disponível
+                        </p>
+                    </div>
+                </DropdownPortal>
             </div>
             {error && <p className="text-sm text-red-500">{error}</p>}
             <p className="text-xs text-muted-foreground">
