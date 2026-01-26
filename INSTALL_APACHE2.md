@@ -377,6 +377,7 @@ numprocs=2
 redirect_stderr=true
 stdout_logfile=/var/log/seminarios-worker.log
 stopwaitsecs=3600
+environment=CLOUDWATCH_LOG_STREAM="worker"
 ```
 
 ### 2. Apply Configuration
@@ -431,7 +432,7 @@ Add the following lines:
 
 ```cron
 # Laravel scheduler - runs every minute
-* * * * * cd /var/www/sites/eic-seminarios.com && php artisan schedule:run >> /dev/null 2>&1
+* * * * * cd /var/www/sites/eic-seminarios.com && CLOUDWATCH_LOG_STREAM=scheduler php artisan schedule:run >> /dev/null 2>&1
 
 # Check for updates daily at 3am
 0 3 * * * cd /var/www/sites/eic-seminarios.com && ./update.sh >> /var/log/seminarios-update.log 2>&1

@@ -127,6 +127,23 @@ return [
             'path' => storage_path('logs/laravel.log'),
         ],
 
+        'cloudwatch' => [
+            'driver' => 'custom',
+            'via' => \Pagevamp\Logger::class,
+            'name' => env('APP_NAME', 'Laravel'),
+            'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
+            'version' => 'latest',
+            'credentials' => [
+                'key' => env('AWS_ACCESS_KEY_ID'),
+                'secret' => env('AWS_SECRET_ACCESS_KEY'),
+            ],
+            'retention' => env('CLOUDWATCH_LOG_RETENTION_DAYS', 14),
+            'group_name' => env('CLOUDWATCH_LOG_GROUP', 'laravel'),
+            'stream_name' => env('CLOUDWATCH_LOG_STREAM', 'server'),
+            'level' => env('LOG_LEVEL', 'debug'),
+            'batch_size' => env('CLOUDWATCH_LOG_BATCH_SIZE', 10),
+        ],
+
     ],
 
 ];

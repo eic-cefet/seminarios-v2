@@ -2,6 +2,7 @@
 
 use App\Exceptions\ApiException;
 use App\Http\Middleware\EnsureUserIsAdmin;
+use App\Http\Middleware\LogRequestMiddleware;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -25,6 +26,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->statefulApi();
         $middleware->trustProxies(at: '*');
+        $middleware->append(LogRequestMiddleware::class);
         $middleware->alias([
             'admin' => EnsureUserIsAdmin::class,
         ]);
