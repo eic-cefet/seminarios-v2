@@ -12,11 +12,7 @@ class EnsureUserIsAdmin
     public function handle(Request $request, Closure $next): Response
     {
         if (! $request->user() || ! $request->user()->hasAnyRole(['admin', 'teacher'])) {
-            if ($request->expectsJson() || $request->is('api/*')) {
-                throw ApiException::forbidden();
-            }
-
-            return redirect('/');
+            throw ApiException::forbidden();
         }
 
         return $next($request);

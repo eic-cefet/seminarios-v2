@@ -384,6 +384,115 @@ describe('PUT /api/admin/seminars/{id}', function () {
 
         $response->assertForbidden();
     });
+
+    it('updates nullable description field', function () {
+        actingAsAdmin();
+
+        $seminar = Seminar::factory()->create(['description' => 'Original description']);
+
+        $response = $this->putJson("/api/admin/seminars/{$seminar->id}", [
+            'description' => null,
+        ]);
+
+        $response->assertSuccessful();
+        expect($seminar->fresh()->description)->toBeNull();
+    });
+
+    it('updates room_link to null', function () {
+        actingAsAdmin();
+
+        $seminar = Seminar::factory()->create(['room_link' => 'https://example.com']);
+
+        $response = $this->putJson("/api/admin/seminars/{$seminar->id}", [
+            'room_link' => null,
+        ]);
+
+        $response->assertSuccessful();
+        expect($seminar->fresh()->room_link)->toBeNull();
+    });
+
+    it('updates seminar_type_id to null', function () {
+        actingAsAdmin();
+
+        $type = SeminarType::factory()->create();
+        $seminar = Seminar::factory()->create(['seminar_type_id' => $type->id]);
+
+        $response = $this->putJson("/api/admin/seminars/{$seminar->id}", [
+            'seminar_type_id' => null,
+        ]);
+
+        $response->assertSuccessful();
+        expect($seminar->fresh()->seminar_type_id)->toBeNull();
+    });
+
+    it('updates workshop_id to null', function () {
+        actingAsAdmin();
+
+        $workshop = Workshop::factory()->create();
+        $seminar = Seminar::factory()->create(['workshop_id' => $workshop->id]);
+
+        $response = $this->putJson("/api/admin/seminars/{$seminar->id}", [
+            'workshop_id' => null,
+        ]);
+
+        $response->assertSuccessful();
+        expect($seminar->fresh()->workshop_id)->toBeNull();
+    });
+
+    it('updates scheduled_at', function () {
+        actingAsAdmin();
+
+        $seminar = Seminar::factory()->create();
+        $newDate = now()->addDays(30)->toDateTimeString();
+
+        $response = $this->putJson("/api/admin/seminars/{$seminar->id}", [
+            'scheduled_at' => $newDate,
+        ]);
+
+        $response->assertSuccessful();
+    });
+
+    it('updates active status', function () {
+        actingAsAdmin();
+
+        $seminar = Seminar::factory()->create(['active' => true]);
+
+        $response = $this->putJson("/api/admin/seminars/{$seminar->id}", [
+            'active' => false,
+        ]);
+
+        $response->assertSuccessful();
+        expect($seminar->fresh()->active)->toBeFalse();
+    });
+
+    it('updates seminar_location_id', function () {
+        actingAsAdmin();
+
+        $newLocation = SeminarLocation::factory()->create();
+        $seminar = Seminar::factory()->create();
+
+        $response = $this->putJson("/api/admin/seminars/{$seminar->id}", [
+            'seminar_location_id' => $newLocation->id,
+        ]);
+
+        $response->assertSuccessful();
+        expect($seminar->fresh()->seminar_location_id)->toBe($newLocation->id);
+    });
+
+    it('updates speaker_ids', function () {
+        actingAsAdmin();
+
+        $seminar = Seminar::factory()->create();
+        $newSpeaker = User::factory()->create();
+        UserSpeakerData::create(['user_id' => $newSpeaker->id, 'slug' => 'new-speaker']);
+
+        $response = $this->putJson("/api/admin/seminars/{$seminar->id}", [
+            'speaker_ids' => [$newSpeaker->id],
+        ]);
+
+        $response->assertSuccessful();
+        expect($seminar->fresh()->speakers->pluck('id')->toArray())->toBe([$newSpeaker->id]);
+    });
 });
 
 describe('DELETE /api/admin/seminars/{id}', function () {

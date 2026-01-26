@@ -5,6 +5,7 @@ use App\Models\Rating;
 use App\Models\Registration;
 use App\Models\Seminar;
 use App\Models\User;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Queue;
 
 describe('reminders:evaluations command', function () {
@@ -250,6 +251,36 @@ describe('reminders:evaluations command', function () {
             ->assertExitCode(0);
 
         Queue::assertNothingPushed();
+    });
+
+    it('sends reminders synchronously with --sync option', function () {
+        Queue::fake();
+        Mail::fake();
+
+        $threeDaysAgo = now()->subDays(3);
+        $seminar = Seminar::factory()->create([
+            'scheduled_at' => $threeDaysAgo,
+        ]);
+
+        $user = User::factory()->create();
+
+        Registration::factory()->create([
+            'user_id' => $user->id,
+            'seminar_id' => $seminar->id,
+            'present' => true,
+            'evaluation_sent_at' => null,
+        ]);
+
+        $this->artisan('reminders:evaluations --sync')
+            ->expectsOutputToContain('Found 1 users with pending evaluations.')
+            ->expectsOutput('Dispatched 1 evaluation reminder(s).')
+            ->assertExitCode(0);
+
+        // Job should NOT be queued when using --sync
+        Queue::assertNothingPushed();
+
+        // Mail should have been queued (mailable implements ShouldQueue)
+        Mail::assertQueued(\App\Mail\EvaluationReminder::class);
     });
 
 });

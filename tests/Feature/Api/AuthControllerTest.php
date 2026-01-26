@@ -1,7 +1,9 @@
 <?php
 
+use App\Http\Controllers\Api\AuthController;
 use App\Models\Course;
 use App\Models\User;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Password;
@@ -62,13 +64,137 @@ describe('POST /api/auth/login', function () {
         $response->assertUnprocessable()
             ->assertJsonValidationErrors(['email']);
     });
+
+    it('handles legacy password format and rehashes on successful login', function () {
+        // Create a proper bcrypt hash and convert to legacy $2a$ format
+        $password = 'testpassword123';
+        $modernHash = password_hash($password, PASSWORD_BCRYPT);
+        $legacyHash = str_replace('$2y$', '$2a$', $modernHash);
+
+        // Debug: verify the hash replacement worked
+        expect($legacyHash)->toStartWith('$2a$');
+        expect(password_verify($password, $legacyHash))->toBeTrue();
+
+        $user = User::factory()->create();
+        // Update directly in DB to bypass the 'hashed' cast which would double-hash
+        \Illuminate\Support\Facades\DB::table('users')
+            ->where('id', $user->id)
+            ->update(['password' => $legacyHash]);
+        $user->refresh();
+
+        // Verify the setup is correct
+        expect($user->password)->toBe($legacyHash);
+
+        // Create request manually
+        $request = Request::create('/api/auth/login', 'POST', [
+            'email' => $user->email,
+            'password' => $password,
+        ]);
+
+        // Create a custom controller that overrides the Hash check behavior
+        $callCount = 0;
+        $originalCheck = fn ($value, $hashedValue) => Hash::driver()->check($value, $hashedValue);
+
+        // Bind a custom hasher to 'hash'
+        $this->app->singleton('hash', function () use (&$callCount, $password, $legacyHash) {
+            return new class($callCount) extends \Illuminate\Hashing\HashManager
+            {
+                private int $callCount;
+
+                public function __construct(&$callCount)
+                {
+                    parent::__construct(app());
+                    $this->callCount = &$callCount;
+                }
+
+                public function check($value, $hashedValue, array $options = []): bool
+                {
+                    $this->callCount++;
+                    if ($this->callCount === 1) {
+                        throw new \RuntimeException('Invalid hash format');
+                    }
+
+                    return password_verify($value, $hashedValue);
+                }
+            };
+        });
+
+        $response = $this->postJson('/api/auth/login', [
+            'email' => $user->email,
+            'password' => $password,
+        ]);
+
+        $response->assertSuccessful()
+            ->assertJsonPath('user.id', $user->id);
+
+        // Verify password was rehashed
+        $user->refresh();
+        expect($user->password)->not->toBe($legacyHash);
+    });
+
+    it('returns error for wrong password with legacy format', function () {
+        // Create a proper bcrypt hash and convert to legacy $2a$ format
+        $legacyHash = str_replace('$2y$', '$2a$', password_hash('realpassword', PASSWORD_BCRYPT));
+
+        $user = User::factory()->create();
+        // Update directly in DB to bypass the 'hashed' cast which would double-hash
+        \Illuminate\Support\Facades\DB::table('users')
+            ->where('id', $user->id)
+            ->update(['password' => $legacyHash]);
+        $user->refresh();
+
+        // Verify the setup is correct
+        expect($user->password)->toBe($legacyHash);
+
+        // Bind a custom hasher that always throws
+        $this->app->singleton('hash', function () {
+            return new class extends \Illuminate\Hashing\HashManager
+            {
+                public function __construct()
+                {
+                    parent::__construct(app());
+                }
+
+                public function check($value, $hashedValue, array $options = []): bool
+                {
+                    throw new \RuntimeException('Invalid hash format');
+                }
+            };
+        });
+
+        $response = $this->postJson('/api/auth/login', [
+            'email' => $user->email,
+            'password' => 'wrongpassword',
+        ]);
+
+        $response->assertStatus(401)
+            ->assertJsonPath('message', 'Credenciais inválidas');
+    });
 });
 
 describe('POST /api/auth/logout', function () {
-    // Note: Logout requires Sanctum's stateful SPA authentication with session support
-    // This works in production when the SPA makes requests from a recognized domain
-    // but is difficult to test in isolation without the full SPA/session setup
-    it('logs out authenticated user')->skip('Requires Sanctum stateful SPA setup');
+    it('logs out authenticated user with session', function () {
+        $user = User::factory()->create();
+
+        // Set Origin header to make request appear stateful (from localhost)
+        $headers = ['Origin' => 'http://localhost'];
+
+        // First login to establish a session
+        $loginResponse = $this->withHeaders($headers)
+            ->postJson('/api/auth/login', [
+                'email' => $user->email,
+                'password' => 'password',
+            ]);
+
+        $loginResponse->assertSuccessful();
+
+        // Now logout using the same session (with same headers)
+        $response = $this->withHeaders($headers)
+            ->postJson('/api/auth/logout');
+
+        $response->assertSuccessful()
+            ->assertJsonPath('message', 'Logout realizado com sucesso');
+    });
 });
 
 describe('GET /api/auth/me', function () {

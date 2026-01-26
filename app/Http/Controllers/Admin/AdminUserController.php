@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Enums\CourseSituation;
-use App\Exceptions\ApiException;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Admin\AdminUserResource;
 use App\Models\User;
@@ -186,11 +185,8 @@ class AdminUserController extends Controller
 
     public function destroy(Request $request, User $user): JsonResponse
     {
+        // Note: UserPolicy::delete() already prevents self-deletion
         Gate::authorize('delete', $user);
-
-        if ($request->user()->id === $user->id) {
-            throw ApiException::cannotDeleteSelf();
-        }
 
         $user->delete();
 

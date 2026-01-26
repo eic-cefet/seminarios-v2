@@ -4,6 +4,7 @@ use App\Jobs\GenerateCertificateJob;
 use App\Models\Registration;
 use App\Models\Seminar;
 use App\Models\User;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Queue;
 
 describe('certificates:process-pending command', function () {
@@ -177,6 +178,36 @@ describe('certificates:process-pending command', function () {
             ->assertExitCode(0);
 
         Queue::assertPushed(GenerateCertificateJob::class, 3);
+    });
+
+    it('processes synchronously with --sync option', function () {
+        Queue::fake();
+        Mail::fake();
+
+        $registration = Registration::factory()->present()->create([
+            'certificate_sent' => false,
+            'certificate_code' => null,
+        ]);
+
+        // Mock the CertificateService with shouldIgnoreMissing to handle all methods
+        $mockCertificateService = Mockery::mock(\App\Services\CertificateService::class)->shouldIgnoreMissing();
+        $mockCertificateService->shouldReceive('ensureCertificateCode')
+            ->andReturn('CERT-123');
+        $mockCertificateService->shouldReceive('jpgExists')
+            ->andReturn(true);
+        $mockCertificateService->shouldReceive('pdfExists')
+            ->andReturn(true);
+
+        $this->app->instance(\App\Services\CertificateService::class, $mockCertificateService);
+
+        // Use --no-email to avoid S3 storage operations
+        $this->artisan('certificates:process-pending --sync --no-email')
+            ->expectsOutputToContain('Found 1 registration(s)')
+            ->expectsOutput('Dispatched 1 certificate job(s).')
+            ->assertExitCode(0);
+
+        // Job should NOT be queued when using --sync
+        Queue::assertNothingPushed();
     });
 
 });

@@ -12,8 +12,6 @@ use App\Models\Seminar;
 use App\Models\Subject;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
-use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class AdminDashboardController extends Controller
 {
@@ -62,15 +60,5 @@ class AdminDashboardController extends Controller
                 ],
             ],
         ]);
-    }
-
-    public function seminars(Request $request): AnonymousResourceCollection
-    {
-        $seminars = Seminar::query()
-            ->select(['id', 'name', 'slug', 'scheduled_at'])
-            ->orderByDesc('scheduled_at')
-            ->get();
-
-        return AdminSeminarResource::collection($seminars);
     }
 }

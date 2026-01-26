@@ -4,6 +4,7 @@ use App\Jobs\SendSeminarReminderJob;
 use App\Models\Registration;
 use App\Models\Seminar;
 use App\Models\User;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Queue;
 
 describe('reminders:seminars command', function () {
@@ -218,6 +219,36 @@ describe('reminders:seminars command', function () {
             ->assertExitCode(0);
 
         Queue::assertNothingPushed();
+    });
+
+    it('sends reminders synchronously with --sync option', function () {
+        Queue::fake();
+        Mail::fake();
+
+        $tomorrow = now()->addDay()->setHour(14);
+        $seminar = Seminar::factory()->create([
+            'scheduled_at' => $tomorrow,
+            'active' => true,
+        ]);
+
+        $user = User::factory()->create();
+
+        Registration::factory()->create([
+            'user_id' => $user->id,
+            'seminar_id' => $seminar->id,
+            'reminder_sent' => false,
+        ]);
+
+        $this->artisan('reminders:seminars --sync')
+            ->expectsOutputToContain('Found 1 users to remind.')
+            ->expectsOutput('Dispatched 1 reminder(s).')
+            ->assertExitCode(0);
+
+        // Job should NOT be queued when using --sync
+        Queue::assertNothingPushed();
+
+        // Mail should have been queued (mailable implements ShouldQueue)
+        Mail::assertQueued(\App\Mail\SeminarReminder::class);
     });
 
 });

@@ -101,14 +101,8 @@ class AdminSubjectController extends Controller
         ]);
 
         $targetId = $validated['target_id'];
+        // Validation rule 'different:target_id' already ensures no source_id equals target_id
         $sourceIds = $validated['source_ids'];
-
-        // Make sure target is not in source
-        $sourceIds = array_filter($sourceIds, fn ($id) => $id !== $targetId);
-
-        if (empty($sourceIds)) {
-            throw ApiException::cannotMergeSubjects();
-        }
 
         DB::beginTransaction();
         try {

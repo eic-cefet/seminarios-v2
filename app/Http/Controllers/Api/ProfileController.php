@@ -18,12 +18,8 @@ class ProfileController extends Controller
      */
     public function show(Request $request): JsonResponse
     {
+        // auth:sanctum middleware ensures $user is not null
         $user = $request->user();
-
-        if (! $user) {
-            throw ApiException::unauthenticated();
-        }
-
         $user->load('studentData.course');
 
         return response()->json([
@@ -127,11 +123,8 @@ class ProfileController extends Controller
      */
     public function updatePassword(Request $request): JsonResponse
     {
+        // auth:sanctum middleware ensures $user is not null
         $user = $request->user();
-
-        if (! $user) {
-            throw ApiException::unauthenticated();
-        }
 
         $validated = $request->validate([
             'current_password' => ['required', 'string'],
@@ -156,12 +149,8 @@ class ProfileController extends Controller
      */
     public function registrations(Request $request): JsonResponse
     {
+        // auth:sanctum middleware ensures $user is not null
         $user = $request->user();
-
-        if (! $user) {
-            throw ApiException::unauthenticated();
-        }
-
         $perPage = $this->getPerPage($request);
 
         $paginator = $user->registrations()
@@ -206,11 +195,8 @@ class ProfileController extends Controller
      */
     public function pendingEvaluations(Request $request): JsonResponse
     {
+        // auth:sanctum middleware ensures $user is not null
         $user = $request->user();
-
-        if (! $user) {
-            throw ApiException::unauthenticated();
-        }
 
         // Get registrations where:
         // - User was present
@@ -256,11 +242,8 @@ class ProfileController extends Controller
      */
     public function submitRating(Request $request, int $seminarId): JsonResponse
     {
+        // auth:sanctum middleware ensures $user is not null
         $user = $request->user();
-
-        if (! $user) {
-            throw ApiException::unauthenticated();
-        }
 
         $validated = $request->validate([
             'score' => ['required', 'integer', 'min:1', 'max:5'],
@@ -318,12 +301,8 @@ class ProfileController extends Controller
      */
     public function certificates(Request $request): JsonResponse
     {
+        // auth:sanctum middleware ensures $user is not null
         $user = $request->user();
-
-        if (! $user) {
-            throw ApiException::unauthenticated();
-        }
-
         $perPage = $this->getPerPage($request);
 
         $paginator = $user->registrations()

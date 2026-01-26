@@ -15,31 +15,22 @@ use Laravel\Socialite\Facades\Socialite;
 class SocialAuthController extends Controller
 {
     /**
-     * Supported OAuth providers
-     */
-    private const PROVIDERS = ['google', 'github'];
-
-    /**
      * Redirect to OAuth provider
+     *
+     * Note: Route constraint (->where('provider', 'google|github')) ensures only valid providers reach this method
      */
     public function redirect(string $provider): RedirectResponse
     {
-        if (! in_array($provider, self::PROVIDERS)) {
-            abort(404, 'Provider not supported');
-        }
-
         return Socialite::driver($provider)->redirect();
     }
 
     /**
      * Handle OAuth provider callback
+     *
+     * Note: Route constraint (->where('provider', 'google|github')) ensures only valid providers reach this method
      */
     public function callback(string $provider): RedirectResponse
     {
-        if (! in_array($provider, self::PROVIDERS)) {
-            abort(404, 'Provider not supported');
-        }
-
         try {
             $socialUser = Socialite::driver($provider)->user();
 
