@@ -303,6 +303,41 @@ it('skips AWS calls when cached', function () {
     expect(true)->toBeTrue();
 });
 
+it('creates CloudWatch client with correct configuration', function () {
+    $provider = new CloudWatchServiceProvider($this->app);
+
+    $config = [
+        'region' => 'us-east-1',
+        'version' => 'latest',
+        'credentials' => [
+            'key' => 'test-key',
+            'secret' => 'test-secret',
+        ],
+    ];
+
+    $method = new ReflectionMethod($provider, 'createClient');
+    $client = $method->invoke($provider, $config);
+
+    expect($client)->toBeInstanceOf(CloudWatchLogsClient::class);
+});
+
+it('creates CloudWatch client with default version when not specified', function () {
+    $provider = new CloudWatchServiceProvider($this->app);
+
+    $config = [
+        'region' => 'sa-east-1',
+        'credentials' => [
+            'key' => 'test-key',
+            'secret' => 'test-secret',
+        ],
+    ];
+
+    $method = new ReflectionMethod($provider, 'createClient');
+    $client = $method->invoke($provider, $config);
+
+    expect($client)->toBeInstanceOf(CloudWatchLogsClient::class);
+});
+
 /**
  * Testable subclass that allows mocking the CloudWatch client.
  */
