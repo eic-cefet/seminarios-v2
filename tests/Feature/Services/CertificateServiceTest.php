@@ -232,3 +232,123 @@ describe('CertificateService calculateFontSize helper', function () {
         expect($method->invoke($service, 50, $thresholds, 39))->toBe(39);
     });
 });
+
+describe('CertificateService JPG generation', function () {
+    it('generates JPG certificate and uploads to S3', function () {
+        $registration = Registration::factory()->create([
+            'certificate_code' => null,
+        ]);
+
+        $service = new CertificateService;
+        $path = $service->generateJpg($registration);
+
+        // Should return the path
+        expect($path)->toContain('.jpg');
+
+        // File should exist in S3
+        Storage::disk('s3')->assertExists($path);
+
+        // Certificate code should be generated
+        expect($registration->fresh()->certificate_code)->not->toBeNull();
+
+        // Cache should be marked
+        expect(Cache::get("certificate_exists_jpg:{$registration->fresh()->certificate_code}"))->toBeTrue();
+    });
+
+    it('generates JPG with existing certificate code', function () {
+        $registration = Registration::factory()->create([
+            'certificate_code' => 'existing-jpg-code',
+        ]);
+
+        $service = new CertificateService;
+        $path = $service->generateJpg($registration);
+
+        expect($path)->toContain('existing-jpg-code.jpg');
+        Storage::disk('s3')->assertExists($path);
+    });
+
+    it('handles seminar type name formatting', function () {
+        $seminar = Seminar::factory()->create([
+            'scheduled_at' => now(),
+        ]);
+
+        // Get the seminar type and ensure it has a name
+        $seminar->load('seminarType');
+
+        $registration = Registration::factory()->create([
+            'seminar_id' => $seminar->id,
+            'certificate_code' => null,
+        ]);
+
+        $service = new CertificateService;
+        $path = $service->generateJpg($registration);
+
+        Storage::disk('s3')->assertExists($path);
+    });
+});
+
+describe('CertificateService PDF generation', function () {
+    it('generates PDF certificate and uploads to S3', function () {
+        $registration = Registration::factory()->create([
+            'certificate_code' => 'pdf-test-code',
+        ]);
+
+        $service = new CertificateService;
+
+        // First generate JPG (required for PDF)
+        $service->generateJpg($registration);
+
+        // Now generate PDF
+        $pdfPath = $service->generatePdf($registration);
+
+        expect($pdfPath)->toContain('.pdf');
+        Storage::disk('s3')->assertExists($pdfPath);
+
+        // Cache should be marked
+        expect(Cache::get('certificate_exists_pdf:pdf-test-code'))->toBeTrue();
+    });
+
+    it('generates JPG automatically if not exists when generating PDF', function () {
+        $registration = Registration::factory()->create([
+            'certificate_code' => 'auto-jpg-code',
+        ]);
+
+        $service = new CertificateService;
+
+        // Generate PDF without JPG first
+        $pdfPath = $service->generatePdf($registration);
+
+        // Both files should exist
+        Storage::disk('s3')->assertExists($pdfPath);
+        Storage::disk('s3')->assertExists($service->getJpgPath($registration));
+    });
+});
+
+describe('CertificateService signed URLs', function () {
+    it('generates signed URL for PDF', function () {
+        $registration = Registration::factory()->create([
+            'certificate_code' => 'signed-url-code',
+        ]);
+
+        // Create files in fake storage
+        Storage::disk('s3')->put('certificates/2024/test/signed-url-code.pdf', 'content');
+
+        $service = new CertificateService;
+        $url = $service->getSignedUrl($registration, 'pdf');
+
+        expect($url)->toBeString();
+    });
+
+    it('generates signed URL for JPG', function () {
+        $registration = Registration::factory()->create([
+            'certificate_code' => 'signed-url-jpg',
+        ]);
+
+        Storage::disk('s3')->put('certificates/2024/test/signed-url-jpg.jpg', 'content');
+
+        $service = new CertificateService;
+        $url = $service->getSignedUrl($registration, 'jpg');
+
+        expect($url)->toBeString();
+    });
+});

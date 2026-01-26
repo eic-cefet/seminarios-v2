@@ -16,6 +16,10 @@
         <include>
             <directory>app</directory>
         </include>
+        <exclude>
+            <directory>app/Console/Commands/Migration</directory>
+            <file>app/Console/Commands/ProcessMissingCertificatesCommand.php</file>
+        </exclude>
     </source>
     <php>
         <env name="APP_ENV" value="testing"/>
