@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-> NEVER RUN `pnpm run build` by your own. During the development of the solution I always will be watching using the dev command by my own.
+> **NEVER RUN `pnpm run build` by your own.** During the development of the solution I always will be watching using the dev command by my own.
 
 ## Project Overview
 
@@ -13,9 +13,6 @@ CEFET-RJ Seminários - A seminar and workshop management system for the School o
 ```bash
 # Development (runs server, queue, logs, and vite concurrently)
 composer run dev
-
-# Build frontend assets
-pnpm run build
 
 # Run tests
 php artisan test --compact
@@ -35,20 +32,23 @@ php artisan migrate:legacy --fresh --seed
 
 The application has two separate React SPAs served by Laravel:
 
-- **System SPA** (`resources/js/system/`) - Public-facing for students/attendees
-  - Routes: `/`, `/login`, `/cadastro`, `/topicos`, `/apresentacoes`, `/seminario/:slug`, `/workshops`, `/workshop/:id`
-  - Served at `/*` (catch-all except admin/api paths)
-
-- **Admin SPA** (`resources/js/admin/`) - Protected dashboard for administrators
-  - Routes under `/admin/*`
-  - Requires authentication middleware
+| SPA | Location | Description | Routes |
+|-----|----------|-------------|--------|
+| **System** | `resources/js/system/` | Public-facing for students/attendees | `/`, `/login`, `/cadastro`, `/topicos`, `/apresentacoes`, `/seminario/:slug`, `/workshops`, `/workshop/:id` |
+| **Admin** | `resources/js/admin/` | Protected dashboard for administrators | `/admin/*` |
 
 ### Shared Code
 
 `resources/js/shared/` contains code used by both SPAs:
-- `api/client.ts` - API client with typed endpoints (seminarsApi, subjectsApi, workshopsApi, etc.)
-- `types/index.ts` - TypeScript interfaces for API responses
-- `lib/utils.ts` - Utility functions (cn, formatDateTime, containsHTML)
+
+| File | Purpose |
+|------|---------|
+| `api/client.ts` | API client with typed endpoints (seminarsApi, subjectsApi, workshopsApi, etc.) |
+| `types/index.ts` | TypeScript interfaces for API responses |
+| `lib/utils.ts` | Utility functions (cn, formatDateTime, containsHTML) |
+| `components/` | Shared UI components (ReCaptcha, PageTitle, etc.) |
+| `contexts/` | React contexts (Auth, etc.) |
+| `hooks/` | Custom React hooks |
 
 ### Vite Path Aliases
 
@@ -59,44 +59,79 @@ The application has two separate React SPAs served by Laravel:
 '@shared' → resources/js/shared/
 ```
 
-### Backend API Structure
+### Backend Structure
 
-All public API routes are in `routes/api.php` under `/api/*`:
-- Controllers: `app/Http/Controllers/Api/`
-- Resources: `app/Http/Resources/` (SeminarResource, SubjectResource, etc.)
+| Directory | Purpose |
+|-----------|---------|
+| `app/Http/Controllers/Api/` | Public API controllers |
+| `app/Http/Controllers/Admin/` | Admin panel controllers |
+| `app/Http/Resources/` | Eloquent API Resources (JSON transformation) |
+| `app/Http/Requests/` | Form Request validation classes |
+| `app/Models/` | Eloquent models (13 models) |
+| `app/Services/` | Business logic (CertificateService, QrCodeService, SlugService) |
+| `app/Jobs/` | Queued jobs (certificates, reminders) |
+| `app/Mail/` | Mailable classes |
+| `routes/api.php` | Public API routes (`/api/*`) |
+| `routes/admin.php` | Admin routes |
 
 ### Domain Models
 
-Core entities: Seminar, Subject, Workshop, SeminarType, User, Registration, Rating
-- Seminars belong to Workshops (optional), have many Subjects (pivot), and Speakers (pivot with UserSpeakerData)
-- Users can be speakers (UserSpeakerData) or students (UserStudentData)
+Core entities and their relationships:
+
+- **Seminar** - Central entity, belongs to Workshop (optional), has many Subjects (pivot), Speakers (pivot with UserSpeakerData)
+- **Workshop** - Groups related seminars
+- **Subject** - Topics/disciplines for seminars
+- **User** - Can be speaker (UserSpeakerData) or student (UserStudentData)
+- **Registration** - User seminar registrations
+- **Rating** - Seminar evaluations
+- **PresenceLink** - QR-based attendance tracking
 
 ### Legacy Migration System
 
 Data is migrated from a legacy database using artisan commands in `app/Console/Commands/Migration/`:
-- `php artisan migrate:legacy` runs all migrations in order
-- Individual commands: `migrate:seminars`, `migrate:users`, `migrate:workshops`, etc.
-- Legacy DB connection configured as `legacy` in `config/database.php`
+
+```bash
+php artisan migrate:legacy           # Run all migrations in order
+php artisan migrate:legacy --fresh   # Fresh migration with seeding
+```
+
+Individual commands: `migrate:seminars`, `migrate:users`, `migrate:workshops`, etc.
+Legacy DB connection configured as `legacy` in `config/database.php`.
 
 ## Key Conventions
 
 ### Frontend
-- Use TanStack Query for data fetching
-- Use Radix UI primitives for accessible components
-- Tailwind CSS v4 (CSS-first config with `@theme` directive)
-- Lucide React for icons
+
+- **Data Fetching:** TanStack Query with typed API client
+- **UI Components:** Radix UI primitives for accessibility
+- **Styling:** Tailwind CSS v4 (CSS-first config with `@theme` directive)
+- **Icons:** Lucide React
+- **Forms:** React Hook Form + Zod validation
+- **Routing:** React Router DOM v7
 
 ### Backend
-- API Resources for JSON transformation
-- Eloquent with eager loading (avoid N+1)
-- Form Request classes for validation
-- Pest for testing
+
+- **JSON Responses:** Always use API Resources for transformation
+- **Database:** Eloquent with eager loading (avoid N+1 queries)
+- **Validation:** Form Request classes (never inline in controllers)
+- **Testing:** Pest v4 (feature, unit, and browser tests)
+- **Authorization:** Spatie Permission (admin, teacher roles)
 
 ### OAuth Flow
+
 Social auth uses one-time code exchange pattern:
-1. `/auth/{provider}` → OAuth provider
+
+1. `/auth/{provider}` → Redirects to OAuth provider (Google)
 2. Provider callback generates code stored in cache
 3. Frontend exchanges code via `POST /api/auth/exchange`
+
+### Test Helpers (tests/Pest.php)
+
+```php
+actingAsUser()    // Create and authenticate regular user
+actingAsAdmin()   // Create and authenticate admin user
+actingAsTeacher() // Create and authenticate teacher user
+```
 
 ===
 
@@ -110,7 +145,7 @@ The Laravel Boost guidelines are specifically curated by Laravel maintainers for
 ## Foundational Context
 This application is a Laravel application and its main Laravel ecosystems package & versions are below. You are an expert with them all. Ensure you abide by these specific packages & versions.
 
-- php - 8.4.1
+- php - 8.5.0
 - laravel/framework (LARAVEL) - v12
 - laravel/octane (OCTANE) - v2
 - laravel/prompts (PROMPTS) - v0
@@ -211,6 +246,13 @@ protected function isAccessible(User $user, ?string $path = null): bool
 
 ## Enums
 - Typically, keys in an Enum should be TitleCase. For example: `FavoritePerson`, `BestLake`, `Monthly`.
+
+=== tests rules ===
+
+## Test Enforcement
+
+- Every change must be programmatically tested. Write a new test or update an existing test, then run the affected tests to make sure they pass.
+- Run the minimum number of tests needed to ensure code quality and speed. Use `php artisan test --compact` with a specific filename or filter.
 
 === laravel/core rules ===
 

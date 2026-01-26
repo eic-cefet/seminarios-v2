@@ -33,7 +33,7 @@ jobs:
         with:
           php-version: '8.4'
           extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, pdo_mysql, bcmath, intl, gd, exif, iconv
-          coverage: none
+          coverage: pcov
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -83,8 +83,8 @@ jobs:
       - name: Generate application key
         run: php artisan key:generate
 
-      - name: Run tests
-        run: php artisan test --compact
+      - name: Run tests with coverage
+        run: php artisan test --compact --coverage-clover=coverage.xml
         env:
           DB_CONNECTION: mysql
           DB_HOST: 127.0.0.1
@@ -92,3 +92,10 @@ jobs:
           DB_DATABASE: testing
           DB_USERNAME: root
           DB_PASSWORD: password
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          files: coverage.xml
+          fail_ci_if_error: false
+          verbose: true
