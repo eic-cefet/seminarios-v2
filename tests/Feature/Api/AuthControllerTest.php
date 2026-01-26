@@ -1,6 +1,5 @@
 <?php
 
-use App\Http\Controllers\Api\AuthController;
 use App\Models\Course;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -96,7 +95,7 @@ describe('POST /api/auth/login', function () {
         $originalCheck = fn ($value, $hashedValue) => Hash::driver()->check($value, $hashedValue);
 
         // Bind a custom hasher to 'hash'
-        $this->app->singleton('hash', function () use (&$callCount, $password, $legacyHash) {
+        $this->app->singleton('hash', function () use (&$callCount) {
             return new class($callCount) extends \Illuminate\Hashing\HashManager
             {
                 private int $callCount;
