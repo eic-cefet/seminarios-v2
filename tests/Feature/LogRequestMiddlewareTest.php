@@ -3,6 +3,9 @@
 use Illuminate\Support\Facades\Log;
 
 beforeEach(function () {
+    // Enable request logging for these specific tests
+    config(['logging.enable_request_logging' => true]);
+
     // Clear the default log file before each test
     $logPath = storage_path('logs/laravel.log');
     if (file_exists($logPath)) {

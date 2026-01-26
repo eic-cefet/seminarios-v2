@@ -46,6 +46,10 @@ class LogRequestMiddleware
      */
     public function terminate(Request $request, Response $response): void
     {
+        if (! config('logging.enable_request_logging', true)) {
+            return;
+        }
+
         $startTime = $request->attributes->get('_log_start_time');
         if ($startTime === null) {
             return;

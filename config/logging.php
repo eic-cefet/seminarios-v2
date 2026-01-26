@@ -36,6 +36,9 @@ return [
         'trace' => env('LOG_DEPRECATIONS_TRACE', false),
     ],
 
+    'enable_request_logging' => env('LOGGING_ENABLE_REQUEST_LOGGING', true),
+    'enable_cloudwatch_boot' => env('LOGGING_ENABLE_CLOUDWATCH_BOOT', true),
+
     /*
     |--------------------------------------------------------------------------
     | Log Channels

@@ -35,5 +35,7 @@
         <env name="PULSE_ENABLED" value="false"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
         <env name="NIGHTWATCH_ENABLED" value="false"/>
+        <env name="LOGGING_ENABLE_REQUEST_LOGGING" value="false"/>
+        <env name="LOGGING_ENABLE_CLOUDWATCH_BOOT" value="false"/>
     </php>
 </phpunit>

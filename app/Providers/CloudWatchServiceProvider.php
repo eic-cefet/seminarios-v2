@@ -30,9 +30,9 @@ class CloudWatchServiceProvider extends ServiceProvider
         });
     }
 
-    private function shouldInitialize(): bool
+    protected function shouldInitialize(): bool
     {
-        if ($this->app->runningUnitTests()) {
+        if (! config('logging.enable_cloudwatch_boot', true)) {
             return false;
         }
 
@@ -42,7 +42,7 @@ class CloudWatchServiceProvider extends ServiceProvider
             return false;
         }
 
-        if (empty($config['sdk']['credentials']['key'])) {
+        if (empty($config['credentials']['key'])) {
             return false;
         }
 
@@ -52,14 +52,10 @@ class CloudWatchServiceProvider extends ServiceProvider
         return $defaultChannel === 'cloudwatch' || in_array('cloudwatch', $logStack);
     }
 
-    private function ensureResourcesExist(array $config): void
+    protected function ensureResourcesExist(array $config): void
     {
         try {
-            $client = new CloudWatchLogsClient([
-                'region' => $config['sdk']['region'],
-                'version' => 'latest',
-                'credentials' => $config['sdk']['credentials'],
-            ]);
+            $client = $this->createClient($config);
 
             try {
                 $client->createLogGroup(['logGroupName' => $config['group_name']]);
@@ -82,5 +78,14 @@ class CloudWatchServiceProvider extends ServiceProvider
         } catch (\Throwable $e) {
             report($e);
         }
+    }
+
+    protected function createClient(array $config): CloudWatchLogsClient
+    {
+        return new CloudWatchLogsClient([
+            'region' => $config['region'],
+            'version' => $config['version'] ?? 'latest',
+            'credentials' => $config['credentials'],
+        ]);
     }
 }
