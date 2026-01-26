@@ -242,63 +242,38 @@ sudo a2enmod rewrite headers
 sudo ln -sf /var/www/sites/eic-seminarios.com/public /var/www/html/seminarios
 ```
 
-### 3. Create Apache Configuration
+### 3. Enable AllowOverride for .htaccess
 
-Create `/etc/apache2/sites-available/seminarios.conf`:
+Laravel includes a `.htaccess` file that handles URL rewriting. Ensure Apache allows it:
 
 ```bash
-sudo nano /etc/apache2/sites-available/seminarios.conf
+sudo nano /etc/apache2/apache2.conf
 ```
 
-Add the following content:
+Find the `/var/www/` directory block and ensure `AllowOverride All`:
 
 ```apache
-<VirtualHost *:80>
-    ServerAdmin webmaster@localhost
-    DocumentRoot /var/www/html
-
-    # Alias for /seminarios
-    Alias /seminarios /var/www/sites/eic-seminarios.com/public
-
-    <Directory /var/www/sites/eic-seminarios.com/public>
-        Options -Indexes +FollowSymLinks
-        AllowOverride All
-        Require all granted
-
-        # Handle Laravel routing
-        <IfModule mod_rewrite.c>
-            RewriteEngine On
-            RewriteBase /seminarios/
-            RewriteCond %{REQUEST_FILENAME} !-f
-            RewriteCond %{REQUEST_FILENAME} !-d
-            RewriteRule ^ index.php [L]
-        </IfModule>
-    </Directory>
-
-    # Security headers
-    <IfModule mod_headers.c>
-        Header always set X-Content-Type-Options "nosniff"
-        Header always set X-Frame-Options "SAMEORIGIN"
-        Header always set X-XSS-Protection "1; mode=block"
-    </IfModule>
-
-    ErrorLog ${APACHE_LOG_DIR}/seminarios_error.log
-    CustomLog ${APACHE_LOG_DIR}/seminarios_access.log combined
-</VirtualHost>
+<Directory /var/www/>
+    Options Indexes FollowSymLinks
+    AllowOverride All
+    Require all granted
+</Directory>
 ```
 
-### 4. Enable Site and Restart Apache
+### 4. Restart Apache
 
 ```bash
-sudo a2ensite seminarios.conf
 sudo systemctl restart apache2
 ```
 
-### 5. Verify Apache Configuration
+### 5. Verify Configuration
 
 ```bash
+# Check Apache config syntax
 sudo apache2ctl configtest
-# Should output: Syntax OK
+
+# Verify modules are loaded
+apache2ctl -M | grep -E "rewrite|headers"
 ```
 
 ---
@@ -527,7 +502,7 @@ sudo tail -f /var/log/seminarios-worker.log
 |------|------|
 | Application | `/var/www/sites/eic-seminarios.com` |
 | Public symlink | `/var/www/html/seminarios` |
-| Apache config | `/etc/apache2/sites-available/seminarios.conf` |
+| Apache config | `/etc/apache2/apache2.conf` |
 | Supervisor config | `/etc/supervisor/conf.d/seminarios-worker.conf` |
 | Laravel logs | `/var/www/sites/eic-seminarios.com/storage/logs/` |
 | Worker logs | `/var/log/seminarios-worker.log` |
