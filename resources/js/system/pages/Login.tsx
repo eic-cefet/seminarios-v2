@@ -1,13 +1,17 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import * as Label from "@radix-ui/react-label";
 import { Layout } from "../components/Layout";
 import { PageTitle } from "@shared/components/PageTitle";
 import { GoogleIcon, GithubIcon } from "@shared/components/icons/SocialIcons";
 import { buildUrl, cn } from "@shared/lib/utils";
 import { analytics } from "@shared/lib/analytics";
+import { useAuth } from "@shared/contexts/AuthContext";
+import { getErrorMessage } from "@shared/lib/errors";
 
 export default function Login() {
+    const navigate = useNavigate();
+    const { login } = useAuth();
     const [formData, setFormData] = useState({
         email: "",
         password: "",
@@ -28,13 +32,11 @@ export default function Login() {
         setLoading(true);
 
         try {
-            // TODO: Implement actual login
-            console.log("Login:", formData);
-            await new Promise((resolve) => setTimeout(resolve, 1000));
+            await login(formData.email, formData.password);
             analytics.event("login_email");
-            // Redirect to home after success
-        } catch {
-            setError("E-mail ou senha incorretos");
+            navigate("/");
+        } catch (err) {
+            setError(getErrorMessage(err));
             analytics.event("login_failed", { method: "email" });
         } finally {
             setLoading(false);
