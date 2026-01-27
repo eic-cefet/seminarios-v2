@@ -3,6 +3,7 @@ name: PR Checks
 on:
   pull_request:
     branches: [main]
+    types: [opened, synchronize, edited, reopened]
 
 concurrency:
   group: pr-${{ github.event.pull_request.number }}
@@ -81,14 +82,14 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.4'
+          php-version: "8.4"
           extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, pdo_mysql, bcmath, intl, gd, exif, iconv
           coverage: pcov
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: "20"
 
       - name: Install pnpm
         uses: pnpm/action-setup@v4
@@ -162,7 +163,7 @@ jobs:
         if: steps.filter.outputs.frontend == 'true'
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: "20"
 
       - name: Install pnpm
         if: steps.filter.outputs.frontend == 'true'
