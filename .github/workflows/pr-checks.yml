@@ -221,7 +221,7 @@ jobs:
              - Performance considerations
              Be concise and actionable.
 
-          2. **Categorization**: Categorize this PR with applicable labels from:
+          2. **Categorization**: You MUST categorize this PR with AT LEAST ONE label from:
              - "feature" (new functionality)
              - "bugfix" (bug fixes)
              - "documentation" (docs, README, comments)
@@ -231,6 +231,8 @@ jobs:
              - "config" (configuration files, env, CI/CD)
              - "refactor" (code restructuring without new features)
              - "dependencies" (package updates)
+
+             Always pick at least one label. Multiple labels are encouraged if applicable.
 
           **Response format** (MUST follow exactly):
           ```review
