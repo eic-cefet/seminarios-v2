@@ -277,7 +277,15 @@ jobs:
     needs: [checklist, tests, typecheck, claude-review]
     if: always()
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
       - name: Check job results
         run: |
           echo "Checklist: ${{ needs.checklist.result }}"
@@ -305,6 +313,127 @@ jobs:
 
           echo "All checks passed or were appropriately skipped"
 
+      - name: Categorize PR with Claude
+        id: categorize
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          git fetch origin ${{ github.base_ref }}
+          git diff origin/${{ github.base_ref }}...HEAD --name-only > /tmp/files.txt
+          git diff origin/${{ github.base_ref }}...HEAD --stat > /tmp/stats.txt
+
+          # Build the prompt
+          cat > /tmp/prompt.txt << 'PROMPT'
+          Analyze these changed files and categorize the PR. Return ONLY a JSON array of applicable labels from this list:
+          - "feature" (new functionality)
+          - "bugfix" (bug fixes)
+          - "documentation" (docs, README, comments)
+          - "tests" (test files)
+          - "frontend" (resources/js, CSS, views)
+          - "backend" (PHP, routes, controllers, models)
+          - "config" (configuration files, env, CI/CD)
+          - "refactor" (code restructuring without new features)
+          - "dependencies" (package updates)
+
+          Return ONLY valid JSON array like: ["feature", "frontend", "tests"]
+          No explanation, just the JSON array.
+
+          Changed files:
+          PROMPT
+
+          cat /tmp/files.txt >> /tmp/prompt.txt
+          echo -e "\n\nChange statistics:" >> /tmp/prompt.txt
+          cat /tmp/stats.txt >> /tmp/prompt.txt
+
+          jq -n --rawfile prompt /tmp/prompt.txt '{
+            model: "claude-sonnet-4-20250514",
+            max_tokens: 256,
+            messages: [{
+              role: "user",
+              content: $prompt
+            }]
+          }' > /tmp/payload.json
+
+          curl -s https://api.anthropic.com/v1/messages \
+            -H "Content-Type: application/json" \
+            -H "x-api-key: $ANTHROPIC_API_KEY" \
+            -H "anthropic-version: 2023-06-01" \
+            -d @/tmp/payload.json > /tmp/response.json
+
+          LABELS=$(jq -r '.content[0].text // "[]"' /tmp/response.json)
+          echo "Raw response: $LABELS"
+
+          # Validate it's valid JSON array
+          if echo "$LABELS" | jq -e 'type == "array"' > /dev/null 2>&1; then
+            echo "labels=$LABELS" >> $GITHUB_OUTPUT
+          else
+            echo "labels=[]" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Apply category labels
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const labelsJson = process.env.LABELS || '[]';
+            let labels = [];
+            try {
+              labels = JSON.parse(labelsJson);
+            } catch (e) {
+              console.log('Failed to parse labels:', e);
+              return;
+            }
+
+            if (labels.length === 0) {
+              console.log('No labels to apply');
+              return;
+            }
+
+            // Ensure labels exist
+            const validLabels = ['feature', 'bugfix', 'documentation', 'tests', 'frontend', 'backend', 'config', 'refactor', 'dependencies'];
+            const labelColors = {
+              'feature': '0e8a16',
+              'bugfix': 'd73a4a',
+              'documentation': '0075ca',
+              'tests': 'fbca04',
+              'frontend': '1d76db',
+              'backend': '5319e7',
+              'config': 'c5def5',
+              'refactor': 'fef2c0',
+              'dependencies': '006b75'
+            };
+
+            for (const label of labels) {
+              if (!validLabels.includes(label)) continue;
+
+              try {
+                await github.rest.issues.getLabel({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  name: label
+                });
+              } catch (e) {
+                if (e.status === 404) {
+                  await github.rest.issues.createLabel({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    name: label,
+                    color: labelColors[label] || 'ededed'
+                  });
+                }
+              }
+            }
+
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              labels: labels.filter(l => validLabels.includes(l))
+            });
+
+            console.log('Applied labels:', labels);
+        env:
+          LABELS: ${{ steps.categorize.outputs.labels }}
+
       - name: Generate GitHub App Token
         if: needs.checklist.outputs.automerge == 'true'
         id: app-token
@@ -313,9 +442,10 @@ jobs:
           app-id: ${{ secrets.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
 
-      - name: Enable automerge
+      - name: Add automerge label and enable automerge
         if: needs.checklist.outputs.automerge == 'true'
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
+          gh pr edit ${{ github.event.pull_request.number }} --add-label "automerge"
           gh pr merge ${{ github.event.pull_request.number }} --auto --squash
