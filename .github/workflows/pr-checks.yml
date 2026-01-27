@@ -423,6 +423,10 @@ jobs:
 
           echo "All checks passed or were appropriately skipped"
 
+      - name: Checkout code
+        if: needs.checklist.outputs.automerge == 'true'
+        uses: actions/checkout@v4
+
       - name: Generate GitHub App Token
         if: needs.checklist.outputs.automerge == 'true'
         id: app-token
