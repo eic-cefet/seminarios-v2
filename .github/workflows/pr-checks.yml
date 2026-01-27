@@ -197,48 +197,48 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Get PR diff
-        id: diff
-        run: |
-          git fetch origin ${{ github.base_ref }}
-          DIFF=$(git diff origin/${{ github.base_ref }}...HEAD)
-          # Truncate if too large (Claude has context limits)
-          if [ ${#DIFF} -gt 100000 ]; then
-            DIFF="${DIFF:0:100000}... [truncated]"
-          fi
-          echo "diff<<EOF" >> $GITHUB_OUTPUT
-          echo "$DIFF" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
-
-      - name: Review with Claude
+      - name: Get PR diff and review with Claude
         id: review
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
-          REVIEW=$(curl -s https://api.anthropic.com/v1/messages \
+          git fetch origin ${{ github.base_ref }}
+          git diff origin/${{ github.base_ref }}...HEAD > /tmp/diff.txt
+
+          # Truncate if too large
+          head -c 100000 /tmp/diff.txt > /tmp/diff_truncated.txt
+
+          # Build JSON payload using jq with file input
+          jq -n --rawfile diff /tmp/diff_truncated.txt '{
+            model: "claude-sonnet-4-20250514",
+            max_tokens: 4096,
+            messages: [{
+              role: "user",
+              content: ("Review the following code diff. Provide constructive feedback on:\n- Potential bugs or issues\n- Code quality and best practices\n- Security concerns\n- Performance considerations\n\nBe concise and actionable. Format your response in markdown.\n\nDiff:\n```\n" + $diff + "\n```")
+            }]
+          }' > /tmp/payload.json
+
+          # Call Claude API
+          curl -s https://api.anthropic.com/v1/messages \
             -H "Content-Type: application/json" \
             -H "x-api-key: $ANTHROPIC_API_KEY" \
             -H "anthropic-version: 2023-06-01" \
-            -d "$(jq -n \
-              --arg diff "${{ steps.diff.outputs.diff }}" \
-              '{
-                model: "claude-sonnet-4-20250514",
-                max_tokens: 4096,
-                messages: [{
-                  role: "user",
-                  content: "Review the following code diff. Provide constructive feedback on:\n- Potential bugs or issues\n- Code quality and best practices\n- Security concerns\n- Performance considerations\n\nBe concise and actionable. Format your response in markdown.\n\nDiff:\n```\n\($diff)\n```"
-                }]
-              }')" | jq -r '.content[0].text')
+            -d @/tmp/payload.json > /tmp/response.json
 
-          echo "review<<EOF" >> $GITHUB_OUTPUT
+          # Extract review text
+          REVIEW=$(jq -r '.content[0].text // .error.message // "Failed to get review"' /tmp/response.json)
+
+          # Save to output using delimiter
+          echo "review<<ENDOFREVIEW" >> $GITHUB_OUTPUT
           echo "$REVIEW" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          echo "ENDOFREVIEW" >> $GITHUB_OUTPUT
 
       - name: Post review comment
         uses: actions/github-script@v7
         with:
           script: |
-            const review = `## Claude Code Review\n\n${{ steps.review.outputs.review }}`;
+            const review = process.env.REVIEW_CONTENT;
+            const body = `## Claude Code Review\n\n${review}`;
 
             const { data: comments } = await github.rest.issues.listComments({
               owner: context.repo.owner,
@@ -255,16 +255,18 @@ jobs:
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 comment_id: botComment.id,
-                body: review
+                body: body
               });
             } else {
               await github.rest.issues.createComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 issue_number: context.issue.number,
-                body: review
+                body: body
               });
             }
+        env:
+          REVIEW_CONTENT: ${{ steps.review.outputs.review }}
 
   # ============================================
   # FINAL GATE (always runs, checks all jobs)
