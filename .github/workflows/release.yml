@@ -35,7 +35,7 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.4'
+          php-version: "8.4"
           extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, pdo_mysql, bcmath, intl, gd, exif, iconv
           coverage: pcov
 
@@ -43,7 +43,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: "20"
 
       - name: Install pnpm
         uses: pnpm/action-setup@v4
@@ -128,15 +128,13 @@ jobs:
         id: version
         run: |
           BODY='${{ steps.pr.outputs.body }}'
-          if echo "$BODY" | grep -qi "version_bump.*major"; then
-            echo "bump=major" >> $GITHUB_OUTPUT
-          elif echo "$BODY" | grep -qi "version_bump.*minor"; then
-            echo "bump=minor" >> $GITHUB_OUTPUT
-          elif echo "$BODY" | grep -qi "version_bump.*patch"; then
-            echo "bump=patch" >> $GITHUB_OUTPUT
-          else
-            echo "bump=patch" >> $GITHUB_OUTPUT
+          # Match table format: | version_bump | VALUE |
+          BUMP=$(echo "$BODY" | grep -oiP '\|\s*version_bump\s*\|\s*\K(patch|minor|major)(?=\s*\|)' | head -1 | tr '[:upper:]' '[:lower:]')
+          if [ -z "$BUMP" ]; then
+            BUMP="patch"
           fi
+          echo "Detected version bump: $BUMP"
+          echo "bump=$BUMP" >> $GITHUB_OUTPUT
 
       - name: Get latest tag and calculate new version
         if: steps.pr.outputs.found == 'true'
