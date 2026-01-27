@@ -107,6 +107,27 @@ describe('PUT /api/profile', function () {
 
         $response->assertUnauthorized();
     });
+
+    it('returns profile with student data but no course after update', function () {
+        $user = actingAsUser();
+
+        UserStudentData::factory()->create([
+            'user_id' => $user->id,
+            'course_id' => null, // No course associated
+            'course_situation' => CourseSituation::Studying,
+            'course_role' => CourseRole::Aluno,
+        ]);
+
+        $response = $this->putJson('/api/profile', [
+            'name' => 'Updated Name',
+            'email' => $user->email,
+        ]);
+
+        $response->assertSuccessful()
+            ->assertJsonPath('user.name', 'Updated Name')
+            ->assertJsonPath('user.student_data.course_situation', 'studying')
+            ->assertJsonPath('user.student_data.course', null);
+    });
 });
 
 describe('PUT /api/profile/student-data', function () {

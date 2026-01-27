@@ -1,5 +1,6 @@
 <?php
 
+use Monolog\Formatter\JsonFormatter;
 use Monolog\Handler\NullHandler;
 use Monolog\Handler\StreamHandler;
 use Monolog\Handler\SyslogUdpHandler;
@@ -145,6 +146,7 @@ return [
             'stream_name' => env('CLOUDWATCH_LOG_STREAM', 'server'),
             'level' => env('LOG_LEVEL', 'debug'),
             'batch_size' => env('CLOUDWATCH_LOG_BATCH_SIZE', 10),
+            'formatter' => JsonFormatter::class,
         ],
 
     ],

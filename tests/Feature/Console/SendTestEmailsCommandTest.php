@@ -99,4 +99,13 @@ describe('SendTestEmailsCommand', function () {
             ->expectsOutputToContain('Test data cleaned up')
             ->assertExitCode(0);
     });
+
+    it('handles exceptions during email sending', function () {
+        Mail::shouldReceive('to')
+            ->andThrow(new \RuntimeException('Mail server unavailable'));
+
+        $this->artisan('mail:send-tests', ['--to' => 'test@example.com', '--only' => 'welcome'])
+            ->expectsOutputToContain('Error: Mail server unavailable')
+            ->assertExitCode(1);
+    });
 });
