@@ -197,24 +197,68 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Get PR diff and review with Claude
-        id: review
+      - name: Get PR diff, review and categorize with Claude
+        id: claude
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
           git fetch origin ${{ github.base_ref }}
           git diff origin/${{ github.base_ref }}...HEAD > /tmp/diff.txt
+          git diff origin/${{ github.base_ref }}...HEAD --name-only > /tmp/files.txt
+          git diff origin/${{ github.base_ref }}...HEAD --stat > /tmp/stats.txt
 
-          # Truncate if too large
+          # Truncate diff if too large
           head -c 100000 /tmp/diff.txt > /tmp/diff_truncated.txt
 
-          # Build JSON payload using jq with file input
-          jq -n --rawfile diff /tmp/diff_truncated.txt '{
+          # Build combined prompt for review and categorization
+          cat > /tmp/prompt.txt << 'PROMPT'
+          You are reviewing a pull request. Do two things:
+
+          1. **Code Review**: Provide constructive feedback on:
+             - Potential bugs or issues
+             - Code quality and best practices
+             - Security concerns
+             - Performance considerations
+             Be concise and actionable.
+
+          2. **Categorization**: You MUST categorize this PR with AT LEAST ONE label from:
+             - "feature" (new functionality)
+             - "bugfix" (bug fixes)
+             - "documentation" (docs, README, comments)
+             - "tests" (test files)
+             - "frontend" (resources/js, CSS, views)
+             - "backend" (PHP, routes, controllers, models)
+             - "config" (configuration files, env, CI/CD)
+             - "refactor" (code restructuring without new features)
+             - "dependencies" (package updates)
+
+             Always pick at least one label. Multiple labels are encouraged if applicable.
+
+          **Response format** (MUST follow exactly):
+          ```review
+          [Your code review in markdown here]
+          ```
+
+          ```labels
+          ["label1", "label2"]
+          ```
+
+          Changed files:
+          PROMPT
+
+          cat /tmp/files.txt >> /tmp/prompt.txt
+          echo -e "\n\nChange statistics:" >> /tmp/prompt.txt
+          cat /tmp/stats.txt >> /tmp/prompt.txt
+          echo -e "\n\nDiff:\n\`\`\`" >> /tmp/prompt.txt
+          cat /tmp/diff_truncated.txt >> /tmp/prompt.txt
+          echo -e "\n\`\`\`" >> /tmp/prompt.txt
+
+          jq -n --rawfile prompt /tmp/prompt.txt '{
             model: "claude-sonnet-4-20250514",
             max_tokens: 4096,
             messages: [{
               role: "user",
-              content: ("Review the following code diff. Provide constructive feedback on:\n- Potential bugs or issues\n- Code quality and best practices\n- Security concerns\n- Performance considerations\n\nBe concise and actionable. Format your response in markdown.\n\nDiff:\n```\n" + $diff + "\n```")
+              content: $prompt
             }]
           }' > /tmp/payload.json
 
@@ -225,18 +269,35 @@ jobs:
             -H "anthropic-version: 2023-06-01" \
             -d @/tmp/payload.json > /tmp/response.json
 
-          # Extract review text
-          REVIEW=$(jq -r '.content[0].text // .error.message // "Failed to get review"' /tmp/response.json)
+          # Extract full response
+          RESPONSE=$(jq -r '.content[0].text // .error.message // "Failed to get response"' /tmp/response.json)
 
-          # Save to output using delimiter
+          # Extract review (between ```review and ```)
+          REVIEW=$(echo "$RESPONSE" | sed -n '/```review/,/```/p' | sed '1d;$d')
+          if [ -z "$REVIEW" ]; then
+            REVIEW="$RESPONSE"
+          fi
+
+          # Extract labels (between ```labels and ```)
+          LABELS=$(echo "$RESPONSE" | sed -n '/```labels/,/```/p' | sed '1d;$d' | tr -d '\n')
+          if ! echo "$LABELS" | jq -e 'type == "array"' > /dev/null 2>&1; then
+            LABELS="[]"
+          fi
+
+          echo "Extracted labels: $LABELS"
+
+          # Save outputs
           echo "review<<ENDOFREVIEW" >> $GITHUB_OUTPUT
           echo "$REVIEW" >> $GITHUB_OUTPUT
           echo "ENDOFREVIEW" >> $GITHUB_OUTPUT
 
-      - name: Post review comment
+          echo "labels=$LABELS" >> $GITHUB_OUTPUT
+
+      - name: Post review comment and apply labels
         uses: actions/github-script@v7
         with:
           script: |
+            // Post review comment
             const review = process.env.REVIEW_CONTENT;
             const body = `## Claude Code Review\n\n${review}`;
 
@@ -265,115 +326,8 @@ jobs:
                 body: body
               });
             }
-        env:
-          REVIEW_CONTENT: ${{ steps.review.outputs.review }}
 
-  # ============================================
-  # FINAL GATE (always runs, checks all jobs)
-  # ============================================
-
-  final-status:
-    name: Final Status
-    needs: [checklist, tests, typecheck, claude-review]
-    if: always()
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      pull-requests: write
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Check job results
-        run: |
-          echo "Checklist: ${{ needs.checklist.result }}"
-          echo "Tests: ${{ needs.tests.result }}"
-          echo "Typecheck: ${{ needs.typecheck.result }}"
-          echo "Claude Review: ${{ needs.claude-review.result }}"
-
-          # Fail if any required job failed
-          if [[ "${{ needs.checklist.result }}" == "failure" ]]; then
-            echo "::error::Checklist validation failed"
-            exit 1
-          fi
-          if [[ "${{ needs.tests.result }}" == "failure" ]]; then
-            echo "::error::Tests failed"
-            exit 1
-          fi
-          if [[ "${{ needs.typecheck.result }}" == "failure" ]]; then
-            echo "::error::TypeScript check failed"
-            exit 1
-          fi
-          if [[ "${{ needs.claude-review.result }}" == "failure" ]]; then
-            echo "::error::Claude review failed"
-            exit 1
-          fi
-
-          echo "All checks passed or were appropriately skipped"
-
-      - name: Categorize PR with Claude
-        id: categorize
-        env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-        run: |
-          git fetch origin ${{ github.base_ref }}
-          git diff origin/${{ github.base_ref }}...HEAD --name-only > /tmp/files.txt
-          git diff origin/${{ github.base_ref }}...HEAD --stat > /tmp/stats.txt
-
-          # Build the prompt
-          cat > /tmp/prompt.txt << 'PROMPT'
-          Analyze these changed files and categorize the PR. Return ONLY a JSON array of applicable labels from this list:
-          - "feature" (new functionality)
-          - "bugfix" (bug fixes)
-          - "documentation" (docs, README, comments)
-          - "tests" (test files)
-          - "frontend" (resources/js, CSS, views)
-          - "backend" (PHP, routes, controllers, models)
-          - "config" (configuration files, env, CI/CD)
-          - "refactor" (code restructuring without new features)
-          - "dependencies" (package updates)
-
-          Return ONLY valid JSON array like: ["feature", "frontend", "tests"]
-          No explanation, just the JSON array.
-
-          Changed files:
-          PROMPT
-
-          cat /tmp/files.txt >> /tmp/prompt.txt
-          echo -e "\n\nChange statistics:" >> /tmp/prompt.txt
-          cat /tmp/stats.txt >> /tmp/prompt.txt
-
-          jq -n --rawfile prompt /tmp/prompt.txt '{
-            model: "claude-sonnet-4-20250514",
-            max_tokens: 256,
-            messages: [{
-              role: "user",
-              content: $prompt
-            }]
-          }' > /tmp/payload.json
-
-          curl -s https://api.anthropic.com/v1/messages \
-            -H "Content-Type: application/json" \
-            -H "x-api-key: $ANTHROPIC_API_KEY" \
-            -H "anthropic-version: 2023-06-01" \
-            -d @/tmp/payload.json > /tmp/response.json
-
-          LABELS=$(jq -r '.content[0].text // "[]"' /tmp/response.json)
-          echo "Raw response: $LABELS"
-
-          # Validate it's valid JSON array
-          if echo "$LABELS" | jq -e 'type == "array"' > /dev/null 2>&1; then
-            echo "labels=$LABELS" >> $GITHUB_OUTPUT
-          else
-            echo "labels=[]" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Apply category labels
-        uses: actions/github-script@v7
-        with:
-          script: |
+            // Apply category labels
             const labelsJson = process.env.LABELS || '[]';
             let labels = [];
             try {
@@ -388,7 +342,6 @@ jobs:
               return;
             }
 
-            // Ensure labels exist
             const validLabels = ['feature', 'bugfix', 'documentation', 'tests', 'frontend', 'backend', 'config', 'refactor', 'dependencies'];
             const labelColors = {
               'feature': '0e8a16',
@@ -432,7 +385,49 @@ jobs:
 
             console.log('Applied labels:', labels);
         env:
-          LABELS: ${{ steps.categorize.outputs.labels }}
+          REVIEW_CONTENT: ${{ steps.claude.outputs.review }}
+          LABELS: ${{ steps.claude.outputs.labels }}
+
+  # ============================================
+  # FINAL GATE (always runs, checks all jobs)
+  # ============================================
+
+  final-status:
+    name: Final Status
+    needs: [checklist, tests, typecheck, claude-review]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check job results
+        run: |
+          echo "Checklist: ${{ needs.checklist.result }}"
+          echo "Tests: ${{ needs.tests.result }}"
+          echo "Typecheck: ${{ needs.typecheck.result }}"
+          echo "Claude Review: ${{ needs.claude-review.result }}"
+
+          # Fail if any required job failed
+          if [[ "${{ needs.checklist.result }}" == "failure" ]]; then
+            echo "::error::Checklist validation failed"
+            exit 1
+          fi
+          if [[ "${{ needs.tests.result }}" == "failure" ]]; then
+            echo "::error::Tests failed"
+            exit 1
+          fi
+          if [[ "${{ needs.typecheck.result }}" == "failure" ]]; then
+            echo "::error::TypeScript check failed"
+            exit 1
+          fi
+          if [[ "${{ needs.claude-review.result }}" == "failure" ]]; then
+            echo "::error::Claude review failed"
+            exit 1
+          fi
+
+          echo "All checks passed or were appropriately skipped"
+
+      - name: Checkout code
+        if: needs.checklist.outputs.automerge == 'true'
+        uses: actions/checkout@v4
 
       - name: Generate GitHub App Token
         if: needs.checklist.outputs.automerge == 'true'
