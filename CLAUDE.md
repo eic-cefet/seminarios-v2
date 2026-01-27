@@ -128,3 +128,4 @@ actingAsUser()    // Create and authenticate regular user
 actingAsAdmin()   // Create and authenticate admin user
 actingAsTeacher() // Create and authenticate teacher user
 ```
+
