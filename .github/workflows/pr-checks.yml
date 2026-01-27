@@ -1,0 +1,249 @@
+name: PR Checks
+
+on:
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  # ============================================
+  # GATE: Checklist Validation (runs first)
+  # ============================================
+  checklist:
+    name: Checklist Validation
+    runs-on: ubuntu-latest
+    outputs:
+      automerge: ${{ steps.parse.outputs.automerge }}
+      version_bump: ${{ steps.parse.outputs.version_bump }}
+    steps:
+      - name: Parse and validate PR template
+        id: parse
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const body = context.payload.pull_request.body || '';
+
+            // Parse automerge (table format)
+            const automergeMatch = body.match(/\|\s*automerge\s*\|\s*(true|false)\s*\|/i);
+            const automerge = automergeMatch ? automergeMatch[1].toLowerCase() : 'false';
+            core.setOutput('automerge', automerge);
+
+            // Parse version_bump (table format)
+            const versionMatch = body.match(/\|\s*version_bump\s*\|\s*(patch|minor|major)\s*\|/i);
+            const versionBump = versionMatch ? versionMatch[1].toLowerCase() : '';
+            core.setOutput('version_bump', versionBump);
+
+            // Validate version_bump exists
+            if (!versionBump) {
+              core.setFailed('version_bump is required. Valid values: patch, minor, major');
+              return;
+            }
+
+            // Validate checklist items are checked
+            const requiredChecks = [
+              'I have tested my code locally',
+              'All tests are passing',
+              'New code has adequate test coverage'
+            ];
+
+            const unchecked = requiredChecks.filter(check => {
+              const pattern = new RegExp(`-\\s*\\[x\\]\\s*${check.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, 'i');
+              return !pattern.test(body);
+            });
+
+            if (unchecked.length > 0) {
+              core.setFailed(`Unchecked items:\n${unchecked.map(c => '- ' + c).join('\n')}`);
+            }
+
+  # ============================================
+  # PARALLEL JOBS (depend on checklist)
+  # ============================================
+
+  tests:
+    name: Tests & Coverage (95%)
+    needs: checklist
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: password
+          MYSQL_DATABASE: testing
+        ports:
+          - 3306:3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, pdo_mysql, bcmath, intl, gd, exif, iconv
+          coverage: pcov
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        shell: bash
+        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
+
+      - name: Get composer cache directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+
+      - name: Cache composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: ${{ runner.os }}-composer-
+
+      - name: Cache pnpm dependencies
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: ${{ runner.os }}-pnpm-
+
+      - name: Install composer dependencies
+        run: composer install --no-interaction --prefer-dist --optimize-autoloader
+
+      - name: Install pnpm dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build frontend assets
+        run: pnpm run build
+
+      - name: Copy environment file
+        run: cp .env.example .env
+
+      - name: Generate application key
+        run: php artisan key:generate
+
+      - name: Run tests with coverage
+        run: php artisan test --compact --min=95
+        env:
+          DB_CONNECTION: mysql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_DATABASE: testing
+          DB_USERNAME: root
+          DB_PASSWORD: password
+
+  typecheck:
+    name: TypeScript Check
+    needs: checklist
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check for frontend changes
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            frontend:
+              - 'resources/**'
+
+      - name: Setup Node.js
+        if: steps.filter.outputs.frontend == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install pnpm
+        if: steps.filter.outputs.frontend == 'true'
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Install dependencies
+        if: steps.filter.outputs.frontend == 'true'
+        run: pnpm install --frozen-lockfile
+
+      - name: Run typecheck
+        if: steps.filter.outputs.frontend == 'true'
+        run: pnpm typecheck
+
+      - name: Skip message
+        if: steps.filter.outputs.frontend != 'true'
+        run: echo "No frontend changes detected, skipping typecheck"
+
+  claude-review:
+    name: Claude Code Review
+    needs: checklist
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Claude Review
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          prompt: "/review"
+
+  # ============================================
+  # FINAL GATE (always runs, checks all jobs)
+  # ============================================
+
+  final-status:
+    name: Final Status
+    needs: [checklist, tests, typecheck, claude-review]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check job results
+        run: |
+          echo "Checklist: ${{ needs.checklist.result }}"
+          echo "Tests: ${{ needs.tests.result }}"
+          echo "Typecheck: ${{ needs.typecheck.result }}"
+          echo "Claude Review: ${{ needs.claude-review.result }}"
+
+          # Fail if any required job failed
+          if [[ "${{ needs.checklist.result }}" == "failure" ]]; then
+            echo "::error::Checklist validation failed"
+            exit 1
+          fi
+          if [[ "${{ needs.tests.result }}" == "failure" ]]; then
+            echo "::error::Tests failed"
+            exit 1
+          fi
+          if [[ "${{ needs.typecheck.result }}" == "failure" ]]; then
+            echo "::error::TypeScript check failed"
+            exit 1
+          fi
+          if [[ "${{ needs.claude-review.result }}" == "failure" ]]; then
+            echo "::error::Claude review failed"
+            exit 1
+          fi
+
+          echo "All checks passed or were appropriately skipped"
+
+      - name: Add automerge label
+        if: needs.checklist.outputs.automerge == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              labels: ['automerge']
+            });
