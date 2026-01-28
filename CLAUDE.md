@@ -8,11 +8,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **IMPORTANT:** When asked to push changes to GitHub, ALWAYS follow this workflow:
 
-1. Create a new branch from the current branch: `git checkout -b <branch-name>`
-2. Commit the changes to that branch
-3. Push the branch to origin
-4. Create a Pull Request using the PR template (`.github/pull_request_template.md`)
-5. Use `gh pr create` with the following structure:
+1. **Fetch latest changes**: `git fetch origin`
+2. **Stash any local changes** (if needed): `git stash`
+3. **Create a new branch from origin/main**: `git checkout origin/main -b <branch-name>`
+4. **Apply stashed changes** (if needed): `git stash pop`
+5. Commit the changes to that branch
+6. Push the branch to origin
+7. Create a Pull Request using the PR template (`.github/pull_request_template.md`)
+8. Use `gh pr create` with the following structure:
 
 ```bash
 gh pr create --base main --head <branch-name> \
