@@ -6,10 +6,10 @@
 
 ## Configuration
 
-| Setting | Value |
-|---------|-------|
-| automerge | false |
-| version_bump | patch |
+```
+automerge=false
+version_bump=patch
+```
 
 **version_bump options:** `patch` (bug fixes), `minor` (new features), `major` (breaking changes)
 

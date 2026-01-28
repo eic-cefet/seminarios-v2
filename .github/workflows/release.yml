@@ -128,8 +128,8 @@ jobs:
         id: version
         run: |
           BODY='${{ steps.pr.outputs.body }}'
-          # Match table format: | version_bump | VALUE |
-          BUMP=$(echo "$BODY" | grep -oiP '\|\s*version_bump\s*\|\s*\K(patch|minor|major)(?=\s*\|)' | head -1 | tr '[:upper:]' '[:lower:]')
+          # Match key=value format: version_bump=VALUE
+          BUMP=$(echo "$BODY" | grep -oiE 'version_bump=(patch|minor|major)' | cut -d'=' -f2 | head -1 | tr '[:upper:]' '[:lower:]')
           if [ -z "$BUMP" ]; then
             BUMP="patch"
           fi
