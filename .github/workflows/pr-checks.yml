@@ -19,7 +19,6 @@ jobs:
     outputs:
       automerge: ${{ steps.parse.outputs.automerge }}
       version_bump: ${{ steps.parse.outputs.version_bump }}
-      bot_token: ${{ steps.app-token.outputs.token }}
     steps:
       - name: Generate GitHub App Token
         id: app-token
@@ -476,10 +475,18 @@ jobs:
         if: needs.checklist.outputs.automerge == 'true'
         uses: actions/checkout@v4
 
+      - name: Generate GitHub App Token for automerge
+        if: needs.checklist.outputs.automerge == 'true'
+        id: app-token-automerge
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+
       - name: Add automerge label and enable automerge
         if: needs.checklist.outputs.automerge == 'true'
         env:
-          GH_TOKEN: ${{ needs.checklist.outputs.bot_token }}
+          GH_TOKEN: ${{ steps.app-token-automerge.outputs.token }}
         run: |
           gh pr edit ${{ github.event.pull_request.number }} --add-label "automerge"
           gh pr merge ${{ github.event.pull_request.number }} --auto --squash
