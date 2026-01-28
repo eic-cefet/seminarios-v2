@@ -10,20 +10,49 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Trigger deployments
+      - name: Trigger deployments with retries
         env:
           DEPLOYMENT_TRIGGERS: ${{ secrets.DEPLOYMENT_TRIGGERS }}
         run: |
           IFS=';' read -ra TRIGGERS <<< "$DEPLOYMENT_TRIGGERS"
+
           for trigger in "${TRIGGERS[@]}"; do
             if [ -n "$trigger" ]; then
               echo "Triggering deployment for: $trigger"
-              response=$(curl -s -o /dev/null -w "%{http_code}" -X POST "https://dns.jorgejunior.dev/api/deploy/$trigger")
-              if [ "$response" -ge 200 ] && [ "$response" -lt 300 ]; then
-                echo "Success: HTTP $response"
-              else
-                echo "Failed: HTTP $response"
+
+              # Retry logic: 5 attempts with exponential backoff (2, 4, 8, 16, 32 seconds)
+              max_retries=5
+              attempt=1
+              success=false
+
+              while [ $attempt -le $max_retries ]; do
+                echo "Attempt $attempt/$max_retries..."
+
+                response=$(curl -s -o /dev/null -w "%{http_code}" -X POST "https://dns.jorgejunior.dev/api/deploy/$trigger")
+
+                if [ "$response" -ge 200 ] && [ "$response" -lt 300 ]; then
+                  echo "✓ Success: HTTP $response"
+                  success=true
+                  break
+                else
+                  echo "✗ Failed: HTTP $response"
+
+                  if [ $attempt -lt $max_retries ]; then
+                    # Calculate exponential backoff: 2^attempt seconds
+                    wait_time=$((2 ** attempt))
+                    echo "Waiting ${wait_time} seconds before retry..."
+                    sleep $wait_time
+                  fi
+                fi
+
+                attempt=$((attempt + 1))
+              done
+
+              if [ "$success" = false ]; then
+                echo "ERROR: Deployment failed after $max_retries attempts"
                 exit 1
               fi
             fi
           done
+
+          echo "All deployments completed successfully!"
