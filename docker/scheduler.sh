@@ -1,11 +1,8 @@
 #!/bin/bash
 set -e
 
-# Simple netcat-based health check server on port 2019 (matches Easypanel health check)
-# Responds to any HTTP request with 200 OK
-(while true; do
-    echo -e "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n{\"status\":\"healthy\",\"service\":\"scheduler\"}" | nc -l -p 2019 -q 1
-done) &
+# Start health check server in background on port 2019 (matches Easypanel health check)
+HEALTH_SERVICE=scheduler php -S 0.0.0.0:2019 /app/docker/health.php &
 
 # Run the Laravel scheduler (this is PID 1)
 while true; do
