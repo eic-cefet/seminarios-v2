@@ -4,6 +4,42 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 > NEVER RUN `pnpm run build` by your own. During the development of the solution I always will be watching using the dev command by my own.
 
+## Git Workflow
+
+**IMPORTANT:** When asked to push changes to GitHub, ALWAYS follow this workflow:
+
+1. Create a new branch from the current branch: `git checkout -b <branch-name>`
+2. Commit the changes to that branch
+3. Push the branch to origin
+4. Create a Pull Request using the PR template (`.github/pull_request_template.md`)
+5. Use `gh pr create` with the following structure:
+
+```bash
+gh pr create --base main --head <branch-name> \
+  --title "<Clear title>" \
+  --body "## What Changed
+<!-- List specific changes -->
+
+## Why
+<!-- Explain motivation and context -->
+
+## Configuration
+
+| Setting | Value |
+|---------|-------|
+| automerge | false |
+| version_bump | patch |
+
+**version_bump options:** \`patch\` (bug fixes), \`minor\` (new features), \`major\` (breaking changes)
+
+## Checklist
+- [x] I have tested my code locally
+- [x] All tests are passing
+- [x] New code has adequate test coverage"
+```
+
+**NEVER push directly to main** - the branch is protected and requires status checks to pass.
+
 ## Project Overview
 
 CEFET-RJ Seminários - A seminar and workshop management system for the School of Informatics & Computing (EIC). Built with Laravel 12 backend and dual React 19 SPAs (public system + admin panel).
