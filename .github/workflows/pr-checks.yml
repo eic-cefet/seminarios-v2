@@ -79,7 +79,24 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Check for backend/test changes
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            backend:
+              - 'app/**'
+              - 'bootstrap/**'
+              - 'config/**'
+              - 'database/**'
+              - 'resources/**'
+              - 'routes/**'
+              - 'tests/**'
+              - 'composer.json'
+              - 'composer.lock'
+
       - name: Setup PHP
+        if: steps.filter.outputs.backend == 'true'
         uses: shivammathur/setup-php@v2
         with:
           php-version: "8.4"
@@ -87,25 +104,30 @@ jobs:
           coverage: pcov
 
       - name: Setup Node.js
+        if: steps.filter.outputs.backend == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: "20"
 
       - name: Install pnpm
+        if: steps.filter.outputs.backend == 'true'
         uses: pnpm/action-setup@v4
         with:
           version: 9
 
       - name: Get pnpm store directory
+        if: steps.filter.outputs.backend == 'true'
         id: pnpm-cache
         shell: bash
         run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
 
       - name: Get composer cache directory
+        if: steps.filter.outputs.backend == 'true'
         id: composer-cache
         run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
 
       - name: Cache composer dependencies
+        if: steps.filter.outputs.backend == 'true'
         uses: actions/cache@v4
         with:
           path: ${{ steps.composer-cache.outputs.dir }}
@@ -113,6 +135,7 @@ jobs:
           restore-keys: ${{ runner.os }}-composer-
 
       - name: Cache pnpm dependencies
+        if: steps.filter.outputs.backend == 'true'
         uses: actions/cache@v4
         with:
           path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
@@ -120,21 +143,27 @@ jobs:
           restore-keys: ${{ runner.os }}-pnpm-
 
       - name: Install composer dependencies
+        if: steps.filter.outputs.backend == 'true'
         run: composer install --no-interaction --prefer-dist --optimize-autoloader
 
       - name: Install pnpm dependencies
+        if: steps.filter.outputs.backend == 'true'
         run: pnpm install --frozen-lockfile
 
       - name: Build frontend assets
+        if: steps.filter.outputs.backend == 'true'
         run: pnpm run build
 
       - name: Copy environment file
+        if: steps.filter.outputs.backend == 'true'
         run: cp .env.example .env
 
       - name: Generate application key
+        if: steps.filter.outputs.backend == 'true'
         run: php artisan key:generate
 
       - name: Run tests with coverage
+        if: steps.filter.outputs.backend == 'true'
         run: php artisan test --compact --min=95
         env:
           DB_CONNECTION: mysql
@@ -143,6 +172,10 @@ jobs:
           DB_DATABASE: testing
           DB_USERNAME: root
           DB_PASSWORD: password
+
+      - name: Skip message
+        if: steps.filter.outputs.backend != 'true'
+        run: echo "No backend/test changes detected, skipping tests"
 
   typecheck:
     name: TypeScript Check
