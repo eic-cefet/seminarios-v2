@@ -27,13 +27,13 @@ jobs:
           script: |
             const body = context.payload.pull_request.body || '';
 
-            // Parse automerge (table format)
-            const automergeMatch = body.match(/\|\s*automerge\s*\|\s*(true|false)\s*\|/i);
+            // Parse automerge (key=value format)
+            const automergeMatch = body.match(/automerge=(true|false)/i);
             const automerge = automergeMatch ? automergeMatch[1].toLowerCase() : 'false';
             core.setOutput('automerge', automerge);
 
-            // Parse version_bump (table format)
-            const versionMatch = body.match(/\|\s*version_bump\s*\|\s*(patch|minor|major)\s*\|/i);
+            // Parse version_bump (key=value format)
+            const versionMatch = body.match(/version_bump=(patch|minor|major)/i);
             const versionBump = versionMatch ? versionMatch[1].toLowerCase() : '';
             core.setOutput('version_bump', versionBump);
 
