@@ -25,12 +25,12 @@ gh pr create --base main --head <branch-name> \
 
 ## Configuration
 
-| Setting | Value |
-|---------|-------|
-| automerge | false |
-| version_bump | patch |
+\\\`\\\`\\\`
+automerge=false
+version_bump=patch
+\\\`\\\`\\\`
 
-**version_bump options:** \`patch\` (bug fixes), \`minor\` (new features), \`major\` (breaking changes)
+**version_bump options:** \\\`patch\\\` (bug fixes), \\\`minor\\\` (new features), \\\`major\\\` (breaking changes)
 
 ## Checklist
 - [x] I have tested my code locally
