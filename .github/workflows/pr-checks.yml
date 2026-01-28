@@ -332,10 +332,17 @@ jobs:
 
           echo "labels=$LABELS" >> $GITHUB_OUTPUT
 
+      - name: Generate GitHub App Token for this job
+        id: app-token-review
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+
       - name: Post review comment and apply labels
         uses: actions/github-script@v7
         with:
-          github-token: ${{ needs.checklist.outputs.bot_token }}
+          github-token: ${{ steps.app-token-review.outputs.token }}
           script: |
             // Post review comment
             const review = process.env.REVIEW_CONTENT;
