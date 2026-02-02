@@ -2,7 +2,7 @@
 set -e
 
 # Start health check server in background
-HEALTH_SERVICE=scheduler php -S 0.0.0.0:8000 /app/docker/health.php &
+HEALTH_SERVICE=scheduler php -q -S 0.0.0.0:8000 /app/docker/health.php &
 
 # Run the Laravel scheduler
 while true; do
