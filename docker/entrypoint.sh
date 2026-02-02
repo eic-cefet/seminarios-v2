@@ -15,4 +15,4 @@ fi
 
 # Start Octane with FrankenPHP
 # TLS should be handled by reverse proxy/load balancer in production
-exec php artisan octane:frankenphp --host=0.0.0.0 --port=8000 --no-access-log
+exec php artisan octane:frankenphp --host=0.0.0.0 --port=8000
