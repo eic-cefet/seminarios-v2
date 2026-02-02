@@ -2,7 +2,7 @@
 set -e
 
 # Start health check server in background on port 2019 (matches Easypanel health check)
-HEALTH_SERVICE=scheduler php -S 0.0.0.0:2019 /app/docker/health.php &
+HEALTH_SERVICE=scheduler php -q -S 0.0.0.0:2019 /app/docker/health.php &
 
 # Run the Laravel scheduler (this is PID 1)
 while true; do
