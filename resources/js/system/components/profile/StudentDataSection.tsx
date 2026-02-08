@@ -1,12 +1,12 @@
 import { coursesApi, profileApi } from "@shared/api/client";
-import { getErrorMessage, getFieldErrors } from "@shared/lib/errors";
 import { cn } from "@shared/lib/utils";
 import { analytics } from "@shared/lib/analytics";
 import type { User as UserType } from "@shared/types";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { GraduationCap } from "lucide-react";
-import { ErrorAlert, SuccessAlert } from "./FormAlerts";
 import { useState } from "react";
+import { ErrorAlert, SuccessAlert } from "./FormAlerts";
+import { useProfileForm } from "./useProfileForm";
 
 interface StudentDataSectionProps {
     user: UserType;
@@ -14,7 +14,6 @@ interface StudentDataSectionProps {
 }
 
 export function StudentDataSection({ user, onUpdate }: StudentDataSectionProps) {
-    const [isEditing, setIsEditing] = useState(false);
     const [courseId, setCourseId] = useState(
         user.student_data?.course?.id?.toString() || "",
     );
@@ -24,9 +23,19 @@ export function StudentDataSection({ user, onUpdate }: StudentDataSectionProps) 
     const [courseRole, setCourseRole] = useState<
         "Aluno" | "Professor" | "Outro"
     >(user.student_data?.course_role || "Aluno");
-    const [error, setError] = useState<string | null>(null);
-    const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
-    const [success, setSuccess] = useState(false);
+
+    const { isEditing, startEditing, error, fieldErrors, success, mutationCallbacks, handleCancel } =
+        useProfileForm({
+            onSuccess: async () => {
+                analytics.event("profile_student_data_update");
+                await onUpdate();
+            },
+            onCancel: () => {
+                setCourseId(user.student_data?.course?.id?.toString() || "");
+                setCourseSituation(user.student_data?.course_situation || "studying");
+                setCourseRole(user.student_data?.course_role || "Aluno");
+            },
+        });
 
     const { data: coursesData } = useQuery({
         queryKey: ["courses"],
@@ -42,33 +51,12 @@ export function StudentDataSection({ user, onUpdate }: StudentDataSectionProps) 
                 course_situation: courseSituation,
                 course_role: courseRole,
             }),
-        onSuccess: async () => {
-            setError(null);
-            setFieldErrors({});
-            setSuccess(true);
-            setIsEditing(false);
-            analytics.event("profile_student_data_update");
-            await onUpdate();
-            setTimeout(() => setSuccess(false), 3000);
-        },
-        onError: (err) => {
-            setError(getErrorMessage(err));
-            setFieldErrors(getFieldErrors(err) || {});
-        },
+        ...mutationCallbacks,
     });
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         mutation.mutate();
-    };
-
-    const handleCancel = () => {
-        setCourseId(user.student_data?.course?.id?.toString() || "");
-        setCourseSituation(user.student_data?.course_situation || "studying");
-        setCourseRole(user.student_data?.course_role || "Aluno");
-        setError(null);
-        setFieldErrors({});
-        setIsEditing(false);
     };
 
     return (
@@ -83,7 +71,7 @@ export function StudentDataSection({ user, onUpdate }: StudentDataSectionProps) 
                     </div>
                     {!isEditing && (
                         <button
-                            onClick={() => setIsEditing(true)}
+                            onClick={startEditing}
                             className="text-sm font-medium text-primary-600 hover:text-primary-700 cursor-pointer"
                         >
                             Editar

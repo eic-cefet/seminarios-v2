@@ -1,11 +1,11 @@
 import { profileApi } from "@shared/api/client";
-import { getErrorMessage, getFieldErrors } from "@shared/lib/errors";
 import { cn } from "@shared/lib/utils";
 import { analytics } from "@shared/lib/analytics";
 import { useMutation } from "@tanstack/react-query";
 import { Mail, User } from "lucide-react";
-import { ErrorAlert, SuccessAlert } from "./FormAlerts";
 import { useState } from "react";
+import { ErrorAlert, SuccessAlert } from "./FormAlerts";
+import { useProfileForm } from "./useProfileForm";
 
 interface ProfileInfoSectionProps {
     user: { id: number; name: string; email: string };
@@ -13,41 +13,29 @@ interface ProfileInfoSectionProps {
 }
 
 export function ProfileInfoSection({ user, onUpdate }: ProfileInfoSectionProps) {
-    const [isEditing, setIsEditing] = useState(false);
     const [name, setName] = useState(user.name);
     const [email, setEmail] = useState(user.email);
-    const [error, setError] = useState<string | null>(null);
-    const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
-    const [success, setSuccess] = useState(false);
+
+    const { isEditing, startEditing, error, fieldErrors, success, mutationCallbacks, handleCancel } =
+        useProfileForm({
+            onSuccess: async () => {
+                analytics.event("profile_info_update");
+                await onUpdate();
+            },
+            onCancel: () => {
+                setName(user.name);
+                setEmail(user.email);
+            },
+        });
 
     const mutation = useMutation({
         mutationFn: () => profileApi.update({ name, email }),
-        onSuccess: async () => {
-            setError(null);
-            setFieldErrors({});
-            setSuccess(true);
-            setIsEditing(false);
-            analytics.event("profile_info_update");
-            await onUpdate();
-            setTimeout(() => setSuccess(false), 3000);
-        },
-        onError: (err) => {
-            setError(getErrorMessage(err));
-            setFieldErrors(getFieldErrors(err) || {});
-        },
+        ...mutationCallbacks,
     });
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         mutation.mutate();
-    };
-
-    const handleCancel = () => {
-        setName(user.name);
-        setEmail(user.email);
-        setError(null);
-        setFieldErrors({});
-        setIsEditing(false);
     };
 
     return (
@@ -62,7 +50,7 @@ export function ProfileInfoSection({ user, onUpdate }: ProfileInfoSectionProps) 
                     </div>
                     {!isEditing && (
                         <button
-                            onClick={() => setIsEditing(true)}
+                            onClick={startEditing}
                             className="text-sm font-medium text-primary-600 hover:text-primary-700 cursor-pointer"
                         >
                             Editar

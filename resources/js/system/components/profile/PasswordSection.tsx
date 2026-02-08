@@ -1,20 +1,31 @@
 import { profileApi } from "@shared/api/client";
-import { getErrorMessage, getFieldErrors } from "@shared/lib/errors";
 import { cn } from "@shared/lib/utils";
 import { analytics } from "@shared/lib/analytics";
 import { useMutation } from "@tanstack/react-query";
 import { Lock } from "lucide-react";
-import { ErrorAlert, SuccessAlert } from "./FormAlerts";
 import { useState } from "react";
+import { ErrorAlert, SuccessAlert } from "./FormAlerts";
+import { useProfileForm } from "./useProfileForm";
 
 export function PasswordSection() {
-    const [isEditing, setIsEditing] = useState(false);
     const [currentPassword, setCurrentPassword] = useState("");
     const [password, setPassword] = useState("");
     const [passwordConfirmation, setPasswordConfirmation] = useState("");
-    const [error, setError] = useState<string | null>(null);
-    const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
-    const [success, setSuccess] = useState(false);
+
+    const clearPasswords = () => {
+        setCurrentPassword("");
+        setPassword("");
+        setPasswordConfirmation("");
+    };
+
+    const { isEditing, startEditing, error, fieldErrors, success, mutationCallbacks, handleCancel } =
+        useProfileForm({
+            onSuccess: () => {
+                clearPasswords();
+                analytics.event("profile_password_change");
+            },
+            onCancel: clearPasswords,
+        });
 
     const mutation = useMutation({
         mutationFn: () =>
@@ -23,35 +34,12 @@ export function PasswordSection() {
                 password,
                 password_confirmation: passwordConfirmation,
             }),
-        onSuccess: () => {
-            setError(null);
-            setFieldErrors({});
-            setSuccess(true);
-            setIsEditing(false);
-            setCurrentPassword("");
-            setPassword("");
-            setPasswordConfirmation("");
-            analytics.event("profile_password_change");
-            setTimeout(() => setSuccess(false), 3000);
-        },
-        onError: (err) => {
-            setError(getErrorMessage(err));
-            setFieldErrors(getFieldErrors(err) || {});
-        },
+        ...mutationCallbacks,
     });
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         mutation.mutate();
-    };
-
-    const handleCancel = () => {
-        setCurrentPassword("");
-        setPassword("");
-        setPasswordConfirmation("");
-        setError(null);
-        setFieldErrors({});
-        setIsEditing(false);
     };
 
     return (
@@ -66,7 +54,7 @@ export function PasswordSection() {
                     </div>
                     {!isEditing && (
                         <button
-                            onClick={() => setIsEditing(true)}
+                            onClick={startEditing}
                             className="text-sm font-medium text-primary-600 hover:text-primary-700 cursor-pointer"
                         >
                             Alterar senha
