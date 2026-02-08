@@ -101,13 +101,6 @@ describe('ApiException', function () {
         expect($exception->statusCode)->toBe(400);
     });
 
-    it('creates email not verified exception', function () {
-        $exception = ApiException::emailNotVerified();
-
-        expect($exception->errorCode)->toBe('email_not_verified');
-        expect($exception->statusCode)->toBe(403);
-    });
-
     it('creates server error exception', function () {
         $exception = ApiException::serverError();
 

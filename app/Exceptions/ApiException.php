@@ -71,11 +71,6 @@ class ApiException extends Exception
         return new self('invalid_token', 'Token inválido ou expirado', 400);
     }
 
-    public static function emailNotVerified(): self
-    {
-        return new self('email_not_verified', 'E-mail não verificado', 403);
-    }
-
     public static function serverError(): self
     {
         return new self('server_error', 'Erro interno do servidor', 500);

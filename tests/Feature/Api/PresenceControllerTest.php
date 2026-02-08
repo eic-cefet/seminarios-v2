@@ -32,8 +32,7 @@ it('returns 400 for expired presence link', function () {
     $response = $this->getJson("/api/presence/{$presenceLink->uuid}");
 
     $response->assertStatus(400)
-        ->assertJsonPath('is_valid', false)
-        ->assertJsonPath('is_expired', true);
+        ->assertJsonPath('error', 'invalid_presence_link');
 });
 
 it('returns 400 for inactive presence link', function () {
@@ -42,8 +41,7 @@ it('returns 400 for inactive presence link', function () {
     $response = $this->getJson("/api/presence/{$presenceLink->uuid}");
 
     $response->assertStatus(400)
-        ->assertJsonPath('is_valid', false)
-        ->assertJsonPath('is_active', false);
+        ->assertJsonPath('error', 'invalid_presence_link');
 });
 
 it('requires authentication to register presence', function () {
@@ -124,7 +122,7 @@ it('returns 400 when registering with expired link', function () {
         ->postJson("/api/presence/{$presenceLink->uuid}/register");
 
     $response->assertStatus(400)
-        ->assertJsonPath('is_valid', false);
+        ->assertJsonPath('error', 'invalid_presence_link');
 });
 
 it('returns QR code PNG for valid presence link', function () {

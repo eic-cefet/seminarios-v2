@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Console\Commands\Concerns\DispatchesGroupedJobs;
 use App\Jobs\SendEvaluationReminderJob;
 use App\Models\Registration;
 use Illuminate\Console\Command;
@@ -9,6 +10,8 @@ use Illuminate\Support\Facades\DB;
 
 class SendEvaluationRemindersCommand extends Command
 {
+    use DispatchesGroupedJobs;
+
     protected $signature = 'reminders:evaluations
                             {--sync : Send emails synchronously instead of queuing}';
 
@@ -18,12 +21,6 @@ class SendEvaluationRemindersCommand extends Command
     {
         $this->info('Finding users with pending evaluations...');
 
-        // Find registrations where:
-        // - User was present
-        // - Seminar ended at least 2 days ago
-        // - Seminar ended no more than 30 days ago (restriction)
-        // - Evaluation reminder not yet sent
-        // - User hasn't rated the seminar yet
         $twoDaysAgo = now()->subDays(2)->endOfDay();
         $thirtyDaysAgo = now()->subDays(30)->startOfDay();
 
@@ -50,33 +47,7 @@ class SendEvaluationRemindersCommand extends Command
             return self::SUCCESS;
         }
 
-        // Group registrations by user
-        $grouped = $registrations->groupBy('user_id');
-
-        $this->info("Found {$grouped->count()} users with pending evaluations.");
-
-        $dispatched = 0;
-
-        foreach ($grouped as $userId => $userRegistrations) {
-            $user = $userRegistrations->first()->user;
-
-            if (! $user) {
-                continue;
-            }
-
-            $registrationIds = $userRegistrations->pluck('id');
-
-            if ($this->option('sync')) {
-                (new SendEvaluationReminderJob($user, $registrationIds))->handle();
-            } else {
-                SendEvaluationReminderJob::dispatch($user, $registrationIds);
-            }
-
-            $dispatched++;
-
-            $seminarCount = $userRegistrations->count();
-            $this->line("  - {$user->email}: {$seminarCount} seminar(s)");
-        }
+        $dispatched = $this->dispatchGroupedByUser($registrations, SendEvaluationReminderJob::class, 'users with pending evaluations');
 
         $this->info("Dispatched {$dispatched} evaluation reminder(s).");
 

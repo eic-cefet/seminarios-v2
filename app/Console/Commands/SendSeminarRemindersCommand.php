@@ -2,12 +2,15 @@
 
 namespace App\Console\Commands;
 
+use App\Console\Commands\Concerns\DispatchesGroupedJobs;
 use App\Jobs\SendSeminarReminderJob;
 use App\Models\Registration;
 use Illuminate\Console\Command;
 
 class SendSeminarRemindersCommand extends Command
 {
+    use DispatchesGroupedJobs;
+
     protected $signature = 'reminders:seminars
                             {--sync : Send emails synchronously instead of queuing}';
 
@@ -17,8 +20,6 @@ class SendSeminarRemindersCommand extends Command
     {
         $this->info('Finding seminars happening tomorrow...');
 
-        // Find registrations for seminars scheduled tomorrow
-        // that haven't been reminded yet
         $tomorrowStart = now()->addDay()->startOfDay();
         $tomorrowEnd = now()->addDay()->endOfDay();
 
@@ -38,33 +39,7 @@ class SendSeminarRemindersCommand extends Command
             return self::SUCCESS;
         }
 
-        // Group registrations by user to send one email per user
-        $grouped = $registrations->groupBy('user_id');
-
-        $this->info("Found {$grouped->count()} users to remind.");
-
-        $dispatched = 0;
-
-        foreach ($grouped as $userId => $userRegistrations) {
-            $user = $userRegistrations->first()->user;
-
-            if (! $user) {
-                continue;
-            }
-
-            $registrationIds = $userRegistrations->pluck('id');
-
-            if ($this->option('sync')) {
-                (new SendSeminarReminderJob($user, $registrationIds))->handle();
-            } else {
-                SendSeminarReminderJob::dispatch($user, $registrationIds);
-            }
-
-            $dispatched++;
-
-            $seminarCount = $userRegistrations->count();
-            $this->line("  - {$user->email}: {$seminarCount} seminar(s)");
-        }
+        $dispatched = $this->dispatchGroupedByUser($registrations, SendSeminarReminderJob::class, 'users to remind');
 
         $this->info("Dispatched {$dispatched} reminder(s).");
 

@@ -6,6 +6,7 @@ use App\Exceptions\ApiException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ProfileUpdateRequest;
 use App\Http\Requests\StudentDataUpdateRequest;
+use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -23,21 +24,7 @@ class ProfileController extends Controller
         $user->load('studentData.course');
 
         return response()->json([
-            'user' => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
-                'email_verified_at' => $user->email_verified_at?->toISOString(),
-                'roles' => $user->getRoleNames()->toArray(),
-                'student_data' => $user->studentData ? [
-                    'course_situation' => $user->studentData->course_situation,
-                    'course_role' => $user->studentData->course_role,
-                    'course' => $user->studentData->course ? [
-                        'id' => $user->studentData->course->id,
-                        'name' => $user->studentData->course->name,
-                    ] : null,
-                ] : null,
-            ],
+            'user' => $this->formatUserResponse($user),
         ]);
     }
 
@@ -64,21 +51,7 @@ class ProfileController extends Controller
 
         return response()->json([
             'message' => 'Perfil atualizado com sucesso.',
-            'user' => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
-                'email_verified_at' => $user->email_verified_at?->toISOString(),
-                'roles' => $user->getRoleNames()->toArray(),
-                'student_data' => $user->studentData ? [
-                    'course_situation' => $user->studentData->course_situation,
-                    'course_role' => $user->studentData->course_role,
-                    'course' => $user->studentData->course ? [
-                        'id' => $user->studentData->course->id,
-                        'name' => $user->studentData->course->name,
-                    ] : null,
-                ] : null,
-            ],
+            'user' => $this->formatUserResponse($user),
         ]);
     }
 
@@ -100,21 +73,7 @@ class ProfileController extends Controller
 
         return response()->json([
             'message' => 'Dados atualizados com sucesso.',
-            'user' => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
-                'email_verified_at' => $user->email_verified_at?->toISOString(),
-                'roles' => $user->getRoleNames()->toArray(),
-                'student_data' => $user->studentData ? [
-                    'course_situation' => $user->studentData->course_situation,
-                    'course_role' => $user->studentData->course_role,
-                    'course' => $user->studentData->course ? [
-                        'id' => $user->studentData->course->id,
-                        'name' => $user->studentData->course->name,
-                    ] : null,
-                ] : null,
-            ],
+            'user' => $this->formatUserResponse($user),
         ]);
     }
 
@@ -335,5 +294,24 @@ class ProfileController extends Controller
                 'total' => $paginator->total(),
             ],
         ]);
+    }
+
+    private function formatUserResponse(User $user): array
+    {
+        return [
+            'id' => $user->id,
+            'name' => $user->name,
+            'email' => $user->email,
+            'email_verified_at' => $user->email_verified_at?->toISOString(),
+            'roles' => $user->getRoleNames()->toArray(),
+            'student_data' => $user->studentData ? [
+                'course_situation' => $user->studentData->course_situation,
+                'course_role' => $user->studentData->course_role,
+                'course' => $user->studentData->course ? [
+                    'id' => $user->studentData->course->id,
+                    'name' => $user->studentData->course->name,
+                ] : null,
+            ] : null,
+        ];
     }
 }
