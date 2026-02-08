@@ -3,7 +3,8 @@ import { getErrorMessage, getFieldErrors } from "@shared/lib/errors";
 import { cn } from "@shared/lib/utils";
 import { analytics } from "@shared/lib/analytics";
 import { useMutation } from "@tanstack/react-query";
-import { Check, Lock } from "lucide-react";
+import { Lock } from "lucide-react";
+import { ErrorAlert, SuccessAlert } from "./FormAlerts";
 import { useState } from "react";
 
 export function PasswordSection() {
@@ -76,19 +77,12 @@ export function PasswordSection() {
 
             <div className="px-6 py-4">
                 {success && (
-                    <div className="flex items-center gap-2 rounded-md bg-green-50 p-3 text-sm text-green-700">
-                        <Check className="h-4 w-4" />
-                        Senha atualizada com sucesso!
-                    </div>
+                    <SuccessAlert message="Senha atualizada com sucesso!" />
                 )}
 
                 {isEditing ? (
                     <form onSubmit={handleSubmit} className="space-y-4">
-                        {error && (
-                            <div className="rounded-md bg-red-50 p-3 text-sm text-red-700">
-                                {error}
-                            </div>
-                        )}
+                        {error && <ErrorAlert message={error} />}
 
                         <div>
                             <label

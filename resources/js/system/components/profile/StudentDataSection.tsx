@@ -4,7 +4,8 @@ import { cn } from "@shared/lib/utils";
 import { analytics } from "@shared/lib/analytics";
 import type { User as UserType } from "@shared/types";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { Check, GraduationCap } from "lucide-react";
+import { GraduationCap } from "lucide-react";
+import { ErrorAlert, SuccessAlert } from "./FormAlerts";
 import { useState } from "react";
 
 interface StudentDataSectionProps {
@@ -93,19 +94,12 @@ export function StudentDataSection({ user, onUpdate }: StudentDataSectionProps) 
 
             <div className="px-6 py-4">
                 {success && (
-                    <div className="mb-4 flex items-center gap-2 rounded-md bg-green-50 p-3 text-sm text-green-700">
-                        <Check className="h-4 w-4" />
-                        Dados acadêmicos atualizados com sucesso!
-                    </div>
+                    <SuccessAlert message="Dados acadêmicos atualizados com sucesso!" />
                 )}
 
                 {isEditing ? (
                     <form onSubmit={handleSubmit} className="space-y-4">
-                        {error && (
-                            <div className="rounded-md bg-red-50 p-3 text-sm text-red-700">
-                                {error}
-                            </div>
-                        )}
+                        {error && <ErrorAlert message={error} />}
 
                         <div>
                             <label
