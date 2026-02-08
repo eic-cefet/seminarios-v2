@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import * as Label from "@radix-ui/react-label";
 import { Layout } from "../components/Layout";
 import { PageTitle } from "@shared/components/PageTitle";
-import { GoogleIcon, GithubIcon } from "@shared/components/icons/SocialIcons";
+import { SocialLoginButtons } from "@shared/components/SocialLoginButtons";
 import { buildUrl, cn } from "@shared/lib/utils";
 import { analytics } from "@shared/lib/analytics";
 import { useAuth } from "@shared/contexts/AuthContext";
@@ -63,36 +63,12 @@ export default function Login() {
                             </p>
                         </div>
 
-                        {/* Social Login */}
-                        <div className="space-y-3">
-                            <button
-                                type="button"
-                                onClick={() => handleSocialLogin("google")}
-                                className="flex w-full items-center justify-center gap-3 rounded-md border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 transition-colors"
-                            >
-                                <GoogleIcon className="h-5 w-5" />
-                                Entrar com Google
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => handleSocialLogin("github")}
-                                className="flex w-full items-center justify-center gap-3 rounded-md border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 transition-colors"
-                            >
-                                <GithubIcon className="h-5 w-5" />
-                                Entrar com GitHub
-                            </button>
-                        </div>
-
-                        <div className="relative">
-                            <div className="absolute inset-0 flex items-center">
-                                <div className="w-full border-t border-gray-200" />
-                            </div>
-                            <div className="relative flex justify-center text-sm">
-                                <span className="bg-gray-50 px-2 text-gray-500">
-                                    ou entre com e-mail
-                                </span>
-                            </div>
-                        </div>
+                        <SocialLoginButtons
+                            onSocialLogin={handleSocialLogin}
+                            actionLabel="Entrar"
+                            dividerText="ou entre com e-mail"
+                            dividerBgColor="bg-gray-50"
+                        />
 
                         <form onSubmit={handleSubmit} className="space-y-5">
                             {error && (
