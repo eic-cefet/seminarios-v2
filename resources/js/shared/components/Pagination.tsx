@@ -15,7 +15,10 @@ export function Pagination({
     if (lastPage <= 1) return null;
 
     return (
-        <div className="flex items-center justify-between px-6 py-3 bg-gray-50">
+        <nav
+            aria-label="Paginação"
+            className="flex items-center justify-between px-6 py-3 bg-gray-50"
+        >
             <span className="text-sm text-gray-500">
                 Página {currentPage} de {lastPage}
             </span>
@@ -23,6 +26,7 @@ export function Pagination({
                 <button
                     onClick={() => onPageChange(Math.max(1, currentPage - 1))}
                     disabled={currentPage === 1}
+                    aria-label="Página anterior"
                     className={cn(
                         "inline-flex items-center gap-1 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium shadow-sm transition-colors cursor-pointer",
                         currentPage === 1
@@ -38,6 +42,7 @@ export function Pagination({
                         onPageChange(Math.min(lastPage, currentPage + 1))
                     }
                     disabled={currentPage === lastPage}
+                    aria-label="Próxima página"
                     className={cn(
                         "inline-flex items-center gap-1 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium shadow-sm transition-colors cursor-pointer",
                         currentPage === lastPage
@@ -49,6 +54,6 @@ export function Pagination({
                     <ChevronRight className="h-4 w-4" />
                 </button>
             </div>
-        </div>
+        </nav>
     );
 }
