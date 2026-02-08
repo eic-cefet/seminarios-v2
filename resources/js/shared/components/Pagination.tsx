@@ -19,7 +19,7 @@ export function Pagination({
             aria-label="Paginação"
             className="flex items-center justify-between px-6 py-3 bg-gray-50"
         >
-            <span className="text-sm text-gray-500">
+            <span className="text-sm text-gray-500" aria-live="polite">
                 Página {currentPage} de {lastPage}
             </span>
             <div className="flex items-center gap-2">
