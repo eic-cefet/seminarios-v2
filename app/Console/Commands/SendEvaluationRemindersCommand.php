@@ -47,9 +47,7 @@ class SendEvaluationRemindersCommand extends Command
             return self::SUCCESS;
         }
 
-        $this->info("Found {$registrations->groupBy('user_id')->count()} users with pending evaluations.");
-
-        $dispatched = $this->dispatchGroupedByUser($registrations, SendEvaluationReminderJob::class);
+        $dispatched = $this->dispatchGroupedByUser($registrations, SendEvaluationReminderJob::class, 'users with pending evaluations');
 
         $this->info("Dispatched {$dispatched} evaluation reminder(s).");
 

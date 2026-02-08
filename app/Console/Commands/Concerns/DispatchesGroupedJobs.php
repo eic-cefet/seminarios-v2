@@ -13,9 +13,12 @@ trait DispatchesGroupedJobs
      * @param  class-string  $jobClass  Job class that accepts (User, Collection<int>) constructor
      * @return int Number of jobs dispatched
      */
-    protected function dispatchGroupedByUser(Collection $registrations, string $jobClass): int
+    protected function dispatchGroupedByUser(Collection $registrations, string $jobClass, string $userLabel = 'users'): int
     {
         $grouped = $registrations->groupBy('user_id');
+
+        $this->info("Found {$grouped->count()} {$userLabel}.");
+
         $dispatched = 0;
 
         foreach ($grouped as $userRegistrations) {

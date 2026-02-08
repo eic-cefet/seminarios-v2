@@ -39,9 +39,7 @@ class SendSeminarRemindersCommand extends Command
             return self::SUCCESS;
         }
 
-        $this->info("Found {$registrations->groupBy('user_id')->count()} users to remind.");
-
-        $dispatched = $this->dispatchGroupedByUser($registrations, SendSeminarReminderJob::class);
+        $dispatched = $this->dispatchGroupedByUser($registrations, SendSeminarReminderJob::class, 'users to remind');
 
         $this->info("Dispatched {$dispatched} reminder(s).");
 
