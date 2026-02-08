@@ -9,7 +9,6 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import {
     Calendar,
     Check,
-    ChevronLeft,
     ChevronRight,
     Download,
     FileText,
@@ -23,6 +22,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { Link, Navigate } from "react-router-dom";
+import { Pagination } from "@shared/components/Pagination";
 import { Badge } from "../components/Badge";
 import { Layout } from "../components/Layout";
 
@@ -823,48 +823,11 @@ function RegistrationsSection() {
                                 </div>
                             </div>
                         ))}
-                        {meta && meta.last_page > 1 && (
-                            <div className="flex items-center justify-between px-6 py-3 bg-gray-50">
-                                <span className="text-sm text-gray-500">
-                                    Página {meta.current_page} de{" "}
-                                    {meta.last_page}
-                                </span>
-                                <div className="flex items-center gap-2">
-                                    <button
-                                        onClick={() =>
-                                            setPage((p) => Math.max(1, p - 1))
-                                        }
-                                        disabled={page === 1}
-                                        className={cn(
-                                            "inline-flex items-center gap-1 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium shadow-sm transition-colors cursor-pointer",
-                                            page === 1
-                                                ? "text-gray-300 cursor-not-allowed"
-                                                : "text-gray-700 hover:bg-gray-50",
-                                        )}
-                                    >
-                                        <ChevronLeft className="h-4 w-4" />
-                                        Anterior
-                                    </button>
-                                    <button
-                                        onClick={() =>
-                                            setPage((p) =>
-                                                Math.min(meta.last_page, p + 1),
-                                            )
-                                        }
-                                        disabled={page === meta.last_page}
-                                        className={cn(
-                                            "inline-flex items-center gap-1 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium shadow-sm transition-colors cursor-pointer",
-                                            page === meta.last_page
-                                                ? "text-gray-300 cursor-not-allowed"
-                                                : "text-gray-700 hover:bg-gray-50",
-                                        )}
-                                    >
-                                        Próximo
-                                        <ChevronRight className="h-4 w-4" />
-                                    </button>
-                                </div>
-                            </div>
-                        )}
+                        <Pagination
+                            currentPage={meta?.current_page ?? page}
+                            lastPage={meta?.last_page ?? 1}
+                            onPageChange={setPage}
+                        />
                     </>
                 )}
             </div>
@@ -969,48 +932,11 @@ function CertificatesSection() {
                                 </div>
                             </div>
                         ))}
-                        {meta && meta.last_page > 1 && (
-                            <div className="flex items-center justify-between px-6 py-3 bg-gray-50">
-                                <span className="text-sm text-gray-500">
-                                    Página {meta.current_page} de{" "}
-                                    {meta.last_page}
-                                </span>
-                                <div className="flex items-center gap-2">
-                                    <button
-                                        onClick={() =>
-                                            setPage((p) => Math.max(1, p - 1))
-                                        }
-                                        disabled={page === 1}
-                                        className={cn(
-                                            "inline-flex items-center gap-1 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium shadow-sm transition-colors cursor-pointer",
-                                            page === 1
-                                                ? "text-gray-300 cursor-not-allowed"
-                                                : "text-gray-700 hover:bg-gray-50",
-                                        )}
-                                    >
-                                        <ChevronLeft className="h-4 w-4" />
-                                        Anterior
-                                    </button>
-                                    <button
-                                        onClick={() =>
-                                            setPage((p) =>
-                                                Math.min(meta.last_page, p + 1),
-                                            )
-                                        }
-                                        disabled={page === meta.last_page}
-                                        className={cn(
-                                            "inline-flex items-center gap-1 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium shadow-sm transition-colors cursor-pointer",
-                                            page === meta.last_page
-                                                ? "text-gray-300 cursor-not-allowed"
-                                                : "text-gray-700 hover:bg-gray-50",
-                                        )}
-                                    >
-                                        Próximo
-                                        <ChevronRight className="h-4 w-4" />
-                                    </button>
-                                </div>
-                            </div>
-                        )}
+                        <Pagination
+                            currentPage={meta?.current_page ?? page}
+                            lastPage={meta?.last_page ?? 1}
+                            onPageChange={setPage}
+                        />
                     </>
                 )}
             </div>

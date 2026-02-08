@@ -3,11 +3,11 @@ import { Link } from "react-router-dom";
 import * as Dialog from "@radix-ui/react-dialog";
 import * as Label from "@radix-ui/react-label";
 import { X } from "lucide-react";
+import { SocialLoginButtons } from "@shared/components/SocialLoginButtons";
 import { buildUrl, cn } from "@shared/lib/utils";
 import { useAuth } from "@shared/contexts/AuthContext";
 import { authApi } from "@shared/api/client";
 import { getErrorMessage } from "@shared/lib/errors";
-import { GoogleIcon, GithubIcon } from "@shared/components/icons/SocialIcons";
 
 interface LoginModalProps {
     open: boolean;
@@ -96,38 +96,13 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
                                 Entre com sua conta para acessar o sistema
                             </Dialog.Description>
 
-                            {/* Social Login Buttons */}
-                            <div className="mt-6 space-y-3">
-                                <button
-                                    type="button"
-                                    onClick={() => handleSocialLogin("google")}
-                                    className="flex w-full items-center justify-center gap-3 rounded-md border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 transition-colors cursor-pointer"
-                                >
-                                    <GoogleIcon className="h-5 w-5" />
-                                    Continuar com Google
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => handleSocialLogin("github")}
-                                    className="flex w-full items-center justify-center gap-3 rounded-md border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 transition-colors cursor-pointer"
-                                >
-                                    <GithubIcon className="h-5 w-5" />
-                                    Continuar com GitHub
-                                </button>
+                            <div className="mt-6 space-y-6">
+                                <SocialLoginButtons
+                                    onSocialLogin={handleSocialLogin}
+                                    actionLabel="Continuar"
+                                />
                             </div>
 
-                            <div className="relative my-6">
-                                <div className="absolute inset-0 flex items-center">
-                                    <div className="w-full border-t border-gray-200" />
-                                </div>
-                                <div className="relative flex justify-center text-sm">
-                                    <span className="bg-white px-2 text-gray-500">
-                                        ou
-                                    </span>
-                                </div>
-                            </div>
-
-                            {/* Email/Password Form */}
                             <form onSubmit={handleLogin} className="space-y-4">
                                 {error && (
                                     <div className="rounded-md bg-red-50 p-3 text-sm text-red-700">
