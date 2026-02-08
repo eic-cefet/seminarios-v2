@@ -27,5 +27,6 @@ Thumbs.db
 frankenphp
 frankenphp-worker.php
 
+coverage/
 coverage.xml
 composer.phar
