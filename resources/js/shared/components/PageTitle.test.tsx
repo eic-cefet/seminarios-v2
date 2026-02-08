@@ -11,7 +11,7 @@ describe('PageTitle', () => {
         const { container } = renderWithHelmet(<PageTitle title="Home" />);
         // HelmetProvider in tests inserts title tags into the component tree
         // We check the rendered output contains the right title text
-        const helmet = document.head.querySelector('title') ?? document.querySelector('title');
+        document.head.querySelector('title') ?? document.querySelector('title');
         // In test environment, Helmet may not update document.title but does render the element
         // Just verify the component renders without error and constructs correct title
         expect(container).toBeDefined();

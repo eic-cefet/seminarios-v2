@@ -97,7 +97,7 @@ describe('Login', () => {
         const mockLogin = vi.fn(() => new Promise(() => {}));
         vi.mocked(useAuth).mockReturnValue({
             user: null, isLoading: false, isAuthenticated: false,
-            login: mockLogin, register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(),
+            login: mockLogin as any, register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(),
         });
         const user = userEvent.setup();
 

@@ -151,7 +151,7 @@ describe('Presence', () => {
     });
 
     it('auto-registers presence when user is authenticated and link is valid', async () => {
-        const fetchSpy = vi.spyOn(globalThis, 'fetch')
+        vi.spyOn(globalThis, 'fetch')
             .mockResolvedValueOnce(validPresenceResponse()) // check link
             .mockResolvedValueOnce(successRegisterResponse()); // register
 
@@ -365,7 +365,7 @@ describe('Presence', () => {
     });
 
     it('retries registration when "Tentar novamente" button is clicked', async () => {
-        const fetchSpy = vi.spyOn(globalThis, 'fetch')
+        vi.spyOn(globalThis, 'fetch')
             .mockResolvedValueOnce(validPresenceResponse())
             .mockResolvedValueOnce(new Response(
                 JSON.stringify({ message: 'Server error' }),

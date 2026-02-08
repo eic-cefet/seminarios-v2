@@ -32,7 +32,7 @@ describe('SubjectSeminars', () => {
     it('renders subject name heading after loading', async () => {
         const subject = createSubject({ name: 'Machine Learning' });
         vi.mocked(subjectsApi.get).mockResolvedValue({ data: subject });
-        vi.mocked(seminarsApi.bySubject).mockResolvedValue({ data: [] });
+        vi.mocked(seminarsApi.bySubject).mockResolvedValue({ data: [], meta: { current_page: 1, last_page: 1, per_page: 10, total: 0, from: 0, to: 0 }, links: { first: '', last: '', prev: null, next: null } });
 
         render(<SubjectSeminars />);
 
@@ -48,7 +48,7 @@ describe('SubjectSeminars', () => {
             createSeminar({ name: 'Seminar Beta' }),
         ];
         vi.mocked(subjectsApi.get).mockResolvedValue({ data: subject });
-        vi.mocked(seminarsApi.bySubject).mockResolvedValue({ data: seminars });
+        vi.mocked(seminarsApi.bySubject).mockResolvedValue({ data: seminars, meta: { current_page: 1, last_page: 1, per_page: 10, total: 2, from: 1, to: 2 }, links: { first: '', last: '', prev: null, next: null } });
 
         render(<SubjectSeminars />);
 
@@ -61,7 +61,7 @@ describe('SubjectSeminars', () => {
     it('shows empty state when no seminars', async () => {
         const subject = createSubject({ name: 'Empty Topic' });
         vi.mocked(subjectsApi.get).mockResolvedValue({ data: subject });
-        vi.mocked(seminarsApi.bySubject).mockResolvedValue({ data: [] });
+        vi.mocked(seminarsApi.bySubject).mockResolvedValue({ data: [], meta: { current_page: 1, last_page: 1, per_page: 10, total: 0, from: 0, to: 0 }, links: { first: '', last: '', prev: null, next: null } });
 
         render(<SubjectSeminars />);
 

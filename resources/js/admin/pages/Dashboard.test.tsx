@@ -8,7 +8,7 @@ vi.mock('../api/adminClient', () => ({
 }));
 
 import { dashboardApi } from '../api/adminClient';
-const mockDashboardApi = dashboardApi as { stats: ReturnType<typeof vi.fn> };
+const mockDashboardApi = dashboardApi as unknown as { stats: ReturnType<typeof vi.fn> };
 
 describe('Dashboard', () => {
     it('shows loading state initially', () => {

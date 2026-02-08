@@ -3,7 +3,6 @@ import { render, screen } from '@/test/test-utils';
 import { Footer } from './Footer';
 
 describe('Footer', () => {
-    const originalDate = Date;
 
     beforeEach(() => {
         // Mock Date to return a fixed year

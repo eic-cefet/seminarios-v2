@@ -5,7 +5,7 @@ describe('analytics', () => {
 
     beforeEach(() => {
         gtagSpy = vi.fn();
-        window.gtag = gtagSpy;
+        window.gtag = gtagSpy as typeof window.gtag;
     });
 
     afterEach(() => {

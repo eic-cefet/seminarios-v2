@@ -515,7 +515,7 @@ describe('SemestralReport', () => {
         expect(capturedMutationOptions.mutationFn).toBeDefined();
 
         // Call the mutationFn directly to test its logic
-        const result = await capturedMutationOptions.mutationFn();
+        await capturedMutationOptions.mutationFn();
         expect(mockFetch).toHaveBeenCalled();
     });
 

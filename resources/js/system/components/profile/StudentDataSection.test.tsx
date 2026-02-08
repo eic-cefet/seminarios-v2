@@ -1,7 +1,7 @@
 import { render, screen, userEvent, waitFor } from '@/test/test-utils';
 import { createUser, createStudentData, createCourse } from '@/test/factories';
 import { StudentDataSection } from './StudentDataSection';
-import { profileApi, coursesApi } from '@shared/api/client';
+import { profileApi } from '@shared/api/client';
 import { analytics } from '@shared/lib/analytics';
 
 vi.mock('@shared/api/client', () => ({
@@ -14,7 +14,7 @@ vi.mock('@shared/api/client', () => ({
     ApiRequestError: class extends Error {
         code: string;
         errors?: Record<string, string[]>;
-        constructor(code: string, message: string, status: number, errors?: Record<string, string[]>) {
+        constructor(code: string, message: string, _status: number, errors?: Record<string, string[]>) {
             super(message);
             this.code = code;
             this.errors = errors;
@@ -176,7 +176,7 @@ describe('StudentDataSection', () => {
 
         await userAction.click(screen.getByRole('button', { name: /editar/i }));
 
-        const courseSelect = screen.getByLabelText(/curso/i);
+        screen.getByLabelText(/curso/i);
         const situationSelect = screen.getByLabelText(/situação/i);
         const roleSelect = screen.getByLabelText(/vínculo/i);
 
@@ -281,7 +281,7 @@ describe('StudentDataSection', () => {
     });
 
     it('shows loading state while submitting', async () => {
-        let resolveUpdate: () => void;
+        let resolveUpdate: (value?: any) => void;
         vi.mocked(profileApi.updateStudentData).mockImplementation(() => new Promise<any>((resolve) => { resolveUpdate = resolve; }));
         const userAction = userEvent.setup();
 

@@ -24,7 +24,7 @@ vi.mock('@shared/api/client', () => ({
     },
 }));
 
-const mockAuthApi = authApi as {
+const mockAuthApi = authApi as unknown as {
     me: ReturnType<typeof vi.fn>;
     login: ReturnType<typeof vi.fn>;
     register: ReturnType<typeof vi.fn>;

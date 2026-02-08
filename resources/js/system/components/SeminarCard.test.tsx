@@ -7,7 +7,7 @@ vi.mock('@shared/lib/utils', async () => {
     const actual = await vi.importActual('@shared/lib/utils');
     return {
         ...actual,
-        formatDateTime: vi.fn((date: string) => 'Formatted Date'),
+        formatDateTime: vi.fn((_date: string) => 'Formatted Date'),
         isExpired: vi.fn((date: string) => date === '2020-01-01T00:00:00Z'),
         containsHTML: vi.fn((text: string) => text.includes('<')),
     };

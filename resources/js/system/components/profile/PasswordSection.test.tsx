@@ -8,7 +8,7 @@ vi.mock('@shared/api/client', () => ({
     ApiRequestError: class extends Error {
         code: string;
         errors?: Record<string, string[]>;
-        constructor(code: string, message: string, status: number, errors?: Record<string, string[]>) {
+        constructor(code: string, message: string, _status: number, errors?: Record<string, string[]>) {
             super(message);
             this.code = code;
             this.errors = errors;
@@ -164,7 +164,7 @@ describe('PasswordSection', () => {
     });
 
     it('shows loading state while submitting', async () => {
-        let resolveUpdate: () => void;
+        let resolveUpdate: (value?: any) => void;
         vi.mocked(profileApi.updatePassword).mockImplementation(() => new Promise<any>((resolve) => { resolveUpdate = resolve; }));
         const user = userEvent.setup();
 

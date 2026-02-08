@@ -45,7 +45,7 @@ describe('Certificates', () => {
             createUserCertificate({ seminar: { id: 1, name: 'Intro to AI', slug: 'intro-ai', scheduled_at: '2026-06-15T14:00:00Z', seminar_type: { id: 1, name: 'Palestra' } } }),
             createUserCertificate({ seminar: { id: 2, name: 'Web Security', slug: 'web-security', scheduled_at: '2026-07-10T10:00:00Z', seminar_type: { id: 1, name: 'Palestra' } } }),
         ];
-        vi.mocked(profileApi.certificates).mockResolvedValue({ data: certificates });
+        vi.mocked(profileApi.certificates).mockResolvedValue({ data: certificates, meta: { current_page: 1, last_page: 1, per_page: 10, total: 2 } });
 
         render(<Certificates />);
 
@@ -60,7 +60,7 @@ describe('Certificates', () => {
             user: createUser({ name: 'Test User' }), isLoading: false, isAuthenticated: true,
             login: vi.fn(), register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(),
         });
-        vi.mocked(profileApi.certificates).mockResolvedValue({ data: [] });
+        vi.mocked(profileApi.certificates).mockResolvedValue({ data: [], meta: { current_page: 1, last_page: 1, per_page: 10, total: 0 } });
 
         render(<Certificates />);
 

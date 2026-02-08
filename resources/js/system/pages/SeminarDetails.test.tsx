@@ -201,7 +201,7 @@ describe('SeminarDetails', () => {
     it('registers successfully and shows registered state', async () => {
         const seminar = createSeminar({ name: 'Test', isExpired: false });
         vi.mocked(seminarsApi.get).mockResolvedValue({ data: seminar });
-        vi.mocked(registrationApi.register).mockResolvedValue({ message: 'ok' });
+        vi.mocked(registrationApi.register).mockResolvedValue({ message: 'ok', registration: { id: 1, seminar_id: 1, created_at: '2024-01-01' } });
         // After registration, the status query returns registered: true
         vi.mocked(registrationApi.status)
             .mockResolvedValueOnce({ registered: false })

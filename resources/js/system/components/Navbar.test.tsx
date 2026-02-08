@@ -137,7 +137,6 @@ describe('Navbar', () => {
     });
 
     it('shows mobile menu with Entrar and Criar conta for unauthenticated users', async () => {
-        const user = userEvent.setup();
         render(<Navbar />);
 
         // Mobile menu buttons appear in the DOM

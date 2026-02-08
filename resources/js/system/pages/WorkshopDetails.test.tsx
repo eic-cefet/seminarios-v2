@@ -34,7 +34,7 @@ describe('WorkshopDetails', () => {
     it('renders workshop name after loading', async () => {
         const workshop = createWorkshop({ name: 'Advanced Docker' });
         vi.mocked(workshopsApi.get).mockResolvedValue({ data: workshop });
-        vi.mocked(workshopsApi.seminars).mockResolvedValue({ data: [] });
+        vi.mocked(workshopsApi.seminars).mockResolvedValue({ data: [], meta: { current_page: 1, last_page: 1, per_page: 10, total: 0, from: 0, to: 0 }, links: { first: '', last: '', prev: null, next: null } });
 
         render(<WorkshopDetails />);
 
@@ -50,7 +50,7 @@ describe('WorkshopDetails', () => {
             createSeminar({ name: 'Session 2: Context' }),
         ];
         vi.mocked(workshopsApi.get).mockResolvedValue({ data: workshop });
-        vi.mocked(workshopsApi.seminars).mockResolvedValue({ data: seminars });
+        vi.mocked(workshopsApi.seminars).mockResolvedValue({ data: seminars, meta: { current_page: 1, last_page: 1, per_page: 10, total: 2, from: 1, to: 2 }, links: { first: '', last: '', prev: null, next: null } });
 
         render(<WorkshopDetails />);
 
@@ -62,7 +62,7 @@ describe('WorkshopDetails', () => {
 
     it('shows not found state when workshop does not exist', async () => {
         vi.mocked(workshopsApi.get).mockResolvedValue({ data: null as any });
-        vi.mocked(workshopsApi.seminars).mockResolvedValue({ data: [] });
+        vi.mocked(workshopsApi.seminars).mockResolvedValue({ data: [], meta: { current_page: 1, last_page: 1, per_page: 10, total: 0, from: 0, to: 0 }, links: { first: '', last: '', prev: null, next: null } });
 
         render(<WorkshopDetails />);
 

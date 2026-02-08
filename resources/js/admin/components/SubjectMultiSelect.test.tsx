@@ -1,4 +1,4 @@
-import { render, screen, userEvent, fireEvent, waitFor } from '@/test/test-utils';
+import { render, screen, userEvent, waitFor } from '@/test/test-utils';
 
 vi.mock('../api/adminClient', () => ({
     subjectsApi: {
@@ -19,6 +19,7 @@ beforeEach(async () => {
     vi.mocked(subjectsApi.list).mockResolvedValue({
         data: [],
         meta: { last_page: 1, current_page: 1, total: 0 } as any,
+        links: { first: '', last: '', prev: null, next: null },
     });
 });
 
@@ -136,6 +137,7 @@ describe('SubjectMultiSelect', () => {
                 { id: 2, name: 'Vue', created_at: '', updated_at: '' },
             ],
             meta: { last_page: 1, current_page: 1, total: 2 } as any,
+            links: { first: '', last: '', prev: null, next: null },
         });
 
         render(<SubjectMultiSelect {...defaultProps} />);
@@ -162,6 +164,7 @@ describe('SubjectMultiSelect', () => {
                 { id: 1, name: 'React', created_at: '', updated_at: '' },
             ],
             meta: { last_page: 1, current_page: 1, total: 1 } as any,
+            links: { first: '', last: '', prev: null, next: null },
         });
 
         render(<SubjectMultiSelect {...defaultProps} onChange={mockOnChange} />);
@@ -187,6 +190,7 @@ describe('SubjectMultiSelect', () => {
                 { id: 2, name: 'Redux', created_at: '', updated_at: '' },
             ],
             meta: { last_page: 1, current_page: 1, total: 2 } as any,
+            links: { first: '', last: '', prev: null, next: null },
         });
 
         render(<SubjectMultiSelect {...defaultProps} value={['React']} />);
@@ -242,6 +246,7 @@ describe('SubjectMultiSelect', () => {
                 { id: 1, name: 'React', created_at: '', updated_at: '' },
             ],
             meta: { last_page: 1, current_page: 1, total: 1 } as any,
+            links: { first: '', last: '', prev: null, next: null },
         });
 
         render(<SubjectMultiSelect {...defaultProps} />);

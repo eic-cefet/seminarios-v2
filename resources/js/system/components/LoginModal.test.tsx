@@ -1,6 +1,5 @@
 import { render, screen, userEvent, waitFor } from '@/test/test-utils';
 import { LoginModal } from './LoginModal';
-import { useAuth } from '@shared/contexts/AuthContext';
 import { authApi } from '@shared/api/client';
 
 const mockLogin = vi.fn();
@@ -239,7 +238,7 @@ describe('LoginModal', () => {
     });
 
     it('shows loading state during forgot password submission', async () => {
-        let resolveForgot: () => void;
+        let resolveForgot: (value?: any) => void;
         vi.mocked(authApi.forgotPassword).mockImplementation(() => new Promise<any>((resolve) => { resolveForgot = resolve; }));
         const user = userEvent.setup();
 
@@ -339,7 +338,7 @@ describe('LoginModal', () => {
 
         expect(hrefSetter).toHaveBeenCalledWith('/auth/google');
 
-        window.location = originalLocation;
+        window.location = originalLocation as any;
     });
 
     it('redirects to GitHub on social login click', async () => {
@@ -356,7 +355,7 @@ describe('LoginModal', () => {
 
         expect(hrefSetter).toHaveBeenCalledWith('/auth/github');
 
-        window.location = originalLocation;
+        window.location = originalLocation as any;
     });
 
     it('resets state when dialog is closed via close button', async () => {

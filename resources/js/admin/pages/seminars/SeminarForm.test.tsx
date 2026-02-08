@@ -298,7 +298,6 @@ describe('SeminarForm', () => {
     });
 
     it('renders location select placeholder', () => {
-        const importReactRouterDom = vi.fn();
         render(<SeminarForm />);
         expect(screen.getByText('Selecione um local')).toBeInTheDocument();
     });

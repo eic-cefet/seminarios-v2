@@ -31,6 +31,7 @@ describe('SpeakerSelectionModal', () => {
                 { id: 2, name: 'Speaker Two', email: 'speaker2@test.com', speaker_data: null },
             ] as any,
             meta: { last_page: 1, current_page: 1, total: 2 } as any,
+            links: { first: '', last: '', prev: null, next: null },
         });
         vi.mocked(usersApi.create).mockReset();
     });
@@ -195,6 +196,7 @@ describe('SpeakerSelectionModal', () => {
         vi.mocked(usersApi.list).mockResolvedValue({
             data: [],
             meta: { last_page: 1, current_page: 1, total: 0 } as any,
+            links: { first: '', last: '', prev: null, next: null },
         });
 
         render(<SpeakerSelectionModal {...defaultProps} />);
