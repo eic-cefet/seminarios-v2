@@ -209,6 +209,38 @@ describe('RegistrationsSection', () => {
         expect(screen.queryByText('Room 202')).not.toBeInTheDocument();
     });
 
+    it('falls back to page state for currentPage and 1 for lastPage when meta is undefined', async () => {
+        const registrations = [
+            createUserRegistration({
+                id: 1,
+                present: false,
+                seminar: {
+                    id: 10,
+                    name: 'Seminário Sem Meta',
+                    slug: 'seminario-sem-meta',
+                    scheduled_at: '2026-06-15T14:00:00Z',
+                    is_expired: false,
+                    seminar_type: null,
+                    location: null,
+                },
+            }),
+        ];
+
+        vi.mocked(profileApi.registrations).mockResolvedValue({
+            data: registrations,
+            meta: undefined as any,
+        });
+
+        render(<RegistrationsSection />);
+
+        await waitFor(() => {
+            expect(screen.getByText('Seminário Sem Meta')).toBeInTheDocument();
+        });
+
+        // The Pagination component renders with fallback values (currentPage=1, lastPage=1)
+        expect(screen.getByText('Inscrito')).toBeInTheDocument();
+    });
+
     it('renders "Ausente" badge when expired and not present', async () => {
         const registrations = [
             createUserRegistration({

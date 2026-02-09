@@ -350,6 +350,50 @@ describe('SpeakerSelectionModal', () => {
         });
     });
 
+    it('calls onConfirm with empty users array when data is not yet loaded', async () => {
+        const { usersApi } = await import('../api/adminClient');
+        // Make the list return a never-resolving promise so usersData is undefined
+        vi.mocked(usersApi.list).mockReturnValue(new Promise(() => {}));
+
+        const mockOnConfirm = vi.fn();
+        render(<SpeakerSelectionModal {...defaultProps} onConfirm={mockOnConfirm} selectedIds={[1]} />);
+        const user = userEvent.setup();
+
+        // Click Confirmar immediately while data hasn't loaded
+        await user.click(screen.getByText('Confirmar (1)'));
+
+        // onConfirm should be called with ids but empty users array (the ?? [] fallback)
+        expect(mockOnConfirm).toHaveBeenCalledWith([1], []);
+    });
+
+    it('shows Criando... when create mutation is pending', async () => {
+        const { usersApi } = await import('../api/adminClient');
+        // Make create return a never-resolving promise so mutation stays pending
+        vi.mocked(usersApi.create).mockReturnValue(new Promise(() => {}));
+
+        render(<SpeakerSelectionModal {...defaultProps} />);
+        const user = userEvent.setup();
+
+        // Go to create form
+        await user.click(screen.getByText('Criar Novo Palestrante'));
+
+        await waitFor(() => {
+            expect(screen.getByLabelText('Nome *')).toBeInTheDocument();
+        });
+
+        // Fill required fields
+        await user.type(screen.getByLabelText('Nome *'), 'Pending Speaker');
+        await user.type(screen.getByLabelText('Email *'), 'pending@test.com');
+
+        // Submit
+        await user.click(screen.getByText('Criar e Adicionar'));
+
+        // Button should show pending state
+        await waitFor(() => {
+            expect(screen.getByText('Criando...')).toBeInTheDocument();
+        });
+    });
+
     it('clears search and resets form when closing the modal', async () => {
         render(<SpeakerSelectionModal {...defaultProps} />);
         const user = userEvent.setup();

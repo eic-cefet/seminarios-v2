@@ -22,7 +22,7 @@ import { Skeleton } from "../components/ui/skeleton";
 import { formatDateTime } from "@shared/lib/utils";
 import { PageTitle } from "@shared/components/PageTitle";
 
-function StatsCard({
+export function StatsCard({
     title,
     value,
     icon: Icon,

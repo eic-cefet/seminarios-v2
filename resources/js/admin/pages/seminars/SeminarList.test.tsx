@@ -723,6 +723,72 @@ describe('SeminarList', () => {
         });
     });
 
+    it('shows empty state Limpar filtros when only upcoming filter is active', async () => {
+        vi.mocked(seminarsApi.list).mockResolvedValue({
+            data: [],
+            meta: { last_page: 1, current_page: 1, total: 0, from: 0, to: 0 },
+        } as any);
+
+        render(<SeminarList />);
+        const user = userEvent.setup();
+
+        // Toggle upcoming filter on
+        const upcomingSwitch = screen.getByRole('switch', { name: 'Apenas futuros' });
+        await user.click(upcomingSwitch);
+
+        // The empty state should show "Limpar filtros" link because upcomingFilter is true
+        await waitFor(() => {
+            expect(screen.getByText('Nenhum seminário encontrado')).toBeInTheDocument();
+        });
+
+        // There should be a "Limpar filtros" button in the empty state area (variant="link")
+        const clearButtons = screen.getAllByText('Limpar filtros');
+        expect(clearButtons.length).toBeGreaterThanOrEqual(1);
+    });
+
+    it('triggers PresenceLinkModal onClose callback when modal is dismissed', async () => {
+        vi.mocked(seminarsApi.list).mockResolvedValue({
+            data: [
+                {
+                    id: 20,
+                    name: 'Modal Close Seminar',
+                    slug: 'modal-close',
+                    scheduled_at: '2026-06-15T14:00:00Z',
+                    active: true,
+                    location: null,
+                    created_at: '2026-01-01T00:00:00Z',
+                    updated_at: '2026-01-01T00:00:00Z',
+                },
+            ],
+            meta: { last_page: 1, current_page: 1, total: 1, from: 1, to: 1 },
+        } as any);
+
+        render(<SeminarList />);
+        const user = userEvent.setup();
+
+        await waitFor(() => {
+            expect(screen.getByText('Modal Close Seminar')).toBeInTheDocument();
+        });
+
+        // Open QR code modal
+        const qrButton = screen.getByTitle('Link de Presença (QR Code)');
+        await user.click(qrButton);
+
+        // The PresenceLinkModal should be rendered (Dialog open)
+        await waitFor(() => {
+            expect(screen.getByText('Link de Presença')).toBeInTheDocument();
+        });
+
+        // Press Escape to close the dialog, which triggers onClose callback (lines 416-418)
+        await user.keyboard('{Escape}');
+
+        // After onClose: selectedSeminar is set to null, so the PresenceLinkModal
+        // should no longer be rendered (the conditional on line 413 is false)
+        await waitFor(() => {
+            expect(screen.queryByText('Link de Presença')).not.toBeInTheDocument();
+        });
+    });
+
     it('clears active and upcoming filters when Limpar filtros is clicked', async () => {
         render(<SeminarList />);
         const user = userEvent.setup();

@@ -970,50 +970,6 @@ describe('UserList', () => {
         });
     });
 
-    it('covers handleRoleFilter (lines 184-185) setting roleFilter to empty on "all"', async () => {
-        // Lines 184-185: setRoleFilter(value === "all" ? "" : value) and setPage(1)
-        // This is a Radix Select onValueChange callback. We verify the component renders
-        // the role filter and the default value is "all" (showing "Todas").
-        render(<UserList />);
-
-        // The role filter defaults to "all" which maps to empty string
-        expect(screen.getByText('Filtros')).toBeInTheDocument();
-        expect(screen.getAllByText('Funcao').length).toBeGreaterThanOrEqual(1);
-    });
-
-    it('covers role Select onValueChange in dialog (line 633) by verifying role form field', async () => {
-        // Line 633: setFormData({...formData, role: value as "admin" | "teacher" | "user"})
-        // This is a Radix Select in the create/edit dialog
-        render(<UserList />);
-        const user = userEvent.setup();
-
-        await user.click(screen.getByText('Novo Usuario'));
-
-        await waitFor(() => {
-            expect(screen.getByText('Informacoes Basicas')).toBeInTheDocument();
-        });
-
-        // The role select defaults to "user" - verify it renders
-        // We can't trigger Radix Select in jsdom but we verify the field exists
-        expect(screen.getByText('Informacoes Basicas')).toBeInTheDocument();
-    });
-
-    it('covers course_situation Select onValueChange (line 701) by verifying field renders', async () => {
-        // Line 701: setFormData({...formData, student_data: {..., course_situation: value}})
-        // This is a Radix Select for course situation in the dialog
-        render(<UserList />);
-        const user = userEvent.setup();
-
-        await user.click(screen.getByText('Novo Usuario'));
-
-        await waitFor(() => {
-            expect(screen.getByText('Dados de Aluno (opcional)')).toBeInTheDocument();
-        });
-
-        // The Situacao select field should render
-        expect(screen.getByText('Situacao')).toBeInTheDocument();
-    });
-
     it('handles unknown role with default badge variant', async () => {
         vi.mocked(usersApi.list).mockResolvedValue({
             data: [
@@ -1124,5 +1080,265 @@ describe('UserList', () => {
         });
 
         expect(screen.getByText('Usuarios')).toBeInTheDocument();
+    });
+
+    it('triggers handleRoleFilter with a specific role (non-"all" branch)', async () => {
+        // Polyfill pointer capture methods for Radix Select in jsdom
+        const origHasPointerCapture = HTMLElement.prototype.hasPointerCapture;
+        const origSetPointerCapture = HTMLElement.prototype.setPointerCapture;
+        const origReleasePointerCapture = HTMLElement.prototype.releasePointerCapture;
+        HTMLElement.prototype.hasPointerCapture = vi.fn().mockReturnValue(false);
+        HTMLElement.prototype.setPointerCapture = vi.fn();
+        HTMLElement.prototype.releasePointerCapture = vi.fn();
+
+        vi.mocked(usersApi.list).mockResolvedValue({
+            data: [],
+            meta: { last_page: 1, current_page: 1, total: 0, from: 0, to: 0 },
+        } as any);
+
+        render(<UserList />);
+        const user = userEvent.setup();
+
+        // Open the role filter Select (the one with id="role-filter")
+        const roleFilterTrigger = screen.getByRole('combobox', { name: 'Funcao' });
+        await user.click(roleFilterTrigger);
+
+        // Select a specific role - this triggers handleRoleFilter with value !== "all"
+        const adminOption = await screen.findByRole('option', { name: 'Admin' });
+        await user.click(adminOption);
+
+        // After selecting "Admin", usersApi.list should be called with role="admin"
+        await waitFor(() => {
+            expect(usersApi.list).toHaveBeenCalledWith(
+                expect.objectContaining({ role: 'admin' }),
+            );
+        });
+
+        // Restore
+        HTMLElement.prototype.hasPointerCapture = origHasPointerCapture;
+        HTMLElement.prototype.setPointerCapture = origSetPointerCapture;
+        HTMLElement.prototype.releasePointerCapture = origReleasePointerCapture;
+    });
+
+    it('triggers handleRoleFilter with "all" to reset role filter', async () => {
+        // Polyfill pointer capture methods for Radix Select in jsdom
+        const origHasPointerCapture = HTMLElement.prototype.hasPointerCapture;
+        const origSetPointerCapture = HTMLElement.prototype.setPointerCapture;
+        const origReleasePointerCapture = HTMLElement.prototype.releasePointerCapture;
+        HTMLElement.prototype.hasPointerCapture = vi.fn().mockReturnValue(false);
+        HTMLElement.prototype.setPointerCapture = vi.fn();
+        HTMLElement.prototype.releasePointerCapture = vi.fn();
+
+        vi.mocked(usersApi.list).mockResolvedValue({
+            data: [],
+            meta: { last_page: 1, current_page: 1, total: 0, from: 0, to: 0 },
+        } as any);
+
+        render(<UserList />);
+        const user = userEvent.setup();
+
+        // First set a specific role filter
+        const roleFilterTrigger = screen.getByRole('combobox', { name: 'Funcao' });
+        await user.click(roleFilterTrigger);
+        const adminOption = await screen.findByRole('option', { name: 'Admin' });
+        await user.click(adminOption);
+
+        await waitFor(() => {
+            expect(usersApi.list).toHaveBeenCalledWith(
+                expect.objectContaining({ role: 'admin' }),
+            );
+        });
+
+        // Now select "all" - this triggers handleRoleFilter with value === "all"
+        await user.click(roleFilterTrigger);
+        const allOption = await screen.findByRole('option', { name: 'Todas' });
+        await user.click(allOption);
+
+        // After selecting "all", roleFilter resets to "" so role should be undefined
+        await waitFor(() => {
+            expect(usersApi.list).toHaveBeenCalledWith(
+                expect.objectContaining({ role: undefined }),
+            );
+        });
+
+        // Restore
+        HTMLElement.prototype.hasPointerCapture = origHasPointerCapture;
+        HTMLElement.prototype.setPointerCapture = origSetPointerCapture;
+        HTMLElement.prototype.releasePointerCapture = origReleasePointerCapture;
+    });
+
+    it('covers openEditDialog with empty roles array (branch 211:1)', async () => {
+        vi.mocked(usersApi.list).mockResolvedValue({
+            data: [
+                {
+                    id: 99,
+                    name: 'No Role User',
+                    email: 'norole@test.com',
+                    roles: [],
+                    created_at: '2026-01-01T00:00:00Z',
+                    updated_at: '2026-01-01T00:00:00Z',
+                },
+            ],
+            meta: { last_page: 1, current_page: 1, total: 1, from: 1, to: 1 },
+        } as any);
+
+        render(<UserList />);
+        const user = userEvent.setup();
+
+        await waitFor(() => {
+            expect(screen.getByText('No Role User')).toBeInTheDocument();
+        });
+
+        // Click edit button - the fallback (user.roles[0] || "user") triggers branch 211:1
+        const row = screen.getByText('No Role User').closest('tr')!;
+        const buttons = row.querySelectorAll('button');
+        await user.click(buttons[0]); // edit button
+
+        await waitFor(() => {
+            expect(screen.getByText('Editar Usuario')).toBeInTheDocument();
+        });
+
+        // Verify role defaults to "user" when roles array is empty
+        expect(screen.getByLabelText('Nome')).toHaveValue('No Role User');
+    });
+
+    it('triggers role Select onValueChange in dialog (line 633)', async () => {
+        // Polyfill pointer capture methods for Radix Select in jsdom
+        const origHasPointerCapture = HTMLElement.prototype.hasPointerCapture;
+        const origSetPointerCapture = HTMLElement.prototype.setPointerCapture;
+        const origReleasePointerCapture = HTMLElement.prototype.releasePointerCapture;
+        HTMLElement.prototype.hasPointerCapture = vi.fn().mockReturnValue(false);
+        HTMLElement.prototype.setPointerCapture = vi.fn();
+        HTMLElement.prototype.releasePointerCapture = vi.fn();
+
+        vi.mocked(usersApi.create).mockResolvedValue({ data: { id: 30 } } as any);
+
+        render(<UserList />);
+        const user = userEvent.setup();
+
+        await user.click(screen.getByText('Novo Usuario'));
+
+        await waitFor(() => {
+            expect(screen.getByText('Informacoes Basicas')).toBeInTheDocument();
+        });
+
+        // Find the role Select combobox in the dialog (not the filter one)
+        const comboboxes = screen.getAllByRole('combobox');
+        const dialogRoleSelect = comboboxes.find(
+            (cb) => !cb.id?.includes('role-filter') && cb.closest('[role="dialog"]'),
+        )!;
+
+        await user.click(dialogRoleSelect);
+
+        // Select "Administrador" to change role from "user" to "admin"
+        const adminOption = await screen.findByRole('option', { name: 'Administrador' });
+        await user.click(adminOption);
+
+        // Fill required fields and submit to verify the role was changed
+        await user.type(screen.getByLabelText('Nome'), 'Role Test User');
+        await user.type(screen.getByLabelText('Email'), 'roletest@user.com');
+        await user.type(screen.getByLabelText(/Senha/), 'password123');
+
+        await user.click(screen.getByRole('button', { name: 'Salvar' }));
+
+        await waitFor(() => {
+            expect(usersApi.create).toHaveBeenCalledWith(
+                expect.objectContaining({ role: 'admin' }),
+            );
+        });
+
+        // Restore
+        HTMLElement.prototype.hasPointerCapture = origHasPointerCapture;
+        HTMLElement.prototype.setPointerCapture = origSetPointerCapture;
+        HTMLElement.prototype.releasePointerCapture = origReleasePointerCapture;
+    });
+
+    it('triggers course_situation Select onValueChange in dialog (line 701)', async () => {
+        // Polyfill pointer capture methods for Radix Select in jsdom
+        const origHasPointerCapture = HTMLElement.prototype.hasPointerCapture;
+        const origSetPointerCapture = HTMLElement.prototype.setPointerCapture;
+        const origReleasePointerCapture = HTMLElement.prototype.releasePointerCapture;
+        HTMLElement.prototype.hasPointerCapture = vi.fn().mockReturnValue(false);
+        HTMLElement.prototype.setPointerCapture = vi.fn();
+        HTMLElement.prototype.releasePointerCapture = vi.fn();
+
+        vi.mocked(usersApi.create).mockResolvedValue({ data: { id: 31 } } as any);
+
+        render(<UserList />);
+        const user = userEvent.setup();
+
+        await user.click(screen.getByText('Novo Usuario'));
+
+        await waitFor(() => {
+            expect(screen.getByText('Dados de Aluno (opcional)')).toBeInTheDocument();
+        });
+
+        // Find the course_situation Select combobox (it has placeholder "Selecione")
+        const comboboxes = screen.getAllByRole('combobox');
+        const situacaoSelect = comboboxes.find(
+            (cb) => cb.closest('[role="dialog"]') && cb.textContent?.includes('Selecione'),
+        )!;
+
+        await user.click(situacaoSelect);
+
+        // Select "Cursando"
+        const cursandoOption = await screen.findByRole('option', { name: 'Cursando' });
+        await user.click(cursandoOption);
+
+        // Fill required fields, plus course_name so student_data is included
+        await user.type(screen.getByLabelText('Nome'), 'Situation Test');
+        await user.type(screen.getByLabelText('Email'), 'situation@test.com');
+        await user.type(screen.getByLabelText(/Senha/), 'password123');
+        await user.type(screen.getByLabelText('Curso'), 'CS');
+
+        await user.click(screen.getByRole('button', { name: 'Salvar' }));
+
+        await waitFor(() => {
+            expect(usersApi.create).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    student_data: expect.objectContaining({
+                        course_situation: 'studying',
+                    }),
+                }),
+            );
+        });
+
+        // Restore
+        HTMLElement.prototype.hasPointerCapture = origHasPointerCapture;
+        HTMLElement.prototype.setPointerCapture = origSetPointerCapture;
+        HTMLElement.prototype.releasePointerCapture = origReleasePointerCapture;
+    });
+
+    it('shows "Salvando..." text when mutation is pending (branch 834:0)', async () => {
+        // Make create resolve slowly so isPending is true
+        let resolveCreate: (value: any) => void;
+        vi.mocked(usersApi.create).mockImplementation(
+            () => new Promise((resolve) => { resolveCreate = resolve; }),
+        );
+
+        render(<UserList />);
+        const user = userEvent.setup();
+
+        await user.click(screen.getByText('Novo Usuario'));
+
+        await waitFor(() => {
+            expect(screen.getByLabelText('Nome')).toBeInTheDocument();
+        });
+
+        await user.type(screen.getByLabelText('Nome'), 'Pending User');
+        await user.type(screen.getByLabelText('Email'), 'pending@user.com');
+        await user.type(screen.getByLabelText(/Senha/), 'password123');
+
+        await user.click(screen.getByRole('button', { name: 'Salvar' }));
+
+        // While the mutation is pending, the button should show "Salvando..."
+        await waitFor(() => {
+            expect(screen.getByText('Salvando...')).toBeInTheDocument();
+        });
+
+        // Resolve to clean up
+        await act(async () => {
+            resolveCreate!({ data: { id: 50 } });
+        });
     });
 });

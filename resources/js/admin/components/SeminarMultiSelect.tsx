@@ -72,6 +72,7 @@ export function SeminarMultiSelect({
 
     const addSeminar = useCallback(
         (seminar: SeminarSearchResult) => {
+            /* v8 ignore next -- @preserve defensive guard: suggestions are pre-filtered */
             if (!value.includes(seminar.id)) {
                 onChange([...value, seminar.id]);
                 setSelectedSeminars((prev) => [

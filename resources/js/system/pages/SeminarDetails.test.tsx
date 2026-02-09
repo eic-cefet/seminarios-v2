@@ -488,6 +488,56 @@ describe('SeminarDetails', () => {
         });
     });
 
+    it('shows "Processando..." on unregister button while mutation is pending', async () => {
+        const seminar = createSeminar({ name: 'Test', isExpired: false });
+        vi.mocked(seminarsApi.get).mockResolvedValue({ data: seminar });
+        vi.mocked(registrationApi.status).mockResolvedValue({ registered: true });
+        // Never-resolving promise keeps the mutation in pending state
+        vi.mocked(registrationApi.unregister).mockImplementation(() => new Promise(() => {}));
+        vi.mocked(useAuth).mockReturnValue({
+            user: createUser(), isLoading: false, isAuthenticated: true,
+            login: vi.fn(), register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(),
+        });
+        const user = userEvent.setup();
+
+        render(<SeminarDetails />);
+
+        await waitFor(() => {
+            expect(screen.getByRole('button', { name: /cancelar inscrição/i })).toBeInTheDocument();
+        });
+
+        await user.click(screen.getByRole('button', { name: /cancelar inscrição/i }));
+
+        await waitFor(() => {
+            expect(screen.getByText('Processando...')).toBeInTheDocument();
+        });
+    });
+
+    it('shows "Processando..." on register button while mutation is pending', async () => {
+        const seminar = createSeminar({ name: 'Test', isExpired: false });
+        vi.mocked(seminarsApi.get).mockResolvedValue({ data: seminar });
+        vi.mocked(registrationApi.status).mockResolvedValue({ registered: false });
+        // Never-resolving promise keeps the mutation in pending state
+        vi.mocked(registrationApi.register).mockImplementation(() => new Promise(() => {}));
+        vi.mocked(useAuth).mockReturnValue({
+            user: createUser(), isLoading: false, isAuthenticated: true,
+            login: vi.fn(), register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(),
+        });
+        const user = userEvent.setup();
+
+        render(<SeminarDetails />);
+
+        await waitFor(() => {
+            expect(screen.getByRole('button', { name: /realizar inscrição/i })).toBeInTheDocument();
+        });
+
+        await user.click(screen.getByRole('button', { name: /realizar inscrição/i }));
+
+        await waitFor(() => {
+            expect(screen.getByText('Processando...')).toBeInTheDocument();
+        });
+    });
+
     it('calls unregisterMutation onError when unregister fails', async () => {
         const seminar = createSeminar({ name: 'Test', isExpired: false });
         vi.mocked(seminarsApi.get).mockResolvedValue({ data: seminar });

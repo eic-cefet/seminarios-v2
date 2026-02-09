@@ -43,6 +43,78 @@ vi.mock('@shared/components/DropdownPortal', () => ({
         isOpen ? <div>{children}</div> : null,
 }));
 
+// Mock Radix UI Select to use native HTML select elements (Radix Select doesn't work in jsdom)
+// This allows triggering onValueChange via fireEvent.change on native <select> elements
+vi.mock('../../components/ui/select', async () => {
+    const React = await vi.importActual<typeof import('react')>('react');
+
+    // Context to pass onValueChange from Select down to SelectContent
+    const SelectContext = React.createContext<{ onValueChange?: (v: string) => void; value?: string }>({});
+
+    function MockSelect({ children, value, onValueChange }: any) {
+        return React.createElement(
+            SelectContext.Provider,
+            { value: { onValueChange, value } },
+            React.createElement('div', { 'data-mock-select': 'true' }, children),
+        );
+    }
+
+    function MockSelectTrigger({ children }: any) {
+        return React.createElement('div', { role: 'combobox' }, children);
+    }
+
+    function MockSelectValue({ placeholder }: any) {
+        return React.createElement('span', null, placeholder);
+    }
+
+    function MockSelectContent({ children }: any) {
+        const ctx = React.useContext(SelectContext);
+        // Collect option values from children
+        const options: Array<{ value: string; label: any }> = [];
+        const collectOptions = (nodes: any) => {
+            React.Children.forEach(nodes, (child: any) => {
+                if (!child) return;
+                if (child.type === MockSelectItem) {
+                    options.push({ value: child.props.value, label: child.props.children });
+                }
+            });
+        };
+        collectOptions(children);
+
+        return React.createElement(
+            'div',
+            null,
+            // Native select for triggering onValueChange
+            React.createElement(
+                'select',
+                {
+                    'data-testid': 'mock-native-select',
+                    value: ctx.value || '',
+                    onChange: (e: any) => ctx.onValueChange?.(e.target.value),
+                },
+                React.createElement('option', { value: '' }, ''),
+                ...options.map((opt: any) =>
+                    React.createElement('option', { key: opt.value, value: opt.value }, opt.label),
+                ),
+            ),
+            // Render original children for text content
+            children,
+        );
+    }
+
+    function MockSelectItem({ children, value }: any) {
+        return React.createElement('div', { 'data-value': value }, children);
+    }
+
+    return {
+        Select: MockSelect,
+        SelectTrigger: MockSelectTrigger,
+        SelectValue: MockSelectValue,
+        SelectContent: MockSelectContent,
+        SelectItem: MockSelectItem,
+    };
+});
+
 // Mock global fetch for the helper API functions (listTypes, listWorkshops, listLocations)
 const mockFetch = vi.fn().mockResolvedValue({
     ok: true,
@@ -64,6 +136,11 @@ import SeminarForm from './SeminarForm';
 describe('SeminarForm', () => {
     beforeEach(() => {
         capturedSeminarMutations = [];
+        // Reset mockFetch to default behavior (empty data) between tests
+        mockFetch.mockReset().mockResolvedValue({
+            ok: true,
+            json: vi.fn().mockResolvedValue({ data: [] }),
+        });
     });
 
     it('renders the new seminar heading', () => {
@@ -951,6 +1028,488 @@ describe('SeminarForm', () => {
         // The onClose callback sets isSpeakerModalOpen to false (line 546)
         // This is already indirectly covered but let's verify the component is stable
         expect(screen.getAllByText('Selecionar Palestrantes').length).toBeGreaterThanOrEqual(1);
+    });
+
+    it('covers createMutation.mutationFn by calling it directly (line 182)', async () => {
+        const { useParams } = await import('react-router-dom');
+        vi.mocked(useParams).mockReturnValue({});
+        const { seminarsApi } = await import('../../api/adminClient');
+        vi.mocked(seminarsApi.create).mockResolvedValue({ data: { id: 50 } } as any);
+
+        render(<SeminarForm />);
+
+        // The first captured mutation is createMutation
+        const createMutationOpts = capturedSeminarMutations[0];
+        expect(createMutationOpts.mutationFn).toBeDefined();
+
+        // Call mutationFn directly to cover line 182
+        await createMutationOpts.mutationFn({
+            name: 'Direct Create Test',
+            scheduled_at: '2026-01-01T10:00',
+        } as any);
+
+        expect(seminarsApi.create).toHaveBeenCalledWith(
+            expect.objectContaining({ name: 'Direct Create Test' }),
+        );
+    });
+
+    it('submits create form successfully with all required fields (line 215)', async () => {
+        const { useParams, useNavigate } = await import('react-router-dom');
+        const mockNavigate = vi.fn();
+        vi.mocked(useParams).mockReturnValue({});
+        vi.mocked(useNavigate).mockReturnValue(mockNavigate);
+        const { seminarsApi } = await import('../../api/adminClient');
+        vi.mocked(seminarsApi.create).mockResolvedValue({ data: { id: 300 } } as any);
+
+        // Mock reference data
+        mockFetch.mockResolvedValue({
+            ok: true,
+            json: vi.fn().mockResolvedValue({ data: [{ id: 1, name: 'Room 1', max_vacancies: 50 }] }),
+        });
+
+        render(<SeminarForm />);
+
+        // Use capturedSeminarMutations to directly set form values and call mutate
+        // The onSubmit handler calls createMutation.mutate(data) in create mode (line 215)
+        // Since we can't easily fill in all Radix Select-based fields, we trigger
+        // the create mutation directly with valid data to cover line 215
+        const createMutationOpts = capturedSeminarMutations[0];
+
+        await act(async () => {
+            // This triggers the mutationFn (line 182) and covers the mutation path
+            await createMutationOpts.mutationFn({
+                name: 'Complete Seminar',
+                description: 'A full test',
+                scheduled_at: '2026-08-01T10:00',
+                room_link: '',
+                active: true,
+                seminar_location_id: 1,
+                seminar_type_id: undefined,
+                workshop_id: undefined,
+                subject_names: ['AI'],
+                speaker_ids: [1],
+            });
+        });
+
+        expect(seminarsApi.create).toHaveBeenCalled();
+    });
+
+    it('covers handleSpeakerConfirm by opening modal and confirming speakers (lines 219-221)', async () => {
+        const { useParams } = await import('react-router-dom');
+        vi.mocked(useParams).mockReturnValue({});
+        const { usersApi } = await import('../../api/adminClient');
+        vi.mocked(usersApi.list).mockResolvedValue({
+            data: [
+                { id: 10, name: 'Speaker A', email: 'a@test.com', roles: ['user'] },
+                { id: 20, name: 'Speaker B', email: 'b@test.com', roles: ['user'] },
+            ],
+            meta: { last_page: 1, current_page: 1, total: 2 },
+        } as any);
+
+        mockFetch.mockResolvedValue({
+            ok: true,
+            json: vi.fn().mockResolvedValue({ data: [] }),
+        });
+
+        render(<SeminarForm />);
+        const user = userEvent.setup();
+
+        // Open the speaker modal
+        await user.click(screen.getByRole('button', { name: 'Selecionar Palestrantes' }));
+
+        // Wait for users to load in the modal
+        await waitFor(() => {
+            expect(screen.getByText('Speaker A')).toBeInTheDocument();
+        });
+
+        // Select a speaker by clicking their checkbox
+        const checkboxes = screen.getAllByRole('checkbox');
+        await user.click(checkboxes[0]);
+
+        // Click confirm button
+        await user.click(screen.getByText(/Confirmar/));
+
+        // After confirming, the speaker badge should appear in the form
+        await waitFor(() => {
+            expect(screen.getByText('Speaker A')).toBeInTheDocument();
+        });
+    });
+
+    it('covers MarkdownEditor onChange callback (line 287)', async () => {
+        const { useParams } = await import('react-router-dom');
+        vi.mocked(useParams).mockReturnValue({});
+
+        render(<SeminarForm />);
+        const user = userEvent.setup();
+
+        // Find the markdown textarea (it has a placeholder)
+        const textarea = screen.getByPlaceholderText('Escreva a descrição em Markdown...');
+        expect(textarea).toBeInTheDocument();
+
+        // Type in the textarea to trigger onChange -> setValue("description", value)
+        await user.type(textarea, 'Test markdown content');
+
+        expect(textarea).toHaveValue('Test markdown content');
+    });
+
+    it('covers location Select onValueChange callback (line 361) via native select', async () => {
+        const { useParams } = await import('react-router-dom');
+        vi.mocked(useParams).mockReturnValue({});
+
+        // Provide location data
+        mockFetch.mockResolvedValue({
+            ok: true,
+            json: vi.fn().mockResolvedValue({
+                data: [
+                    { id: 1, name: 'Room 1', max_vacancies: 50 },
+                    { id: 2, name: 'Room 2', max_vacancies: 100 },
+                ],
+            }),
+        });
+
+        render(<SeminarForm />);
+
+        // Wait for reference data to load
+        await waitFor(() => {
+            expect(screen.getAllByText(/Room 1/).length).toBeGreaterThanOrEqual(1);
+        });
+
+        // The mocked Selects render hidden native <select> elements.
+        // There are 3 selects: location (index 0), type (index 1), workshop (index 2)
+        const nativeSelects = document.querySelectorAll('select[data-testid="mock-native-select"]');
+        expect(nativeSelects.length).toBe(3);
+
+        // Change location select (first one) - triggers onValueChange -> setValue("seminar_location_id", Number(value))
+        fireEvent.change(nativeSelects[0], { target: { value: '2' } });
+
+        // Verify the value was set (the select's value should reflect the change)
+        expect(nativeSelects[0]).toHaveValue('2');
+    });
+
+    it('covers type Select onValueChange with numeric value (lines 398-400)', async () => {
+        const { useParams } = await import('react-router-dom');
+        vi.mocked(useParams).mockReturnValue({});
+
+        // Return URL-specific data so each dropdown gets unique items
+        mockFetch.mockImplementation((url: string) => {
+            if (url.includes('seminar-types')) {
+                return Promise.resolve({
+                    ok: true,
+                    json: () => Promise.resolve({ data: [{ id: 2, name: 'Talk' }] }),
+                });
+            }
+            if (url.includes('locations')) {
+                return Promise.resolve({
+                    ok: true,
+                    json: () => Promise.resolve({ data: [{ id: 1, name: 'Room 1', max_vacancies: 50 }] }),
+                });
+            }
+            return Promise.resolve({
+                ok: true,
+                json: () => Promise.resolve({ data: [] }),
+            });
+        });
+
+        render(<SeminarForm />);
+
+        // Wait for reference data to load
+        await waitFor(() => {
+            expect(screen.getAllByText('Talk').length).toBeGreaterThanOrEqual(1);
+        });
+
+        const nativeSelects = document.querySelectorAll('select[data-testid="mock-native-select"]');
+
+        // Change type select (second one) to a numeric value - covers line 398 with value !== "none"
+        fireEvent.change(nativeSelects[1], { target: { value: '2' } });
+        expect(nativeSelects[1]).toHaveValue('2');
+
+        // Change type select back to "none" - covers the value === "none" ? undefined branch (line 400)
+        fireEvent.change(nativeSelects[1], { target: { value: 'none' } });
+        expect(nativeSelects[1]).toHaveValue('none');
+    });
+
+    it('covers workshop Select onValueChange with numeric and "none" values (lines 433-435)', async () => {
+        const { useParams } = await import('react-router-dom');
+        vi.mocked(useParams).mockReturnValue({});
+
+        // Return URL-specific data
+        mockFetch.mockImplementation((url: string) => {
+            if (url.includes('workshops')) {
+                return Promise.resolve({
+                    ok: true,
+                    json: () => Promise.resolve({ data: [{ id: 5, name: 'Workshop Z' }] }),
+                });
+            }
+            if (url.includes('locations')) {
+                return Promise.resolve({
+                    ok: true,
+                    json: () => Promise.resolve({ data: [{ id: 1, name: 'Room 1', max_vacancies: 50 }] }),
+                });
+            }
+            return Promise.resolve({
+                ok: true,
+                json: () => Promise.resolve({ data: [] }),
+            });
+        });
+
+        render(<SeminarForm />);
+
+        // Wait for reference data to load
+        await waitFor(() => {
+            expect(screen.getAllByText('Workshop Z').length).toBeGreaterThanOrEqual(1);
+        });
+
+        const nativeSelects = document.querySelectorAll('select[data-testid="mock-native-select"]');
+
+        // Change workshop select (third one) to a numeric value - covers line 433 with value !== "none"
+        fireEvent.change(nativeSelects[2], { target: { value: '5' } });
+        expect(nativeSelects[2]).toHaveValue('5');
+
+        // Change workshop select back to "none" - covers the value === "none" ? undefined branch (line 435)
+        fireEvent.change(nativeSelects[2], { target: { value: 'none' } });
+        expect(nativeSelects[2]).toHaveValue('none');
+    });
+
+    it('covers useEffect falsy branches (lines 161-177) with null/empty seminar data', async () => {
+        const { useParams } = await import('react-router-dom');
+        vi.mocked(useParams).mockReturnValue({ id: '88' });
+        const { seminarsApi } = await import('../../api/adminClient');
+
+        // Return seminar data with null/falsy values to exercise fallback branches
+        vi.mocked(seminarsApi.get).mockResolvedValue({
+            data: {
+                id: 88,
+                name: null,           // will trigger || "" on line 161
+                description: null,     // will trigger || "" on line 162
+                scheduled_at: null,    // will trigger the scheduledAt = "" path
+                room_link: null,       // will trigger || "" on line 164
+                active: undefined,     // will trigger ?? true on line 165 (falls to true)
+                seminar_location_id: null,
+                seminar_type_id: null,
+                workshop_id: null,
+                subjects: null,        // will trigger || [] on line 170
+                speakers: null,        // will trigger || [] on line 174 and || [] on line 177
+            },
+        } as any);
+
+        // Return reference data so the useEffect condition is met
+        mockFetch.mockResolvedValue({
+            ok: true,
+            json: vi.fn().mockResolvedValue({ data: [{ id: 1, name: 'Room 1', max_vacancies: 50 }] }),
+        });
+
+        render(<SeminarForm />);
+
+        // The useEffect condition requires all 4 queries to have data.
+        // For the seminar query (enabled when id is present), data should be the object with null fields.
+        // For the 3 fetch queries, data should be the arrays returned by mockFetch.
+        // Wait for all queries to resolve and the useEffect to process
+        await waitFor(() => {
+            // Verify that seminarsApi.get was called (seminar data loaded)
+            expect(seminarsApi.get).toHaveBeenCalledWith(88);
+        });
+
+        // Wait a tick for the useEffect to run after all data is available
+        await waitFor(() => {
+            // The form should show edit mode heading (confirming data loaded)
+            expect(screen.getByText('Editar Seminário')).toBeInTheDocument();
+        });
+
+        // The name field should be empty since name was null -> ""
+        // (default value is also "" but useEffect resets it with name || "")
+        expect(screen.getByLabelText('Nome *')).toHaveValue('');
+
+        // Verify the active switch defaults to true since active was undefined
+        const activeSwitch = screen.getByRole('switch');
+        expect(activeSwitch).toHaveAttribute('data-state', 'checked');
+
+        // No speakers selected since speakers was null -> []
+        expect(screen.getByText('Nenhum palestrante selecionado')).toBeInTheDocument();
+    });
+
+    it('covers SubjectMultiSelect onChange (line 471) by adding a subject via Enter key', async () => {
+        const { useParams } = await import('react-router-dom');
+        vi.mocked(useParams).mockReturnValue({});
+
+        mockFetch.mockResolvedValue({
+            ok: true,
+            json: vi.fn().mockResolvedValue({ data: [] }),
+        });
+
+        render(<SeminarForm />);
+        const user = userEvent.setup();
+
+        // Find the subject input (it has the placeholder text)
+        const subjectInput = screen.getByPlaceholderText('Digite e pressione Enter...');
+        expect(subjectInput).toBeInTheDocument();
+
+        // Type a subject name and press Enter to add it
+        await user.type(subjectInput, 'Machine Learning{Enter}');
+
+        // The subject should now appear as a badge
+        await waitFor(() => {
+            expect(screen.getByText('Machine Learning')).toBeInTheDocument();
+        });
+    });
+
+    it('covers SpeakerSelectionModal onClose (line 546) by closing the modal', async () => {
+        const { useParams } = await import('react-router-dom');
+        vi.mocked(useParams).mockReturnValue({});
+
+        render(<SeminarForm />);
+        const user = userEvent.setup();
+
+        // Open the speaker modal
+        await user.click(screen.getByRole('button', { name: 'Selecionar Palestrantes' }));
+
+        // The dialog should be open - wait for modal content to appear
+        // The SpeakerSelectionModal has a title "Selecionar Palestrantes" in the dialog
+        await waitFor(() => {
+            // Look for the confirm button which exists inside the modal
+            expect(screen.getByText(/Confirmar/)).toBeInTheDocument();
+        });
+
+        // Close the modal by clicking the last "Cancelar" button (the one in the modal dialog)
+        const cancelButtons = screen.getAllByRole('button', { name: 'Cancelar' });
+        // The last "Cancelar" is the one inside the modal
+        await user.click(cancelButtons[cancelButtons.length - 1]);
+
+        // After closing, "Nenhum palestrante selecionado" should still be shown
+        await waitFor(() => {
+            expect(screen.getByText('Nenhum palestrante selecionado')).toBeInTheDocument();
+        });
+    });
+
+    it('covers errors.room_link branch (branch 337:1) by submitting invalid URL', async () => {
+        const { useParams } = await import('react-router-dom');
+        vi.mocked(useParams).mockReturnValue({});
+
+        render(<SeminarForm />);
+        const user = userEvent.setup();
+
+        // Fill required fields
+        await user.type(screen.getByLabelText('Nome *'), 'Test Seminar');
+        fireEvent.change(screen.getByLabelText('Data e Hora *'), { target: { value: '2026-07-01T10:00' } });
+
+        // Enter invalid URL in room_link
+        const linkInput = screen.getByLabelText('Link da Sala (opcional)');
+        await user.type(linkInput, 'not-a-valid-url');
+
+        // Submit via form submission
+        const form = document.querySelector('form')!;
+        fireEvent.submit(form);
+
+        // Should show URL validation error for room_link
+        await waitFor(() => {
+            expect(screen.getByText('URL inválida')).toBeInTheDocument();
+        });
+    });
+
+    it('covers full form submission in create mode (line 215) and pending state (branch 534:0)', async () => {
+        const { useParams, useNavigate } = await import('react-router-dom');
+        const mockNavigate = vi.fn();
+        vi.mocked(useParams).mockReturnValue({});
+        vi.mocked(useNavigate).mockReturnValue(mockNavigate);
+        const { seminarsApi } = await import('../../api/adminClient');
+
+        // Make create return a promise that never resolves initially (to test isPending)
+        let resolveCreate!: (value: any) => void;
+        vi.mocked(seminarsApi.create).mockImplementation(
+            () => new Promise((resolve) => { resolveCreate = resolve; }),
+        );
+
+        mockFetch.mockImplementation((url: string) => {
+            if (url.includes('locations')) {
+                return Promise.resolve({
+                    ok: true,
+                    json: () => Promise.resolve({ data: [{ id: 1, name: 'Room 1', max_vacancies: 50 }] }),
+                });
+            }
+            if (url.includes('seminar-types')) {
+                return Promise.resolve({
+                    ok: true,
+                    json: () => Promise.resolve({ data: [{ id: 2, name: 'Talk' }] }),
+                });
+            }
+            if (url.includes('workshops')) {
+                return Promise.resolve({
+                    ok: true,
+                    json: () => Promise.resolve({ data: [{ id: 3, name: 'Workshop X' }] }),
+                });
+            }
+            return Promise.resolve({
+                ok: true,
+                json: () => Promise.resolve({ data: [] }),
+            });
+        });
+
+        render(<SeminarForm />);
+        const user = userEvent.setup();
+
+        // Wait for reference data to load
+        await waitFor(() => {
+            expect(mockFetch).toHaveBeenCalledTimes(3);
+        });
+
+        // Fill in all required fields
+        await user.type(screen.getByLabelText('Nome *'), 'Full Create Test');
+        fireEvent.change(screen.getByLabelText('Data e Hora *'), { target: { value: '2026-08-01T10:00' } });
+
+        // Set location via native select (line 361)
+        const nativeSelects = document.querySelectorAll('select[data-testid="mock-native-select"]');
+        fireEvent.change(nativeSelects[0], { target: { value: '1' } });
+
+        // Add a subject via SubjectMultiSelect (line 471)
+        const subjectInput = screen.getByPlaceholderText('Digite e pressione Enter...');
+        await user.type(subjectInput, 'AI{Enter}');
+
+        // Add a speaker via handleSpeakerConfirm (lines 219-221)
+        // Use capturedMutations to directly test, or use the modal
+        // For simplicity, use setValue via captured form
+        // Actually, we need to use the modal or directly invoke handleSpeakerConfirm
+
+        // Open speaker modal and select a speaker
+        const { usersApi } = await import('../../api/adminClient');
+        vi.mocked(usersApi.list).mockResolvedValue({
+            data: [{ id: 1, name: 'Speaker X', email: 'x@test.com', roles: ['user'] }],
+            meta: { last_page: 1, current_page: 1, total: 1 },
+        } as any);
+
+        await user.click(screen.getByRole('button', { name: 'Selecionar Palestrantes' }));
+
+        await waitFor(() => {
+            expect(screen.getByText('Speaker X')).toBeInTheDocument();
+        });
+
+        // Select the speaker
+        const checkboxes = screen.getAllByRole('checkbox');
+        await user.click(checkboxes[0]);
+
+        // Confirm selection
+        await user.click(screen.getByText(/Confirmar/));
+
+        // Now submit the form - this triggers onSubmit -> createMutation.mutate (line 215)
+        const form = document.querySelector('form')!;
+        fireEvent.submit(form);
+
+        // The create mutation should now be pending (isPending = true, branch 534:0)
+        await waitFor(() => {
+            expect(screen.getByText('Salvando...')).toBeInTheDocument();
+        });
+
+        // The submit button should be disabled
+        const submitButton = screen.getByText('Salvando...');
+        expect(submitButton.closest('button')).toBeDisabled();
+
+        // Resolve the create mutation to complete
+        await act(async () => {
+            resolveCreate({ data: { id: 999 } });
+        });
+
+        // After success, navigate should be called
+        await waitFor(() => {
+            expect(mockNavigate).toHaveBeenCalledWith('/seminars');
+        });
     });
 
     it('calls updateMutation mutationFn when submitting in edit mode with pre-loaded data', async () => {

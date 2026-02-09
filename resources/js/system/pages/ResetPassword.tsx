@@ -38,6 +38,7 @@ export default function ResetPassword() {
         e.preventDefault();
         setError(null);
 
+        /* v8 ignore next 3 -- @preserve defensive guard: form only renders when token & email are present */
         if (!token || !email) {
             setError("Link de redefinição inválido");
             return;

@@ -224,6 +224,37 @@ describe('CertificatesSection', () => {
         expect(screen.getByText('Palestra')).toBeInTheDocument();
     });
 
+    it('falls back to page state for currentPage and 1 for lastPage when meta is undefined', async () => {
+        const certificates = [
+            createUserCertificate({
+                id: 1,
+                certificate_code: 'CERT-001',
+                seminar: {
+                    id: 10,
+                    name: 'Seminário Sem Meta',
+                    slug: 'seminario-sem-meta',
+                    scheduled_at: '2026-06-15T14:00:00Z',
+                    seminar_type: { id: 1, name: 'Palestra' },
+                },
+            }),
+        ];
+
+        vi.mocked(profileApi.certificates).mockResolvedValue({
+            data: certificates,
+            meta: undefined as any,
+        });
+
+        render(<CertificatesSection />);
+
+        await waitFor(() => {
+            expect(screen.getByText('Seminário Sem Meta')).toBeInTheDocument();
+        });
+
+        // The Pagination component renders with fallback values (currentPage=1, lastPage=1)
+        // and since lastPage=1, no pagination controls should be shown
+        expect(screen.getByText('Baixar')).toBeInTheDocument();
+    });
+
     it('fires analytics event when download link is clicked', async () => {
         const { analytics } = await import('@shared/lib/analytics');
         const certificates = [

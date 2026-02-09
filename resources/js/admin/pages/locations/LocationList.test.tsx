@@ -580,6 +580,28 @@ describe('LocationList', () => {
         expect(buttons[buttons.length - 1]).not.toBeDisabled();
     });
 
+    it('shows Salvando... when create mutation is pending', async () => {
+        vi.mocked(locationsApi.create).mockReturnValue(new Promise(() => {}));
+
+        render(<LocationList />);
+        const user = userEvent.setup();
+
+        await user.click(screen.getByText('Novo Local'));
+
+        await waitFor(() => {
+            expect(screen.getByLabelText('Nome')).toBeInTheDocument();
+        });
+
+        await user.type(screen.getByLabelText('Nome'), 'Pending Room');
+        await user.type(screen.getByLabelText('Capacidade'), '50');
+
+        await user.click(screen.getByRole('button', { name: 'Salvar' }));
+
+        await waitFor(() => {
+            expect(screen.getByText('Salvando...')).toBeInTheDocument();
+        });
+    });
+
     it('captures all three mutation options', () => {
         render(<LocationList />);
         expect(capturedLocCreateOptions).not.toBeNull();

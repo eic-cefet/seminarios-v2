@@ -18,6 +18,10 @@ vi.mock('@shared/api/client', () => ({
     ApiRequestError: class extends Error {},
 }));
 
+vi.mock('@shared/lib/errors', () => ({
+    getErrorMessage: vi.fn((err: Error) => err.message),
+}));
+
 const mockNavigate = vi.fn();
 
 vi.mock('react-router-dom', async () => {
@@ -308,22 +312,11 @@ describe('ResetPassword', () => {
         expect(screen.getByText(/digite sua nova senha abaixo/i)).toBeInTheDocument();
     });
 
-    it('shows error if handleSubmit is called without token/email (defensive guard)', async () => {
-        // Render with valid params first so the form renders
-        const { unmount } = render(<ResetPassword />, {
-            routerProps: { initialEntries: [validRoute] },
-        });
-        unmount();
-
-        // Now render with only token present (no email) - this shows invalid link state
-        // To hit lines 42-43, we need to somehow submit the form without token/email.
-        // Since the form only renders when both are present, and the guard is defensive,
-        // we test that the "link invalido" UI is shown when params are missing.
+    it('shows invalid link UI and description when params are missing', () => {
         render(<ResetPassword />, {
             routerProps: { initialEntries: ['/redefinir-senha?token=abc123'] },
         });
 
-        // Should show the invalid link state
         expect(screen.getByRole('heading', { name: /link inválido/i })).toBeInTheDocument();
         expect(screen.getByText(/o link de redefinição de senha é inválido/i)).toBeInTheDocument();
     });

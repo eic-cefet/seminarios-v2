@@ -1,5 +1,5 @@
 import { render, screen, waitFor } from '@/test/test-utils';
-import Dashboard from './Dashboard';
+import Dashboard, { StatsCard } from './Dashboard';
 
 vi.mock('../api/adminClient', () => ({
     dashboardApi: {
@@ -276,6 +276,12 @@ describe('Dashboard', () => {
         });
         expect(screen.getByText('por User X')).toBeInTheDocument();
         expect(screen.getByText('4')).toBeInTheDocument();
+    });
+
+    it('renders StatsCard with description when provided', () => {
+        const TestIcon = ({ className }: { className?: string }) => <span className={className}>icon</span>;
+        render(<StatsCard title="Test" value={42} icon={TestIcon} description="some description" />);
+        expect(screen.getByText('some description')).toBeInTheDocument();
     });
 
     it('renders stat card titles', async () => {

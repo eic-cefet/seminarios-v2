@@ -284,4 +284,19 @@ describe('Sidebar', () => {
         const usersLink = screen.getByText('Usuários').closest('a');
         expect(usersLink).toBeInTheDocument();
     });
+
+    it('renders child NavLinks with active style when route matches', () => {
+        render(<Sidebar />, {
+            routerProps: { initialEntries: ['/seminars'] },
+        });
+
+        // Seminários group is open by default, its children should be visible
+        // The child "Seminários" link (href=/seminars) should be active at route "/seminars"
+        const seminarsChildLinks = screen.getAllByText('Seminários');
+        const childNavLink = seminarsChildLinks
+            .map(el => el.closest('a'))
+            .find(a => a?.getAttribute('href') === '/seminars');
+        expect(childNavLink).toBeInTheDocument();
+        expect(childNavLink!.className).toContain('bg-accent');
+    });
 });

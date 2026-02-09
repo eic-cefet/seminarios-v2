@@ -24,6 +24,20 @@ vi.mock('@shared/lib/errors', () => ({
     getErrorMessage: vi.fn((err: Error) => err.message),
 }));
 
+// Capture the onOpenChange callback passed to Dialog.Root
+let capturedDialogOnOpenChange: ((open: boolean) => void) | undefined;
+
+vi.mock('@radix-ui/react-dialog', async () => {
+    const actual = await vi.importActual('@radix-ui/react-dialog');
+    return {
+        ...actual,
+        Root: (props: any) => {
+            capturedDialogOnOpenChange = props.onOpenChange;
+            return (actual as any).Root(props);
+        },
+    };
+});
+
 describe('LoginModal', () => {
     const onOpenChange = vi.fn();
 
@@ -395,5 +409,34 @@ describe('LoginModal', () => {
         await user.click(screen.getByRole('button', { name: /fechar/i }));
 
         expect(onOpenChange).toHaveBeenCalledWith(false);
+    });
+
+    it('resets modal state when dialog is closed via Escape key', async () => {
+        const user = userEvent.setup();
+
+        render(<LoginModal open={true} onOpenChange={onOpenChange} />);
+
+        // Switch to forgot view to set some state
+        await user.click(screen.getByText(/esqueci minha senha/i));
+        expect(screen.getByText('Recuperar senha')).toBeInTheDocument();
+
+        // Press Escape to close dialog, which triggers onOpenChange(false) and resetModal
+        await user.keyboard('{Escape}');
+
+        // Verify that onOpenChange was called with false, indicating the internal callback ran
+        expect(onOpenChange).toHaveBeenCalledWith(false);
+    });
+
+    it('does not call resetModal when dialog onOpenChange is called with true', () => {
+        // Cover branch 74:1 (newOpen=true path). When onOpenChange fires with true,
+        // the condition !newOpen is false, so resetModal is skipped.
+        render(<LoginModal open={true} onOpenChange={onOpenChange} />);
+
+        // Directly call the internal onOpenChange callback (captured via mock) with true
+        expect(capturedDialogOnOpenChange).toBeDefined();
+        capturedDialogOnOpenChange!(true);
+
+        // onOpenChange prop should have been forwarded with true
+        expect(onOpenChange).toHaveBeenCalledWith(true);
     });
 });

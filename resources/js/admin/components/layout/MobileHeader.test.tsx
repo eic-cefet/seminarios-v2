@@ -256,6 +256,22 @@ describe('MobileHeader', () => {
         expect(backLink).toHaveAttribute('href', '/');
     });
 
+    it('renders child NavLinks with active style when route matches', () => {
+        render(<MobileHeader />, {
+            routerProps: { initialEntries: ['/seminars'] },
+        });
+        fireEvent.click(screen.getByText('Abrir menu'));
+
+        // Seminários group is expanded by default, its children should be visible
+        // The child "Seminários" link (href=/seminars) should be active at route "/seminars"
+        const seminarsChildLinks = screen.getAllByText('Seminários');
+        const childNavLink = seminarsChildLinks
+            .map(el => el.closest('a'))
+            .find(a => a?.getAttribute('href') === '/seminars');
+        expect(childNavLink).toBeInTheDocument();
+        expect(childNavLink!.className).toContain('bg-accent');
+    });
+
     it('handles user with undefined roles (isAdmin ?? false fallback)', async () => {
         const { useAuth } = await import('@shared/contexts/AuthContext');
         vi.mocked(useAuth).mockReturnValue({

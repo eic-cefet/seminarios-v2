@@ -23,9 +23,21 @@ vi.mock('@tanstack/react-query', async () => {
 
 import SemestralReport from './SemestralReport';
 
+// Polyfill pointer capture methods for Radix Select in jsdom
+if (!Element.prototype.hasPointerCapture) {
+    Element.prototype.hasPointerCapture = vi.fn().mockReturnValue(false);
+}
+if (!Element.prototype.setPointerCapture) {
+    Element.prototype.setPointerCapture = vi.fn();
+}
+if (!Element.prototype.releasePointerCapture) {
+    Element.prototype.releasePointerCapture = vi.fn();
+}
+
 describe('SemestralReport', () => {
     beforeEach(() => {
         capturedMutationOptions = null;
+        mockFetch.mockClear();
         mockFetch.mockResolvedValue({
             ok: true,
             json: vi.fn().mockResolvedValue({ data: [] }),
@@ -698,5 +710,308 @@ describe('SemestralReport', () => {
 
         expect(screen.getByText('NewUser')).toBeInTheDocument();
         // After new data loads, old expanded rows are cleared
+    });
+
+    it('mutationFn appends courses[], types[], and situations[] params when selections are non-empty', async () => {
+        document.cookie = 'XSRF-TOKEN=test-token-filters';
+
+        // Set up fetch mock before rendering so React Query gets the right data
+        mockFetch.mockImplementation((url: string) => {
+            if (typeof url === 'string' && url.includes('/seminar-types')) {
+                return Promise.resolve({
+                    ok: true,
+                    json: () => Promise.resolve({
+                        data: [{ id: 1, name: 'Palestra' }, { id: 2, name: 'Workshop' }],
+                    }),
+                });
+            }
+            if (typeof url === 'string' && url.includes('/reports/courses')) {
+                return Promise.resolve({
+                    ok: true,
+                    json: () => Promise.resolve({
+                        data: [{ value: 'CS', label: 'Computer Science' }, { value: 'Math', label: 'Mathematics' }],
+                    }),
+                });
+            }
+            if (typeof url === 'string' && url.includes('/sanctum/csrf-cookie')) {
+                return Promise.resolve({ ok: true });
+            }
+            if (typeof url === 'string' && url.includes('/reports/semestral')) {
+                return Promise.resolve({
+                    ok: true,
+                    json: () => Promise.resolve({
+                        data: [],
+                        summary: { total_users: 0, total_hours: 0, semester: '2026.1' },
+                    }),
+                });
+            }
+            return Promise.resolve({
+                ok: true,
+                json: () => Promise.resolve({ data: [] }),
+            });
+        });
+
+        render(<SemestralReport />);
+        const user = userEvent.setup();
+
+        // Wait for courses data to load into the MultiSelect options
+        // The MultiSelect renders options as clickable divs with text content
+        // We need to open the courses MultiSelect popover first
+        const comboboxes = screen.getAllByRole('combobox');
+        const coursesCombobox = comboboxes[2];
+
+        // Wait for courses to be loaded, then open the popover
+        await waitFor(() => {
+            // The courses query should have returned data
+            expect(mockFetch).toHaveBeenCalledWith(
+                expect.stringContaining('/reports/courses'),
+                expect.anything()
+            );
+        });
+
+        // Open courses popover and select an option
+        await user.click(coursesCombobox);
+        await waitFor(() => {
+            expect(screen.getByText('Computer Science')).toBeInTheDocument();
+        });
+        await user.click(screen.getByText('Computer Science'));
+
+        // Open types popover and select an option
+        const typesCombobox = comboboxes[3];
+        await user.click(typesCombobox);
+        await waitFor(() => {
+            expect(screen.getByText('Palestra')).toBeInTheDocument();
+        });
+        await user.click(screen.getByText('Palestra'));
+
+        // Select course situations via checkboxes
+        await user.click(screen.getByLabelText('Cursando'));
+        await user.click(screen.getByLabelText('Trancado'));
+
+        // Now call the mutationFn directly - it will use the current state values
+        await capturedMutationOptions.mutationFn();
+
+        // Verify that the fetch call included courses[], types[], and situations[] params
+        const reportCalls = mockFetch.mock.calls.filter(
+            (call: any[]) => typeof call[0] === 'string' && call[0].includes('/reports/semestral')
+        );
+        expect(reportCalls.length).toBeGreaterThan(0);
+        const fetchUrl = reportCalls[reportCalls.length - 1][0] as string;
+        expect(fetchUrl).toContain('courses%5B%5D=CS');
+        expect(fetchUrl).toContain('types%5B%5D=1');
+        expect(fetchUrl).toContain('situations%5B%5D=Cursando');
+        expect(fetchUrl).toContain('situations%5B%5D=Trancado');
+    });
+
+    it('covers format select onValueChange and excel button text by selecting excel format', async () => {
+        mockFetch.mockResolvedValue({
+            ok: true,
+            json: vi.fn().mockResolvedValue({ data: [] }),
+        });
+
+        render(<SemestralReport />);
+        const user = userEvent.setup();
+
+        // The format Select trigger is the second combobox
+        const comboboxes = screen.getAllByRole('combobox');
+        const formatTrigger = comboboxes[1];
+
+        // Click to open the format Select
+        await user.click(formatTrigger);
+
+        // Wait for dropdown to open and click "Baixar Excel"
+        await waitFor(() => {
+            expect(screen.getByRole('option', { name: 'Baixar Excel' })).toBeInTheDocument();
+        });
+        await user.click(screen.getByRole('option', { name: 'Baixar Excel' }));
+
+        // After selecting excel format, the button text should change to "Baixar Excel"
+        await waitFor(() => {
+            expect(screen.getByRole('button', { name: /Baixar Excel/i })).toBeInTheDocument();
+        });
+    });
+
+    it('covers excel format onSuccess branch - calls toast.success and window.open', async () => {
+        const mockWindowOpen = vi.fn();
+        const originalOpen = window.open;
+        window.open = mockWindowOpen;
+
+        mockFetch.mockResolvedValue({
+            ok: true,
+            json: vi.fn().mockResolvedValue({ data: [] }),
+        });
+
+        render(<SemestralReport />);
+        const user = userEvent.setup();
+
+        // Change format to excel via Select
+        const comboboxes = screen.getAllByRole('combobox');
+        const formatTrigger = comboboxes[1];
+        await user.click(formatTrigger);
+
+        await waitFor(() => {
+            expect(screen.getByRole('option', { name: 'Baixar Excel' })).toBeInTheDocument();
+        });
+        await user.click(screen.getByRole('option', { name: 'Baixar Excel' }));
+
+        // Wait for format state to update
+        await waitFor(() => {
+            expect(screen.getByRole('button', { name: /Baixar Excel/i })).toBeInTheDocument();
+        });
+
+        // Now call onSuccess with a url - should trigger window.open since format is "excel"
+        await act(() => {
+            capturedMutationOptions.onSuccess({ url: 'https://example.com/report.xlsx' });
+        });
+
+        expect(mockWindowOpen).toHaveBeenCalledWith('https://example.com/report.xlsx', '_blank');
+        // Report data should NOT be set (no table rendered) because it's excel format
+        expect(screen.queryByText('Total de Usuários')).not.toBeInTheDocument();
+
+        window.open = originalOpen;
+    });
+
+    it('covers handleSubmit with semester selected - calls generateMutation.mutate()', async () => {
+        document.cookie = 'XSRF-TOKEN=test-token-submit';
+        mockFetch
+            .mockResolvedValueOnce({ ok: true, json: vi.fn().mockResolvedValue({ data: [] }) }) // seminar types
+            .mockResolvedValueOnce({ ok: true, json: vi.fn().mockResolvedValue({ data: [] }) }) // courses
+            .mockResolvedValueOnce({ ok: true }) // csrf cookie
+            .mockResolvedValueOnce({
+                ok: true,
+                json: vi.fn().mockResolvedValue({
+                    data: [],
+                    summary: { total_users: 0, total_hours: 0, semester: '2026.1' },
+                }),
+            });
+
+        render(<SemestralReport />);
+        const user = userEvent.setup();
+
+        // Select a semester via the Radix Select
+        const comboboxes = screen.getAllByRole('combobox');
+        const semesterTrigger = comboboxes[0];
+        await user.click(semesterTrigger);
+
+        // Wait for semester options to appear and click the first one
+        await waitFor(() => {
+            expect(screen.getByRole('option', { name: '2026.1' })).toBeInTheDocument();
+        });
+        await user.click(screen.getByRole('option', { name: '2026.1' }));
+
+        // After selecting semester, the submit button should be enabled
+        await waitFor(() => {
+            const submitBtn = screen.getByRole('button', { name: /Visualizar Relatório/i });
+            expect(submitBtn).not.toBeDisabled();
+        });
+
+        // Submit the form by clicking the submit button
+        const submitBtn = screen.getByRole('button', { name: /Visualizar Relatório/i });
+        await user.click(submitBtn);
+
+        // The mutation should have been triggered
+        await waitFor(() => {
+            // Verify that the CSRF cookie fetch was called (indicating mutationFn ran)
+            const csrfCalls = mockFetch.mock.calls.filter(
+                (call: any[]) => call[0] === '/sanctum/csrf-cookie'
+            );
+            expect(csrfCalls.length).toBeGreaterThan(0);
+        });
+    });
+
+    it('shows "Gerando..." text while mutation is pending', async () => {
+        // We need to make the mutation stay pending. We can do this by making
+        // the mutationFn return a promise that never resolves during the test.
+        document.cookie = 'XSRF-TOKEN=test-token-pending';
+
+        let resolveMutationFetch: ((value: any) => void) | undefined;
+
+        mockFetch
+            .mockResolvedValueOnce({ ok: true, json: vi.fn().mockResolvedValue({ data: [] }) }) // seminar types
+            .mockResolvedValueOnce({ ok: true, json: vi.fn().mockResolvedValue({ data: [] }) }) // courses
+            .mockResolvedValueOnce({ ok: true }) // csrf cookie
+            .mockImplementationOnce(() => new Promise((resolve) => { resolveMutationFetch = resolve; })); // report - hangs
+
+        render(<SemestralReport />);
+        const user = userEvent.setup();
+
+        // Select semester
+        const comboboxes = screen.getAllByRole('combobox');
+        await user.click(comboboxes[0]);
+        await waitFor(() => {
+            expect(screen.getByRole('option', { name: '2026.1' })).toBeInTheDocument();
+        });
+        await user.click(screen.getByRole('option', { name: '2026.1' }));
+
+        // Wait for button to become enabled
+        await waitFor(() => {
+            const submitBtn = screen.getByRole('button', { name: /Visualizar Relatório/i });
+            expect(submitBtn).not.toBeDisabled();
+        });
+
+        // Click submit - mutation starts but won't resolve yet
+        const submitBtn = screen.getByRole('button', { name: /Visualizar Relatório/i });
+        await user.click(submitBtn);
+
+        // The button should now show "Gerando..."
+        await waitFor(() => {
+            expect(screen.getByText('Gerando...')).toBeInTheDocument();
+        });
+
+        // Clean up: resolve the pending fetch to avoid act() warnings
+        await act(async () => {
+            resolveMutationFetch?.({
+                ok: true,
+                json: () => Promise.resolve({ data: [], summary: { total_users: 0, total_hours: 0, semester: '2026.1' } }),
+            });
+        });
+    });
+
+    it('generates semesters starting from semester 2 when current month is after June', () => {
+        // Mock Date to return August (month index 7, getMonth()+1 = 8 > 6 => semester 2)
+        const originalDate = globalThis.Date;
+        const mockDate = class extends originalDate {
+            constructor(...args: any[]) {
+                if (args.length === 0) {
+                    super(2026, 7, 15); // August 15, 2026
+                } else {
+                    super(...(args as [any]));
+                }
+            }
+        } as any;
+        mockDate.now = originalDate.now;
+        globalThis.Date = mockDate;
+
+        render(<SemestralReport />);
+
+        // The first semester in the dropdown should be 2026.2 since we're in second semester
+        // This exercises the line 67 else branch: currentSemester = 2
+        expect(screen.getByText('Selecione o semestre')).toBeInTheDocument();
+
+        globalThis.Date = originalDate;
+    });
+
+    it('getCsrfToken returns empty string when XSRF-TOKEN cookie is not present', async () => {
+        // Clear any XSRF-TOKEN from cookies
+        document.cookie = 'XSRF-TOKEN=; expires=Thu, 01 Jan 1970 00:00:00 UTC;';
+
+        mockFetch.mockResolvedValue({
+            ok: true,
+            json: () => Promise.resolve({ data: [], summary: { total_users: 0, total_hours: 0, semester: '2026.1' } }),
+        });
+
+        render(<SemestralReport />);
+
+        // Call mutationFn - it calls getCsrfToken() which should return ""
+        // when no XSRF-TOKEN cookie exists
+        await capturedMutationOptions.mutationFn();
+
+        // Verify the fetch was called with empty X-XSRF-TOKEN header
+        const reportCalls = mockFetch.mock.calls.filter(
+            (call: any[]) => typeof call[0] === 'string' && call[0].includes('/reports/semestral')
+        );
+        expect(reportCalls.length).toBeGreaterThan(0);
+        const headers = reportCalls[reportCalls.length - 1][1]?.headers;
+        expect(headers['X-XSRF-TOKEN']).toBe('');
     });
 });

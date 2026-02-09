@@ -70,6 +70,18 @@ describe('SubjectSeminars', () => {
         });
     });
 
+    it('shows 0 when subject.seminarsCount is undefined', async () => {
+        const subject = createSubject({ name: 'No Count Topic', seminarsCount: undefined as any });
+        vi.mocked(subjectsApi.get).mockResolvedValue({ data: subject });
+        vi.mocked(seminarsApi.bySubject).mockResolvedValue({ data: [], meta: { current_page: 1, last_page: 1, per_page: 10, total: 0, from: 0, to: 0 }, links: { first: '', last: '', prev: null, next: null } });
+
+        render(<SubjectSeminars />);
+
+        await waitFor(() => {
+            expect(screen.getByText(/0 seminários neste tópico/i)).toBeInTheDocument();
+        });
+    });
+
     it('shows not-found state when subject is null after loading', async () => {
         vi.mocked(subjectsApi.get).mockResolvedValue({ data: null as any });
         vi.mocked(seminarsApi.bySubject).mockResolvedValue({ data: [], meta: { current_page: 1, last_page: 1, per_page: 10, total: 0, from: 0, to: 0 }, links: { first: '', last: '', prev: null, next: null } });
