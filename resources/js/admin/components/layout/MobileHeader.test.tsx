@@ -255,4 +255,69 @@ describe('MobileHeader', () => {
         const backLink = screen.getByText('Voltar ao Site').closest('a');
         expect(backLink).toHaveAttribute('href', '/');
     });
+
+    it('renders child NavLinks with active style when route matches', () => {
+        render(<MobileHeader />, {
+            routerProps: { initialEntries: ['/seminars'] },
+        });
+        fireEvent.click(screen.getByText('Abrir menu'));
+
+        // Seminários group is expanded by default, its children should be visible
+        // The child "Seminários" link (href=/seminars) should be active at route "/seminars"
+        const seminarsChildLinks = screen.getAllByText('Seminários');
+        const childNavLink = seminarsChildLinks
+            .map(el => el.closest('a'))
+            .find(a => a?.getAttribute('href') === '/seminars');
+        expect(childNavLink).toBeInTheDocument();
+        expect(childNavLink!.className).toContain('bg-accent');
+    });
+
+    it('handles user with undefined roles (isAdmin ?? false fallback)', async () => {
+        const { useAuth } = await import('@shared/contexts/AuthContext');
+        vi.mocked(useAuth).mockReturnValue({
+            user: { id: 3, name: 'No Roles User', email: 'noroles@test.com', roles: undefined } as any,
+            isLoading: false,
+            isAuthenticated: true,
+            login: vi.fn(),
+            register: vi.fn(),
+            logout: vi.fn(),
+            exchangeCode: vi.fn(),
+            refreshUser: vi.fn(),
+        });
+
+        render(<MobileHeader />);
+        fireEvent.click(screen.getByText('Abrir menu'));
+
+        // Should see Dashboard (non-admin item)
+        expect(screen.getByText('Dashboard')).toBeInTheDocument();
+        // Should not see admin-only items
+        expect(screen.queryByText('Usuários')).not.toBeInTheDocument();
+        expect(screen.queryByText('Inscrições')).not.toBeInTheDocument();
+    });
+
+    it('renders non-children NavLink items with correct active/inactive styles', async () => {
+        const { useAuth } = await import('@shared/contexts/AuthContext');
+        vi.mocked(useAuth).mockReturnValue({
+            user: { id: 1, name: 'Admin User', email: 'admin@test.com', roles: ['admin'], is_admin: true } as any,
+            isLoading: false,
+            isAuthenticated: true,
+            login: vi.fn(),
+            register: vi.fn(),
+            logout: vi.fn(),
+            exchangeCode: vi.fn(),
+            refreshUser: vi.fn(),
+        });
+
+        render(<MobileHeader />, {
+            routerProps: { initialEntries: ['/users'] },
+        });
+        fireEvent.click(screen.getByText('Abrir menu'));
+
+        // Dashboard should be a NavLink (non-children item)
+        const dashboardLink = screen.getByText('Dashboard').closest('a');
+        expect(dashboardLink).toBeInTheDocument();
+        // Users link should exist for admin and be active at /users
+        const usersLink = screen.getByText('Usuários').closest('a');
+        expect(usersLink).toBeInTheDocument();
+    });
 });

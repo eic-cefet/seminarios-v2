@@ -1,9 +1,12 @@
 import { AdminApiError, dashboardApi, usersApi, locationsApi, subjectsApi, workshopsApi, registrationsApi, seminarsApi, presenceLinkApi } from './adminClient';
+import { getCookie } from '@shared/api/httpUtils';
 
 vi.mock('@shared/api/httpUtils', () => ({
     getCookie: vi.fn(() => null),
     getCsrfCookie: vi.fn(() => Promise.resolve()),
 }));
+
+const mockGetCookie = getCookie as ReturnType<typeof vi.fn>;
 
 describe('AdminApiError', () => {
     it('creates an error with correct properties', () => {
@@ -445,6 +448,190 @@ describe('Admin API endpoints', () => {
                 expect(err).toBeInstanceOf(AdminApiError);
                 expect((err as AdminApiError).errors).toEqual({ name: ['Required'] });
             }
+        });
+    });
+
+    describe('XSRF token handling', () => {
+        it('includes X-XSRF-TOKEN header when cookie is present', async () => {
+            mockGetCookie.mockReturnValue('test-xsrf-token');
+            mockSuccess({ data: { counts: { users: 10 } } });
+
+            await dashboardApi.stats();
+
+            expect(fetchSpy).toHaveBeenCalledWith(
+                expect.any(String),
+                expect.objectContaining({
+                    headers: expect.objectContaining({
+                        'X-XSRF-TOKEN': 'test-xsrf-token',
+                    }),
+                }),
+            );
+
+            mockGetCookie.mockReturnValue(null);
+        });
+    });
+
+    describe('workshopsApi.searchSeminars with workshop_id', () => {
+        it('includes workshop_id param when provided', async () => {
+            mockSuccess({ data: [] });
+            await workshopsApi.searchSeminars({ search: 'test', workshop_id: 5 });
+            expect(fetchSpy).toHaveBeenCalledWith(
+                expect.stringContaining('workshop_id=5'),
+                expect.any(Object),
+            );
+        });
+    });
+
+    describe('usersApi.list query params coverage', () => {
+        it('passes trashed param', async () => {
+            mockSuccess({ data: [], meta: {} });
+            await usersApi.list({ trashed: true });
+            expect(fetchSpy).toHaveBeenCalledWith(
+                expect.stringContaining('trashed=1'),
+                expect.any(Object),
+            );
+        });
+
+        it('passes role param', async () => {
+            mockSuccess({ data: [], meta: {} });
+            await usersApi.list({ role: 'admin' });
+            expect(fetchSpy).toHaveBeenCalledWith(
+                expect.stringContaining('role=admin'),
+                expect.any(Object),
+            );
+        });
+
+        it('builds no query string when no params', async () => {
+            mockSuccess({ data: [], meta: {} });
+            await usersApi.list();
+            expect(fetchSpy).toHaveBeenCalledWith(
+                expect.not.stringContaining('?'),
+                expect.any(Object),
+            );
+        });
+    });
+
+    describe('locationsApi.list query params coverage', () => {
+        it('passes page param', async () => {
+            mockSuccess({ data: [], meta: {} });
+            await locationsApi.list({ page: 2 });
+            expect(fetchSpy).toHaveBeenCalledWith(
+                expect.stringContaining('page=2'),
+                expect.any(Object),
+            );
+        });
+    });
+
+    describe('subjectsApi.list query params coverage', () => {
+        it('passes page param', async () => {
+            mockSuccess({ data: [], meta: {} });
+            await subjectsApi.list({ page: 3 });
+            expect(fetchSpy).toHaveBeenCalledWith(
+                expect.stringContaining('page=3'),
+                expect.any(Object),
+            );
+        });
+
+        it('builds no query string when no params', async () => {
+            mockSuccess({ data: [], meta: {} });
+            await subjectsApi.list();
+            expect(fetchSpy).toHaveBeenCalledWith(
+                expect.not.stringContaining('?'),
+                expect.any(Object),
+            );
+        });
+    });
+
+    describe('workshopsApi.list query params coverage', () => {
+        it('passes page param', async () => {
+            mockSuccess({ data: [], meta: {} });
+            await workshopsApi.list({ page: 2 });
+            expect(fetchSpy).toHaveBeenCalledWith(
+                expect.stringContaining('page=2'),
+                expect.any(Object),
+            );
+        });
+
+        it('passes search param', async () => {
+            mockSuccess({ data: [], meta: {} });
+            await workshopsApi.list({ search: 'ml' });
+            expect(fetchSpy).toHaveBeenCalledWith(
+                expect.stringContaining('search=ml'),
+                expect.any(Object),
+            );
+        });
+    });
+
+    describe('workshopsApi.searchSeminars query params coverage', () => {
+        it('builds no query string when no params match', async () => {
+            mockSuccess({ data: [] });
+            await workshopsApi.searchSeminars({});
+            expect(fetchSpy).toHaveBeenCalledWith(
+                expect.stringContaining('/workshops/search-seminars'),
+                expect.any(Object),
+            );
+            expect(fetchSpy).toHaveBeenCalledWith(
+                expect.not.stringContaining('?'),
+                expect.any(Object),
+            );
+        });
+    });
+
+    describe('registrationsApi.list query params coverage', () => {
+        it('passes page param', async () => {
+            mockSuccess({ data: [], meta: {} });
+            await registrationsApi.list({ page: 4 });
+            expect(fetchSpy).toHaveBeenCalledWith(
+                expect.stringContaining('page=4'),
+                expect.any(Object),
+            );
+        });
+
+        it('passes search param', async () => {
+            mockSuccess({ data: [], meta: {} });
+            await registrationsApi.list({ search: 'john' });
+            expect(fetchSpy).toHaveBeenCalledWith(
+                expect.stringContaining('search=john'),
+                expect.any(Object),
+            );
+        });
+
+        it('builds no query string when no params', async () => {
+            mockSuccess({ data: [], meta: {} });
+            await registrationsApi.list();
+            expect(fetchSpy).toHaveBeenCalledWith(
+                expect.not.stringContaining('?'),
+                expect.any(Object),
+            );
+        });
+    });
+
+    describe('seminarsApi.list query params coverage', () => {
+        it('passes page param', async () => {
+            mockSuccess({ data: [], meta: {} });
+            await seminarsApi.list({ page: 5 });
+            expect(fetchSpy).toHaveBeenCalledWith(
+                expect.stringContaining('page=5'),
+                expect.any(Object),
+            );
+        });
+
+        it('passes active=0 when active is false', async () => {
+            mockSuccess({ data: [], meta: {} });
+            await seminarsApi.list({ active: false });
+            expect(fetchSpy).toHaveBeenCalledWith(
+                expect.stringContaining('active=0'),
+                expect.any(Object),
+            );
+        });
+
+        it('builds no query string when no params', async () => {
+            mockSuccess({ data: [], meta: {} });
+            await seminarsApi.list();
+            expect(fetchSpy).toHaveBeenCalledWith(
+                expect.not.stringContaining('?'),
+                expect.any(Object),
+            );
         });
     });
 });

@@ -50,4 +50,18 @@ describe('Subjects', () => {
             expect(screen.getByText(/nenhum tópico encontrado/i)).toBeInTheDocument();
         });
     });
+
+    it('shows 0 seminários when subject.seminarsCount is undefined', async () => {
+        vi.mocked(subjectsApi.list).mockResolvedValue({
+            data: [createSubject({ name: 'Topic Without Count', seminarsCount: undefined as any })],
+        });
+
+        render(<Subjects />);
+
+        await waitFor(() => {
+            expect(screen.getByText('Topic Without Count')).toBeInTheDocument();
+        });
+
+        expect(screen.getByText(/0\s+seminários/)).toBeInTheDocument();
+    });
 });

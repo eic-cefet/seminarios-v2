@@ -80,4 +80,30 @@ describe('Home', () => {
         expect(screen.getByText('12 seminários')).toBeInTheDocument();
         expect(screen.getByText('8 seminários')).toBeInTheDocument();
     });
+
+    it('renders subject with seminarsCount as 0 when undefined', async () => {
+        const subjects = [
+            createSubject({ id: 1, name: 'No Count Subject', seminarsCount: undefined as any }),
+        ];
+        vi.mocked(subjectsApi.list).mockResolvedValue({ data: subjects });
+
+        render(<Home />);
+
+        await waitFor(() => {
+            expect(screen.getByText('No Count Subject')).toBeInTheDocument();
+        });
+
+        // The ?? 0 fallback should display "0 seminários"
+        expect(screen.getByText('0 seminários')).toBeInTheDocument();
+    });
+
+    it('shows "Nenhum seminário agendado" when no upcoming seminars', async () => {
+        vi.mocked(seminarsApi.upcoming).mockResolvedValue({ data: [] });
+
+        render(<Home />);
+
+        await waitFor(() => {
+            expect(screen.getByText(/nenhum seminário agendado no momento/i)).toBeInTheDocument();
+        });
+    });
 });

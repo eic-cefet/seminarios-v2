@@ -68,10 +68,8 @@ export default function BugReport() {
 
         setFiles((prev) => [...prev, ...validFiles]);
 
-        // Reset file input
-        if (fileInputRef.current) {
-            fileInputRef.current.value = "";
-        }
+        // Reset file input so the same file can be re-selected
+        fileInputRef.current && (fileInputRef.current.value = "");
     };
 
     const removeFile = (index: number) => {

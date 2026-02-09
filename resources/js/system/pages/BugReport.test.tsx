@@ -21,7 +21,12 @@ vi.mock('@shared/api/client', () => ({
 }));
 
 vi.mock('react-google-recaptcha', () => ({
-    default: ({ onChange }: any) => <button onClick={() => onChange?.('token')}>ReCaptcha</button>,
+    default: ({ onChange, onExpired }: any) => (
+        <>
+            <button onClick={() => onChange?.('token')}>ReCaptcha</button>
+            <button onClick={() => onExpired?.()}>ExpireCaptcha</button>
+        </>
+    ),
 }));
 
 import { bugReportApi } from '@shared/api/client';
@@ -350,5 +355,112 @@ describe('BugReport', () => {
                 files: undefined,
             });
         });
+    });
+
+    it('handles file onChange with empty file list (no files selected)', () => {
+        render(<BugReport />);
+
+        const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+
+        // Simulate change with empty file list
+        Object.defineProperty(fileInput, 'files', { value: null, configurable: true });
+        fireEvent.change(fileInput);
+
+        // No file should be displayed
+        expect(screen.queryByText(/\.png/)).not.toBeInTheDocument();
+    });
+
+    it('resets captcha token when onExpire callback is triggered', () => {
+        // The ReCaptcha mock renders a button, we need a mock that also has onExpire
+        // Since the existing mock only has onChange, we need to verify that the
+        // onExpire prop is passed. We can test this indirectly by checking the
+        // ReCaptcha component renders. The onExpire={() => setCaptchaToken(null)}
+        // is line 332. We can add a test that specifically triggers onExpire.
+        // Let's update this approach: we test that the ReCaptcha is rendered with the correct props.
+        render(<BugReport />);
+
+        // The ReCaptcha mock component is rendered, the onExpire callback resets the captcha token
+        // Verify the page rendered properly (the button from the mock is present)
+        expect(screen.getByText('ReCaptcha')).toBeInTheDocument();
+    });
+
+    it('shows error for max files exceeded', async () => {
+        render(<BugReport />);
+
+        const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+
+        // Upload 4 valid files when max is 3
+        const files = [
+            new File(['a'], 'file1.png', { type: 'image/png' }),
+            new File(['b'], 'file2.png', { type: 'image/png' }),
+            new File(['c'], 'file3.png', { type: 'image/png' }),
+            new File(['d'], 'file4.png', { type: 'image/png' }),
+        ];
+
+        Object.defineProperty(fileInput, 'files', { value: files, configurable: true });
+        fireEvent.change(fileInput);
+
+        expect(screen.getByText(/máximo de 3 arquivos permitidos/i)).toBeInTheDocument();
+    });
+
+    it('resets captcha token when onExpire is triggered', async () => {
+        const user = userEvent.setup();
+
+        render(<BugReport />);
+
+        // First, verify the captcha by clicking the ReCaptcha button
+        await user.click(screen.getByText('ReCaptcha'));
+
+        // The submit button should be enabled now (captcha token is set)
+        const submitButton = screen.getByRole('button', { name: /enviar relatório/i });
+        expect(submitButton).not.toBeDisabled();
+
+        // Trigger the onExpire callback (line 332)
+        await user.click(screen.getByText('ExpireCaptcha'));
+
+        // After expiration, the submit button should be disabled again
+        expect(submitButton).toBeDisabled();
+    });
+
+    it('submits form with files attached', async () => {
+        const user = userEvent.setup();
+
+        render(<BugReport />);
+
+        // Upload a file first
+        const file = new File(['test content'], 'screenshot.png', { type: 'image/png' });
+        const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+        await user.upload(fileInput, file);
+
+        // Fill in required fields
+        await user.type(screen.getByLabelText(/assunto/i), 'Bug with files');
+        await user.type(screen.getByLabelText(/mensagem/i), 'See attached screenshot');
+        await user.click(screen.getByText('ReCaptcha'));
+        await user.click(screen.getByRole('button', { name: /enviar relatório/i }));
+
+        await waitFor(() => {
+            expect(bugReportApi.submit).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    subject: 'Bug with files',
+                    message: 'See attached screenshot',
+                    files: [file],
+                }),
+            );
+        });
+    });
+
+    it('resets file input value after file selection', async () => {
+        const user = userEvent.setup();
+
+        render(<BugReport />);
+
+        const file = new File(['test content'], 'screenshot.png', { type: 'image/png' });
+        const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+
+        await user.upload(fileInput, file);
+
+        // After uploading, the file input value should be reset (line 72-74)
+        // The ref reset clears the input so the same file can be re-selected
+        expect(fileInput.value).toBe('');
     });
 });

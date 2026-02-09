@@ -12,4 +12,16 @@ describe('Separator', () => {
         const sep = container.firstChild as HTMLElement;
         expect(sep).toHaveClass('my-4');
     });
+
+    it('renders with vertical orientation', () => {
+        const { container } = render(<Separator orientation="vertical" />);
+        const sep = container.firstChild as HTMLElement;
+        expect(sep).toHaveAttribute('data-orientation', 'vertical');
+    });
+
+    it('renders with horizontal orientation by default', () => {
+        const { container } = render(<Separator />);
+        const sep = container.firstChild as HTMLElement;
+        expect(sep).toHaveAttribute('data-orientation', 'horizontal');
+    });
 });

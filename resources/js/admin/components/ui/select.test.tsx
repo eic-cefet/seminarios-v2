@@ -1,10 +1,13 @@
 import { render, screen } from '@/test/test-utils';
 import {
     Select,
+    SelectGroup,
     SelectTrigger,
     SelectValue,
     SelectContent,
     SelectItem,
+    SelectLabel,
+    SelectSeparator,
 } from './select';
 
 describe('Select', () => {
@@ -83,5 +86,75 @@ describe('Select', () => {
         );
 
         expect(screen.getByText('Option A')).toBeInTheDocument();
+    });
+
+    it('renders SelectLabel inside a group', () => {
+        render(
+            <Select defaultValue="a" open>
+                <SelectTrigger>
+                    <SelectValue placeholder="Select" />
+                </SelectTrigger>
+                <SelectContent>
+                    <SelectGroup>
+                        <SelectLabel>My Group Label</SelectLabel>
+                        <SelectItem value="a">Option A</SelectItem>
+                    </SelectGroup>
+                </SelectContent>
+            </Select>,
+        );
+
+        expect(screen.getByText('My Group Label')).toBeInTheDocument();
+    });
+
+    it('renders SelectLabel with custom className', () => {
+        render(
+            <Select defaultValue="a" open>
+                <SelectTrigger>
+                    <SelectValue placeholder="Select" />
+                </SelectTrigger>
+                <SelectContent>
+                    <SelectGroup>
+                        <SelectLabel className="custom-label">Label</SelectLabel>
+                        <SelectItem value="a">Option A</SelectItem>
+                    </SelectGroup>
+                </SelectContent>
+            </Select>,
+        );
+
+        expect(screen.getByText('Label')).toHaveClass('custom-label');
+    });
+
+    it('renders SelectSeparator', () => {
+        render(
+            <Select defaultValue="a" open>
+                <SelectTrigger>
+                    <SelectValue placeholder="Select" />
+                </SelectTrigger>
+                <SelectContent>
+                    <SelectItem value="a">Option A</SelectItem>
+                    <SelectSeparator data-testid="select-separator" />
+                    <SelectItem value="b">Option B</SelectItem>
+                </SelectContent>
+            </Select>,
+        );
+
+        expect(screen.getByTestId('select-separator')).toBeInTheDocument();
+    });
+
+    it('renders SelectSeparator with custom className', () => {
+        render(
+            <Select defaultValue="a" open>
+                <SelectTrigger>
+                    <SelectValue placeholder="Select" />
+                </SelectTrigger>
+                <SelectContent>
+                    <SelectItem value="a">Option A</SelectItem>
+                    <SelectSeparator data-testid="select-separator" className="custom-sep" />
+                    <SelectItem value="b">Option B</SelectItem>
+                </SelectContent>
+            </Select>,
+        );
+
+        expect(screen.getByTestId('select-separator')).toHaveClass('custom-sep');
     });
 });

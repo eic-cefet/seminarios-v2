@@ -214,6 +214,93 @@ describe('Presentations', () => {
         );
     });
 
+    it('shows "Limpar filtro" button and calls API with type filter when a type is selected', async () => {
+        const seminars = [createSeminar({ name: 'Talk 1' })];
+        vi.mocked(seminarsApi.list).mockResolvedValue(createPaginatedResponse(seminars));
+        const user = userEvent.setup();
+
+        // Polyfill pointer capture methods for Radix Select
+        const origHasPointerCapture = HTMLElement.prototype.hasPointerCapture;
+        const origSetPointerCapture = HTMLElement.prototype.setPointerCapture;
+        const origReleasePointerCapture = HTMLElement.prototype.releasePointerCapture;
+        HTMLElement.prototype.hasPointerCapture = vi.fn().mockReturnValue(false);
+        HTMLElement.prototype.setPointerCapture = vi.fn();
+        HTMLElement.prototype.releasePointerCapture = vi.fn();
+
+        render(<Presentations />);
+
+        // The "Limpar filtro" button should not appear initially
+        expect(screen.queryByText(/limpar filtro/i)).not.toBeInTheDocument();
+
+        // Open the Radix Select by clicking the combobox trigger
+        const selectTrigger = screen.getByRole('combobox');
+        await user.click(selectTrigger);
+
+        // Select "Palestra" from the dropdown options
+        const palestraOption = await screen.findByRole('option', { name: /palestra/i });
+        await user.click(palestraOption);
+
+        // Verify the API was called with the type filter (covers branch 30:0)
+        await waitFor(() => {
+            expect(seminarsApi.list).toHaveBeenCalledWith(
+                expect.objectContaining({ type: 'Palestra' })
+            );
+        });
+
+        // Verify the "Limpar filtro" button now appears (covers branch 151:1)
+        expect(screen.getByText(/limpar filtro/i)).toBeInTheDocument();
+
+        // Restore original methods
+        HTMLElement.prototype.hasPointerCapture = origHasPointerCapture;
+        HTMLElement.prototype.setPointerCapture = origSetPointerCapture;
+        HTMLElement.prototype.releasePointerCapture = origReleasePointerCapture;
+    });
+
+    it('clears type filter when "Limpar filtro" button is clicked', async () => {
+        const seminars = [createSeminar({ name: 'Talk 1' })];
+        vi.mocked(seminarsApi.list).mockResolvedValue(createPaginatedResponse(seminars));
+        const user = userEvent.setup();
+
+        // Polyfill pointer capture methods for Radix Select
+        const origHasPointerCapture = HTMLElement.prototype.hasPointerCapture;
+        const origSetPointerCapture = HTMLElement.prototype.setPointerCapture;
+        const origReleasePointerCapture = HTMLElement.prototype.releasePointerCapture;
+        HTMLElement.prototype.hasPointerCapture = vi.fn().mockReturnValue(false);
+        HTMLElement.prototype.setPointerCapture = vi.fn();
+        HTMLElement.prototype.releasePointerCapture = vi.fn();
+
+        render(<Presentations />);
+
+        // Open the Radix Select and pick a type
+        const selectTrigger = screen.getByRole('combobox');
+        await user.click(selectTrigger);
+        const palestraOption = await screen.findByRole('option', { name: /palestra/i });
+        await user.click(palestraOption);
+
+        // Wait for the "Limpar filtro" button to appear
+        const clearButton = await screen.findByText(/limpar filtro/i);
+
+        // Click "Limpar filtro" to reset the filter (covers fn at line 153)
+        await user.click(clearButton);
+
+        // Verify the "Limpar filtro" button disappears
+        await waitFor(() => {
+            expect(screen.queryByText(/limpar filtro/i)).not.toBeInTheDocument();
+        });
+
+        // Verify the API was called again with type: undefined (back to "all")
+        await waitFor(() => {
+            expect(seminarsApi.list).toHaveBeenCalledWith(
+                expect.objectContaining({ type: undefined })
+            );
+        });
+
+        // Restore original methods
+        HTMLElement.prototype.hasPointerCapture = origHasPointerCapture;
+        HTMLElement.prototype.setPointerCapture = origSetPointerCapture;
+        HTMLElement.prototype.releasePointerCapture = origReleasePointerCapture;
+    });
+
     it('navigates to previous page when "Anterior" is clicked', async () => {
         // Start on page 2
         const seminars = [createSeminar({ name: 'Talk on Page 2' })];

@@ -1,5 +1,6 @@
 import { ApiRequestError, seminarsApi, subjectsApi, workshopsApi, seminarTypesApi, coursesApi, statsApi, authApi, registrationApi, profileApi, bugReportApi } from './client';
 import { createSeminar, createSubject, createWorkshop, createPaginatedResponse } from '@/test/factories';
+import { getCookie } from './httpUtils';
 
 // Mock httpUtils to avoid CSRF fetch in tests
 vi.mock('./httpUtils', () => ({
@@ -7,6 +8,8 @@ vi.mock('./httpUtils', () => ({
     getCsrfCookie: vi.fn(() => Promise.resolve()),
     buildQueryString: vi.fn(),
 }));
+
+const mockGetCookie = getCookie as ReturnType<typeof vi.fn>;
 
 describe('ApiRequestError', () => {
     it('creates an error with code, message, status', () => {
@@ -318,6 +321,36 @@ describe('fetchApi (via API namespaces)', () => {
                 expect.any(Object),
             );
         });
+
+        it('registrations with no params produces no query string', async () => {
+            mockFetchSuccess({ data: [], meta: { current_page: 1, last_page: 1, per_page: 15, total: 0 } });
+            const result = await profileApi.registrations();
+            expect(result.data).toEqual([]);
+            expect(fetchSpy).toHaveBeenCalledWith(
+                expect.stringMatching(/\/profile\/registrations$/),
+                expect.any(Object),
+            );
+        });
+
+        it('registrations with only per_page param', async () => {
+            mockFetchSuccess({ data: [], meta: { current_page: 1, last_page: 1, per_page: 5, total: 0 } });
+            const result = await profileApi.registrations({ per_page: 5 });
+            expect(result.data).toEqual([]);
+            expect(fetchSpy).toHaveBeenCalledWith(
+                expect.stringContaining('per_page=5'),
+                expect.any(Object),
+            );
+        });
+
+        it('certificates with no params produces no query string', async () => {
+            mockFetchSuccess({ data: [], meta: { current_page: 1, last_page: 1, per_page: 15, total: 0 } });
+            const result = await profileApi.certificates();
+            expect(result.data).toEqual([]);
+            expect(fetchSpy).toHaveBeenCalledWith(
+                expect.stringMatching(/\/profile\/certificates$/),
+                expect.any(Object),
+            );
+        });
     });
 
     describe('seminarsApi extended', () => {
@@ -330,11 +363,47 @@ describe('fetchApi (via API namespaces)', () => {
             );
         });
 
+        it('list passes subject param', async () => {
+            mockFetchSuccess(createPaginatedResponse([createSeminar()]));
+            await seminarsApi.list({ subject: 42 });
+            expect(fetchSpy).toHaveBeenCalledWith(
+                expect.stringContaining('subject=42'),
+                expect.any(Object),
+            );
+        });
+
+        it('list passes expired param', async () => {
+            mockFetchSuccess(createPaginatedResponse([createSeminar()]));
+            await seminarsApi.list({ expired: true });
+            expect(fetchSpy).toHaveBeenCalledWith(
+                expect.stringContaining('expired=1'),
+                expect.any(Object),
+            );
+        });
+
         it('bySubject passes pagination params', async () => {
             mockFetchSuccess(createPaginatedResponse([]));
             await seminarsApi.bySubject(2, { page: 3, direction: 'asc' });
             expect(fetchSpy).toHaveBeenCalledWith(
                 expect.stringContaining('/subjects/2/seminars'),
+                expect.any(Object),
+            );
+        });
+
+        it('bySubject passes per_page param', async () => {
+            mockFetchSuccess(createPaginatedResponse([]));
+            await seminarsApi.bySubject(2, { per_page: 25 });
+            expect(fetchSpy).toHaveBeenCalledWith(
+                expect.stringContaining('per_page=25'),
+                expect.any(Object),
+            );
+        });
+
+        it('bySubject with no params produces no query string', async () => {
+            mockFetchSuccess(createPaginatedResponse([]));
+            await seminarsApi.bySubject(5);
+            expect(fetchSpy).toHaveBeenCalledWith(
+                expect.stringMatching(/\/subjects\/5\/seminars$/),
                 expect.any(Object),
             );
         });
@@ -357,6 +426,15 @@ describe('fetchApi (via API namespaces)', () => {
             await workshopsApi.seminars(1, { upcoming: true, page: 2, per_page: 5 });
             expect(fetchSpy).toHaveBeenCalledWith(
                 expect.stringContaining('/workshops/1/seminars'),
+                expect.any(Object),
+            );
+        });
+
+        it('seminars passes direction param', async () => {
+            mockFetchSuccess(createPaginatedResponse([]));
+            await workshopsApi.seminars(3, { direction: 'desc' });
+            expect(fetchSpy).toHaveBeenCalledWith(
+                expect.stringContaining('direction=desc'),
                 expect.any(Object),
             );
         });
@@ -417,6 +495,79 @@ describe('fetchApi (via API namespaces)', () => {
             } catch (err) {
                 expect(err).toBeInstanceOf(ApiRequestError);
                 expect((err as ApiRequestError).code).toBe('unknown_error');
+            }
+        });
+    });
+
+    describe('XSRF token handling', () => {
+        it('includes X-XSRF-TOKEN header when cookie is present', async () => {
+            mockGetCookie.mockReturnValue('my-xsrf-token');
+            mockFetchSuccess({ data: [] });
+
+            await seminarsApi.upcoming();
+
+            expect(fetchSpy).toHaveBeenCalledWith(
+                expect.any(String),
+                expect.objectContaining({
+                    headers: expect.objectContaining({
+                        'X-XSRF-TOKEN': 'my-xsrf-token',
+                    }),
+                }),
+            );
+
+            mockGetCookie.mockReturnValue(null);
+        });
+    });
+
+    describe('bugReportApi extended', () => {
+        it('submit includes files in FormData when provided', async () => {
+            mockFetchSuccess({ message: 'Sent' });
+            const file = new File(['content'], 'screenshot.png', { type: 'image/png' });
+
+            const result = await bugReportApi.submit({
+                subject: 'Bug',
+                message: 'Something broke',
+                files: [file],
+            });
+            expect(result.message).toBe('Sent');
+
+            const callArgs = fetchSpy.mock.calls[0];
+            const body = callArgs[1]?.body as FormData;
+            expect(body).toBeInstanceOf(FormData);
+            expect(body.getAll('files[]')).toHaveLength(1);
+        });
+
+        it('submit includes X-XSRF-TOKEN header when cookie is present', async () => {
+            mockGetCookie.mockReturnValue('bug-xsrf-token');
+            mockFetchSuccess({ message: 'Sent' });
+
+            await bugReportApi.submit({ subject: 'Bug', message: 'Error' });
+
+            expect(fetchSpy).toHaveBeenCalledWith(
+                expect.any(String),
+                expect.objectContaining({
+                    headers: expect.objectContaining({
+                        'X-XSRF-TOKEN': 'bug-xsrf-token',
+                    }),
+                }),
+            );
+
+            mockGetCookie.mockReturnValue(null);
+        });
+
+        it('submit handles non-JSON error response', async () => {
+            fetchSpy.mockResolvedValue(new Response('Not JSON', {
+                status: 500,
+                statusText: 'Internal Server Error',
+            }));
+
+            try {
+                await bugReportApi.submit({ subject: 'Bug', message: 'Error' });
+                expect.unreachable('Should have thrown');
+            } catch (err) {
+                expect(err).toBeInstanceOf(ApiRequestError);
+                expect((err as ApiRequestError).code).toBe('unknown_error');
+                expect((err as ApiRequestError).message).toBe('Internal Server Error');
             }
         });
     });

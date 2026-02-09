@@ -169,5 +169,34 @@ describe('AuthContext', () => {
             expect(mockAuthApi.exchangeCode).toHaveBeenCalledWith('code123');
             expect(result.current.user).toEqual(user);
         });
+
+        it('refreshUser ignores non-401 errors (keeps user as null)', async () => {
+            // First call: a generic error (not 401, not ApiRequestError)
+            mockAuthApi.me.mockRejectedValue(new Error('Network error'));
+
+            const { result } = renderHook(() => useAuth(), { wrapper: createWrapper() });
+
+            await waitFor(() => {
+                expect(result.current.isLoading).toBe(false);
+            });
+
+            // User should remain null but not be explicitly set to null (the catch doesn't match)
+            expect(result.current.user).toBeNull();
+            expect(result.current.isAuthenticated).toBe(false);
+        });
+
+        it('refreshUser ignores ApiRequestError with non-401 status', async () => {
+            // A 500 ApiRequestError should not set user to null explicitly
+            mockAuthApi.me.mockRejectedValue(new ApiRequestError('server_error', 'Server Error', 500));
+
+            const { result } = renderHook(() => useAuth(), { wrapper: createWrapper() });
+
+            await waitFor(() => {
+                expect(result.current.isLoading).toBe(false);
+            });
+
+            expect(result.current.user).toBeNull();
+            expect(result.current.isAuthenticated).toBe(false);
+        });
     });
 });

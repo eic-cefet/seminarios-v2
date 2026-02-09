@@ -172,7 +172,7 @@ jobs:
 
       - name: Run tests with coverage
         if: steps.filter.outputs.backend == 'true'
-        run: php artisan test --compact --min=95
+        run: php artisan test --compact --min=95 --coverage-clover=coverage/backend-clover.xml
         env:
           DB_CONNECTION: mysql
           DB_HOST: 127.0.0.1
@@ -180,6 +180,14 @@ jobs:
           DB_DATABASE: testing
           DB_USERNAME: root
           DB_PASSWORD: password
+
+      - name: Upload backend coverage to Codecov
+        if: steps.filter.outputs.backend == 'true'
+        uses: codecov/codecov-action@v5
+        with:
+          files: ./coverage/backend-clover.xml
+          flags: backend
+          token: ${{ secrets.CODECOV_TOKEN }}
 
       - name: Skip message
         if: steps.filter.outputs.backend != 'true'
@@ -237,6 +245,14 @@ jobs:
       - name: Run frontend tests with coverage
         if: steps.filter.outputs.frontend == 'true'
         run: pnpm test:coverage
+
+      - name: Upload frontend coverage to Codecov
+        if: steps.filter.outputs.frontend == 'true'
+        uses: codecov/codecov-action@v5
+        with:
+          files: ./coverage/coverage-final.json
+          flags: frontend
+          token: ${{ secrets.CODECOV_TOKEN }}
 
       - name: Skip message
         if: steps.filter.outputs.frontend != 'true'

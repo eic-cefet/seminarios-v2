@@ -1,4 +1,4 @@
-import { render, screen, userEvent } from '@/test/test-utils';
+import { render, screen, userEvent, fireEvent } from '@/test/test-utils';
 import { Navbar } from './Navbar';
 import { useAuth } from '@shared/contexts/AuthContext';
 import { analytics } from '@shared/lib/analytics';
@@ -260,6 +260,32 @@ describe('Navbar', () => {
 
         // After clicking, mobile menu should be closed (the link onClick calls setMobileMenuOpen(false))
         // We verify indirectly by re-opening - the toggle button should show menu icon not X
+    });
+
+    it('calls logout and tracks analytics when desktop Sair is clicked', async () => {
+        vi.mocked(useAuth).mockReturnValue({
+            user: { id: 1, name: 'Jane Doe', email: 'jane@example.com', roles: [] } as any,
+            isLoading: false, isAuthenticated: true,
+            login: vi.fn(), register: vi.fn(), logout: mockLogout, exchangeCode: vi.fn(), refreshUser: vi.fn(),
+        });
+
+        const user = userEvent.setup();
+        render(<Navbar />);
+
+        // Open the desktop Radix dropdown by clicking on the trigger button
+        const triggerButtons = screen.getAllByText('Jane Doe');
+        const desktopTrigger = triggerButtons[0].closest('button')!;
+        await user.click(desktopTrigger);
+
+        // The Radix DropdownMenu portal renders items into the body.
+        // After opening, there should be an additional Sair button from the dropdown.
+        // The dropdown portal renders with role="menuitem", find the Sair menuitem.
+        const sairMenuItems = await screen.findAllByRole('menuitem', { name: /sair/i });
+        // Use fireEvent.click to bypass pointer-events: none (Radix animation CSS)
+        fireEvent.click(sairMenuItems[0]);
+
+        expect(analytics.event).toHaveBeenCalledWith('logout');
+        expect(mockLogout).toHaveBeenCalled();
     });
 
     it('does not show admin link when user has no roles', () => {

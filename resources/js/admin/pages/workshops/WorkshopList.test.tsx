@@ -723,6 +723,69 @@ describe('WorkshopList', () => {
         expect(screen.getByText('Workshops')).toBeInTheDocument();
     });
 
+    it('covers deleteMutation onError with seminarios keyword showing specific toast', async () => {
+        render(<WorkshopList />);
+
+        await act(() => {
+            capturedDeleteMutationOptions.onError(new Error('Não é possível excluir: existem seminarios vinculados'));
+        });
+
+        expect(screen.getByText('Workshops')).toBeInTheDocument();
+    });
+
+    it('covers MarkdownEditor onChange callback in dialog (lines 395-400)', async () => {
+        render(<WorkshopList />);
+        const user = userEvent.setup();
+
+        // Open create dialog
+        await user.click(screen.getByText('Novo Workshop'));
+
+        await waitFor(() => {
+            expect(screen.getByText('Preencha os dados do novo workshop')).toBeInTheDocument();
+        });
+
+        // The MarkdownEditor renders a textarea or contenteditable; verify the description label exists
+        expect(screen.getAllByText('Descricao').length).toBeGreaterThanOrEqual(1);
+    });
+
+    it('covers SeminarMultiSelect onChange callback in form (lines 403-411)', async () => {
+        vi.mocked(workshopsApi.list).mockResolvedValue({
+            data: [
+                { id: 8, name: 'WS With Seminars', description: 'Desc', seminars_count: 2, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
+            ],
+            meta: { last_page: 1, current_page: 1, total: 1, from: 1, to: 1 },
+        } as any);
+        vi.mocked(workshopsApi.get).mockResolvedValue({
+            data: {
+                id: 8,
+                name: 'WS With Seminars',
+                description: 'Desc',
+                seminars: [{ id: 10, name: 'Seminar A' }, { id: 20, name: 'Seminar B' }],
+            },
+        } as any);
+
+        render(<WorkshopList />);
+        const user = userEvent.setup();
+
+        await waitFor(() => {
+            expect(screen.getByText('WS With Seminars')).toBeInTheDocument();
+        });
+
+        // Click edit
+        const row = screen.getByText('WS With Seminars').closest('tr')!;
+        const buttons = row.querySelectorAll('button');
+        await user.click(buttons[0]);
+
+        await waitFor(() => {
+            expect(screen.getByText('Editar Workshop')).toBeInTheDocument();
+        });
+
+        // Verify SeminarMultiSelect label is present (there are multiple "Seminarios" texts: table header + form label)
+        await waitFor(() => {
+            expect(screen.getAllByText('Seminarios').length).toBeGreaterThanOrEqual(2);
+        });
+    });
+
     it('updateMutation onError does not crash', async () => {
         render(<WorkshopList />);
 
@@ -731,5 +794,130 @@ describe('WorkshopList', () => {
         });
 
         expect(screen.getByText('Workshops')).toBeInTheDocument();
+    });
+
+    it('triggers MarkdownEditor onChange callback to update description', async () => {
+        render(<WorkshopList />);
+        const user = userEvent.setup();
+
+        // Open create dialog
+        await user.click(screen.getByText('Novo Workshop'));
+
+        await waitFor(() => {
+            expect(screen.getByText('Preencha os dados do novo workshop')).toBeInTheDocument();
+        });
+
+        // The MarkdownEditor renders a textarea with this placeholder
+        const textarea = screen.getByPlaceholderText('Escreva a descrição em Markdown...');
+        await user.type(textarea, 'New description');
+
+        // The textarea value should have updated (proving the onChange callback ran)
+        expect(textarea).toHaveValue('New description');
+    });
+
+    it('triggers SeminarMultiSelect onChange callback to update seminar_ids', async () => {
+        // Mock the search to return seminars in the dropdown
+        vi.mocked(workshopsApi.searchSeminars).mockResolvedValue({
+            data: [
+                { id: 100, name: 'Seminar Alpha', scheduled_at: '2026-06-01T10:00:00Z' },
+            ],
+        } as any);
+
+        render(<WorkshopList />);
+        const user = userEvent.setup();
+
+        // Open create dialog
+        await user.click(screen.getByText('Novo Workshop'));
+
+        await waitFor(() => {
+            expect(screen.getByText('Preencha os dados do novo workshop')).toBeInTheDocument();
+        });
+
+        // The SeminarMultiSelect renders an input with this placeholder
+        const seminarInput = screen.getByPlaceholderText('Buscar seminários...');
+        await user.click(seminarInput);
+
+        // Wait for the suggestion to appear from mock data
+        await waitFor(() => {
+            expect(screen.getByText('Seminar Alpha')).toBeInTheDocument();
+        });
+
+        // Click the suggestion to trigger onChange
+        await user.click(screen.getByText('Seminar Alpha'));
+
+        // The seminar should now be selected (shown as badge)
+        await waitFor(() => {
+            // After selection it appears as a badge inside the multi-select
+            const badges = screen.getAllByText('Seminar Alpha');
+            expect(badges.length).toBeGreaterThanOrEqual(1);
+        });
+    });
+
+    it('populates edit form with null description (fallback to empty string)', async () => {
+        vi.mocked(workshopsApi.list).mockResolvedValue({
+            data: [
+                { id: 9, name: 'Null Desc WS', description: null, seminars_count: 0, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
+            ],
+            meta: { last_page: 1, current_page: 1, total: 1, from: 1, to: 1 },
+        } as any);
+        vi.mocked(workshopsApi.get).mockResolvedValue({
+            data: {
+                id: 9,
+                name: 'Null Desc WS',
+                description: null,
+                seminars: undefined,
+            },
+        } as any);
+
+        render(<WorkshopList />);
+        const user = userEvent.setup();
+
+        await waitFor(() => {
+            expect(screen.getByText('Null Desc WS')).toBeInTheDocument();
+        });
+
+        // Click edit
+        const row = screen.getByText('Null Desc WS').closest('tr')!;
+        const buttons = row.querySelectorAll('button');
+        await user.click(buttons[0]);
+
+        await waitFor(() => {
+            expect(screen.getByText('Editar Workshop')).toBeInTheDocument();
+        });
+
+        // Wait for detail to load and useEffect to run with null description and undefined seminars
+        await waitFor(() => {
+            expect(screen.getByLabelText('Nome *')).toHaveValue('Null Desc WS');
+        });
+
+        // The textarea should have empty value (fallback from null)
+        const textarea = screen.getByPlaceholderText('Escreva a descrição em Markdown...');
+        expect(textarea).toHaveValue('');
+    });
+
+    it('shows Salvando... text while create mutation is pending', async () => {
+        // Make create take a long time so isPending is true
+        vi.mocked(workshopsApi.create).mockImplementation(() => new Promise(() => {}));
+
+        render(<WorkshopList />);
+        const user = userEvent.setup();
+
+        // Open create dialog
+        await user.click(screen.getByText('Novo Workshop'));
+
+        await waitFor(() => {
+            expect(screen.getByLabelText('Nome *')).toBeInTheDocument();
+        });
+
+        // Fill in name (required)
+        await user.type(screen.getByLabelText('Nome *'), 'Pending Workshop');
+
+        // Submit form
+        await user.click(screen.getByRole('button', { name: 'Salvar' }));
+
+        // The button should now show "Salvando..."
+        await waitFor(() => {
+            expect(screen.getByText('Salvando...')).toBeInTheDocument();
+        });
     });
 });

@@ -1,5 +1,8 @@
 import { render, screen, userEvent, waitFor } from '@/test/test-utils';
 
+// Holder for captured queryFn from useQuery calls
+const capturedQueryFns: { queryFn: (() => any) | null } = { queryFn: null };
+
 vi.mock('../api/adminClient', () => ({
     subjectsApi: {
         list: vi.fn().mockResolvedValue({ data: [], meta: { last_page: 1, current_page: 1, total: 0 } }),
@@ -10,6 +13,19 @@ vi.mock('@shared/components/DropdownPortal', () => ({
     DropdownPortal: ({ children, isOpen }: { children: React.ReactNode; isOpen: boolean }) =>
         isOpen ? <div data-testid="dropdown-portal">{children}</div> : null,
 }));
+
+vi.mock('@tanstack/react-query', async () => {
+    const actual = await vi.importActual<typeof import('@tanstack/react-query')>('@tanstack/react-query');
+    return {
+        ...actual,
+        useQuery: (options: any) => {
+            if (options.queryKey?.[0] === 'admin-subjects-search') {
+                capturedQueryFns.queryFn = options.queryFn;
+            }
+            return actual.useQuery(options);
+        },
+    };
+});
 
 import { SubjectMultiSelect } from './SubjectMultiSelect';
 
@@ -237,6 +253,137 @@ describe('SubjectMultiSelect', () => {
         await user.click(input);
         await user.keyboard('{Backspace}');
         expect(mockOnChange).not.toHaveBeenCalled();
+    });
+
+    it('does not add subject when Enter is pressed with only whitespace input and no selection highlighted', async () => {
+        const mockOnChange = vi.fn();
+        render(<SubjectMultiSelect {...defaultProps} onChange={mockOnChange} />);
+        const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+        const input = screen.getByPlaceholderText('Digite e pressione Enter...');
+        // Type spaces then press Enter - the trim should result in empty
+        await user.type(input, '   {Enter}');
+        // onChange should NOT be called because inputValue.trim() is empty
+        expect(mockOnChange).not.toHaveBeenCalled();
+    });
+
+    it('selects a subject via keyboard navigation (ArrowDown + Enter)', async () => {
+        const mockOnChange = vi.fn();
+        const { subjectsApi } = await import('../api/adminClient');
+        vi.mocked(subjectsApi.list).mockResolvedValue({
+            data: [
+                { id: 1, name: 'React', created_at: '', updated_at: '' },
+                { id: 2, name: 'Redux', created_at: '', updated_at: '' },
+            ],
+            meta: { last_page: 1, current_page: 1, total: 2 } as any,
+            links: { first: '', last: '', prev: null, next: null },
+        });
+
+        render(<SubjectMultiSelect {...defaultProps} onChange={mockOnChange} />);
+        const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+        const input = screen.getByPlaceholderText('Digite e pressione Enter...');
+        await user.type(input, 'Re');
+
+        vi.advanceTimersByTime(350);
+
+        await waitFor(() => {
+            expect(screen.getByTestId('dropdown-portal')).toBeInTheDocument();
+        });
+
+        // Press ArrowDown to highlight the first suggestion
+        await user.keyboard('{ArrowDown}');
+
+        // The highlighted item should have the Check icon and accent styling
+        await waitFor(() => {
+            const checkIcons = document.querySelectorAll('.lucide-check');
+            expect(checkIcons.length).toBeGreaterThan(0);
+        });
+
+        // Press Enter to select the highlighted suggestion via onSelect callback
+        await user.keyboard('{Enter}');
+        expect(mockOnChange).toHaveBeenCalledWith(['React']);
+    });
+
+    it('highlights second suggestion when pressing ArrowDown twice', async () => {
+        const mockOnChange = vi.fn();
+        const { subjectsApi } = await import('../api/adminClient');
+        vi.mocked(subjectsApi.list).mockResolvedValue({
+            data: [
+                { id: 1, name: 'React', created_at: '', updated_at: '' },
+                { id: 2, name: 'Redux', created_at: '', updated_at: '' },
+            ],
+            meta: { last_page: 1, current_page: 1, total: 2 } as any,
+            links: { first: '', last: '', prev: null, next: null },
+        });
+
+        render(<SubjectMultiSelect {...defaultProps} onChange={mockOnChange} />);
+        const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+        const input = screen.getByPlaceholderText('Digite e pressione Enter...');
+        await user.type(input, 'Re');
+
+        vi.advanceTimersByTime(350);
+
+        await waitFor(() => {
+            expect(screen.getByTestId('dropdown-portal')).toBeInTheDocument();
+        });
+
+        // Press ArrowDown twice to highlight the second suggestion
+        await user.keyboard('{ArrowDown}{ArrowDown}');
+
+        // Press Enter to select Redux (index 1)
+        await user.keyboard('{Enter}');
+        expect(mockOnChange).toHaveBeenCalledWith(['Redux']);
+    });
+
+    it('passes search term to subjectsApi.list in queryFn', async () => {
+        const { subjectsApi } = await import('../api/adminClient');
+        const listMock = vi.mocked(subjectsApi.list);
+        listMock.mockResolvedValue({
+            data: [
+                { id: 1, name: 'React', created_at: '', updated_at: '' },
+            ],
+            meta: { last_page: 1, current_page: 1, total: 1 } as any,
+            links: { first: '', last: '', prev: null, next: null },
+        });
+
+        render(<SubjectMultiSelect {...defaultProps} />);
+        const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+        const input = screen.getByPlaceholderText('Digite e pressione Enter...');
+
+        // Type something to trigger the query
+        await user.type(input, 'R');
+        vi.advanceTimersByTime(350);
+
+        await waitFor(() => {
+            expect(listMock).toHaveBeenCalled();
+        });
+
+        // The queryFn uses searchTerm || undefined
+        // When searchTerm is 'R', it should pass 'R'
+        expect(listMock).toHaveBeenCalledWith({ search: 'R' });
+    });
+
+    it('queryFn passes undefined as search param when searchTerm is empty', async () => {
+        // This test covers the `searchTerm || undefined` branch where searchTerm is falsy.
+        // On initial render, searchTerm is '', so the captured queryFn closure has searchTerm=''.
+        // We manually invoke the captured queryFn to exercise the || undefined branch.
+        const { subjectsApi } = await import('../api/adminClient');
+        const listMock = vi.mocked(subjectsApi.list);
+        listMock.mockResolvedValue({
+            data: [],
+            meta: { last_page: 1, current_page: 1, total: 0 } as any,
+            links: { first: '', last: '', prev: null, next: null },
+        });
+
+        capturedQueryFns.queryFn = null;
+        render(<SubjectMultiSelect {...defaultProps} />);
+
+        // The useQuery mock captures the queryFn on render.
+        // On initial render, searchTerm is '' (debounced value starts empty).
+        expect(capturedQueryFns.queryFn).not.toBeNull();
+
+        // Manually call the queryFn - searchTerm is '' so `searchTerm || undefined` yields undefined
+        await capturedQueryFns.queryFn!();
+        expect(listMock).toHaveBeenCalledWith({ search: undefined });
     });
 
     it('shows suggestion-mode helper text when suggestions are visible', async () => {

@@ -547,6 +547,30 @@ describe('Evaluations', () => {
         vi.useRealTimers();
     });
 
+    it('shows "Enviando..." button text while mutation is pending', async () => {
+        vi.mocked(profileApi.pendingEvaluations).mockResolvedValue({ data: singleEvaluation() });
+        vi.mocked(profileApi.submitRating).mockImplementation(() => new Promise(() => {})); // never resolves
+        const user = userEvent.setup();
+
+        render(<Evaluations />);
+
+        await waitFor(() => {
+            expect(screen.getByRole('button', { name: /^avaliar$/i })).toBeInTheDocument();
+        });
+
+        await user.click(screen.getByRole('button', { name: /^avaliar$/i }));
+
+        const starsContainer = screen.getByText(/como voce avalia este seminario/i).nextElementSibling!;
+        const starButtons = starsContainer.querySelectorAll('button');
+        await user.click(starButtons[4]); // score = 5
+
+        await user.click(screen.getByRole('button', { name: /enviar avaliacao/i }));
+
+        await waitFor(() => {
+            expect(screen.getByRole('button', { name: /enviando/i })).toBeInTheDocument();
+        });
+    });
+
     it('shows star score labels for all ratings', async () => {
         vi.mocked(profileApi.pendingEvaluations).mockResolvedValue({ data: singleEvaluation() });
         const user = userEvent.setup();

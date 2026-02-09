@@ -185,4 +185,110 @@ describe('useDropdownNavigation', () => {
 
         expect(result.current.highlightedIndex).toBe(-1);
     });
+
+    describe('click outside behavior', () => {
+        it('does not reset when clicking inside the dropdown ref', () => {
+            const onClose = vi.fn();
+            const { result } = renderHook(() =>
+                useDropdownNavigation({ onSelect: vi.fn(), onClose }),
+            );
+
+            // Create DOM elements for the refs
+            const dropdownEl = document.createElement('div');
+            const inputEl = document.createElement('input');
+            const childEl = document.createElement('span');
+            dropdownEl.appendChild(childEl);
+            document.body.appendChild(dropdownEl);
+            document.body.appendChild(inputEl);
+
+            // Assign refs
+            Object.defineProperty(result.current.dropdownRef, 'current', {
+                value: dropdownEl,
+                writable: true,
+            });
+            Object.defineProperty(result.current.inputRef, 'current', {
+                value: inputEl,
+                writable: true,
+            });
+
+            act(() => {
+                result.current.setIsOpen(true);
+            });
+
+            // Click on the child of dropdown (inside dropdown) - should NOT reset
+            act(() => {
+                const event = new MouseEvent('mousedown', { bubbles: true });
+                Object.defineProperty(event, 'target', { value: childEl });
+                document.dispatchEvent(event);
+            });
+
+            // The dropdown should still be open because the click was inside
+            expect(result.current.isOpen).toBe(true);
+            expect(onClose).not.toHaveBeenCalled();
+
+            // Cleanup
+            document.body.removeChild(dropdownEl);
+            document.body.removeChild(inputEl);
+        });
+
+        it('resets when clicking outside both dropdown and input refs', () => {
+            const onClose = vi.fn();
+            const { result } = renderHook(() =>
+                useDropdownNavigation({ onSelect: vi.fn(), onClose }),
+            );
+
+            // Create DOM elements for the refs
+            const dropdownEl = document.createElement('div');
+            const inputEl = document.createElement('input');
+            const outsideEl = document.createElement('div');
+            document.body.appendChild(dropdownEl);
+            document.body.appendChild(inputEl);
+            document.body.appendChild(outsideEl);
+
+            // Assign refs
+            Object.defineProperty(result.current.dropdownRef, 'current', {
+                value: dropdownEl,
+                writable: true,
+            });
+            Object.defineProperty(result.current.inputRef, 'current', {
+                value: inputEl,
+                writable: true,
+            });
+
+            act(() => {
+                result.current.setIsOpen(true);
+            });
+
+            // Click outside both - should reset
+            act(() => {
+                outsideEl.dispatchEvent(
+                    new MouseEvent('mousedown', { bubbles: true }),
+                );
+            });
+
+            expect(result.current.isOpen).toBe(false);
+            expect(onClose).toHaveBeenCalled();
+
+            // Cleanup
+            document.body.removeChild(dropdownEl);
+            document.body.removeChild(inputEl);
+            document.body.removeChild(outsideEl);
+        });
+    });
+
+    it('reset works without onClose callback', () => {
+        const { result } = renderHook(() =>
+            useDropdownNavigation({ onSelect: vi.fn() }),
+        );
+
+        act(() => {
+            result.current.setIsOpen(true);
+        });
+
+        act(() => {
+            result.current.reset();
+        });
+
+        expect(result.current.isOpen).toBe(false);
+    });
 });

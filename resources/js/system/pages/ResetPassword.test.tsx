@@ -18,6 +18,10 @@ vi.mock('@shared/api/client', () => ({
     ApiRequestError: class extends Error {},
 }));
 
+vi.mock('@shared/lib/errors', () => ({
+    getErrorMessage: vi.fn((err: Error) => err.message),
+}));
+
 const mockNavigate = vi.fn();
 
 vi.mock('react-router-dom', async () => {
@@ -306,6 +310,15 @@ describe('ResetPassword', () => {
             routerProps: { initialEntries: [validRoute] },
         });
         expect(screen.getByText(/digite sua nova senha abaixo/i)).toBeInTheDocument();
+    });
+
+    it('shows invalid link UI and description when params are missing', () => {
+        render(<ResetPassword />, {
+            routerProps: { initialEntries: ['/redefinir-senha?token=abc123'] },
+        });
+
+        expect(screen.getByRole('heading', { name: /link inválido/i })).toBeInTheDocument();
+        expect(screen.getByText(/o link de redefinição de senha é inválido/i)).toBeInTheDocument();
     });
 
     it('navigates to /login after successful reset via timer', async () => {

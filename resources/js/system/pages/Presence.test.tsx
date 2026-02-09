@@ -364,6 +364,61 @@ describe('Presence', () => {
         });
     });
 
+    it('shows pending state while registration is in progress', async () => {
+        vi.spyOn(globalThis, 'fetch')
+            .mockResolvedValueOnce(validPresenceResponse()) // check link
+            .mockImplementationOnce(() => new Promise(() => {})); // register hangs
+
+        vi.mocked(useAuth).mockReturnValue({
+            user: createUser({ name: 'John Doe' }), isLoading: false, isAuthenticated: true,
+            login: vi.fn(), register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(),
+        });
+
+        render(<Presence />);
+
+        await waitFor(() => {
+            expect(screen.getByText(/registrando presença/i)).toBeInTheDocument();
+        });
+    });
+
+    it('shows fallback error message when registration fails without a message', async () => {
+        vi.spyOn(globalThis, 'fetch')
+            .mockResolvedValueOnce(validPresenceResponse())
+            .mockResolvedValueOnce(new Response(
+                JSON.stringify({}),
+                { status: 500, headers: { 'Content-Type': 'application/json' } },
+            ));
+
+        vi.mocked(useAuth).mockReturnValue({
+            user: createUser({ name: 'John Doe' }), isLoading: false, isAuthenticated: true,
+            login: vi.fn(), register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(),
+        });
+
+        render(<Presence />);
+
+        await waitFor(() => {
+            // When server returns no message, the mutation throws "Erro ao registrar presença"
+            expect(screen.getByText('Erro ao registrar presença')).toBeInTheDocument();
+        });
+    });
+
+    it('shows fallback error text when registerMutation.error is not an Error instance', async () => {
+        vi.spyOn(globalThis, 'fetch')
+            .mockResolvedValueOnce(validPresenceResponse())
+            .mockImplementationOnce(() => Promise.reject('string error'));
+
+        vi.mocked(useAuth).mockReturnValue({
+            user: createUser({ name: 'John Doe' }), isLoading: false, isAuthenticated: true,
+            login: vi.fn(), register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(),
+        });
+
+        render(<Presence />);
+
+        await waitFor(() => {
+            expect(screen.getByText('Não foi possível registrar sua presença.')).toBeInTheDocument();
+        });
+    });
+
     it('retries registration when "Tentar novamente" button is clicked', async () => {
         vi.spyOn(globalThis, 'fetch')
             .mockResolvedValueOnce(validPresenceResponse())

@@ -52,4 +52,19 @@ describe('Workshops', () => {
             expect(screen.getByText(/nenhum workshop encontrado/i)).toBeInTheDocument();
         });
     });
+
+    it('shows 0 sessões when workshop.seminarsCount is undefined', async () => {
+        const workshops = [
+            createWorkshop({ name: 'Workshop No Count', seminarsCount: undefined as any }),
+        ];
+        vi.mocked(workshopsApi.list).mockResolvedValue({ data: workshops });
+
+        render(<Workshops />);
+
+        await waitFor(() => {
+            expect(screen.getByText('Workshop No Count')).toBeInTheDocument();
+        });
+
+        expect(screen.getByText(/0\s+sessões/)).toBeInTheDocument();
+    });
 });

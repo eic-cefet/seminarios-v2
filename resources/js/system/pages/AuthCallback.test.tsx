@@ -112,4 +112,60 @@ describe('AuthCallback', () => {
 
         expect(mockNavigate).toHaveBeenCalledWith('/login');
     });
+
+    it('does not call exchangeCode more than once (hasRun guard)', async () => {
+        mockExchangeCode.mockResolvedValue(undefined);
+
+        const { rerender } = render(<AuthCallback />, {
+            routerProps: { initialEntries: ['/auth/callback?code=test-code'] },
+        });
+
+        await waitFor(() => {
+            expect(mockExchangeCode).toHaveBeenCalledTimes(1);
+        });
+
+        // Re-render the component, the hasRun ref should prevent a second call
+        rerender(<AuthCallback />);
+
+        // Wait a tick to ensure no extra calls happen
+        await waitFor(() => {
+            expect(mockExchangeCode).toHaveBeenCalledTimes(1);
+        });
+    });
+
+    it('skips execution when hasRun ref is already true (strict mode double-fire)', async () => {
+        // In React StrictMode, effects fire twice. The hasRun ref prevents
+        // the second invocation from calling exchangeCode again.
+        // We render with StrictMode to trigger this behavior.
+        mockExchangeCode.mockResolvedValue(undefined);
+
+        const { StrictMode } = await import('react');
+        const { render: rtlRender } = await import('@testing-library/react');
+        const { MemoryRouter } = await import('react-router-dom');
+        const { QueryClient, QueryClientProvider } = await import('@tanstack/react-query');
+        const { HelmetProvider } = await import('react-helmet-async');
+
+        const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+
+        rtlRender(
+            <StrictMode>
+                <QueryClientProvider client={qc}>
+                    <HelmetProvider>
+                        <MemoryRouter initialEntries={['/auth/callback?code=strict-code']}>
+                            <AuthCallback />
+                        </MemoryRouter>
+                    </HelmetProvider>
+                </QueryClientProvider>
+            </StrictMode>,
+        );
+
+        // Wait for the exchange to be called
+        await waitFor(() => {
+            expect(mockExchangeCode).toHaveBeenCalledTimes(1);
+        });
+
+        // Despite StrictMode double-firing effects, exchangeCode is only called once
+        // because hasRun.current guard (line 24) prevents the second execution
+        expect(mockExchangeCode).toHaveBeenCalledTimes(1);
+    });
 });

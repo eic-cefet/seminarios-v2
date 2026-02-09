@@ -163,6 +163,98 @@ describe('CertificatesSection', () => {
         });
     });
 
+    it('does not render seminar type badge when seminar_type is null', async () => {
+        const certificates = [
+            createUserCertificate({
+                id: 1,
+                certificate_code: 'CERT-001',
+                seminar: {
+                    id: 10,
+                    name: 'Seminário Sem Tipo',
+                    slug: 'seminario-sem-tipo',
+                    scheduled_at: '2026-06-15T14:00:00Z',
+                    seminar_type: null,
+                },
+            }),
+        ];
+
+        vi.mocked(profileApi.certificates).mockResolvedValue({
+            data: certificates,
+            meta: { current_page: 1, last_page: 1, per_page: 10, total: 1 },
+        });
+
+        render(<CertificatesSection />);
+
+        await waitFor(() => {
+            expect(screen.getByText('Seminário Sem Tipo')).toBeInTheDocument();
+        });
+
+        // No badge should be rendered since seminar_type is null
+        expect(screen.queryByText('Palestra')).not.toBeInTheDocument();
+        expect(screen.queryByText('Workshop')).not.toBeInTheDocument();
+    });
+
+    it('does not render scheduled date when scheduled_at is null', async () => {
+        const certificates = [
+            createUserCertificate({
+                id: 1,
+                certificate_code: 'CERT-001',
+                seminar: {
+                    id: 10,
+                    name: 'Seminário Sem Data',
+                    slug: 'seminario-sem-data',
+                    scheduled_at: null,
+                    seminar_type: { id: 1, name: 'Palestra' },
+                },
+            }),
+        ];
+
+        vi.mocked(profileApi.certificates).mockResolvedValue({
+            data: certificates,
+            meta: { current_page: 1, last_page: 1, per_page: 10, total: 1 },
+        });
+
+        render(<CertificatesSection />);
+
+        await waitFor(() => {
+            expect(screen.getByText('Seminário Sem Data')).toBeInTheDocument();
+        });
+
+        // Badge should be present but no date text
+        expect(screen.getByText('Palestra')).toBeInTheDocument();
+    });
+
+    it('falls back to page state for currentPage and 1 for lastPage when meta is undefined', async () => {
+        const certificates = [
+            createUserCertificate({
+                id: 1,
+                certificate_code: 'CERT-001',
+                seminar: {
+                    id: 10,
+                    name: 'Seminário Sem Meta',
+                    slug: 'seminario-sem-meta',
+                    scheduled_at: '2026-06-15T14:00:00Z',
+                    seminar_type: { id: 1, name: 'Palestra' },
+                },
+            }),
+        ];
+
+        vi.mocked(profileApi.certificates).mockResolvedValue({
+            data: certificates,
+            meta: undefined as any,
+        });
+
+        render(<CertificatesSection />);
+
+        await waitFor(() => {
+            expect(screen.getByText('Seminário Sem Meta')).toBeInTheDocument();
+        });
+
+        // The Pagination component renders with fallback values (currentPage=1, lastPage=1)
+        // and since lastPage=1, no pagination controls should be shown
+        expect(screen.getByText('Baixar')).toBeInTheDocument();
+    });
+
     it('fires analytics event when download link is clicked', async () => {
         const { analytics } = await import('@shared/lib/analytics');
         const certificates = [

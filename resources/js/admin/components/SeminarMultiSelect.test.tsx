@@ -266,4 +266,75 @@ describe('SeminarMultiSelect', () => {
             expect(screen.queryByTestId('dropdown-portal')).not.toBeInTheDocument();
         });
     });
+
+    it('does not duplicate when selecting an already-selected seminar via suggestion click', async () => {
+        const mockOnChange = vi.fn();
+        const { workshopsApi } = await import('../api/adminClient');
+        // Return two seminars, one of which is already selected
+        vi.mocked(workshopsApi.searchSeminars).mockResolvedValue({
+            data: [
+                { id: 1, name: 'Already Selected', slug: 'a', scheduled_at: '2026-03-01T10:00:00Z', workshop_id: null },
+                { id: 2, name: 'Not Selected', slug: 'b', scheduled_at: '2026-04-01T10:00:00Z', workshop_id: null },
+            ],
+        });
+
+        render(
+            <SeminarMultiSelect
+                {...defaultProps}
+                value={[1]}
+                initialSeminars={[{ id: 1, name: 'Already Selected' }]}
+                onChange={mockOnChange}
+            />,
+        );
+
+        const user = userEvent.setup();
+        const input = screen.getByPlaceholderText('');
+        await user.click(input);
+
+        // Only "Not Selected" should appear in dropdown (already selected are filtered)
+        await waitFor(() => {
+            expect(screen.getByText('Not Selected')).toBeInTheDocument();
+        });
+
+        // Click "Not Selected" to add it
+        await user.click(screen.getByText('Not Selected'));
+        expect(mockOnChange).toHaveBeenCalledWith([1, 2]);
+    });
+
+    it('selects a seminar via keyboard navigation (ArrowDown + Enter)', async () => {
+        const mockOnChange = vi.fn();
+        const { workshopsApi } = await import('../api/adminClient');
+        vi.mocked(workshopsApi.searchSeminars).mockResolvedValue({
+            data: [
+                { id: 10, name: 'Keyboard Seminar', slug: 'keyboard', scheduled_at: '2026-03-01T10:00:00Z', workshop_id: null },
+                { id: 11, name: 'Second Seminar', slug: 'second', scheduled_at: '2026-04-01T10:00:00Z', workshop_id: null },
+            ],
+        });
+
+        render(<SeminarMultiSelect {...defaultProps} onChange={mockOnChange} />);
+        const user = userEvent.setup();
+        const input = screen.getByPlaceholderText('Buscar seminários...');
+        await user.click(input);
+
+        // Wait for suggestions to appear
+        await waitFor(() => {
+            expect(screen.getByText('Keyboard Seminar')).toBeInTheDocument();
+        });
+
+        // Navigate down to highlight the first suggestion and press Enter
+        await user.keyboard('{ArrowDown}');
+
+        // Verify the highlighted item has the active class
+        const firstSuggestion = screen.getByText('Keyboard Seminar').closest('[class*="px-3"]')!;
+        expect(firstSuggestion.className).toContain('bg-accent');
+
+        // Verify the Check icon is rendered for the highlighted item
+        const checkIcon = firstSuggestion.querySelector('svg');
+        expect(checkIcon).toBeInTheDocument();
+
+        // Press Enter to select the highlighted suggestion
+        await user.keyboard('{Enter}');
+        expect(mockOnChange).toHaveBeenCalledWith([10]);
+    });
+
 });
