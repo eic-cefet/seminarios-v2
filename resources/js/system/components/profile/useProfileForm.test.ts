@@ -72,6 +72,30 @@ describe('useProfileForm', () => {
         expect(onSuccess).toHaveBeenCalled();
     });
 
+    it('mutationCallbacks.onSuccess resets success to false after 3 seconds', async () => {
+        vi.useFakeTimers();
+        const onSuccess = vi.fn();
+        const { result } = renderHook(() => useProfileForm({ onSuccess }));
+
+        act(() => {
+            result.current.startEditing();
+        });
+
+        await act(async () => {
+            await result.current.mutationCallbacks.onSuccess();
+        });
+
+        expect(result.current.success).toBe(true);
+
+        // Advance timer by 3 seconds
+        act(() => {
+            vi.advanceTimersByTime(3000);
+        });
+
+        expect(result.current.success).toBe(false);
+        vi.useRealTimers();
+    });
+
     it('mutationCallbacks.onError sets error message', () => {
         const { result } = renderHook(() => useProfileForm());
 

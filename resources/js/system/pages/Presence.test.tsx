@@ -364,6 +364,23 @@ describe('Presence', () => {
         });
     });
 
+    it('shows pending state while registration is in progress', async () => {
+        vi.spyOn(globalThis, 'fetch')
+            .mockResolvedValueOnce(validPresenceResponse()) // check link
+            .mockImplementationOnce(() => new Promise(() => {})); // register hangs
+
+        vi.mocked(useAuth).mockReturnValue({
+            user: createUser({ name: 'John Doe' }), isLoading: false, isAuthenticated: true,
+            login: vi.fn(), register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(),
+        });
+
+        render(<Presence />);
+
+        await waitFor(() => {
+            expect(screen.getByText(/registrando presença/i)).toBeInTheDocument();
+        });
+    });
+
     it('retries registration when "Tentar novamente" button is clicked', async () => {
         vi.spyOn(globalThis, 'fetch')
             .mockResolvedValueOnce(validPresenceResponse())

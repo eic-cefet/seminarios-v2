@@ -18,6 +18,7 @@ export default defineConfig({
         css: false,
         coverage: {
             provider: 'v8',
+            reporter: ['text', 'json'],
             include: ['resources/js/**/*.{ts,tsx}'],
             exclude: [
                 'resources/js/**/*.test.{ts,tsx}',

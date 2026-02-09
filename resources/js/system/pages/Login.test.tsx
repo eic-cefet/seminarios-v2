@@ -122,4 +122,27 @@ describe('Login', () => {
         expect(googleBtn).toBeInTheDocument();
         expect(githubBtn).toBeInTheDocument();
     });
+
+    it('handles social login by calling analytics and setting window.location.href', async () => {
+        const { analytics } = await import('@shared/lib/analytics');
+        const originalLocation = window.location;
+        Object.defineProperty(window, 'location', {
+            writable: true,
+            value: { ...originalLocation, href: '' },
+        });
+        const user = userEvent.setup();
+
+        render(<Login />);
+
+        await user.click(screen.getByRole('button', { name: /google/i }));
+        expect(analytics.event).toHaveBeenCalledWith('login_social', { provider: 'google' });
+
+        await user.click(screen.getByRole('button', { name: /github/i }));
+        expect(analytics.event).toHaveBeenCalledWith('login_social', { provider: 'github' });
+
+        Object.defineProperty(window, 'location', {
+            writable: true,
+            value: originalLocation,
+        });
+    });
 });

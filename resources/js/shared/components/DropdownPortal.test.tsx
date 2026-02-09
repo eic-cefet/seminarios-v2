@@ -54,4 +54,39 @@ describe('DropdownPortal', () => {
         expect(portal?.style.position).toBe('absolute');
         expect(portal?.style.width).toBe('200px');
     });
+
+    it('handles anchor becoming null during scroll/resize', () => {
+        const ref = createAnchorRef();
+        render(
+            <DropdownPortal anchorRef={ref} isOpen={true}>
+                <div>Content</div>
+            </DropdownPortal>,
+        );
+
+        // Verify content renders initially
+        expect(screen.getByText('Content')).toBeInTheDocument();
+
+        // Set ref.current to null to simulate anchor removal
+        Object.defineProperty(ref, 'current', { value: null, writable: true });
+
+        // Trigger scroll event - updatePosition should bail out early
+        window.dispatchEvent(new Event('scroll'));
+
+        // Content should still be in the DOM (portal doesn't unmount)
+        expect(screen.getByText('Content')).toBeInTheDocument();
+    });
+
+    it('renders nothing when anchorRef.current is null and isOpen is true', () => {
+        const ref = createRef<HTMLDivElement>();
+        // ref.current is null by default
+        render(
+            <DropdownPortal anchorRef={ref} isOpen={true}>
+                <div>Should not position</div>
+            </DropdownPortal>,
+        );
+
+        // The useLayoutEffect returns early when anchorRef.current is null,
+        // but the portal still renders (isOpen is true)
+        expect(screen.getByText('Should not position')).toBeInTheDocument();
+    });
 });

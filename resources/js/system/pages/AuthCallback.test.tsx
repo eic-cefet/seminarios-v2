@@ -112,4 +112,24 @@ describe('AuthCallback', () => {
 
         expect(mockNavigate).toHaveBeenCalledWith('/login');
     });
+
+    it('does not call exchangeCode more than once (hasRun guard)', async () => {
+        mockExchangeCode.mockResolvedValue(undefined);
+
+        const { rerender } = render(<AuthCallback />, {
+            routerProps: { initialEntries: ['/auth/callback?code=test-code'] },
+        });
+
+        await waitFor(() => {
+            expect(mockExchangeCode).toHaveBeenCalledTimes(1);
+        });
+
+        // Re-render the component, the hasRun ref should prevent a second call
+        rerender(<AuthCallback />);
+
+        // Wait a tick to ensure no extra calls happen
+        await waitFor(() => {
+            expect(mockExchangeCode).toHaveBeenCalledTimes(1);
+        });
+    });
 });

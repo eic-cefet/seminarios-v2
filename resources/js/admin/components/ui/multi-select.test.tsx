@@ -95,4 +95,46 @@ describe('MultiSelect', () => {
 
         expect(onChange).toHaveBeenCalledWith(['2']);
     });
+
+    it('removes selected item when clicking the X badge button (handleRemove)', async () => {
+        const user = userEvent.setup();
+        const onChange = vi.fn();
+        render(
+            <MultiSelect
+                options={options}
+                selected={['1', '2']}
+                onChange={onChange}
+            />,
+        );
+
+        // Find the X icon inside the badge for "Option 1"
+        const option1Badge = screen.getByText('Option 1');
+        const xIcon = option1Badge.parentElement!.querySelector('svg.cursor-pointer')!;
+        await user.click(xIcon);
+
+        // handleRemove should call onChange with the item filtered out
+        expect(onChange).toHaveBeenCalledWith(['2']);
+    });
+
+    it('stopPropagation prevents popover from opening when removing badge', async () => {
+        const user = userEvent.setup();
+        const onChange = vi.fn();
+        render(
+            <MultiSelect
+                options={options}
+                selected={['1', '2']}
+                onChange={onChange}
+            />,
+        );
+
+        // Click the X on the "Option 1" badge
+        const option1Badge = screen.getByText('Option 1');
+        const xIcon = option1Badge.parentElement!.querySelector('svg')!;
+        await user.click(xIcon);
+
+        // handleRemove was called (onChange fired)
+        expect(onChange).toHaveBeenCalled();
+        // The popover should NOT have opened (stopPropagation prevents the trigger click)
+        expect(screen.getByRole('combobox')).toHaveAttribute('aria-expanded', 'false');
+    });
 });

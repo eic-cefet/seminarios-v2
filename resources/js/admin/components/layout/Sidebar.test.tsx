@@ -249,4 +249,39 @@ describe('Sidebar', () => {
         const registrationsLink = screen.getByText('Inscrições').closest('a');
         expect(registrationsLink).toHaveAttribute('href', '/registrations');
     });
+
+    it('handles user with undefined roles (isAdmin ?? false fallback)', async () => {
+        const { useAuth } = await import('@shared/contexts/AuthContext');
+        vi.mocked(useAuth).mockReturnValue({
+            user: { id: 3, name: 'No Roles User', email: 'noroles@test.com', roles: undefined } as any,
+            isLoading: false,
+            isAuthenticated: true,
+            login: vi.fn(),
+            register: vi.fn(),
+            logout: vi.fn(),
+            exchangeCode: vi.fn(),
+            refreshUser: vi.fn(),
+        });
+
+        render(<Sidebar />);
+
+        // Should see Dashboard (non-admin item)
+        expect(screen.getByText('Dashboard')).toBeInTheDocument();
+        // Should not see admin-only items
+        expect(screen.queryByText('Usuários')).not.toBeInTheDocument();
+        expect(screen.queryByText('Inscrições')).not.toBeInTheDocument();
+    });
+
+    it('renders NavLink items with correct styles at specific routes', () => {
+        render(<Sidebar />, {
+            routerProps: { initialEntries: ['/users'] },
+        });
+
+        // Dashboard should have inactive style at /users route
+        const dashboardLink = screen.getByText('Dashboard').closest('a');
+        expect(dashboardLink).toBeInTheDocument();
+        // Usuários should be active
+        const usersLink = screen.getByText('Usuários').closest('a');
+        expect(usersLink).toBeInTheDocument();
+    });
 });

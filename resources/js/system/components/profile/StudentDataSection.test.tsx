@@ -377,6 +377,44 @@ describe('StudentDataSection', () => {
         });
     });
 
+    it('uses default values when student_data is undefined', () => {
+        const userWithoutStudentData = createUser({
+            student_data: undefined,
+        });
+
+        render(<StudentDataSection user={userWithoutStudentData} onUpdate={onUpdate} />);
+
+        // Should show "Não informado" for course name and course_role
+        const notInformed = screen.getAllByText('Não informado');
+        expect(notInformed.length).toBeGreaterThanOrEqual(2);
+        // course_situation is undefined, so === "studying" is false, display shows "Formado"
+        expect(screen.getByText('Formado')).toBeInTheDocument();
+    });
+
+    it('resets to default values on cancel when student_data is undefined', async () => {
+        const userWithoutStudentData = createUser({
+            student_data: undefined,
+        });
+
+        const userAction = userEvent.setup();
+
+        render(<StudentDataSection user={userWithoutStudentData} onUpdate={onUpdate} />);
+
+        await userAction.click(screen.getByRole('button', { name: /editar/i }));
+
+        // Change course situation to graduated
+        await userAction.selectOptions(screen.getByLabelText(/situação/i), 'graduated');
+        // Change course role to Professor
+        await userAction.selectOptions(screen.getByLabelText(/vínculo/i), 'Professor');
+
+        // Cancel should reset to defaults (which are empty/undefined from student_data)
+        await userAction.click(screen.getByRole('button', { name: /cancelar/i }));
+
+        // Should be back in display mode with default values
+        // course_situation is undefined => "Formado" in display
+        expect(screen.getByText('Formado')).toBeInTheDocument();
+    });
+
     it('displays Situação and Vínculo labels in display mode', () => {
         render(<StudentDataSection user={user} onUpdate={onUpdate} />);
 

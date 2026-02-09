@@ -239,6 +239,17 @@ describe('SubjectMultiSelect', () => {
         expect(mockOnChange).not.toHaveBeenCalled();
     });
 
+    it('does not add subject when Enter is pressed with only whitespace input and no selection highlighted', async () => {
+        const mockOnChange = vi.fn();
+        render(<SubjectMultiSelect {...defaultProps} onChange={mockOnChange} />);
+        const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+        const input = screen.getByPlaceholderText('Digite e pressione Enter...');
+        // Type spaces then press Enter - the trim should result in empty
+        await user.type(input, '   {Enter}');
+        // onChange should NOT be called because inputValue.trim() is empty
+        expect(mockOnChange).not.toHaveBeenCalled();
+    });
+
     it('shows suggestion-mode helper text when suggestions are visible', async () => {
         const { subjectsApi } = await import('../api/adminClient');
         vi.mocked(subjectsApi.list).mockResolvedValue({

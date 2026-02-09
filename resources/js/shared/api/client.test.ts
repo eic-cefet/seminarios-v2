@@ -1,5 +1,6 @@
 import { ApiRequestError, seminarsApi, subjectsApi, workshopsApi, seminarTypesApi, coursesApi, statsApi, authApi, registrationApi, profileApi, bugReportApi } from './client';
 import { createSeminar, createSubject, createWorkshop, createPaginatedResponse } from '@/test/factories';
+import { getCookie } from './httpUtils';
 
 // Mock httpUtils to avoid CSRF fetch in tests
 vi.mock('./httpUtils', () => ({
@@ -7,6 +8,8 @@ vi.mock('./httpUtils', () => ({
     getCsrfCookie: vi.fn(() => Promise.resolve()),
     buildQueryString: vi.fn(),
 }));
+
+const mockGetCookie = getCookie as ReturnType<typeof vi.fn>;
 
 describe('ApiRequestError', () => {
     it('creates an error with code, message, status', () => {
@@ -417,6 +420,79 @@ describe('fetchApi (via API namespaces)', () => {
             } catch (err) {
                 expect(err).toBeInstanceOf(ApiRequestError);
                 expect((err as ApiRequestError).code).toBe('unknown_error');
+            }
+        });
+    });
+
+    describe('XSRF token handling', () => {
+        it('includes X-XSRF-TOKEN header when cookie is present', async () => {
+            mockGetCookie.mockReturnValue('my-xsrf-token');
+            mockFetchSuccess({ data: [] });
+
+            await seminarsApi.upcoming();
+
+            expect(fetchSpy).toHaveBeenCalledWith(
+                expect.any(String),
+                expect.objectContaining({
+                    headers: expect.objectContaining({
+                        'X-XSRF-TOKEN': 'my-xsrf-token',
+                    }),
+                }),
+            );
+
+            mockGetCookie.mockReturnValue(null);
+        });
+    });
+
+    describe('bugReportApi extended', () => {
+        it('submit includes files in FormData when provided', async () => {
+            mockFetchSuccess({ message: 'Sent' });
+            const file = new File(['content'], 'screenshot.png', { type: 'image/png' });
+
+            const result = await bugReportApi.submit({
+                subject: 'Bug',
+                message: 'Something broke',
+                files: [file],
+            });
+            expect(result.message).toBe('Sent');
+
+            const callArgs = fetchSpy.mock.calls[0];
+            const body = callArgs[1]?.body as FormData;
+            expect(body).toBeInstanceOf(FormData);
+            expect(body.getAll('files[]')).toHaveLength(1);
+        });
+
+        it('submit includes X-XSRF-TOKEN header when cookie is present', async () => {
+            mockGetCookie.mockReturnValue('bug-xsrf-token');
+            mockFetchSuccess({ message: 'Sent' });
+
+            await bugReportApi.submit({ subject: 'Bug', message: 'Error' });
+
+            expect(fetchSpy).toHaveBeenCalledWith(
+                expect.any(String),
+                expect.objectContaining({
+                    headers: expect.objectContaining({
+                        'X-XSRF-TOKEN': 'bug-xsrf-token',
+                    }),
+                }),
+            );
+
+            mockGetCookie.mockReturnValue(null);
+        });
+
+        it('submit handles non-JSON error response', async () => {
+            fetchSpy.mockResolvedValue(new Response('Not JSON', {
+                status: 500,
+                statusText: 'Internal Server Error',
+            }));
+
+            try {
+                await bugReportApi.submit({ subject: 'Bug', message: 'Error' });
+                expect.unreachable('Should have thrown');
+            } catch (err) {
+                expect(err).toBeInstanceOf(ApiRequestError);
+                expect((err as ApiRequestError).code).toBe('unknown_error');
+                expect((err as ApiRequestError).message).toBe('Internal Server Error');
             }
         });
     });

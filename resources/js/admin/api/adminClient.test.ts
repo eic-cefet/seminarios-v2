@@ -1,9 +1,12 @@
 import { AdminApiError, dashboardApi, usersApi, locationsApi, subjectsApi, workshopsApi, registrationsApi, seminarsApi, presenceLinkApi } from './adminClient';
+import { getCookie } from '@shared/api/httpUtils';
 
 vi.mock('@shared/api/httpUtils', () => ({
     getCookie: vi.fn(() => null),
     getCsrfCookie: vi.fn(() => Promise.resolve()),
 }));
+
+const mockGetCookie = getCookie as ReturnType<typeof vi.fn>;
 
 describe('AdminApiError', () => {
     it('creates an error with correct properties', () => {
@@ -445,6 +448,37 @@ describe('Admin API endpoints', () => {
                 expect(err).toBeInstanceOf(AdminApiError);
                 expect((err as AdminApiError).errors).toEqual({ name: ['Required'] });
             }
+        });
+    });
+
+    describe('XSRF token handling', () => {
+        it('includes X-XSRF-TOKEN header when cookie is present', async () => {
+            mockGetCookie.mockReturnValue('test-xsrf-token');
+            mockSuccess({ data: { counts: { users: 10 } } });
+
+            await dashboardApi.stats();
+
+            expect(fetchSpy).toHaveBeenCalledWith(
+                expect.any(String),
+                expect.objectContaining({
+                    headers: expect.objectContaining({
+                        'X-XSRF-TOKEN': 'test-xsrf-token',
+                    }),
+                }),
+            );
+
+            mockGetCookie.mockReturnValue(null);
+        });
+    });
+
+    describe('workshopsApi.searchSeminars with workshop_id', () => {
+        it('includes workshop_id param when provided', async () => {
+            mockSuccess({ data: [] });
+            await workshopsApi.searchSeminars({ search: 'test', workshop_id: 5 });
+            expect(fetchSpy).toHaveBeenCalledWith(
+                expect.stringContaining('workshop_id=5'),
+                expect.any(Object),
+            );
         });
     });
 });

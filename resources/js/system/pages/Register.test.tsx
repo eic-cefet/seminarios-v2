@@ -329,6 +329,37 @@ describe('Register', () => {
         expect(call.courseId).toBeUndefined();
     });
 
+    it('sends parsed courseId when a course is selected', async () => {
+        mockRegister.mockResolvedValue(undefined);
+        const user = userEvent.setup();
+
+        render(<Register />);
+
+        await user.type(screen.getByLabelText(/nome completo/i), 'Test User');
+        await user.type(screen.getByLabelText(/e-mail/i), 'test@example.com');
+        await user.selectOptions(screen.getByLabelText(/situação/i), 'studying');
+        await user.selectOptions(screen.getByLabelText(/vínculo/i), 'Aluno');
+
+        // Wait for courses to load and select one
+        await waitFor(() => {
+            expect(screen.getByText('Ciência da Computação')).toBeInTheDocument();
+        });
+        await user.selectOptions(screen.getByLabelText(/curso/i), '1');
+
+        await user.type(screen.getByLabelText(/^senha$/i), 'password123');
+        await user.type(screen.getByLabelText(/confirmar senha/i), 'password123');
+        await user.click(screen.getByText('ReCaptcha'));
+        await user.click(screen.getByRole('button', { name: /criar conta/i }));
+
+        await waitFor(() => {
+            expect(mockRegister).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    courseId: 1,
+                }),
+            );
+        });
+    });
+
     it('disables submit when captcha expires', async () => {
         const user = userEvent.setup();
         render(<Register />);

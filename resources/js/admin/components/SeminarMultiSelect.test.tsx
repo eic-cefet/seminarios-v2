@@ -266,4 +266,38 @@ describe('SeminarMultiSelect', () => {
             expect(screen.queryByTestId('dropdown-portal')).not.toBeInTheDocument();
         });
     });
+
+    it('does not duplicate when selecting an already-selected seminar via suggestion click', async () => {
+        const mockOnChange = vi.fn();
+        const { workshopsApi } = await import('../api/adminClient');
+        // Return two seminars, one of which is already selected
+        vi.mocked(workshopsApi.searchSeminars).mockResolvedValue({
+            data: [
+                { id: 1, name: 'Already Selected', slug: 'a', scheduled_at: '2026-03-01T10:00:00Z', workshop_id: null },
+                { id: 2, name: 'Not Selected', slug: 'b', scheduled_at: '2026-04-01T10:00:00Z', workshop_id: null },
+            ],
+        });
+
+        render(
+            <SeminarMultiSelect
+                {...defaultProps}
+                value={[1]}
+                initialSeminars={[{ id: 1, name: 'Already Selected' }]}
+                onChange={mockOnChange}
+            />,
+        );
+
+        const user = userEvent.setup();
+        const input = screen.getByPlaceholderText('');
+        await user.click(input);
+
+        // Only "Not Selected" should appear in dropdown (already selected are filtered)
+        await waitFor(() => {
+            expect(screen.getByText('Not Selected')).toBeInTheDocument();
+        });
+
+        // Click "Not Selected" to add it
+        await user.click(screen.getByText('Not Selected'));
+        expect(mockOnChange).toHaveBeenCalledWith([1, 2]);
+    });
 });

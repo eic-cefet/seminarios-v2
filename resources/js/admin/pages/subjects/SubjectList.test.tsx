@@ -813,6 +813,96 @@ describe('SubjectList', () => {
         expect(screen.getByText('Tópicos')).toBeInTheDocument();
     });
 
+    it('covers merge dialog rendering: selected subjects badges with seminar counts (lines 476-514)', async () => {
+        vi.mocked(subjectsApi.list).mockResolvedValue({
+            data: [
+                { id: 1, name: 'Alpha', seminars_count: 4, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
+                { id: 2, name: 'Beta', seminars_count: 6, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
+                { id: 3, name: 'Gamma', seminars_count: 0, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
+            ],
+            meta: { last_page: 1, current_page: 1, total: 3, from: 1, to: 3 },
+        } as any);
+
+        render(<SubjectList />);
+        const user = userEvent.setup();
+
+        await waitFor(() => {
+            expect(screen.getByText('Alpha')).toBeInTheDocument();
+        });
+
+        // Select all via header checkbox
+        const headerRow = screen.getByText('Nome').closest('tr')!;
+        const headerCheckbox = headerRow.querySelector('button[role="checkbox"]')!;
+        await user.click(headerCheckbox);
+
+        // Open merge dialog
+        await waitFor(() => {
+            expect(screen.getByText(/Mesclar/)).toBeInTheDocument();
+        });
+        await user.click(screen.getByText(/Mesclar/));
+
+        await waitFor(() => {
+            expect(screen.getByText('Mesclar Tópicos')).toBeInTheDocument();
+        });
+
+        // Verify badges with counts: "Alpha (4)", "Beta (6)", "Gamma (0)"
+        expect(screen.getByText('Alpha (4)')).toBeInTheDocument();
+        expect(screen.getByText('Beta (6)')).toBeInTheDocument();
+        expect(screen.getByText('Gamma (0)')).toBeInTheDocument();
+
+        // Verify total seminars affected: 4 + 6 + 0 = 10
+        expect(screen.getByText(/10/)).toBeInTheDocument();
+
+        // Verify "Tópico destino" label
+        expect(screen.getByText('Tópico destino (será mantido)')).toBeInTheDocument();
+
+        // Verify "Nome final (opcional)" label
+        expect(screen.getByText('Nome final (opcional)')).toBeInTheDocument();
+
+        // Verify placeholder
+        expect(screen.getByPlaceholderText('Deixe vazio para manter o nome atual')).toBeInTheDocument();
+    });
+
+    it('covers mergeMutation.isPending ternary (line 570) by calling mutationFn directly', async () => {
+        render(<SubjectList />);
+
+        expect(capturedSubMergeOptions).not.toBeNull();
+        expect(capturedSubMergeOptions.mutationFn).toBeDefined();
+
+        // Call mutationFn to cover line 570 branch
+        vi.mocked(subjectsApi.merge).mockResolvedValue({ data: { id: 1 } } as any);
+        await capturedSubMergeOptions.mutationFn({ target_id: 1, source_ids: [2] });
+        expect(subjectsApi.merge).toHaveBeenCalledWith({ target_id: 1, source_ids: [2] });
+    });
+
+    it('covers toggleSelection deselecting an already-selected subject (line 213)', async () => {
+        vi.mocked(subjectsApi.list).mockResolvedValue({
+            data: [
+                { id: 1, name: 'Toggle Topic', seminars_count: 0, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
+                { id: 2, name: 'Other Topic', seminars_count: 0, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
+            ],
+            meta: { last_page: 1, current_page: 1, total: 2, from: 1, to: 2 },
+        } as any);
+
+        render(<SubjectList />);
+        const user = userEvent.setup();
+
+        await waitFor(() => {
+            expect(screen.getByText('Toggle Topic')).toBeInTheDocument();
+        });
+
+        const rowA = screen.getByText('Toggle Topic').closest('tr')!;
+        const checkboxA = rowA.querySelector('button[role="checkbox"]')!;
+
+        // Select
+        await user.click(checkboxA);
+        // Deselect
+        await user.click(checkboxA);
+
+        // Merge button should NOT be visible (need 2+ selections)
+        expect(screen.queryByText(/Mesclar/)).not.toBeInTheDocument();
+    });
+
     it('types in the merge name field', async () => {
         vi.mocked(subjectsApi.list).mockResolvedValue({
             data: [

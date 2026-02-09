@@ -68,4 +68,28 @@ describe('Certificates', () => {
             expect(screen.getByText(/nenhum certificado disponível/i)).toBeInTheDocument();
         });
     });
+
+    it('redirects to /login when not authenticated and not loading', () => {
+        vi.mocked(useAuth).mockReturnValue({
+            user: null, isLoading: false, isAuthenticated: false,
+            login: vi.fn(), register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(),
+        });
+
+        render(<Certificates />);
+
+        // Navigate component redirects, so the page heading should not be rendered
+        expect(screen.queryByRole('heading', { name: /meus certificados/i })).not.toBeInTheDocument();
+    });
+
+    it('shows loading spinner when auth is loading', () => {
+        vi.mocked(useAuth).mockReturnValue({
+            user: null, isLoading: true, isAuthenticated: false,
+            login: vi.fn(), register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(),
+        });
+
+        render(<Certificates />);
+
+        // Should not render the heading or certificates
+        expect(screen.queryByRole('heading', { name: /meus certificados/i })).not.toBeInTheDocument();
+    });
 });

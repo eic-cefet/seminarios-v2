@@ -544,6 +544,27 @@ describe('PresenceLinkModal', () => {
         expect(presenceLinkApi.toggle).toHaveBeenCalledWith(1);
     });
 
+    it('shows "Criando..." text while create mutation is pending', async () => {
+        const { presenceLinkApi } = await import('../api/adminClient');
+        vi.mocked(presenceLinkApi.get).mockResolvedValue({ data: null });
+        // Make create return a never-resolving promise to keep isPending true
+        vi.mocked(presenceLinkApi.create).mockReturnValue(new Promise(() => {}) as any);
+
+        render(<PresenceLinkModal {...defaultProps} />);
+        const user = userEvent.setup();
+
+        await waitFor(() => {
+            expect(screen.getByText('Criar Link de Presença')).toBeInTheDocument();
+        });
+
+        await user.click(screen.getByText('Criar Link de Presença'));
+
+        // The button text should change to "Criando..." while pending
+        await waitFor(() => {
+            expect(screen.getByText('Criando...')).toBeInTheDocument();
+        });
+    });
+
     it('shows helper text for page link', async () => {
         const { presenceLinkApi } = await import('../api/adminClient');
         vi.mocked(presenceLinkApi.get).mockResolvedValue({

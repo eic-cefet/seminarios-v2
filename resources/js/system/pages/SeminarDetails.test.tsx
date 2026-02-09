@@ -487,4 +487,34 @@ describe('SeminarDetails', () => {
             expect(screen.getByText(/você receberá um lembrete por e-mail antes do evento/i)).toBeInTheDocument();
         });
     });
+
+    it('calls unregisterMutation onError when unregister fails', async () => {
+        const seminar = createSeminar({ name: 'Test', isExpired: false });
+        vi.mocked(seminarsApi.get).mockResolvedValue({ data: seminar });
+        vi.mocked(registrationApi.status).mockResolvedValue({ registered: true });
+        vi.mocked(registrationApi.unregister).mockRejectedValue(new Error('Cannot unregister'));
+        vi.mocked(useAuth).mockReturnValue({
+            user: createUser(), isLoading: false, isAuthenticated: true,
+            login: vi.fn(), register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(),
+        });
+        const user = userEvent.setup();
+
+        render(<SeminarDetails />);
+
+        await waitFor(() => {
+            expect(screen.getByRole('button', { name: /cancelar inscrição/i })).toBeInTheDocument();
+        });
+
+        await user.click(screen.getByRole('button', { name: /cancelar inscrição/i }));
+
+        // The unregister call should have been made and failed, triggering the onError handler
+        await waitFor(() => {
+            expect(registrationApi.unregister).toHaveBeenCalled();
+        });
+
+        // The "Cancelar inscricao" button should still be visible (still registered)
+        await waitFor(() => {
+            expect(screen.getByRole('button', { name: /cancelar inscrição/i })).toBeInTheDocument();
+        });
+    });
 });

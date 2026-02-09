@@ -52,6 +52,12 @@ describe('formatDateTimeLong', () => {
         expect(result).toMatch(/\d{2}.*\d{4}/);
         expect(result).toMatch(/\d{2}:\d{2}/);
     });
+
+    it('formats a Date object with long month name', () => {
+        const result = formatDateTimeLong(new Date('2026-06-15T12:00:00Z'));
+        expect(result).toMatch(/\d{2}.*\d{4}/);
+        expect(result).toMatch(/\d{2}:\d{2}/);
+    });
 });
 
 describe('isExpired', () => {
@@ -98,6 +104,11 @@ describe('buildUrl', () => {
 
     it('handles path without leading slash', () => {
         app.ROUTER_BASE = '';
+        expect(buildUrl('login')).toBe('login');
+    });
+
+    it('returns path as-is when base is set but path has no leading slash', () => {
+        app.ROUTER_BASE = '/seminarios';
         expect(buildUrl('login')).toBe('login');
     });
 

@@ -56,4 +56,36 @@ describe('filterNavigation', () => {
         // Relatórios has only adminOnly children, so it should be removed
         expect(labels).not.toContain('Relatórios');
     });
+
+    it('returns null and filters out items with all adminOnly children for non-admin', () => {
+        const DummyIcon = (() => null) as any;
+        const customNav = [
+            {
+                label: 'AllAdminChildren',
+                icon: DummyIcon,
+                children: [
+                    { label: 'Child1', href: '/c1', adminOnly: true },
+                    { label: 'Child2', href: '/c2', adminOnly: true },
+                ],
+            },
+            {
+                label: 'MixedChildren',
+                icon: DummyIcon,
+                children: [
+                    { label: 'PublicChild', href: '/public' },
+                    { label: 'AdminChild', href: '/admin', adminOnly: true },
+                ],
+            },
+        ];
+
+        const filtered = filterNavigation(customNav, false);
+        const labels = filtered.map((item) => item.label);
+
+        // AllAdminChildren should be removed (all children are adminOnly)
+        expect(labels).not.toContain('AllAdminChildren');
+        // MixedChildren should remain with only PublicChild
+        expect(labels).toContain('MixedChildren');
+        const mixed = filtered.find((item) => item.label === 'MixedChildren');
+        expect(mixed?.children?.map((c) => c.label)).toEqual(['PublicChild']);
+    });
 });

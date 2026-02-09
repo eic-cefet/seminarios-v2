@@ -358,6 +358,24 @@ describe('LoginModal', () => {
         window.location = originalLocation as any;
     });
 
+    it('does not reset state when dialog onOpenChange is called with true', async () => {
+        const user = userEvent.setup();
+
+        // Render with open=false so we can control opening
+        const { rerender } = render(<LoginModal open={false} onOpenChange={onOpenChange} />);
+
+        // Now render with open=true to simulate dialog opening
+        rerender(<LoginModal open={true} onOpenChange={onOpenChange} />);
+
+        // Type some values into the fields
+        await user.type(screen.getByLabelText('E-mail'), 'keep@example.com');
+        await user.type(screen.getByLabelText('Senha'), 'keeppass');
+
+        // Verify the values are preserved (not reset)
+        expect(screen.getByLabelText('E-mail')).toHaveValue('keep@example.com');
+        expect(screen.getByLabelText('Senha')).toHaveValue('keeppass');
+    });
+
     it('resets state when dialog is closed via close button', async () => {
         mockLogin.mockRejectedValueOnce(new Error('Login error'));
         const user = userEvent.setup();

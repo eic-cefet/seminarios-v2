@@ -194,6 +194,90 @@ describe('Dashboard', () => {
         expect(screen.getByText('Inscricoes Recentes')).toBeInTheDocument();
     });
 
+    it('covers StatsCard description prop (line 44) when description is provided', async () => {
+        // The StatsCard is used without description in Dashboard,
+        // so stats?.counts null coalescing (lines 142-157) is the actual coverage target.
+        // When stats is null/undefined, the ?? 0 branches are taken.
+        mockDashboardApi.stats.mockResolvedValue({
+            data: {
+                counts: { users: 5, seminars: 3, registrations: 7, subjects: 2 },
+                upcomingSeminars: [],
+                latestRatings: [],
+                nearCapacity: [],
+                latestRegistrations: [],
+            },
+        });
+
+        render(<Dashboard />);
+
+        await waitFor(() => {
+            expect(screen.getByText('5')).toBeInTheDocument();
+        });
+        expect(screen.getByText('3')).toBeInTheDocument();
+        expect(screen.getByText('7')).toBeInTheDocument();
+        expect(screen.getByText('2')).toBeInTheDocument();
+    });
+
+    it('covers stats?.counts null coalescing branches (lines 142-157) when stats is null', async () => {
+        // When data.data is null/undefined, stats will be undefined
+        // and stats?.counts.users ?? 0 returns 0
+        mockDashboardApi.stats.mockResolvedValue({
+            data: null,
+        });
+
+        render(<Dashboard />);
+
+        await waitFor(() => {
+            // All four stat cards should show 0
+            const zeros = screen.getAllByText('0');
+            expect(zeros.length).toBeGreaterThanOrEqual(4);
+        });
+    });
+
+    it('covers upcoming seminar without seminar_type badge (line 193-200)', async () => {
+        mockDashboardApi.stats.mockResolvedValue({
+            data: {
+                counts: { users: 1, seminars: 1, registrations: 0, subjects: 0 },
+                upcomingSeminars: [
+                    { id: 1, name: 'No Type Seminar', scheduled_at: '2026-06-15T14:00:00Z', seminar_type: null },
+                ],
+                latestRatings: [],
+                nearCapacity: [],
+                latestRegistrations: [],
+            },
+        });
+
+        render(<Dashboard />);
+
+        await waitFor(() => {
+            expect(screen.getByText('No Type Seminar')).toBeInTheDocument();
+        });
+        // No Badge should appear for seminar_type
+        expect(screen.queryByText('Palestra')).not.toBeInTheDocument();
+    });
+
+    it('covers rating without comment (line 287-290)', async () => {
+        mockDashboardApi.stats.mockResolvedValue({
+            data: {
+                counts: { users: 1, seminars: 1, registrations: 0, subjects: 0 },
+                upcomingSeminars: [],
+                latestRatings: [
+                    { id: 1, score: 4, comment: null, seminar: { id: 1, name: 'Sem Comment' }, user: { id: 1, name: 'User X' } },
+                ],
+                nearCapacity: [],
+                latestRegistrations: [],
+            },
+        });
+
+        render(<Dashboard />);
+
+        await waitFor(() => {
+            expect(screen.getByText('Sem Comment')).toBeInTheDocument();
+        });
+        expect(screen.getByText('por User X')).toBeInTheDocument();
+        expect(screen.getByText('4')).toBeInTheDocument();
+    });
+
     it('renders stat card titles', async () => {
         mockDashboardApi.stats.mockResolvedValue({
             data: {

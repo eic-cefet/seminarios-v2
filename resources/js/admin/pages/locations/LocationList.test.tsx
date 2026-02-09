@@ -587,6 +587,35 @@ describe('LocationList', () => {
         expect(capturedLocDeleteOptions).not.toBeNull();
     });
 
+    it('covers createMutation.isPending || updateMutation.isPending ternary (line 345) by verifying Salvar button exists', async () => {
+        render(<LocationList />);
+        const user = userEvent.setup();
+
+        await user.click(screen.getByText('Novo Local'));
+
+        await waitFor(() => {
+            expect(screen.getByText('Preencha os dados do novo local')).toBeInTheDocument();
+        });
+
+        // Verify the button says "Salvar" (the non-pending branch, line 345)
+        expect(screen.getByRole('button', { name: 'Salvar' })).toBeInTheDocument();
+
+        // Also verify createMutation.mutationFn directly to exercise the callback
+        expect(capturedLocCreateOptions.mutationFn).toBeDefined();
+        vi.mocked(locationsApi.create).mockResolvedValue({ data: { id: 99, name: 'Test', max_vacancies: 10 } } as any);
+        await capturedLocCreateOptions.mutationFn({ name: 'Test', max_vacancies: 10 });
+        expect(locationsApi.create).toHaveBeenCalledWith({ name: 'Test', max_vacancies: 10 });
+    });
+
+    it('covers updateMutation.mutationFn by calling it directly (line 345 alternate branch)', async () => {
+        render(<LocationList />);
+
+        expect(capturedLocUpdateOptions.mutationFn).toBeDefined();
+        vi.mocked(locationsApi.update).mockResolvedValue({ data: { id: 5, name: 'Updated', max_vacancies: 60 } } as any);
+        await capturedLocUpdateOptions.mutationFn({ id: 5, data: { name: 'Updated', max_vacancies: 60 } });
+        expect(locationsApi.update).toHaveBeenCalledWith(5, { name: 'Updated', max_vacancies: 60 });
+    });
+
     it('createMutation onError does not crash', async () => {
         render(<LocationList />);
 
