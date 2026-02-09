@@ -79,8 +79,15 @@ jobs:
       - name: Install pnpm dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Run frontend tests
-        run: pnpm test
+      - name: Run frontend tests with coverage
+        run: pnpm test:coverage
+
+      - name: Upload frontend coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          files: ./coverage/coverage-final.json
+          flags: frontend
+          token: ${{ secrets.CODECOV_TOKEN }}
 
       - name: Build frontend assets
         run: pnpm run build
@@ -91,8 +98,8 @@ jobs:
       - name: Generate application key
         run: php artisan key:generate
 
-      - name: Run tests
-        run: php artisan test --compact
+      - name: Run tests with coverage
+        run: php artisan test --compact --coverage-clover=coverage/backend-clover.xml
         env:
           DB_CONNECTION: mysql
           DB_HOST: 127.0.0.1
@@ -100,6 +107,13 @@ jobs:
           DB_DATABASE: testing
           DB_USERNAME: root
           DB_PASSWORD: password
+
+      - name: Upload backend coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          files: ./coverage/backend-clover.xml
+          flags: backend
+          token: ${{ secrets.CODECOV_TOKEN }}
 
       # Get PR info and create tag
       - name: Get merged PR info
