@@ -3,13 +3,14 @@ import { NavLink } from "react-router-dom";
 import { Menu, X, ChevronDown, LogOut, ArrowLeft } from "lucide-react";
 import { cn } from "@shared/lib/utils";
 import { useAuth } from "@shared/contexts/AuthContext";
+import { ROLES, hasRole } from "@shared/lib/roles";
 import { adminNavigation, filterNavigation } from "../../config/navigation";
 
 export function MobileHeader() {
     const [menuOpen, setMenuOpen] = useState(false);
     const [expandedMenus, setExpandedMenus] = useState<string[]>(["Seminários"]);
     const { user, logout } = useAuth();
-    const isAdmin = user?.roles?.includes("admin");
+    const isAdmin = hasRole(user?.roles, ROLES.ADMIN);
 
     const filteredNav = filterNavigation(adminNavigation, isAdmin ?? false);
 

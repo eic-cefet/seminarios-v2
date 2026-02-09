@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\Role;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\SeminarStoreRequest;
 use App\Http\Requests\Admin\SeminarUpdateRequest;
@@ -39,7 +40,7 @@ class AdminSeminarController extends Controller
         ])->withCount('registrations');
 
         // Teachers only see their own seminars
-        if ($user->hasRole('teacher') && ! $user->hasRole('admin')) {
+        if ($user->hasRole(Role::Teacher) && ! $user->hasRole(Role::Admin)) {
             $query->where('created_by', $user->id);
         }
 

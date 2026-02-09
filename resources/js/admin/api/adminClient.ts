@@ -1,5 +1,5 @@
 import type { PaginatedResponse } from "@shared/types";
-import { getCookie, getCsrfCookie } from "@shared/api/httpUtils";
+import { buildQueryString, getCookie, getCsrfCookie } from "@shared/api/httpUtils";
 
 const API_BASE = () => app.API_URL + "/admin";
 
@@ -220,15 +220,8 @@ export const usersApi = {
         search?: string;
         role?: string;
     }) => {
-        const searchParams = new URLSearchParams();
-        if (params?.page) searchParams.set("page", params.page.toString());
-        if (params?.trashed) searchParams.set("trashed", "1");
-        if (params?.search) searchParams.set("search", params.search);
-        if (params?.role) searchParams.set("role", params.role);
-        const query = searchParams.toString();
-        return fetchAdminApi<PaginatedResponse<AdminUser>>(
-            `/users${query ? `?${query}` : ""}`,
-        );
+        const qs = buildQueryString(params ?? {});
+        return fetchAdminApi<PaginatedResponse<AdminUser>>(`/users${qs}`);
     },
 
     get: (id: number) => fetchAdminApi<{ data: AdminUser }>(`/users/${id}`),
@@ -302,11 +295,9 @@ export const usersApi = {
 // Locations
 export const locationsApi = {
     list: (params?: { page?: number }) => {
-        const searchParams = new URLSearchParams();
-        if (params?.page) searchParams.set("page", params.page.toString());
-        const query = searchParams.toString();
+        const qs = buildQueryString(params ?? {});
         return fetchAdminApi<PaginatedResponse<AdminLocation>>(
-            `/locations${query ? `?${query}` : ""}`,
+            `/locations${qs}`,
         );
     },
 
@@ -349,12 +340,9 @@ export const locationsApi = {
 // Subjects
 export const subjectsApi = {
     list: (params?: { page?: number; search?: string }) => {
-        const searchParams = new URLSearchParams();
-        if (params?.page) searchParams.set("page", params.page.toString());
-        if (params?.search) searchParams.set("search", params.search);
-        const query = searchParams.toString();
+        const qs = buildQueryString(params ?? {});
         return fetchAdminApi<PaginatedResponse<AdminSubject>>(
-            `/subjects${query ? `?${query}` : ""}`,
+            `/subjects${qs}`,
         );
     },
 
@@ -409,12 +397,9 @@ export const subjectsApi = {
 // Workshops
 export const workshopsApi = {
     list: (params?: { page?: number; search?: string }) => {
-        const searchParams = new URLSearchParams();
-        if (params?.page) searchParams.set("page", params.page.toString());
-        if (params?.search) searchParams.set("search", params.search);
-        const query = searchParams.toString();
+        const qs = buildQueryString(params ?? {});
         return fetchAdminApi<PaginatedResponse<AdminWorkshop>>(
-            `/workshops${query ? `?${query}` : ""}`,
+            `/workshops${qs}`,
         );
     },
 
@@ -462,13 +447,9 @@ export const workshopsApi = {
     },
 
     searchSeminars: (params: { search?: string; workshop_id?: number }) => {
-        const searchParams = new URLSearchParams();
-        if (params.search) searchParams.set("search", params.search);
-        if (params.workshop_id)
-            searchParams.set("workshop_id", params.workshop_id.toString());
-        const query = searchParams.toString();
+        const qs = buildQueryString(params);
         return fetchAdminApi<{ data: SeminarSearchResult[] }>(
-            `/workshops/search-seminars${query ? `?${query}` : ""}`,
+            `/workshops/search-seminars${qs}`,
         );
     },
 };
@@ -480,14 +461,9 @@ export const registrationsApi = {
         seminar_id?: number;
         search?: string;
     }) => {
-        const searchParams = new URLSearchParams();
-        if (params?.page) searchParams.set("page", params.page.toString());
-        if (params?.seminar_id)
-            searchParams.set("seminar_id", params.seminar_id.toString());
-        if (params?.search) searchParams.set("search", params.search);
-        const query = searchParams.toString();
+        const qs = buildQueryString(params ?? {});
         return fetchAdminApi<PaginatedResponse<AdminRegistration>>(
-            `/registrations${query ? `?${query}` : ""}`,
+            `/registrations${qs}`,
         );
     },
 
@@ -510,15 +486,20 @@ export const seminarsApi = {
         active?: boolean;
         upcoming?: boolean;
     }) => {
-        const searchParams = new URLSearchParams();
-        if (params?.page) searchParams.set("page", params.page.toString());
-        if (params?.search) searchParams.set("search", params.search);
-        if (params?.active !== undefined)
-            searchParams.set("active", params.active ? "1" : "0");
-        if (params?.upcoming) searchParams.set("upcoming", "1");
-        const query = searchParams.toString();
+        const qs = buildQueryString({
+            page: params?.page,
+            search: params?.search,
+            // active is tri-state: undefined (all), true ("1"), false ("0")
+            active:
+                params?.active !== undefined
+                    ? params.active
+                        ? "1"
+                        : "0"
+                    : undefined,
+            upcoming: params?.upcoming,
+        });
         return fetchAdminApi<PaginatedResponse<AdminSeminar>>(
-            `/seminars${query ? `?${query}` : ""}`,
+            `/seminars${qs}`,
         );
     },
 

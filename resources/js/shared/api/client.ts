@@ -7,7 +7,7 @@ import type {
     User,
     Workshop,
 } from "@shared/types";
-import { getCookie, getCsrfCookie } from "./httpUtils";
+import { buildQueryString, getCookie, getCsrfCookie } from "./httpUtils";
 
 export interface ApiError {
     error: string;
@@ -35,8 +35,12 @@ async function fetchApi<T>(
 ): Promise<T> {
     const headers: Record<string, string> = {
         Accept: "application/json",
-        "Content-Type": "application/json",
     };
+
+    // Skip Content-Type for FormData (browser sets it with boundary automatically)
+    if (!(options?.body instanceof FormData)) {
+        headers["Content-Type"] = "application/json";
+    }
 
     // Include XSRF token for non-GET requests
     const xsrfToken = getCookie("XSRF-TOKEN");
@@ -78,22 +82,8 @@ export const seminarsApi = {
         page?: number;
         per_page?: number;
     }) => {
-        const searchParams = new URLSearchParams();
-        if (params?.type) searchParams.set("type", params.type);
-        if (params?.subject)
-            searchParams.set("subject", params.subject.toString());
-        if (params?.upcoming) searchParams.set("upcoming", "1");
-        if (params?.expired) searchParams.set("expired", "1");
-        if (params?.sort) searchParams.set("sort", params.sort);
-        if (params?.direction) searchParams.set("direction", params.direction);
-        if (params?.page) searchParams.set("page", params.page.toString());
-        if (params?.per_page)
-            searchParams.set("per_page", params.per_page.toString());
-
-        const query = searchParams.toString();
-        return fetchApi<PaginatedResponse<Seminar>>(
-            `/seminars${query ? `?${query}` : ""}`,
-        );
+        const qs = buildQueryString(params ?? {});
+        return fetchApi<PaginatedResponse<Seminar>>(`/seminars${qs}`);
     },
 
     upcoming: () => {
@@ -113,16 +103,9 @@ export const seminarsApi = {
             per_page?: number;
         },
     ) => {
-        const searchParams = new URLSearchParams();
-        if (params?.upcoming) searchParams.set("upcoming", "1");
-        if (params?.direction) searchParams.set("direction", params.direction);
-        if (params?.page) searchParams.set("page", params.page.toString());
-        if (params?.per_page)
-            searchParams.set("per_page", params.per_page.toString());
-
-        const query = searchParams.toString();
+        const qs = buildQueryString(params ?? {});
         return fetchApi<PaginatedResponse<Seminar>>(
-            `/subjects/${subjectId}/seminars${query ? `?${query}` : ""}`,
+            `/subjects/${subjectId}/seminars${qs}`,
         );
     },
 };
@@ -130,13 +113,8 @@ export const seminarsApi = {
 // Subjects
 export const subjectsApi = {
     list: (params?: { sort?: "seminars" | "name"; limit?: number }) => {
-        const searchParams = new URLSearchParams();
-        if (params?.sort) searchParams.set("sort", params.sort);
-        if (params?.limit) searchParams.set("limit", params.limit.toString());
-        const query = searchParams.toString();
-        return fetchApi<{ data: Subject[] }>(
-            `/subjects${query ? `?${query}` : ""}`,
-        );
+        const qs = buildQueryString(params ?? {});
+        return fetchApi<{ data: Subject[] }>(`/subjects${qs}`);
     },
 
     get: (id: number) => {
@@ -163,16 +141,9 @@ export const workshopsApi = {
             per_page?: number;
         },
     ) => {
-        const searchParams = new URLSearchParams();
-        if (params?.upcoming) searchParams.set("upcoming", "1");
-        if (params?.direction) searchParams.set("direction", params.direction);
-        if (params?.page) searchParams.set("page", params.page.toString());
-        if (params?.per_page)
-            searchParams.set("per_page", params.per_page.toString());
-
-        const query = searchParams.toString();
+        const qs = buildQueryString(params ?? {});
         return fetchApi<PaginatedResponse<Seminar>>(
-            `/workshops/${workshopId}/seminars${query ? `?${query}` : ""}`,
+            `/workshops/${workshopId}/seminars${qs}`,
         );
     },
 };
@@ -362,11 +333,7 @@ export const profileApi = {
     },
 
     registrations: (params?: { page?: number; per_page?: number }) => {
-        const searchParams = new URLSearchParams();
-        if (params?.page) searchParams.set("page", params.page.toString());
-        if (params?.per_page)
-            searchParams.set("per_page", params.per_page.toString());
-        const query = searchParams.toString();
+        const qs = buildQueryString(params ?? {});
         return fetchApi<{
             data: UserRegistration[];
             meta: {
@@ -375,15 +342,11 @@ export const profileApi = {
                 per_page: number;
                 total: number;
             };
-        }>(`/profile/registrations${query ? `?${query}` : ""}`);
+        }>(`/profile/registrations${qs}`);
     },
 
     certificates: (params?: { page?: number; per_page?: number }) => {
-        const searchParams = new URLSearchParams();
-        if (params?.page) searchParams.set("page", params.page.toString());
-        if (params?.per_page)
-            searchParams.set("per_page", params.per_page.toString());
-        const query = searchParams.toString();
+        const qs = buildQueryString(params ?? {});
         return fetchApi<{
             data: UserCertificate[];
             meta: {
@@ -392,7 +355,7 @@ export const profileApi = {
                 per_page: number;
                 total: number;
             };
-        }>(`/profile/certificates${query ? `?${query}` : ""}`);
+        }>(`/profile/certificates${qs}`);
     },
 
     updateStudentData: async (data: {
@@ -466,34 +429,9 @@ export const bugReportApi = {
             });
         }
 
-        const xsrfToken = getCookie("XSRF-TOKEN");
-        const headers: Record<string, string> = {
-            Accept: "application/json",
-        };
-        if (xsrfToken) {
-            headers["X-XSRF-TOKEN"] = xsrfToken;
-        }
-
-        const response = await fetch(`${app.API_URL}/bug-report`, {
+        return fetchApi<{ message: string }>("/bug-report", {
             method: "POST",
-            headers,
-            credentials: "same-origin",
             body: formData,
         });
-
-        if (!response.ok) {
-            const errorData: ApiError = await response.json().catch(() => ({
-                error: "unknown_error",
-                message: response.statusText,
-            }));
-            throw new ApiRequestError(
-                errorData.error,
-                errorData.message,
-                response.status,
-                errorData.errors,
-            );
-        }
-
-        return response.json() as Promise<{ message: string }>;
     },
 };

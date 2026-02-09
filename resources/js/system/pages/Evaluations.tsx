@@ -1,6 +1,5 @@
 import { PendingEvaluation, profileApi } from "@shared/api/client";
 import { PageTitle } from "@shared/components/PageTitle";
-import { useAuth } from "@shared/contexts/AuthContext";
 import { getErrorMessage } from "@shared/lib/errors";
 import { cn, formatDateTime } from "@shared/lib/utils";
 import { analytics } from "@shared/lib/analytics";
@@ -14,30 +13,14 @@ import {
     Star,
 } from "lucide-react";
 import { useState } from "react";
-import { Link, Navigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { Badge } from "../components/Badge";
 import { Layout } from "../components/Layout";
+import { ProtectedRoute } from "../components/ProtectedRoute";
 
 export default function Evaluations() {
-    const { user, isLoading: authLoading } = useAuth();
-
-    // Redirect if not authenticated
-    if (!authLoading && !user) {
-        return <Navigate to="/login" replace />;
-    }
-
-    if (authLoading) {
-        return (
-            <Layout>
-                <div className="flex min-h-[calc(100vh-4rem-4rem)] items-center justify-center">
-                    <Loader2 className="h-8 w-8 animate-spin text-primary-600" />
-                </div>
-            </Layout>
-        );
-    }
-
     return (
-        <>
+        <ProtectedRoute>
             <PageTitle title="Avaliar Seminarios" />
             <Layout>
                 <div className="bg-white border-b border-gray-200">
@@ -56,7 +39,7 @@ export default function Evaluations() {
                     <PendingEvaluationsList />
                 </div>
             </Layout>
-        </>
+        </ProtectedRoute>
     );
 }
 

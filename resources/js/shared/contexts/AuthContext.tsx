@@ -61,7 +61,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         async (email: string, password: string, remember = false) => {
             const response = await authApi.login({ email, password, remember });
             setUser(response.user);
-            queryClient.invalidateQueries();
+            queryClient.invalidateQueries({ queryKey: ["profile"] });
+            queryClient.invalidateQueries({ queryKey: ["registration"] });
         },
         [queryClient],
     );
@@ -78,7 +79,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 course_id: data.courseId,
             });
             setUser(response.user);
-            queryClient.invalidateQueries();
+            queryClient.invalidateQueries({ queryKey: ["profile"] });
+            queryClient.invalidateQueries({ queryKey: ["registration"] });
         },
         [queryClient],
     );
@@ -95,7 +97,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             await authApi.exchangeCode(code);
             // Fetch user data via /me to ensure consistent data shape
             await refreshUser();
-            queryClient.invalidateQueries();
+            queryClient.invalidateQueries({ queryKey: ["profile"] });
+            queryClient.invalidateQueries({ queryKey: ["registration"] });
         },
         [queryClient, refreshUser],
     );
