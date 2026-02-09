@@ -10,6 +10,7 @@ use App\Services\QrCodeService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\DB;
 
 class PresenceController extends Controller
 {
@@ -48,19 +49,21 @@ class PresenceController extends Controller
         $user = $request->user();
         $seminar = $presenceLink->seminar;
 
-        $registration = Registration::firstOrCreate(
-            [
-                'seminar_id' => $seminar->id,
-                'user_id' => $user->id,
-            ],
-            [
-                'present' => true,
-            ]
-        );
+        DB::transaction(function () use ($seminar, $user) {
+            $registration = Registration::firstOrCreate(
+                [
+                    'seminar_id' => $seminar->id,
+                    'user_id' => $user->id,
+                ],
+                [
+                    'present' => true,
+                ]
+            );
 
-        if (! $registration->wasRecentlyCreated && ! $registration->present) {
-            $registration->update(['present' => true]);
-        }
+            if (! $registration->wasRecentlyCreated && ! $registration->present) {
+                $registration->update(['present' => true]);
+            }
+        });
 
         return response()->json([
             'message' => 'Presença registrada com sucesso!',

@@ -110,4 +110,9 @@ class ApiException extends Exception
     {
         return new self('cannot_delete_self', 'Você não pode excluir sua própria conta', 400);
     }
+
+    public static function seminarFull(): self
+    {
+        return new self('seminar_full', 'Este seminário atingiu sua capacidade máxima', 409);
+    }
 }

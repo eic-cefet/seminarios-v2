@@ -50,6 +50,15 @@ class RegistrationController extends Controller
             throw ApiException::alreadyRegistered();
         }
 
+        // Check if seminar has reached capacity
+        $seminar->load('seminarLocation');
+        if ($seminar->seminarLocation?->max_vacancies) {
+            $registrationCount = $seminar->registrations()->count();
+            if ($registrationCount >= $seminar->seminarLocation->max_vacancies) {
+                throw ApiException::seminarFull();
+            }
+        }
+
         // Create registration
         $registration = $seminar->registrations()->create([
             'user_id' => $user->id,

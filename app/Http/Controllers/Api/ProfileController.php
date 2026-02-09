@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Exceptions\ApiException;
+use App\Http\Controllers\Concerns\FormatsUserResponse;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ProfileUpdateRequest;
 use App\Http\Requests\StudentDataUpdateRequest;
@@ -14,6 +15,8 @@ use Illuminate\Validation\Rules\Password;
 
 class ProfileController extends Controller
 {
+    use FormatsUserResponse;
+
     /**
      * Get the authenticated user's profile
      */
@@ -294,24 +297,5 @@ class ProfileController extends Controller
                 'total' => $paginator->total(),
             ],
         ]);
-    }
-
-    private function formatUserResponse(User $user): array
-    {
-        return [
-            'id' => $user->id,
-            'name' => $user->name,
-            'email' => $user->email,
-            'email_verified_at' => $user->email_verified_at?->toISOString(),
-            'roles' => $user->getRoleNames()->toArray(),
-            'student_data' => $user->studentData ? [
-                'course_situation' => $user->studentData->course_situation,
-                'course_role' => $user->studentData->course_role,
-                'course' => $user->studentData->course ? [
-                    'id' => $user->studentData->course->id,
-                    'name' => $user->studentData->course->name,
-                ] : null,
-            ] : null,
-        ];
     }
 }
