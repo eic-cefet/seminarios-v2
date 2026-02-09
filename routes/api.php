@@ -5,6 +5,8 @@ use App\Http\Controllers\Api\BugReportController;
 use App\Http\Controllers\Api\CourseController;
 use App\Http\Controllers\Api\PresenceController;
 use App\Http\Controllers\Api\ProfileController;
+use App\Http\Controllers\Api\ProfileRatingController;
+use App\Http\Controllers\Api\ProfileRegistrationController;
 use App\Http\Controllers\Api\RegistrationController;
 use App\Http\Controllers\Api\SeminarController;
 use App\Http\Controllers\Api\SeminarTypeController;
@@ -32,10 +34,8 @@ Route::get('/seminars', [SeminarController::class, 'index']);
 Route::get('/seminars/upcoming', [SeminarController::class, 'upcoming']);
 Route::get('/seminars/{slug}', [SeminarController::class, 'show']);
 
-// Seminar Registration
+// Seminar Registration (status is public, register/unregister require auth)
 Route::get('/seminars/{slug}/registration', [RegistrationController::class, 'status']);
-Route::post('/seminars/{slug}/register', [RegistrationController::class, 'register']);
-Route::delete('/seminars/{slug}/register', [RegistrationController::class, 'unregister']);
 
 // Subjects
 Route::get('/subjects', [SubjectController::class, 'index']);
@@ -66,14 +66,23 @@ Route::post('/presence/{uuid}/register', [PresenceController::class, 'register']
 // Auth
 Route::post('/auth/exchange', [\App\Http\Controllers\SocialAuthController::class, 'exchange']);
 
-// Profile (authenticated)
+// Authenticated routes
 Route::middleware('auth:sanctum')->group(function () {
+    // Seminar Registration
+    Route::post('/seminars/{slug}/register', [RegistrationController::class, 'register']);
+    Route::delete('/seminars/{slug}/register', [RegistrationController::class, 'unregister']);
+
+    // Profile
     Route::get('/profile', [ProfileController::class, 'show']);
     Route::put('/profile', [ProfileController::class, 'update']);
     Route::put('/profile/student-data', [ProfileController::class, 'updateStudentData']);
     Route::put('/profile/password', [ProfileController::class, 'updatePassword']);
-    Route::get('/profile/registrations', [ProfileController::class, 'registrations']);
-    Route::get('/profile/certificates', [ProfileController::class, 'certificates']);
-    Route::get('/profile/pending-evaluations', [ProfileController::class, 'pendingEvaluations']);
-    Route::post('/profile/ratings/{seminar}', [ProfileController::class, 'submitRating']);
+
+    // Profile - Registrations & Certificates
+    Route::get('/profile/registrations', [ProfileRegistrationController::class, 'registrations']);
+    Route::get('/profile/certificates', [ProfileRegistrationController::class, 'certificates']);
+
+    // Profile - Evaluations & Ratings
+    Route::get('/profile/pending-evaluations', [ProfileRatingController::class, 'pendingEvaluations']);
+    Route::post('/profile/ratings/{seminar}', [ProfileRatingController::class, 'submitRating']);
 });

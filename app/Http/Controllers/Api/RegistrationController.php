@@ -5,8 +5,10 @@ namespace App\Http\Controllers\Api;
 use App\Exceptions\ApiException;
 use App\Http\Controllers\Controller;
 use App\Models\Seminar;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class RegistrationController extends Controller
 {
@@ -29,25 +31,11 @@ class RegistrationController extends Controller
     public function register(Request $request, string $slug): JsonResponse
     {
         $user = $request->user();
-
-        if (! $user) {
-            throw ApiException::unauthenticated();
-        }
-
         $seminar = $this->findSeminar($slug);
 
         // Check if seminar is expired
         if ($seminar->scheduled_at->isPast()) {
             throw ApiException::seminarExpired();
-        }
-
-        // Check if already registered
-        $existingRegistration = $seminar->registrations()
-            ->where('user_id', $user->id)
-            ->first();
-
-        if ($existingRegistration) {
-            throw ApiException::alreadyRegistered();
         }
 
         // Check if seminar has reached capacity
@@ -59,11 +47,15 @@ class RegistrationController extends Controller
             }
         }
 
-        // Create registration
-        $registration = $seminar->registrations()->create([
-            'user_id' => $user->id,
-            'present' => false,
-        ]);
+        // Create registration (unique constraint on seminar_id+user_id prevents duplicates)
+        try {
+            $registration = DB::transaction(fn () => $seminar->registrations()->create([
+                'user_id' => $user->id,
+                'present' => false,
+            ]));
+        } catch (UniqueConstraintViolationException) {
+            throw ApiException::alreadyRegistered();
+        }
 
         return response()->json([
             'message' => 'Inscrição realizada com sucesso',
@@ -81,11 +73,6 @@ class RegistrationController extends Controller
     public function unregister(Request $request, string $slug): JsonResponse
     {
         $user = $request->user();
-
-        if (! $user) {
-            throw ApiException::unauthenticated();
-        }
-
         $seminar = $this->findSeminar($slug);
 
         $registration = $seminar->registrations()

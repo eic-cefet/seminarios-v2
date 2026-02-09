@@ -4,12 +4,13 @@ import { ChevronDown, LogOut, ArrowLeft } from "lucide-react";
 import * as Collapsible from "@radix-ui/react-collapsible";
 import { cn } from "@shared/lib/utils";
 import { useAuth } from "@shared/contexts/AuthContext";
+import { ROLES, hasRole } from "@shared/lib/roles";
 import { Separator } from "../ui/separator";
 import { adminNavigation, filterNavigation } from "../../config/navigation";
 
 export function Sidebar() {
     const { user, logout } = useAuth();
-    const isAdmin = user?.roles?.includes("admin");
+    const isAdmin = hasRole(user?.roles, ROLES.ADMIN);
     const [openMenus, setOpenMenus] = useState<string[]>(["Seminários"]);
 
     const toggleMenu = (label: string) => {

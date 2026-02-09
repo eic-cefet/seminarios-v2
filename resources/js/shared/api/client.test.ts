@@ -3,11 +3,14 @@ import { createSeminar, createSubject, createWorkshop, createPaginatedResponse }
 import { getCookie } from './httpUtils';
 
 // Mock httpUtils to avoid CSRF fetch in tests
-vi.mock('./httpUtils', () => ({
-    getCookie: vi.fn(() => null),
-    getCsrfCookie: vi.fn(() => Promise.resolve()),
-    buildQueryString: vi.fn(),
-}));
+vi.mock('./httpUtils', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('./httpUtils')>();
+    return {
+        ...actual,
+        getCookie: vi.fn(() => null),
+        getCsrfCookie: vi.fn(() => Promise.resolve()),
+    };
+});
 
 const mockGetCookie = getCookie as ReturnType<typeof vi.fn>;
 
@@ -376,7 +379,7 @@ describe('fetchApi (via API namespaces)', () => {
             mockFetchSuccess(createPaginatedResponse([createSeminar()]));
             await seminarsApi.list({ expired: true });
             expect(fetchSpy).toHaveBeenCalledWith(
-                expect.stringContaining('expired=1'),
+                expect.stringContaining('expired=true'),
                 expect.any(Object),
             );
         });

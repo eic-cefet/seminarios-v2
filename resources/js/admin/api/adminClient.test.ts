@@ -1,10 +1,14 @@
 import { AdminApiError, dashboardApi, usersApi, locationsApi, subjectsApi, workshopsApi, registrationsApi, seminarsApi, presenceLinkApi } from './adminClient';
 import { getCookie } from '@shared/api/httpUtils';
 
-vi.mock('@shared/api/httpUtils', () => ({
-    getCookie: vi.fn(() => null),
-    getCsrfCookie: vi.fn(() => Promise.resolve()),
-}));
+vi.mock('@shared/api/httpUtils', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@shared/api/httpUtils')>();
+    return {
+        ...actual,
+        getCookie: vi.fn(() => null),
+        getCsrfCookie: vi.fn(() => Promise.resolve()),
+    };
+});
 
 const mockGetCookie = getCookie as ReturnType<typeof vi.fn>;
 
@@ -487,7 +491,7 @@ describe('Admin API endpoints', () => {
             mockSuccess({ data: [], meta: {} });
             await usersApi.list({ trashed: true });
             expect(fetchSpy).toHaveBeenCalledWith(
-                expect.stringContaining('trashed=1'),
+                expect.stringContaining('trashed=true'),
                 expect.any(Object),
             );
         });

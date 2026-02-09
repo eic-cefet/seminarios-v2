@@ -2,8 +2,9 @@
 
 namespace Database\Seeders;
 
+use App\Enums\Role;
 use Illuminate\Database\Seeder;
-use Spatie\Permission\Models\Role;
+use Spatie\Permission\Models\Role as SpatieRole;
 
 class RolesSeeder extends Seeder
 {
@@ -11,7 +12,7 @@ class RolesSeeder extends Seeder
     {
         app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
 
-        Role::create(['name' => 'admin']);
-        Role::create(['name' => 'teacher']);
+        SpatieRole::create(['name' => Role::Admin->value]);
+        SpatieRole::create(['name' => Role::Teacher->value]);
     }
 }

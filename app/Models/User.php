@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\Role;
 use App\Notifications\ResetPassword;
 use Illuminate\Contracts\Auth\CanResetPassword;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -69,17 +70,17 @@ class User extends Authenticatable implements CanResetPassword
 
     public function isAdmin(): bool
     {
-        return $this->hasRole('admin');
+        return $this->hasRole(Role::Admin);
     }
 
     public function isTeacher(): bool
     {
-        return $this->hasRole('teacher');
+        return $this->hasRole(Role::Teacher);
     }
 
     public function isUser(): bool
     {
-        return $this->hasRole('user');
+        return $this->hasRole(Role::User);
     }
 
     /**

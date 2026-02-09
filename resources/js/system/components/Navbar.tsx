@@ -1,5 +1,6 @@
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { useAuth } from "@shared/contexts/AuthContext";
+import { hasAdminAccess } from "@shared/lib/roles";
 import { cn } from "@shared/lib/utils";
 import { analytics } from "@shared/lib/analytics";
 import {
@@ -28,8 +29,7 @@ export function Navbar() {
     const [loginModalOpen, setLoginModalOpen] = useState(false);
     const { user, logout } = useAuth();
 
-    const isAdmin =
-        user?.roles?.includes("admin") || user?.roles?.includes("teacher");
+    const isAdmin = hasAdminAccess(user?.roles);
 
     return (
         <>

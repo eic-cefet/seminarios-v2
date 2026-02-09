@@ -1,5 +1,6 @@
 import { Favicon } from "@shared/components/Favicon";
 import { useAuth } from "@shared/contexts/AuthContext";
+import { hasAdminAccess } from "@shared/lib/roles";
 import { buildUrl } from "@shared/lib/utils";
 import { useEffect } from "react";
 import { Outlet } from "react-router-dom";
@@ -11,18 +12,17 @@ export function AdminLayout() {
     const { user, isLoading, isAuthenticated } = useAuth();
 
     // Check if user has admin or teacher role
-    const hasAdminAccess =
-        user?.roles?.includes("admin") || user?.roles?.includes("teacher");
+    const canAccessAdmin = hasAdminAccess(user?.roles);
 
     useEffect(() => {
         if (!isLoading && !isAuthenticated) {
             // Redirect to system SPA login (full page redirect since it's a different SPA)
             window.location.href = buildUrl("/login");
-        } else if (!isLoading && isAuthenticated && !hasAdminAccess) {
+        } else if (!isLoading && isAuthenticated && !canAccessAdmin) {
             // User is authenticated but doesn't have admin access
             window.location.href = buildUrl("/");
         }
-    }, [isLoading, isAuthenticated, hasAdminAccess]);
+    }, [isLoading, isAuthenticated, canAccessAdmin]);
 
     if (isLoading) {
         return (
@@ -32,7 +32,7 @@ export function AdminLayout() {
         );
     }
 
-    if (!isAuthenticated || !hasAdminAccess) {
+    if (!isAuthenticated || !canAccessAdmin) {
         // Show loading while redirect happens
         return (
             <div className="flex h-screen items-center justify-center bg-background">
