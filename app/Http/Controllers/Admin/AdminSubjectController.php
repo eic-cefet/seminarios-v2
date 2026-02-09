@@ -120,20 +120,14 @@ class AdminSubjectController extends Controller
                 ->pluck('seminar_id')
                 ->unique();
 
-            // For each seminar, check if it already has the target subject
-            foreach ($seminarIds as $seminarId) {
-                $hasTarget = DB::table('seminar_subject')
-                    ->where('seminar_id', $seminarId)
-                    ->where('subject_id', $targetId)
-                    ->exists();
+            // Batch insert target subject for all affected seminars (ignoring duplicates)
+            $insertData = $seminarIds->map(fn ($seminarId) => [
+                'seminar_id' => $seminarId,
+                'subject_id' => $targetId,
+            ])->toArray();
 
-                if (! $hasTarget) {
-                    // Add target subject to seminar
-                    DB::table('seminar_subject')->insert([
-                        'seminar_id' => $seminarId,
-                        'subject_id' => $targetId,
-                    ]);
-                }
+            if (! empty($insertData)) {
+                DB::table('seminar_subject')->insertOrIgnore($insertData);
             }
 
             // Remove all source subject associations

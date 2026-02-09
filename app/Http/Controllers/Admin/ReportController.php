@@ -77,7 +77,7 @@ class ReportController extends Controller
                         }
                     })
                         ->with([
-                            'seminar:id,name,scheduled_at',
+                            'seminar:id,name,scheduled_at,seminar_type_id',
                             'seminar.seminarType:id,name',
                         ]);
                 },

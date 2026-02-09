@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Exceptions\ApiException;
+use App\Http\Controllers\Concerns\FormatsUserResponse;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\UserRegistrationRequest;
 use App\Mail\WelcomeUser;
@@ -18,6 +19,8 @@ use Illuminate\Validation\Rules\Password as PasswordRule;
 
 class AuthController extends Controller
 {
+    use FormatsUserResponse;
+
     /**
      * Login with email and password
      */
@@ -55,7 +58,7 @@ class AuthController extends Controller
         Auth::login($user, $request->boolean('remember', false));
 
         return response()->json([
-            'user' => $this->userResponse($user),
+            'user' => $this->formatUserResponse($user),
         ]);
     }
 
@@ -86,7 +89,7 @@ class AuthController extends Controller
         }
 
         return response()->json([
-            'user' => $this->userResponse($user),
+            'user' => $this->formatUserResponse($user),
         ]);
     }
 
@@ -114,7 +117,7 @@ class AuthController extends Controller
         Auth::login($user);
 
         return response()->json([
-            'user' => $this->userResponse($user),
+            'user' => $this->formatUserResponse($user),
         ], 201);
     }
 
@@ -165,29 +168,5 @@ class AuthController extends Controller
         return response()->json([
             'message' => 'Senha redefinida com sucesso.',
         ]);
-    }
-
-    /**
-     * Format user response
-     */
-    private function userResponse(User $user): array
-    {
-        $user->load('studentData.course');
-
-        return [
-            'id' => $user->id,
-            'name' => $user->name,
-            'email' => $user->email,
-            'email_verified_at' => $user->email_verified_at?->toISOString(),
-            'roles' => $user->getRoleNames()->toArray(),
-            'student_data' => $user->studentData ? [
-                'course_situation' => $user->studentData->course_situation,
-                'course_role' => $user->studentData->course_role,
-                'course' => $user->studentData->course ? [
-                    'id' => $user->studentData->course->id,
-                    'name' => $user->studentData->course->name,
-                ] : null,
-            ] : null,
-        ];
     }
 }
