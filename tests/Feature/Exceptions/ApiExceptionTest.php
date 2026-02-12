@@ -156,4 +156,11 @@ describe('ApiException', function () {
         expect($exception->errorCode)->toBe('cannot_delete_self');
         expect($exception->statusCode)->toBe(400);
     });
+
+    it('creates seminar full exception', function () {
+        $exception = ApiException::seminarFull();
+
+        expect($exception->errorCode)->toBe('seminar_full');
+        expect($exception->statusCode)->toBe(409);
+    });
 });
