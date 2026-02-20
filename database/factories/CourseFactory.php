@@ -13,10 +13,18 @@ class CourseFactory extends Factory
     {
         return [
             'name' => fake()->unique()->randomElement([
-                'Sistemas de Informação',
-                'Ciência da Computação',
-                'Engenharia de Computação',
-                'Análise e Desenvolvimento de Sistemas',
+                'Bacharelado em Ciência da Computação',
+                'Bacharelado em Sistemas de Informação',
+                'Tecnologia em Sistemas para Internet',
+                'Bacharelado em Engenharia de Computação',
+                'Bacharelado em Engenharia de Produção',
+                'Bacharelado em Engenharia Elétrica',
+                'Bacharelado em Engenharia Ambiental',
+                'Bacharelado em Engenharia Civil',
+                'Bacharelado em Administração',
+                'Mestrado em Ciência da Computação',
+                'Doutorado em Ciência da Computação',
+                'Mestrado em Engenharia Elétrica',
             ]),
         ];
     }
