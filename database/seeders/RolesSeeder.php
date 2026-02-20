@@ -12,7 +12,7 @@ class RolesSeeder extends Seeder
     {
         app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
 
-        SpatieRole::create(['name' => Role::Admin->value]);
-        SpatieRole::create(['name' => Role::Teacher->value]);
+        SpatieRole::firstOrCreate(['name' => Role::Admin->value, 'guard_name' => 'web']);
+        SpatieRole::firstOrCreate(['name' => Role::Teacher->value, 'guard_name' => 'web']);
     }
 }
