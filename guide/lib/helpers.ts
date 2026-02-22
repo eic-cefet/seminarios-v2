@@ -65,6 +65,7 @@ export async function loginAs(
     await Promise.all([
         page.waitForURL((url) => !url.pathname.endsWith("/login"), {
             timeout: 30000,
+            waitUntil: "commit",
         }),
         page.click('button[type="submit"]'),
     ]);
