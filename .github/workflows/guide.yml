@@ -1,0 +1,152 @@
+name: Generate Guide Documentation
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'guide/**'
+      - 'database/seeders/DevelopmentSeeder.php'
+      - '.github/workflows/guide.yml'
+
+concurrency:
+  group: guide-deploy
+  cancel-in-progress: true
+
+jobs:
+  generate:
+    name: Generate & Deploy Guide
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: password
+          MYSQL_DATABASE: seminarios_eic
+        ports:
+          - 3306:3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # --- PHP setup ---
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.4"
+          extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, pdo_mysql, bcmath, intl, gd, exif, iconv
+
+      - name: Get composer cache directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+
+      - name: Cache composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: ${{ runner.os }}-composer-
+
+      - name: Install composer dependencies
+        run: composer install --no-interaction --prefer-dist --optimize-autoloader
+
+      # --- Node setup ---
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        shell: bash
+        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
+
+      - name: Cache pnpm dependencies
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: ${{ runner.os }}-pnpm-
+
+      - name: Install app dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build frontend assets
+        run: pnpm run build
+
+      # --- Laravel setup ---
+      - name: Copy environment file
+        run: cp .env.example .env
+
+      - name: Configure environment
+        run: |
+          sed -i 's/DB_USERNAME=seminarios/DB_USERNAME=root/' .env
+          sed -i 's/DB_PASSWORD=seminarios/DB_PASSWORD=password/' .env
+          sed -i 's/DB_DATABASE=seminarios_eic/DB_DATABASE=seminarios_eic/' .env
+          sed -i 's/APP_URL=http:\/\/localhost/APP_URL=http:\/\/localhost:8000/' .env
+
+      - name: Generate application key
+        run: php artisan key:generate
+
+      - name: Migrate and seed database
+        run: php artisan migrate:fresh --seed
+        env:
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_DATABASE: seminarios_eic
+          DB_USERNAME: root
+          DB_PASSWORD: password
+
+      # --- Start app in background ---
+      - name: Start Laravel server
+        run: php artisan serve --host=0.0.0.0 --port=8000 &
+        env:
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_DATABASE: seminarios_eic
+          DB_USERNAME: root
+          DB_PASSWORD: password
+
+      - name: Wait for server to be ready
+        run: |
+          for i in $(seq 1 30); do
+            if curl -s http://localhost:8000 > /dev/null 2>&1; then
+              echo "Server is ready"
+              break
+            fi
+            echo "Waiting for server... ($i)"
+            sleep 1
+          done
+
+      # --- Generate guide ---
+      - name: Install guide dependencies
+        working-directory: guide
+        run: pnpm install
+
+      - name: Install Playwright Chromium
+        working-directory: guide
+        run: pnpm exec playwright install chromium
+
+      - name: Generate guide screenshots and HTML
+        working-directory: guide
+        run: pnpm run generate:quick
+        env:
+          BASE_URL: http://localhost:8000
+
+      # --- Upload to S3 ---
+      - name: Upload guide to S3
+        uses: jakejarvis/s3-sync-action@master
+        with:
+          args: --delete --cache-control "public, max-age=3600"
+        env:
+          AWS_S3_BUCKET: ${{ secrets.GUIDE_S3_BUCKET }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.GUIDE_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.GUIDE_AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: us-east-1
+          SOURCE_DIR: guide/dist
