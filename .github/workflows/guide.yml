@@ -112,6 +112,7 @@ jobs:
           DB_DATABASE: seminarios_eic
           DB_USERNAME: root
           DB_PASSWORD: password
+          LOGIN_RATE_LIMIT: 60
 
       - name: Wait for server to be ready
         run: |

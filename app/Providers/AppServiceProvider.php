@@ -12,7 +12,10 @@ use App\Policies\SeminarLocationPolicy;
 use App\Policies\SeminarPolicy;
 use App\Policies\SubjectPolicy;
 use App\Policies\UserPolicy;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 
@@ -34,6 +37,14 @@ class AppServiceProvider extends ServiceProvider
         if (config('app.force_https')) {
             URL::forceScheme('https');
         }
+
+        RateLimiter::for('login', function (Request $request) {
+            $maxAttempts = (int) env('LOGIN_RATE_LIMIT', 5);
+
+            return Limit::perMinute($maxAttempts)->by(
+                $request->input('email').'|'.$request->ip()
+            );
+        });
 
         Gate::policy(Seminar::class, SeminarPolicy::class);
         Gate::policy(User::class, UserPolicy::class);

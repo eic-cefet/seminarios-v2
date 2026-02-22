@@ -22,7 +22,7 @@ use Illuminate\Support\Facades\Route;
 */
 
 // Auth
-Route::post('/auth/login', [AuthController::class, 'login'])->middleware('throttle:5,1');
+Route::post('/auth/login', [AuthController::class, 'login'])->middleware('throttle:login');
 Route::post('/auth/register', [AuthController::class, 'register'])->middleware('throttle:5,1');
 Route::post('/auth/forgot-password', [AuthController::class, 'forgotPassword'])->middleware('throttle:5,1');
 Route::post('/auth/reset-password', [AuthController::class, 'resetPassword'])->middleware('throttle:5,1');
