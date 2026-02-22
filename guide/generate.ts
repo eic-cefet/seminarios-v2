@@ -24,23 +24,23 @@ import linkPresenca from "./scripts/admin/10-link-presenca.js";
 
 const guideFactories: GuideFactory[] = [
     // Admin guides
-    // loginAdmin,
-    // dashboardAdmin,
-    // criarSeminario,
-    // gerenciarUsuarios,
-    // gerenciarTopicos,
+    loginAdmin,
+    dashboardAdmin,
+    criarSeminario,
+    gerenciarUsuarios,
+    gerenciarTopicos,
     gerenciarLocais,
-    // gerenciarWorkshops,
-    // visualizarInscricoes,
-    // relatorios,
-    // linkPresenca,
+    gerenciarWorkshops,
+    visualizarInscricoes,
+    relatorios,
+    linkPresenca,
     // User guides
-    // criarConta,
-    // loginUsuario,
-    // recuperarSenha,
-    // navegarSeminarios,
-    // inscreverSeminario,
-    // perfilCertificados,
+    criarConta,
+    loginUsuario,
+    recuperarSenha,
+    navegarSeminarios,
+    inscreverSeminario,
+    perfilCertificados,
 ];
 
 async function main() {

@@ -41,6 +41,8 @@ version_bump=patch
 - [x] New code has adequate test coverage"
 ```
 
+**If `gh pr create` fails with "must be a collaborator"**, run `gh auth switch` to switch to the correct GitHub account, then retry.
+
 **NEVER push directly to main** - the branch is protected and requires status checks to pass.
 
 ## Project Overview
