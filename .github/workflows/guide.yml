@@ -139,12 +139,22 @@ jobs:
         env:
           BASE_URL: http://localhost:8000
 
-      # --- Upload to S3 ---
+      # --- Deploy to S3 + CloudFront ---
       - name: Upload guide to S3
         run: |
           aws s3 sync guide/dist/ s3://${{ secrets.GUIDE_S3_BUCKET }}/ \
             --delete \
             --cache-control "public, max-age=3600"
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.GUIDE_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.GUIDE_AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: us-east-1
+
+      - name: Invalidate CloudFront cache
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id ${{ secrets.GUIDE_CLOUDFRONT_DISTRIBUTION_ID }} \
+            --paths "/*"
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.GUIDE_AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.GUIDE_AWS_SECRET_ACCESS_KEY }}

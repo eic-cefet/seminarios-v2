@@ -6,15 +6,15 @@ const DIST_DIR = path.resolve(import.meta.dirname, "..", "dist");
 const SCREENSHOTS_DIR = path.resolve(import.meta.dirname, "..", "screenshots");
 
 function escapeHtml(text: string): string {
-  return text
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
+    return text
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
 }
 
 function css(): string {
-  return `
+    return `
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
@@ -133,19 +133,19 @@ function css(): string {
 }
 
 function sidebarHtml(guides: Guide[], activeId?: string): string {
-  const adminGuides = guides.filter((g) => g.category === "admin");
-  const userGuides = guides.filter((g) => g.category === "usuario");
+    const adminGuides = guides.filter((g) => g.category === "admin");
+    const userGuides = guides.filter((g) => g.category === "usuario");
 
-  const renderLink = (g: Guide) => {
-    const active = g.id === activeId ? ' class="active"' : "";
-    const href =
-      g.category === "admin"
-        ? `admin/${g.id}.html`
-        : `usuario/${g.id}.html`;
-    return `<a href="/${href}"${active}>${escapeHtml(g.title)}</a>`;
-  };
+    const renderLink = (g: Guide) => {
+        const active = g.id === activeId ? ' class="active"' : "";
+        const href =
+            g.category === "admin"
+                ? `admin/${g.id}.html`
+                : `usuario/${g.id}.html`;
+        return `<a href="/${href}"${active}>${escapeHtml(g.title)}</a>`;
+    };
 
-  return `
+    return `
     <nav class="sidebar">
       <h1><a href="/index.html" style="color: inherit; text-decoration: none;">Guia - CEFET-RJ Seminários</a></h1>
       <h2>Administrador</h2>
@@ -157,12 +157,12 @@ function sidebarHtml(guides: Guide[], activeId?: string): string {
 }
 
 function pageHtml(
-  title: string,
-  content: string,
-  guides: Guide[],
-  activeId?: string,
+    title: string,
+    content: string,
+    guides: Guide[],
+    activeId?: string,
 ): string {
-  return `<!DOCTYPE html>
+    return `<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
@@ -182,28 +182,27 @@ function pageHtml(
 }
 
 export function generateIndexPage(guides: Guide[]): string {
-  const adminGuides = guides.filter((g) => g.category === "admin");
-  const userGuides = guides.filter((g) => g.category === "usuario");
+    const adminGuides = guides.filter((g) => g.category === "admin");
+    const userGuides = guides.filter((g) => g.category === "usuario");
 
-  const renderCard = (g: Guide) => {
-    const href =
-      g.category === "admin"
-        ? `admin/${g.id}.html`
-        : `usuario/${g.id}.html`;
-    const badgeClass =
-      g.category === "admin" ? "badge-admin" : "badge-usuario";
-    const badgeLabel =
-      g.category === "admin" ? "Administrador" : "Usuário";
-    return `
+    const renderCard = (g: Guide) => {
+        const href =
+            g.category === "admin"
+                ? `admin/${g.id}.html`
+                : `usuario/${g.id}.html`;
+        const badgeClass =
+            g.category === "admin" ? "badge-admin" : "badge-usuario";
+        const badgeLabel = g.category === "admin" ? "Administrador" : "Usuário";
+        return `
       <a class="index-card" href="${href}">
         <span class="badge ${badgeClass}">${badgeLabel}</span>
         <h3>${escapeHtml(g.title)}</h3>
         <p>${escapeHtml(g.description)}</p>
       </a>
     `;
-  };
+    };
 
-  const content = `
+    const content = `
     <h1>Guia de Uso — CEFET-RJ Seminários</h1>
     <p class="description">Documentação interativa com capturas de tela de todos os fluxos do sistema.</p>
 
@@ -218,13 +217,13 @@ export function generateIndexPage(guides: Guide[]): string {
     </div>
   `;
 
-  return pageHtml("Início", content, guides);
+    return pageHtml("Início", content, guides);
 }
 
 export function generateGuidePage(guide: Guide, allGuides: Guide[]): string {
-  const stepsHtml = guide.steps
-    .map(
-      (step, i) => `
+    const stepsHtml = guide.steps
+        .map(
+            (step, i) => `
       <div class="step">
         <div class="step-header">
           <span class="step-number">${i + 1}</span>
@@ -238,55 +237,55 @@ export function generateGuidePage(guide: Guide, allGuides: Guide[]): string {
         </div>
       </div>
     `,
-    )
-    .join("\n");
+        )
+        .join("\n");
 
-  const content = `
+    const content = `
     <h1>${escapeHtml(guide.title)}</h1>
     <p class="description">${escapeHtml(guide.description)}</p>
     ${stepsHtml}
   `;
 
-  return pageHtml(guide.title, content, allGuides, guide.id);
+    return pageHtml(guide.title, content, allGuides, guide.id);
 }
 
 export function writeGuideFiles(guides: Guide[]) {
-  // Clean dist
-  fs.rmSync(DIST_DIR, { recursive: true, force: true });
-  fs.mkdirSync(DIST_DIR, { recursive: true });
-  fs.mkdirSync(path.join(DIST_DIR, "admin"), { recursive: true });
-  fs.mkdirSync(path.join(DIST_DIR, "usuario"), { recursive: true });
-  fs.mkdirSync(path.join(DIST_DIR, "screenshots"), { recursive: true });
+    // Clean dist
+    fs.rmSync(DIST_DIR, { recursive: true, force: true });
+    fs.mkdirSync(DIST_DIR, { recursive: true });
+    fs.mkdirSync(path.join(DIST_DIR, "admin"), { recursive: true });
+    fs.mkdirSync(path.join(DIST_DIR, "usuario"), { recursive: true });
+    fs.mkdirSync(path.join(DIST_DIR, "screenshots"), { recursive: true });
 
-  // Copy screenshots
-  if (fs.existsSync(SCREENSHOTS_DIR)) {
-    const files = fs.readdirSync(SCREENSHOTS_DIR);
-    for (const file of files) {
-      if (file.endsWith(".png")) {
-        fs.copyFileSync(
-          path.join(SCREENSHOTS_DIR, file),
-          path.join(DIST_DIR, "screenshots", file),
-        );
-      }
+    // Copy screenshots
+    if (fs.existsSync(SCREENSHOTS_DIR)) {
+        const files = fs.readdirSync(SCREENSHOTS_DIR);
+        for (const file of files) {
+            if (file.endsWith(".png")) {
+                fs.copyFileSync(
+                    path.join(SCREENSHOTS_DIR, file),
+                    path.join(DIST_DIR, "screenshots", file),
+                );
+            }
+        }
     }
-  }
 
-  // Write index
-  fs.writeFileSync(
-    path.join(DIST_DIR, "index.html"),
-    generateIndexPage(guides),
-    "utf-8",
-  );
-
-  // Write individual guide pages
-  for (const guide of guides) {
-    const dir = guide.category === "admin" ? "admin" : "usuario";
+    // Write index
     fs.writeFileSync(
-      path.join(DIST_DIR, dir, `${guide.id}.html`),
-      generateGuidePage(guide, guides),
-      "utf-8",
+        path.join(DIST_DIR, "index.html"),
+        generateIndexPage(guides),
+        "utf-8",
     );
-  }
 
-  console.log(`\n  Gerados ${guides.length} guias em ${DIST_DIR}/`);
+    // Write individual guide pages
+    for (const guide of guides) {
+        const dir = guide.category === "admin" ? "admin" : "usuario";
+        fs.writeFileSync(
+            path.join(DIST_DIR, dir, `${guide.id}.html`),
+            generateGuidePage(guide, guides),
+            "utf-8",
+        );
+    }
+
+    console.log(`\n  Gerados ${guides.length} guias em ${DIST_DIR}/`);
 }
