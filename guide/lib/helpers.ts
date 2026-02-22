@@ -55,15 +55,17 @@ export async function loginAs(
   password: string = "password",
 ) {
   await page.goto("/login");
-  await page.waitForLoadState("networkidle");
+  await page.waitForSelector("#email", { state: "visible", timeout: 10000 });
   await page.fill("#email", email);
   await page.fill("#password", password);
-  await page.click('button[type="submit"]');
-  await page.waitForLoadState("networkidle");
-  // Wait for redirect away from login page
-  await page.waitForURL((url) => !url.pathname.endsWith("/login"), {
-    timeout: 30000,
-  });
+  // Click and wait for navigation in parallel — don't wait for networkidle
+  // before the URL check, since the SPA redirect + API calls can stall it
+  await Promise.all([
+    page.waitForURL((url) => !url.pathname.endsWith("/login"), {
+      timeout: 30000,
+    }),
+    page.click('button[type="submit"]'),
+  ]);
   await waitUntilSettled(page);
 }
 
