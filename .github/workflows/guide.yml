@@ -141,12 +141,11 @@ jobs:
 
       # --- Upload to S3 ---
       - name: Upload guide to S3
-        uses: jakejarvis/s3-sync-action@master
-        with:
-          args: --delete --cache-control "public, max-age=3600"
+        run: |
+          aws s3 sync guide/dist/ s3://${{ secrets.GUIDE_S3_BUCKET }}/ \
+            --delete \
+            --cache-control "public, max-age=3600"
         env:
-          AWS_S3_BUCKET: ${{ secrets.GUIDE_S3_BUCKET }}
           AWS_ACCESS_KEY_ID: ${{ secrets.GUIDE_AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.GUIDE_AWS_SECRET_ACCESS_KEY }}
-          AWS_REGION: us-east-1
-          SOURCE_DIR: guide/dist
+          AWS_DEFAULT_REGION: us-east-1

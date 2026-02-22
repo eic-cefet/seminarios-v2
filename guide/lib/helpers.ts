@@ -62,7 +62,7 @@ export async function loginAs(
   await page.waitForLoadState("networkidle");
   // Wait for redirect away from login page
   await page.waitForURL((url) => !url.pathname.endsWith("/login"), {
-    timeout: 10000,
+    timeout: 30000,
   });
   await waitUntilSettled(page);
 }
