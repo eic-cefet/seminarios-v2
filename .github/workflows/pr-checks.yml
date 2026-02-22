@@ -312,6 +312,7 @@ jobs:
         id: claude
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          CLAUDE_MODEL: ${{ vars.CLAUDE_MODEL || 'claude-sonnet-4-20250514' }}
         run: |
           git fetch origin ${{ github.base_ref }}
           git diff origin/${{ github.base_ref }}...HEAD > /tmp/diff.txt
@@ -364,14 +365,16 @@ jobs:
           cat /tmp/diff_truncated.txt >> /tmp/prompt.txt
           echo -e "\n\`\`\`" >> /tmp/prompt.txt
 
-          jq -n --rawfile prompt /tmp/prompt.txt '{
-            model: "claude-sonnet-4-20250514",
-            max_tokens: 4096,
-            messages: [{
-              role: "user",
-              content: $prompt
-            }]
-          }' > /tmp/payload.json
+          jq -n --rawfile prompt /tmp/prompt.txt \
+            --arg model "$CLAUDE_MODEL" \
+            '{
+              model: $model,
+              max_tokens: 4096,
+              messages: [{
+                role: "user",
+                content: $prompt
+              }]
+            }' > /tmp/payload.json
 
           # Call Claude API
           curl -s https://api.anthropic.com/v1/messages \
@@ -446,18 +449,13 @@ jobs:
               });
             }
 
-            // Apply category labels
+            // Sync category labels: remove stale ones, add new ones
             const labelsJson = process.env.LABELS || '[]';
-            let labels = [];
+            let newLabels = [];
             try {
-              labels = JSON.parse(labelsJson);
+              newLabels = JSON.parse(labelsJson);
             } catch (e) {
               console.log('Failed to parse labels:', e);
-              return;
-            }
-
-            if (labels.length === 0) {
-              console.log('No labels to apply');
               return;
             }
 
@@ -474,9 +472,14 @@ jobs:
               'dependencies': '006b75'
             };
 
-            for (const label of labels) {
-              if (!validLabels.includes(label)) continue;
+            const filteredNew = newLabels.filter(l => validLabels.includes(l));
+            if (filteredNew.length === 0) {
+              console.log('No valid labels from Claude, skipping label sync');
+              return;
+            }
 
+            // Ensure all new labels exist in the repo
+            for (const label of filteredNew) {
               try {
                 await github.rest.issues.getLabel({
                   owner: context.repo.owner,
@@ -495,14 +498,43 @@ jobs:
               }
             }
 
-            await github.rest.issues.addLabels({
+            // Get current category labels on the PR
+            const { data: currentLabelsData } = await github.rest.issues.listLabelsOnIssue({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: context.issue.number,
-              labels: labels.filter(l => validLabels.includes(l))
             });
+            const currentCategoryLabels = currentLabelsData
+              .map(l => l.name)
+              .filter(l => validLabels.includes(l));
 
-            console.log('Applied labels:', labels);
+            // Remove labels no longer in the new set
+            const labelsToRemove = currentCategoryLabels.filter(l => !filteredNew.includes(l));
+            for (const label of labelsToRemove) {
+              try {
+                await github.rest.issues.removeLabel({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: context.issue.number,
+                  name: label
+                });
+              } catch (e) {
+                console.log('Failed to remove label:', label, e.message);
+              }
+            }
+
+            // Add labels not already present
+            const labelsToAdd = filteredNew.filter(l => !currentCategoryLabels.includes(l));
+            if (labelsToAdd.length > 0) {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                labels: labelsToAdd
+              });
+            }
+
+            console.log('Label sync complete. Removed:', labelsToRemove, 'Added:', labelsToAdd);
         env:
           REVIEW_CONTENT: ${{ steps.claude.outputs.review }}
           LABELS: ${{ steps.claude.outputs.labels }}
