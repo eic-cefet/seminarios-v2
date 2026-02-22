@@ -1,15 +1,15 @@
 {
-  "compilerOptions": {
-    "target": "ES2022",
-    "module": "ESNext",
-    "moduleResolution": "bundler",
-    "strict": true,
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "outDir": "./dist-ts",
-    "rootDir": ".",
-    "resolveJsonModule": true
-  },
-  "include": ["**/*.ts"],
-  "exclude": ["node_modules", "dist", "dist-ts"]
+    "compilerOptions": {
+        "target": "ES2022",
+        "module": "ESNext",
+        "moduleResolution": "bundler",
+        "strict": true,
+        "esModuleInterop": true,
+        "skipLibCheck": true,
+        "outDir": "./dist-ts",
+        "rootDir": ".",
+        "resolveJsonModule": true
+    },
+    "include": ["**/*.ts"],
+    "exclude": ["node_modules", "dist", "dist-ts"]
 }
