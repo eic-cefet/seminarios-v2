@@ -55,10 +55,15 @@ CEFET-RJ Seminários - A seminar and workshop management system for the School o
 # Development (runs server, queue, logs, and vite concurrently)
 composer run dev
 
-# Run tests
+# Backend tests
 php artisan test --compact
 php artisan test --compact --filter=testName
 php artisan test --compact tests/Feature/ExampleTest.php
+
+# Frontend tests
+pnpm exec vitest run
+pnpm exec vitest run path/to/test.test.ts
+pnpm run typecheck
 
 # Format PHP code
 vendor/bin/pint --dirty
@@ -66,6 +71,11 @@ vendor/bin/pint --dirty
 # Legacy data migration (from old database)
 php artisan migrate:legacy --fresh --seed
 ```
+
+## CI Coverage Requirements
+
+- Backend: 95% coverage threshold (all metrics)
+- Frontend: 90% coverage threshold (statements, branches, functions, lines)
 
 ## Architecture
 
@@ -75,18 +85,20 @@ The application has two separate React SPAs served by Laravel:
 
 - **System SPA** (`resources/js/system/`) - Public-facing for students/attendees
   - Routes: `/`, `/login`, `/cadastro`, `/topicos`, `/apresentacoes`, `/seminario/:slug`, `/workshops`, `/workshop/:id`
-  - Served at `/*` (catch-all except admin/api paths)
+  - Served at `/{any?}` catch-all, excluding: `admin|api|sanctum|certificado|auth/(google|github)(/callback)?`
 
-- **Admin SPA** (`resources/js/admin/`) - Protected dashboard for administrators
+- **Admin SPA** (`resources/js/admin/`) - Protected dashboard for administrators and teachers
   - Routes under `/admin/*`
-  - Requires authentication middleware
+  - `EnsureUserIsAdmin` middleware accepts **both** Admin and Teacher roles
 
 ### Shared Code
 
 `resources/js/shared/` contains code used by both SPAs:
-- `api/client.ts` - API client with typed endpoints (seminarsApi, subjectsApi, workshopsApi, etc.)
+- `api/client.ts` - API client with typed endpoints (`seminarsApi`, `subjectsApi`, `workshopsApi`, `authApi`, `profileApi`, `registrationApi`, etc.)
 - `types/index.ts` - TypeScript interfaces for API responses
-- `lib/utils.ts` - Utility functions (cn, formatDateTime, containsHTML)
+- `lib/utils.ts` - Utility functions (`cn`, `formatDateTime`, `formatDateTimeLong`, `containsHTML`, `isExpired`, `buildUrl`)
+- `lib/httpUtils.ts` - Cookie handling, CSRF token fetching, `buildQueryString`
+- `lib/roles.ts` - Role helpers: `hasRole()`, `hasAdminAccess()` (checks admin OR teacher)
 
 ### Frontend Configuration
 
@@ -94,6 +106,8 @@ Global config is injected via `resources/views/partials/head-scripts.blade.php`:
 - `window.app.API_URL` - API base URL
 - `window.app.BASE_PATH` - Application base path
 - `window.app.ROUTER_BASE` - React Router basename
+
+Use `buildUrl(path)` from shared utils for non-React-Router navigation (handles BASE_PATH prefixing).
 
 ### Vite Path Aliases
 
@@ -129,6 +143,14 @@ throw ApiException::forbidden('You cannot access this resource');
 throw ApiException::validation(['email' => 'Invalid email']);
 ```
 
+Domain-specific factory methods also exist: `seminarFull()`, `alreadyRegistered()`, `notRegistered()`, `seminarExpired()`, `subjectInUse()`, `workshopInUse()`, etc.
+
+### Enums
+
+- `Role` (`app/Enums/Role.php`) - Admin, Teacher, User — used with Spatie Permission (PHP backed enum, supports `hasRole()` directly)
+- `CourseRole` - Aluno, Professor, Outro — student registration course roles
+- `CourseSituation` - Studying, Graduated — student status
+
 ### Domain Models
 
 Core entities: Seminar, Subject, Workshop, SeminarType, User, Registration, Rating
@@ -147,14 +169,16 @@ Data is migrated from a legacy database using artisan commands in `app/Console/C
 ### Frontend
 - Use TanStack Query for data fetching
 - Use Radix UI primitives for accessible components
-- Tailwind CSS v4 (CSS-first config with `@theme` directive)
+- Tailwind CSS v4 (CSS-first config with `@theme` directive — no `tailwind.config.js`)
 - Lucide React for icons
+- React Hook Form + Zod for form validation
 
 ### Backend
-- API Resources for JSON transformation
+- API Resources for JSON transformation (admin-specific ones in `app/Http/Resources/Admin/`)
 - Eloquent with eager loading (avoid N+1)
-- Form Request classes for validation
+- Form Request classes for validation (`app/Http/Requests/` and `app/Http/Requests/Admin/`)
 - Pest for testing
+- Rate limiting: `throttle:login` for login, `throttle:5,1` for auth endpoints, `throttle:3,1` for bug reports
 
 ### OAuth Flow
 Social auth uses one-time code exchange pattern:
@@ -170,3 +194,12 @@ actingAsAdmin()   // Create and authenticate admin user
 actingAsTeacher() // Create and authenticate teacher user
 ```
 
+User factory states for test setup:
+```php
+User::factory()->admin()->create()
+User::factory()->teacher()->create()
+User::factory()->speaker()->create()   // Creates UserSpeakerData
+User::factory()->student()->create()   // Creates UserStudentData
+```
+
+Spatie Permission cache is auto-cleared in `beforeEach`. Roles are auto-created for tests.

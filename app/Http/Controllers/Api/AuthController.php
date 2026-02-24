@@ -46,7 +46,7 @@ class AuthController extends Controller
 
             // If matched, rehash with current algorithm for future logins
             if ($passwordMatches) {
-                $user->password = $validated['password'];
+                $user->password = Hash::make($validated['password']);
                 $user->save();
             }
         }

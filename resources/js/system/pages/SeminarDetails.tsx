@@ -450,16 +450,13 @@ export default function SeminarDetails() {
                             )}
 
                             {/* Location Details */}
-                            {seminar.location && seminar.location.address && (
+                            {seminar.location && (
                                 <div className="rounded-lg border border-gray-200 bg-white p-6">
                                     <h3 className="font-semibold text-gray-900 mb-2">
                                         Local
                                     </h3>
                                     <p className="text-sm text-gray-600">
                                         {seminar.location.name}
-                                    </p>
-                                    <p className="text-sm text-gray-500">
-                                        {seminar.location.address}
                                     </p>
                                 </div>
                             )}

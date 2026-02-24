@@ -28,7 +28,8 @@ class ProfileRatingController extends Controller
             ->where('present', true)
             ->whereHas('seminar', function ($query) use ($thirtyDaysAgo) {
                 $query->whereNotNull('scheduled_at')
-                    ->where('scheduled_at', '>=', $thirtyDaysAgo);
+                    ->where('scheduled_at', '>=', $thirtyDaysAgo)
+                    ->where('scheduled_at', '<=', now());
             })
             ->whereDoesntHave('seminar.ratings', function ($query) use ($user) {
                 $query->where('user_id', $user->id);

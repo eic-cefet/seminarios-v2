@@ -46,7 +46,7 @@ class WorkshopController extends Controller
             $query->where('scheduled_at', '>=', now());
         }
 
-        $sortDirection = $request->input('direction', 'asc');
+        $sortDirection = in_array($request->input('direction'), ['asc', 'desc']) ? $request->input('direction') : 'asc';
         $query->orderBy('scheduled_at', $sortDirection);
 
         $seminars = $query->paginate($this->getPerPage($request, 15));
