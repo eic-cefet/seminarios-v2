@@ -64,7 +64,7 @@ Route::get('/presence/{uuid}', [PresenceController::class, 'show']);
 Route::post('/presence/{uuid}/register', [PresenceController::class, 'register']);
 
 // Auth
-Route::post('/auth/exchange', [\App\Http\Controllers\SocialAuthController::class, 'exchange']);
+Route::post('/auth/exchange', [\App\Http\Controllers\SocialAuthController::class, 'exchange'])->middleware('throttle:5,1');
 
 // Authenticated routes
 Route::middleware('auth:sanctum')->group(function () {

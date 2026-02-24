@@ -28,7 +28,7 @@ class ReportController extends Controller
     public function semestral(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'semester' => 'required|string',
+            'semester' => ['required', 'string', 'regex:/^\d{4}\.[12]$/'],
             'courses' => 'nullable|array',
             'courses.*' => 'integer',
             'types' => 'nullable|array',

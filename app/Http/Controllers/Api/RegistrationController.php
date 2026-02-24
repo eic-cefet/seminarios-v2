@@ -75,6 +75,11 @@ class RegistrationController extends Controller
         $user = $request->user();
         $seminar = $this->findSeminar($slug);
 
+        // Cannot unregister from a seminar that has already occurred
+        if ($seminar->scheduled_at->isPast()) {
+            throw ApiException::seminarExpired();
+        }
+
         $registration = $seminar->registrations()
             ->where('user_id', $user->id)
             ->first();

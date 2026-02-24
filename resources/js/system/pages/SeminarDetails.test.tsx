@@ -386,16 +386,17 @@ describe('SeminarDetails', () => {
         });
     });
 
-    it('shows location address when available', async () => {
-        const location = createLocation({ name: 'Main Hall', address: '123 University Ave' });
-        const seminar = createSeminar({ location });
+    it('shows location name when available', async () => {
+        const location = createLocation({ name: 'Main Hall' });
+        const seminar = createSeminar({ name: 'Test Seminar', location });
         vi.mocked(seminarsApi.get).mockResolvedValue({ data: seminar });
 
         render(<SeminarDetails />);
 
         await waitFor(() => {
-            expect(screen.getByText('123 University Ave')).toBeInTheDocument();
+            expect(screen.getByText('Test Seminar')).toBeInTheDocument();
         });
+        expect(screen.getAllByText('Main Hall').length).toBeGreaterThan(0);
     });
 
     it('shows seminar type badge', async () => {

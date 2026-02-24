@@ -122,6 +122,21 @@ describe('DELETE /api/seminars/{slug}/register', function () {
         $response->assertStatus(400)
             ->assertJsonPath('message', 'Você não está inscrito neste seminário');
     });
+
+    it('returns error for expired seminar', function () {
+        $user = actingAsUser();
+        $seminar = Seminar::factory()->past()->create(['active' => true]);
+
+        Registration::factory()->create([
+            'user_id' => $user->id,
+            'seminar_id' => $seminar->id,
+        ]);
+
+        $response = $this->deleteJson("/api/seminars/{$seminar->slug}/register");
+
+        $response->assertStatus(400)
+            ->assertJsonPath('message', 'Este seminário já foi realizado');
+    });
 });
 
 describe('GET /api/seminars/{slug}/registration (status)', function () {

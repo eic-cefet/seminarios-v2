@@ -27,7 +27,6 @@ class SeminarResource extends JsonResource
             'location' => $this->whenLoaded('seminarLocation', fn () => [
                 'id' => $this->seminarLocation->id,
                 'name' => $this->seminarLocation->name,
-                'address' => $this->seminarLocation->address,
             ]),
 
             // Counts

@@ -44,7 +44,7 @@ class SeminarController extends Controller
 
         // Sorting
         $sortField = $request->input('sort', 'scheduled_at');
-        $sortDirection = $request->input('direction', 'asc');
+        $sortDirection = in_array($request->input('direction'), ['asc', 'desc']) ? $request->input('direction') : 'asc';
 
         if ($sortField === 'scheduled_at') {
             $query->orderBy('scheduled_at', $sortDirection);
@@ -94,7 +94,7 @@ class SeminarController extends Controller
             $query->upcoming();
         }
 
-        $sortDirection = $request->input('direction', 'desc');
+        $sortDirection = in_array($request->input('direction'), ['asc', 'desc']) ? $request->input('direction') : 'desc';
         $query->orderBy('scheduled_at', $sortDirection);
 
         $seminars = $query->paginate($this->getPerPage($request, 15));

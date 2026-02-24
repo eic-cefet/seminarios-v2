@@ -15,6 +15,8 @@ export const API_ERROR_MESSAGES: Record<string, string> = {
     already_registered: "Você já está inscrito neste seminário.",
     not_registered: "Você não está inscrito neste seminário.",
     seminar_expired: "Este seminário já foi realizado.",
+    seminar_full: "Este seminário atingiu sua capacidade máxima.",
+    conflict: "Não foi possível completar a operação devido a um conflito.",
 
     // Validation
     validation_error: "Verifique os dados informados.",

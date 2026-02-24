@@ -88,7 +88,6 @@ export function createLocation(overrides: Partial<SeminarLocation> = {}): Semina
     return {
         id,
         name: `Location ${id}`,
-        address: '123 Test St',
         ...overrides,
     };
 }
