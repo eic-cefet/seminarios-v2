@@ -143,10 +143,11 @@ jobs:
       - name: Parse version bump
         if: steps.pr.outputs.found == 'true'
         id: version
+        env:
+          PR_BODY: ${{ steps.pr.outputs.body }}
         run: |
-          BODY='${{ steps.pr.outputs.body }}'
           # Match key=value format: version_bump=VALUE
-          BUMP=$(echo "$BODY" | grep -oiE 'version_bump=(patch|minor|major)' | cut -d'=' -f2 | head -1 | tr '[:upper:]' '[:lower:]')
+          BUMP=$(echo "$PR_BODY" | grep -oiE 'version_bump=(patch|minor|major)' | cut -d'=' -f2 | head -1 | tr '[:upper:]' '[:lower:]')
           if [ -z "$BUMP" ]; then
             BUMP="patch"
           fi
