@@ -5,7 +5,9 @@ namespace App\Http\Controllers\Api;
 use App\Exceptions\ApiException;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\PendingEvaluationResource;
+use App\Jobs\AnalyzeRatingSentiment;
 use App\Models\Rating;
+use App\Services\FeatureFlags;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -89,6 +91,10 @@ class ProfileRatingController extends Controller
             'score' => $validated['score'],
             'comment' => $validated['comment'] ?? null,
         ]);
+
+        if ($rating->comment && FeatureFlags::shouldRun('sentiment_analysis')) {
+            AnalyzeRatingSentiment::dispatch($rating);
+        }
 
         return response()->json([
             'message' => 'Avaliação enviada com sucesso!',

@@ -1,5 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Sparkles, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate, useParams } from "react-router-dom";
@@ -12,7 +13,7 @@ import type {
     SeminarTypeDropdownItem,
     WorkshopDropdownItem,
 } from "../../api/adminClient";
-import { seminarsApi } from "../../api/adminClient";
+import { seminarsApi, aiApi } from "../../api/adminClient";
 import { MarkdownEditor } from "../../components/MarkdownEditor";
 import { SpeakerSelectionModal } from "../../components/SpeakerSelectionModal";
 import { SubjectMultiSelect } from "../../components/SubjectMultiSelect";
@@ -80,6 +81,7 @@ export default function SeminarForm() {
 
     const [isSpeakerModalOpen, setIsSpeakerModalOpen] = useState(false);
     const [selectedSpeakers, setSelectedSpeakers] = useState<AdminUser[]>([]);
+    const [suggestingName, setSuggestingName] = useState(false);
 
     const { data: seminarData } = useQuery({
         queryKey: ["admin-seminar", id],
@@ -221,6 +223,27 @@ export default function SeminarForm() {
         setSelectedSpeakers(users);
     };
 
+    const handleSuggestName = async () => {
+        const subjects = watch("subject_names");
+        if (subjects.length === 0) {
+            toast.warning("Selecione pelo menos um tópico primeiro.");
+            return;
+        }
+        setSuggestingName(true);
+        try {
+            const speakerNames = selectedSpeakers.map((s) => s.name);
+            const response = await aiApi.suggestSeminarName(
+                subjects,
+                speakerNames.length > 0 ? speakerNames : undefined,
+            );
+            setValue("name", response.data.text);
+        } catch {
+            toast.error("Erro ao sugerir nome com IA.");
+        } finally {
+            setSuggestingName(false);
+        }
+    };
+
     const locations = (locationsData?.data ?? []) as LocationDropdownItem[];
     const types = (typesData?.data ?? []) as SeminarTypeDropdownItem[];
     const workshops = (workshopsData?.data ?? []) as WorkshopDropdownItem[];
@@ -254,7 +277,24 @@ export default function SeminarForm() {
                             </CardHeader>
                             <CardContent className="space-y-4">
                                 <div className="space-y-2">
-                                    <Label htmlFor="name">Nome *</Label>
+                                    <div className="flex items-center justify-between">
+                                        <Label htmlFor="name">Nome *</Label>
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="sm"
+                                            disabled={suggestingName}
+                                            onClick={handleSuggestName}
+                                            className="gap-1.5"
+                                        >
+                                            {suggestingName ? (
+                                                <Loader2 className="size-3.5 animate-spin" />
+                                            ) : (
+                                                <Sparkles className="size-3.5" />
+                                            )}
+                                            Sugerir com IA
+                                        </Button>
+                                    </div>
                                     <Input
                                         id="name"
                                         {...register("name")}

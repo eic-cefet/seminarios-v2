@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\AdminSeminarController;
 use App\Http\Controllers\Admin\AdminSubjectController;
 use App\Http\Controllers\Admin\AdminUserController;
 use App\Http\Controllers\Admin\AdminWorkshopController;
+use App\Http\Controllers\Admin\AiTextController;
 use App\Http\Controllers\Admin\ReportController;
 use Illuminate\Support\Facades\Route;
 
@@ -70,4 +71,12 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function ()
     // Reports
     Route::get('/reports/courses', [ReportController::class, 'courses']);
     Route::get('/reports/semestral', [ReportController::class, 'semestral']);
+
+    // AI
+    Route::middleware('throttle:ai')->group(function () {
+        Route::post('/ai/transform-text', [AiTextController::class, 'transform']);
+        Route::post('/ai/suggest-merge-name', [AiTextController::class, 'suggestMergeName']);
+        Route::post('/ai/suggest-seminar-name', [AiTextController::class, 'suggestSeminarName']);
+    });
+    Route::get('/ai/rating-sentiments', [AiTextController::class, 'ratingSentiments']);
 });

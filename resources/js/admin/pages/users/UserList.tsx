@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { analytics } from "@shared/lib/analytics";
 import { useDebouncedSearch } from "@shared/hooks/useDebouncedSearch";
 import { usersApi, type AdminUser } from "../../api/adminClient";
+import { AiTextToolbar } from "../../components/AiTextToolbar";
 import { Button } from "../../components/ui/button";
 import {
     Card,
@@ -98,6 +99,7 @@ export default function UserList() {
     const [editingUser, setEditingUser] = useState<AdminUser | null>(null);
     const [deletingUser, setDeletingUser] = useState<AdminUser | null>(null);
     const [formData, setFormData] = useState<UserFormData>(initialFormData);
+    const [aiLoading, setAiLoading] = useState<boolean>(false);
 
     const { data, isLoading } = useQuery({
         queryKey: [
@@ -794,12 +796,30 @@ export default function UserList() {
                                     </div>
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="description">
-                                        Descricao
-                                    </Label>
+                                    <div className="flex items-center justify-between">
+                                        <Label htmlFor="description">
+                                            Descricao
+                                        </Label>
+                                        <AiTextToolbar
+                                            value={
+                                                formData.speaker_data
+                                                    .description
+                                            }
+                                            onChange={(value) =>
+                                                setFormData({
+                                                    ...formData,
+                                                    speaker_data: {
+                                                        ...formData.speaker_data,
+                                                        description: value,
+                                                    },
+                                                })
+                                            }
+                                            onLoadingChange={setAiLoading}
+                                        />
+                                    </div>
                                     <textarea
                                         id="description"
-                                        className="flex min-h-20 w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                                        className="flex min-h-20 w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-50 disabled:cursor-not-allowed"
                                         value={
                                             formData.speaker_data.description
                                         }
@@ -812,6 +832,7 @@ export default function UserList() {
                                                 },
                                             })
                                         }
+                                        disabled={aiLoading}
                                     />
                                 </div>
                             </div>

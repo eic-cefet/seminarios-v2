@@ -15,12 +15,15 @@ class Rating extends Model
         'user_id',
         'score',
         'comment',
+        'sentiment',
+        'sentiment_analyzed_at',
     ];
 
     protected function casts(): array
     {
         return [
             'score' => 'integer',
+            'sentiment_analyzed_at' => 'datetime',
         ];
     }
 
