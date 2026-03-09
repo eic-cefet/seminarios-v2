@@ -13,6 +13,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Log;
 
 class AdminSubjectController extends Controller
 {
@@ -103,61 +104,62 @@ class AdminSubjectController extends Controller
         ]);
 
         $targetId = $validated['target_id'];
-        // Validation rule 'different:target_id' already ensures no source_id equals target_id
         $sourceIds = $validated['source_ids'];
 
-        DB::beginTransaction();
         try {
-            $target = Subject::findOrFail($targetId);
+            $target = DB::transaction(function () use ($targetId, $sourceIds, $validated) {
+                $target = Subject::findOrFail($targetId);
 
-            // Update name if provided
-            if (! empty($validated['new_name'])) {
-                $target->name = $validated['new_name'];
-                $target->save();
-            }
+                if (! empty($validated['new_name'])) {
+                    $target->name = $validated['new_name'];
+                    $target->save();
+                }
 
-            // Get all seminar IDs associated with source subjects
-            $seminarIds = DB::table('seminar_subject')
-                ->whereIn('subject_id', $sourceIds)
-                ->pluck('seminar_id')
-                ->unique();
+                $seminarIds = DB::table('seminar_subject')
+                    ->whereIn('subject_id', $sourceIds)
+                    ->pluck('seminar_id')
+                    ->unique();
 
-            // Batch insert target subject for all affected seminars (ignoring duplicates)
-            $insertData = $seminarIds->map(fn ($seminarId) => [
-                'seminar_id' => $seminarId,
-                'subject_id' => $targetId,
-            ])->toArray();
+                $insertData = $seminarIds->map(fn ($seminarId) => [
+                    'seminar_id' => $seminarId,
+                    'subject_id' => $targetId,
+                ])->toArray();
 
-            if (! empty($insertData)) {
-                DB::table('seminar_subject')->insertOrIgnore($insertData);
-            }
+                if (! empty($insertData)) {
+                    DB::table('seminar_subject')->insertOrIgnore($insertData);
+                }
 
-            // Remove all source subject associations
-            DB::table('seminar_subject')
-                ->whereIn('subject_id', $sourceIds)
-                ->delete();
+                DB::table('seminar_subject')
+                    ->whereIn('subject_id', $sourceIds)
+                    ->delete();
 
-            // Delete source subjects
-            Subject::whereIn('id', $sourceIds)->delete();
+                Subject::whereIn('id', $sourceIds)->delete();
 
-            DB::commit();
+                // Audit log is intentionally inside the transaction — if audit
+                // recording fails, the merge is rolled back to ensure auditability.
+                AuditLog::record(AuditEvent::SubjectsMerged, auditable: $target, eventData: [
+                    'target_id' => $targetId,
+                    'source_ids' => $sourceIds,
+                    'new_name' => $validated['new_name'] ?? null,
+                    'affected_seminar_ids' => $seminarIds->values()->toArray(),
+                ]);
 
-            AuditLog::record(AuditEvent::SubjectsMerged, auditable: $target, eventData: [
+                return $target;
+            });
+        } catch (\Throwable $e) {
+            Log::error('Subject merge failed', [
+                'exception' => $e->getMessage(),
                 'target_id' => $targetId,
                 'source_ids' => $sourceIds,
-                'new_name' => $validated['new_name'] ?? null,
-                'affected_seminar_ids' => $seminarIds->values()->toArray(),
             ]);
-
-            $target->loadCount('seminars');
-
-            return response()->json([
-                'message' => 'Tópicos mesclados com sucesso',
-                'data' => new AdminSubjectResource($target),
-            ]);
-        } catch (\Exception $e) {
-            DB::rollBack();
             throw ApiException::cannotMergeSubjects();
         }
+
+        $target->loadCount('seminars');
+
+        return response()->json([
+            'message' => 'Tópicos mesclados com sucesso',
+            'data' => new AdminSubjectResource($target),
+        ]);
     }
 }
