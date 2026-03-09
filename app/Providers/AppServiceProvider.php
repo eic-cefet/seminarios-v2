@@ -26,7 +26,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->singleton(\App\Services\AiService::class, fn () => \App\Services\AiService::fromConfig());
     }
 
     /**
