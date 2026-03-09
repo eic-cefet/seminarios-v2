@@ -302,11 +302,6 @@ jobs:
     needs: checklist
     if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      pull-requests: write
-      issues: write
-      id-token: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -320,43 +315,307 @@ jobs:
           app-id: ${{ secrets.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
 
-      - name: Run Claude Code Review
-        uses: anthropics/claude-code-action@v1
-        with:
-          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          use_sticky_comment: true
-          prompt: |
-            REPO: ${{ github.repository }}
-            PR NUMBER: ${{ github.event.pull_request.number }}
+      - name: Get PR diff and context
+        id: context
+        run: |
+          git fetch origin ${{ github.base_ref }}
+          git diff origin/${{ github.base_ref }}...HEAD > /tmp/diff.txt
+          git diff origin/${{ github.base_ref }}...HEAD --name-only > /tmp/files.txt
+          git diff origin/${{ github.base_ref }}...HEAD --stat > /tmp/stats.txt
 
-            Review this pull request thoroughly. The PR branch is already checked out.
+          # Truncate diff if too large (keep under 100KB for API limits)
+          head -c 100000 /tmp/diff.txt > /tmp/diff_truncated.txt
 
-            **Code Review** — Focus on:
-            - Potential bugs or correctness issues
-            - Code quality, Laravel and React best practices
-            - Security concerns (OWASP top 10, injection, XSS)
-            - Performance (N+1 queries, unnecessary re-renders, missing indexes)
-            - Test coverage adequacy
-
-            Use `gh pr comment` for the review summary.
-            Use `mcp__github_inline_comment__create_inline_comment` to annotate specific code issues inline.
-
-            **Label Categorization** — After reviewing, categorize this PR by syncing labels.
-            Valid category labels (with hex colors for creation):
-            - feature (#0e8a16), bugfix (#d73a4a), documentation (#0075ca)
-            - tests (#fbca04), frontend (#1d76db), backend (#5319e7)
-            - config (#c5def5), refactor (#fef2c0), dependencies (#006b75)
-
-            Steps:
-            1. Determine which category labels apply (at least one, multiple encouraged)
-            2. Check current labels on the PR with `gh pr view`
-            3. Remove any stale category labels with `gh pr edit --remove-label`
-            4. Add new category labels with `gh pr edit --add-label`
-            5. If a label doesn't exist yet, create it first with `gh label create <name> --color <hex> --force`
-          claude_args: |
-            --allowedTools "mcp__github_inline_comment__create_inline_comment,Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh pr edit:*),Bash(gh label create:*),Bash(gh label list:*)"
+      - name: Call Claude API for review
+        id: claude
         env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          CLAUDE_MODEL: ${{ vars.CLAUDE_MODEL || 'claude-sonnet-4-20250514' }}
+        run: |
+          cat > /tmp/prompt.txt << 'PROMPT'
+          You are reviewing a pull request for a Laravel 12 + React 19 seminar management system. Do two things:
+
+          1. **Code Review** — Focus on:
+             - Potential bugs or correctness issues
+             - Code quality, Laravel and React best practices
+             - Security concerns (OWASP top 10, injection, XSS)
+             - Performance (N+1 queries, unnecessary re-renders, missing indexes)
+             - Test coverage adequacy
+             Be concise and actionable. For each issue, reference the file path and provide a brief suggestion.
+
+          2. **Inline Comments** — For specific code issues, provide them in a structured format so they can be posted as inline PR review comments.
+
+          3. **Categorization** — Categorize this PR with AT LEAST ONE label from:
+             - "feature" (new functionality)
+             - "bugfix" (bug fixes)
+             - "documentation" (docs, README, comments)
+             - "tests" (test files)
+             - "frontend" (resources/js, CSS, views)
+             - "backend" (PHP, routes, controllers, models)
+             - "config" (configuration files, env, CI/CD)
+             - "refactor" (code restructuring without new features)
+             - "dependencies" (package updates)
+             Multiple labels are encouraged if applicable.
+
+          **Response format** (MUST follow exactly — use the sentinel markers, NOT markdown fences):
+
+          ===REVIEW_START===
+          [Your code review in markdown here — summary, issues found, suggestions]
+          ===REVIEW_END===
+
+          ===INLINE_START===
+          [JSON array of objects with: {"path": "relative/file/path", "line": <line_number_in_diff>, "body": "comment text"}]
+          ===INLINE_END===
+
+          ===LABELS_START===
+          ["label1", "label2"]
+          ===LABELS_END===
+
+          If no inline comments are needed, return an empty array: `[]`
+
+          Changed files:
+          PROMPT
+
+          cat /tmp/files.txt >> /tmp/prompt.txt
+          echo -e "\n\nChange statistics:" >> /tmp/prompt.txt
+          cat /tmp/stats.txt >> /tmp/prompt.txt
+          echo -e "\n\nDiff:\n\`\`\`" >> /tmp/prompt.txt
+          cat /tmp/diff_truncated.txt >> /tmp/prompt.txt
+          echo -e "\n\`\`\`" >> /tmp/prompt.txt
+
+          jq -n --rawfile prompt /tmp/prompt.txt \
+            --arg model "$CLAUDE_MODEL" \
+            '{
+              model: $model,
+              max_tokens: 8192,
+              messages: [{
+                role: "user",
+                content: $prompt
+              }]
+            }' > /tmp/payload.json
+
+          # Call Claude API
+          curl -s https://api.anthropic.com/v1/messages \
+            -H "Content-Type: application/json" \
+            -H "x-api-key: $ANTHROPIC_API_KEY" \
+            -H "anthropic-version: 2023-06-01" \
+            -d @/tmp/payload.json > /tmp/response.json
+
+          # Extract response and parse sections with Python (handles nested code blocks safely)
+          jq -r '.content[0].text // .error.message // "Failed to get response"' /tmp/response.json > /tmp/response.txt
+
+          python3 << 'PYEOF'
+          import json, os
+
+          with open("/tmp/response.txt") as f:
+              text = f.read()
+
+          def extract(text, start_marker, end_marker):
+              s = text.find(start_marker)
+              if s == -1:
+                  return ""
+              s += len(start_marker)
+              e = text.find(end_marker, s)
+              if e == -1:
+                  return ""
+              return text[s:e].strip()
+
+          review = extract(text, "===REVIEW_START===", "===REVIEW_END===")
+          if not review:
+              review = text
+
+          inline_raw = extract(text, "===INLINE_START===", "===INLINE_END===")
+          try:
+              parsed = json.loads(inline_raw)
+              assert isinstance(parsed, list)
+              inline = json.dumps(parsed, separators=(",", ":"))
+          except Exception:
+              inline = "[]"
+
+          labels_raw = extract(text, "===LABELS_START===", "===LABELS_END===")
+          try:
+              parsed = json.loads(labels_raw)
+              assert isinstance(parsed, list)
+              labels = json.dumps(parsed, separators=(",", ":"))
+          except Exception:
+              labels = "[]"
+
+          print(f"Extracted labels: {labels}")
+          print(f"Inline comments count: {len(json.loads(inline))}")
+
+          # Write to GITHUB_OUTPUT using random delimiters to avoid collisions
+          delim = "DELIM_" + os.urandom(8).hex()
+          with open(os.environ["GITHUB_OUTPUT"], "a") as out:
+              out.write(f"review<<{delim}\n{review}\n{delim}\n")
+              out.write(f"labels={labels}\n")
+              out.write(f"inline={inline}\n")
+          PYEOF
+
+      - name: Post review comment, inline comments, and apply labels
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ steps.app-token.outputs.token }}
+          script: |
+            const review = process.env.REVIEW_CONTENT;
+            const body = `## Claude Code Review\n\n${review}`;
+
+            // Upsert sticky comment
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const botComment = comments.find(c =>
+              c.user.type === 'Bot' && c.body.includes('Claude Code Review')
+            );
+
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: body
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: body
+              });
+            }
+
+            // Post inline comments as a PR review
+            const inlineJson = process.env.INLINE_COMMENTS || '[]';
+            let inlineComments = [];
+            try {
+              inlineComments = JSON.parse(inlineJson);
+            } catch (e) {
+              console.log('Failed to parse inline comments:', e);
+            }
+
+            if (inlineComments.length > 0) {
+              const { data: pr } = await github.rest.pulls.get({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: context.issue.number,
+              });
+
+              const reviewComments = inlineComments
+                .filter(c => c.path && c.line && c.body)
+                .map(c => ({
+                  path: c.path,
+                  line: c.line,
+                  body: c.body,
+                }));
+
+              if (reviewComments.length > 0) {
+                try {
+                  await github.rest.pulls.createReview({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    pull_number: context.issue.number,
+                    commit_id: pr.head.sha,
+                    event: 'COMMENT',
+                    comments: reviewComments,
+                  });
+                } catch (e) {
+                  console.log('Failed to post inline review (line numbers may not match diff):', e.message);
+                }
+              }
+            }
+
+            // Sync category labels
+            const labelsJson = process.env.LABELS || '[]';
+            let newLabels = [];
+            try {
+              newLabels = JSON.parse(labelsJson);
+            } catch (e) {
+              console.log('Failed to parse labels:', e);
+              return;
+            }
+
+            const validLabels = ['feature', 'bugfix', 'documentation', 'tests', 'frontend', 'backend', 'config', 'refactor', 'dependencies'];
+            const labelColors = {
+              'feature': '0e8a16',
+              'bugfix': 'd73a4a',
+              'documentation': '0075ca',
+              'tests': 'fbca04',
+              'frontend': '1d76db',
+              'backend': '5319e7',
+              'config': 'c5def5',
+              'refactor': 'fef2c0',
+              'dependencies': '006b75'
+            };
+
+            const filteredNew = newLabels.filter(l => validLabels.includes(l));
+            if (filteredNew.length === 0) {
+              console.log('No valid labels from Claude, skipping label sync');
+              return;
+            }
+
+            // Ensure all new labels exist in the repo
+            for (const label of filteredNew) {
+              try {
+                await github.rest.issues.getLabel({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  name: label
+                });
+              } catch (e) {
+                if (e.status === 404) {
+                  await github.rest.issues.createLabel({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    name: label,
+                    color: labelColors[label] || 'ededed'
+                  });
+                }
+              }
+            }
+
+            // Get current category labels on the PR
+            const { data: currentLabelsData } = await github.rest.issues.listLabelsOnIssue({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            const currentCategoryLabels = currentLabelsData
+              .map(l => l.name)
+              .filter(l => validLabels.includes(l));
+
+            // Remove labels no longer in the new set
+            const labelsToRemove = currentCategoryLabels.filter(l => !filteredNew.includes(l));
+            for (const label of labelsToRemove) {
+              try {
+                await github.rest.issues.removeLabel({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: context.issue.number,
+                  name: label
+                });
+              } catch (e) {
+                console.log('Failed to remove label:', label, e.message);
+              }
+            }
+
+            // Add labels not already present
+            const labelsToAdd = filteredNew.filter(l => !currentCategoryLabels.includes(l));
+            if (labelsToAdd.length > 0) {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                labels: labelsToAdd
+              });
+            }
+
+            console.log('Label sync complete. Removed:', labelsToRemove, 'Added:', labelsToAdd);
+        env:
+          REVIEW_CONTENT: ${{ steps.claude.outputs.review }}
+          INLINE_COMMENTS: ${{ steps.claude.outputs.inline }}
+          LABELS: ${{ steps.claude.outputs.labels }}
 
   # ============================================
   # FINAL GATE (always runs, checks all jobs)
