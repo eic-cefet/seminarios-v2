@@ -37,14 +37,12 @@ class RegistrationController extends Controller
             throw ApiException::seminarExpired();
         }
 
-        $seminar->loadMissing('seminarLocation');
-
         try {
             $registration = DB::transaction(function () use ($seminar, $user) {
                 $location = $seminar->seminarLocation()->lockForUpdate()->first();
 
                 if ($location?->max_vacancies) {
-                    $registrationCount = $seminar->registrations()->count();
+                    $registrationCount = $seminar->registrations()->sharedLock()->count();
                     if ($registrationCount >= $location->max_vacancies) {
                         throw ApiException::seminarFull();
                     }
