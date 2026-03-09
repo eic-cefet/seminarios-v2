@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Exceptions\ApiException;
+use App\Http\Controllers\Admin\Concerns\EscapesLikeWildcards;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Admin\AdminWorkshopResource;
 use App\Models\Seminar;
@@ -14,6 +15,8 @@ use Illuminate\Support\Facades\Gate;
 
 class AdminWorkshopController extends Controller
 {
+    use EscapesLikeWildcards;
+
     public function index(Request $request): AnonymousResourceCollection
     {
         Gate::authorize('viewAny', Workshop::class);
@@ -21,7 +24,8 @@ class AdminWorkshopController extends Controller
         $query = Workshop::withCount('seminars');
 
         if ($search = $request->string('search')->trim()->toString()) {
-            $query->where('name', 'like', "%{$search}%");
+            $escaped = $this->escapeLike($search);
+            $query->where('name', 'like', "%{$escaped}%");
         }
 
         $workshops = $query->orderBy('name')->paginate(15);
@@ -132,7 +136,8 @@ class AdminWorkshopController extends Controller
             });
 
         if ($search) {
-            $query->where('name', 'like', "%{$search}%");
+            $escaped = $this->escapeLike($search);
+            $query->where('name', 'like', "%{$escaped}%");
         }
 
         $seminars = $query->orderByDesc('scheduled_at')->limit(20)->get();

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Enums\Role;
+use App\Http\Controllers\Admin\Concerns\EscapesLikeWildcards;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\SeminarStoreRequest;
 use App\Http\Requests\Admin\SeminarUpdateRequest;
@@ -22,6 +23,8 @@ use Illuminate\Support\Facades\Gate;
 
 class AdminSeminarController extends Controller
 {
+    use EscapesLikeWildcards;
+
     public function __construct(
         private readonly SlugService $slugService
     ) {}
@@ -47,7 +50,8 @@ class AdminSeminarController extends Controller
 
         // Search by name
         if ($search = $request->string('search')->trim()->toString()) {
-            $query->where('name', 'like', "%{$search}%");
+            $escaped = $this->escapeLike($search);
+            $query->where('name', 'like', "%{$escaped}%");
         }
 
         // Filter by active status
