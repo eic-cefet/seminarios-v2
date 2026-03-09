@@ -10,6 +10,8 @@ use App\Http\Resources\Admin\AdminRatingResource;
 use App\Models\AuditLog;
 use App\Models\Rating;
 use App\Services\AiService;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use RuntimeException;
 
 class AiTextController extends Controller
@@ -22,17 +24,20 @@ class AiTextController extends Controller
         'casual' => 'You are a text editor. Rewrite the given text in a casual, friendly, and approachable tone. Return ONLY the rewritten text, no explanations.',
     ];
 
-    public function transform(AiTransformTextRequest $request)
+    public function __construct(
+        private readonly ?AiService $ai
+    ) {}
+
+    public function transform(AiTransformTextRequest $request): JsonResponse
     {
         $validated = $request->validated();
 
-        $ai = AiService::fromConfig();
-        if (! $ai) {
+        if (! $this->ai) {
             return $this->aiNotConfigured();
         }
 
         try {
-            $text = $ai->chat(self::SYSTEM_PROMPTS[$validated['action']], $validated['text']);
+            $text = $this->ai->chat(self::SYSTEM_PROMPTS[$validated['action']], $validated['text']);
         } catch (RuntimeException) {
             return $this->aiRequestFailed();
         }
@@ -44,19 +49,18 @@ class AiTextController extends Controller
         return response()->json(['data' => ['text' => $text]]);
     }
 
-    public function suggestMergeName(AiSuggestMergeNameRequest $request)
+    public function suggestMergeName(AiSuggestMergeNameRequest $request): JsonResponse
     {
         $validated = $request->validated();
 
-        $ai = AiService::fromConfig();
-        if (! $ai) {
+        if (! $this->ai) {
             return $this->aiNotConfigured();
         }
 
         $systemPrompt = 'You are a naming assistant for academic seminar topics. Given a list of topic names that are being merged, suggest a single concise topic name that best represents all of them. Return ONLY the suggested name, nothing else.';
 
         try {
-            $text = $ai->chat($systemPrompt, implode(', ', $validated['names']), 256);
+            $text = $this->ai->chat($systemPrompt, implode(', ', $validated['names']), 256);
         } catch (RuntimeException) {
             return $this->aiRequestFailed();
         }
@@ -68,7 +72,7 @@ class AiTextController extends Controller
         return response()->json(['data' => ['text' => $text]]);
     }
 
-    public function ratingSentiments()
+    public function ratingSentiments(): AnonymousResourceCollection
     {
         $ratings = Rating::query()
             ->whereNotNull('sentiment_analyzed_at')
@@ -80,7 +84,7 @@ class AiTextController extends Controller
         return AdminRatingResource::collection($ratings);
     }
 
-    private function aiNotConfigured()
+    private function aiNotConfigured(): JsonResponse
     {
         return response()->json([
             'error' => 'ai_not_configured',
@@ -88,7 +92,7 @@ class AiTextController extends Controller
         ], 503);
     }
 
-    private function aiRequestFailed()
+    private function aiRequestFailed(): JsonResponse
     {
         return response()->json([
             'error' => 'ai_request_failed',
