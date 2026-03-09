@@ -149,7 +149,9 @@ class AdminSeminarController extends Controller
                 );
             }
 
-            $seminar->fill($fields)->save();
+            if (! empty($fields)) {
+                $seminar->fill($fields)->save();
+            }
 
             // Handle subject auto-creation and syncing
             if (isset($validated['subject_names'])) {
