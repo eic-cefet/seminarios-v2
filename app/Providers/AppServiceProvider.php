@@ -46,6 +46,10 @@ class AppServiceProvider extends ServiceProvider
             );
         });
 
+        RateLimiter::for('ai', function (Request $request) {
+            return Limit::perMinute(12)->by($request->user()?->id ?: $request->ip());
+        });
+
         Gate::policy(Seminar::class, SeminarPolicy::class);
         Gate::policy(User::class, UserPolicy::class);
         Gate::policy(Subject::class, SubjectPolicy::class);

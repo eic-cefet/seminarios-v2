@@ -561,6 +561,39 @@ export const seminarsApi = {
     },
 };
 
+// AI
+export type AiAction =
+    | "format_markdown"
+    | "shorten"
+    | "explain"
+    | "formal"
+    | "casual";
+
+export const aiApi = {
+    transformText: async (text: string, action: AiAction) => {
+        await getCsrfCookie();
+        return fetchAdminApi<{ data: { text: string } }>(
+            "/ai/transform-text",
+            {
+                method: "POST",
+                body: JSON.stringify({ text, action }),
+            },
+        );
+    },
+
+    suggestMergeName: async (names: string[]) => {
+        await getCsrfCookie();
+        return fetchAdminApi<{ data: { text: string } }>(
+            "/ai/suggest-merge-name",
+            {
+                method: "POST",
+                body: JSON.stringify({ names }),
+            },
+        );
+    },
+
+};
+
 // Presence Links (QR Code)
 export const presenceLinkApi = {
     get: (seminarId: number) =>

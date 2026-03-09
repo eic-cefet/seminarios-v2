@@ -15,6 +15,10 @@ vi.mock('../../api/adminClient', () => ({
         delete: vi.fn(),
         merge: vi.fn(),
     },
+    aiApi: {
+        suggestMergeName: vi.fn(),
+        transformText: vi.fn(),
+    },
     AdminApiError: class extends Error {},
 }));
 
@@ -42,7 +46,7 @@ vi.mock('@tanstack/react-query', async () => {
 });
 
 import SubjectList from './SubjectList';
-import { subjectsApi } from '../../api/adminClient';
+import { subjectsApi, aiApi } from '../../api/adminClient';
 
 describe('SubjectList', () => {
     beforeEach(() => {
@@ -698,6 +702,86 @@ describe('SubjectList', () => {
 
         await waitFor(() => {
             expect(screen.queryByText('Mesclar Tópicos')).not.toBeInTheDocument();
+        });
+    });
+
+    it('suggests merge name via AI when Sugerir button is clicked', async () => {
+        vi.mocked(subjectsApi.list).mockResolvedValue({
+            data: [
+                { id: 1, name: 'Topic A', seminars_count: 0, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
+                { id: 2, name: 'Topic B', seminars_count: 0, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
+            ],
+            meta: { last_page: 1, current_page: 1, total: 2, from: 1, to: 2 },
+        } as any);
+        vi.mocked(aiApi.suggestMergeName).mockResolvedValue({ data: { text: 'Suggested Name' } } as any);
+
+        render(<SubjectList />);
+        const user = userEvent.setup();
+
+        await waitFor(() => {
+            expect(screen.getByText('Topic A')).toBeInTheDocument();
+        });
+
+        // Select all
+        const headerRow = screen.getByText('Nome').closest('tr')!;
+        const headerCheckbox = headerRow.querySelector('button[role="checkbox"]')!;
+        await user.click(headerCheckbox);
+
+        await waitFor(() => {
+            expect(screen.getByText(/Mesclar/)).toBeInTheDocument();
+        });
+
+        // Open merge dialog
+        await user.click(screen.getByText(/Mesclar/));
+
+        await waitFor(() => {
+            expect(screen.getByText('Mesclar Tópicos')).toBeInTheDocument();
+        });
+
+        // Click the Sugerir button
+        await user.click(screen.getByText('Sugerir'));
+
+        await waitFor(() => {
+            expect(aiApi.suggestMergeName).toHaveBeenCalledWith(['Topic A', 'Topic B']);
+            expect(screen.getByDisplayValue('Suggested Name')).toBeInTheDocument();
+        });
+    });
+
+    it('shows error toast when AI merge name suggestion fails', async () => {
+        vi.mocked(subjectsApi.list).mockResolvedValue({
+            data: [
+                { id: 1, name: 'Topic A', seminars_count: 0, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
+                { id: 2, name: 'Topic B', seminars_count: 0, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
+            ],
+            meta: { last_page: 1, current_page: 1, total: 2, from: 1, to: 2 },
+        } as any);
+        vi.mocked(aiApi.suggestMergeName).mockRejectedValue(new Error('fail'));
+
+        render(<SubjectList />);
+        const user = userEvent.setup();
+
+        await waitFor(() => {
+            expect(screen.getByText('Topic A')).toBeInTheDocument();
+        });
+
+        const headerRow = screen.getByText('Nome').closest('tr')!;
+        const headerCheckbox = headerRow.querySelector('button[role="checkbox"]')!;
+        await user.click(headerCheckbox);
+
+        await waitFor(() => {
+            expect(screen.getByText(/Mesclar/)).toBeInTheDocument();
+        });
+
+        await user.click(screen.getByText(/Mesclar/));
+
+        await waitFor(() => {
+            expect(screen.getByText('Mesclar Tópicos')).toBeInTheDocument();
+        });
+
+        await user.click(screen.getByText('Sugerir'));
+
+        await waitFor(() => {
+            expect(aiApi.suggestMergeName).toHaveBeenCalled();
         });
     });
 

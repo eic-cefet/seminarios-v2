@@ -24,6 +24,33 @@ it('does not force https scheme when force_https config is false', function () {
     expect(URL::formatScheme())->toBe('http://');
 });
 
+it('registers ai rate limiter allowing 12 requests per minute', function () {
+    $user = \App\Models\User::factory()->create();
+    $request = \Illuminate\Http\Request::create('/api/admin/ai/transform-text', 'POST');
+    $request->setUserResolver(fn () => $user);
+
+    $callback = \Illuminate\Support\Facades\RateLimiter::limiter('ai');
+    $result = $callback($request);
+
+    $limit = is_array($result) ? $result[0] : $result;
+
+    expect($limit->maxAttempts)->toBe(12);
+    expect($limit->key)->toBe($user->id);
+});
+
+it('ai rate limiter falls back to IP when user is unauthenticated', function () {
+    $request = \Illuminate\Http\Request::create('/api/admin/ai/transform-text', 'POST');
+    $request->server->set('REMOTE_ADDR', '192.168.1.100');
+
+    $callback = \Illuminate\Support\Facades\RateLimiter::limiter('ai');
+    $result = $callback($request);
+
+    $limit = is_array($result) ? $result[0] : $result;
+
+    expect($limit->maxAttempts)->toBe(12);
+    expect($limit->key)->toBe('192.168.1.100');
+});
+
 it('registers gate policies on boot', function () {
     $provider = new AppServiceProvider($this->app);
     $provider->boot();

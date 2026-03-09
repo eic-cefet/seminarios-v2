@@ -80,7 +80,6 @@ export default function SeminarForm() {
 
     const [isSpeakerModalOpen, setIsSpeakerModalOpen] = useState(false);
     const [selectedSpeakers, setSelectedSpeakers] = useState<AdminUser[]>([]);
-
     const { data: seminarData } = useQuery({
         queryKey: ["admin-seminar", id],
         queryFn: () => seminarsApi.get(Number(id)),

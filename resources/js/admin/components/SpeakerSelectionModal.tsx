@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useDebouncedSearch } from "@shared/hooks/useDebouncedSearch";
 import { toast } from "sonner";
 import { usersApi, type AdminUser } from "../api/adminClient";
+import { AiTextToolbar } from "./AiTextToolbar";
 import { Button } from "./ui/button";
 import { Checkbox } from "./ui/checkbox";
 import {
@@ -33,6 +34,7 @@ export function SpeakerSelectionModal({
     const queryClient = useQueryClient();
     const [tempSelected, setTempSelected] = useState<number[]>(selectedIds);
     const [showCreateForm, setShowCreateForm] = useState(false);
+    const [aiLoading, setAiLoading] = useState<boolean>(false);
     const [createFormData, setCreateFormData] = useState({
         name: "",
         email: "",
@@ -275,9 +277,21 @@ export function SpeakerSelectionModal({
                         </div>
 
                         <div className="space-y-2">
-                            <Label htmlFor="create-description">
-                                Descrição
-                            </Label>
+                            <div className="flex items-center justify-between">
+                                <Label htmlFor="create-description">
+                                    Descrição
+                                </Label>
+                                <AiTextToolbar
+                                    value={createFormData.description}
+                                    onChange={(value) =>
+                                        setCreateFormData({
+                                            ...createFormData,
+                                            description: value,
+                                        })
+                                    }
+                                    onLoadingChange={setAiLoading}
+                                />
+                            </div>
                             <textarea
                                 id="create-description"
                                 value={createFormData.description}
@@ -287,7 +301,8 @@ export function SpeakerSelectionModal({
                                         description: e.target.value,
                                     })
                                 }
-                                className="w-full min-h-[100px] px-3 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                                disabled={aiLoading}
+                                className="w-full min-h-[100px] px-3 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50 disabled:cursor-not-allowed"
                                 placeholder="Breve descrição do palestrante..."
                             />
                         </div>

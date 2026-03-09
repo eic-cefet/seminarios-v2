@@ -1,9 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, Pencil, Trash2, Merge } from "lucide-react";
+import { Plus, Pencil, Trash2, Merge, Sparkles, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { analytics } from "@shared/lib/analytics";
-import { subjectsApi, type AdminSubject } from "../../api/adminClient";
+import { subjectsApi, aiApi, type AdminSubject } from "../../api/adminClient";
 import { useCRUDListState } from "../../hooks/useCRUDListState";
 import { useDebouncedSearch } from "@shared/hooks/useDebouncedSearch";
 import { Button } from "../../components/ui/button";
@@ -99,6 +99,7 @@ export default function SubjectList() {
     const [selectedIds, setSelectedIds] = useState<number[]>([]);
     const [targetId, setTargetId] = useState<string>("");
     const [newMergeName, setNewMergeName] = useState("");
+    const [suggestingName, setSuggestingName] = useState(false);
 
     const { data, isLoading } = useQuery({
         queryKey: ["admin-subjects", { search: searchTerm, page }],
@@ -187,6 +188,22 @@ export default function SubjectList() {
         setSelectedIds([]);
         setTargetId("");
         setNewMergeName("");
+    };
+
+    const handleSuggestMergeName = async () => {
+        const names = selectedSubjects.map((s) => s.name);
+        // Defensive: merge dialog only opens with 2+ subjects selected
+        /* istanbul ignore if -- @preserve */
+        if (names.length < 2) return;
+        setSuggestingName(true);
+        try {
+            const response = await aiApi.suggestMergeName(names);
+            setNewMergeName(response.data.text);
+        } catch {
+            toast.error("Erro ao sugerir nome com IA.");
+        } finally {
+            setSuggestingName(false);
+        }
     };
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -542,9 +559,26 @@ export default function SubjectList() {
                         </div>
 
                         <div className="space-y-2">
-                            <Label htmlFor="newName">
-                                Nome final (opcional)
-                            </Label>
+                            <div className="flex items-center justify-between">
+                                <Label htmlFor="newName">
+                                    Nome final (opcional)
+                                </Label>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    disabled={suggestingName}
+                                    onClick={handleSuggestMergeName}
+                                    className="gap-1.5"
+                                >
+                                    {suggestingName ? (
+                                        <Loader2 className="size-3.5 animate-spin" />
+                                    ) : (
+                                        <Sparkles className="size-3.5" />
+                                    )}
+                                    Sugerir
+                                </Button>
+                            </div>
                             <Input
                                 id="newName"
                                 value={newMergeName}

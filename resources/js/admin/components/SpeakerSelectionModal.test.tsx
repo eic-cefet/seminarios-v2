@@ -11,6 +11,9 @@ vi.mock('../api/adminClient', () => ({
         }),
         create: vi.fn(),
     },
+    aiApi: {
+        transformText: vi.fn(),
+    },
 }));
 
 import { SpeakerSelectionModal } from './SpeakerSelectionModal';
@@ -413,6 +416,33 @@ describe('SpeakerSelectionModal', () => {
         // Should be back to selection view
         await waitFor(() => {
             expect(screen.getByText('Selecionar Palestrantes')).toBeInTheDocument();
+        });
+    });
+
+    it('updates speaker description via AiTextToolbar onChange callback', async () => {
+        const { aiApi } = await import('../api/adminClient');
+        vi.mocked(aiApi.transformText).mockResolvedValue({ data: { text: 'AI bio' } } as any);
+
+        render(<SpeakerSelectionModal {...defaultProps} />);
+        const user = userEvent.setup();
+
+        // Open create form
+        await user.click(screen.getByText('Criar Novo Palestrante'));
+
+        await waitFor(() => {
+            expect(screen.getByLabelText('Descrição')).toBeInTheDocument();
+        });
+
+        // Type text in description
+        await user.type(screen.getByLabelText('Descrição'), 'Original bio');
+
+        // Click IA button and trigger an action
+        const iaButton = screen.getAllByRole('button').find(b => b.textContent?.trim() === 'IA')!;
+        await user.click(iaButton);
+        await user.click(screen.getByText('Resumir'));
+
+        await waitFor(() => {
+            expect(screen.getByLabelText('Descrição')).toHaveValue('AI bio');
         });
     });
 });
