@@ -17,11 +17,15 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function ()
     Route::get('/dashboard/stats', [AdminDashboardController::class, 'stats']);
 
     // CRUD Resources
+    // apiResource registers both PUT and PATCH for update routes.
+    // All update requests use 'sometimes' validation, supporting partial payloads.
     Route::apiResource('users', AdminUserController::class);
     Route::post('/users/{user}/restore', [AdminUserController::class, 'restore'])->withTrashed();
 
     Route::apiResource('locations', AdminLocationController::class);
 
+    // Defined before apiResource for consistency with the workshop pattern below.
+    // POST won't conflict with apiResource's GET /{subject}, but ordering makes intent clear.
     Route::post('/subjects/merge', [AdminSubjectController::class, 'merge']);
     Route::apiResource('subjects', AdminSubjectController::class);
 
