@@ -146,7 +146,7 @@ class AdminSubjectController extends Controller
 
                 return $target;
             });
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             Log::error('Subject merge failed', [
                 'exception' => $e->getMessage(),
                 'target_id' => $targetId,
