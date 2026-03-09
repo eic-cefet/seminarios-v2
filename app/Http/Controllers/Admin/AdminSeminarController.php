@@ -16,6 +16,7 @@ use App\Services\SlugService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 
@@ -136,35 +137,18 @@ class AdminSeminarController extends Controller
         $validated = $request->validated();
 
         DB::transaction(function () use ($validated, $seminar) {
-            // Update basic fields
-            if (isset($validated['name'])) {
-                $seminar->name = $validated['name'];
-                // Regenerate slug if name changed
-                $seminar->slug = $this->slugService->generateUnique($validated['name'], Seminar::class, 'slug', $seminar->id);
-            }
-            if (array_key_exists('description', $validated)) {
-                $seminar->description = $validated['description'];
-            }
-            if (isset($validated['scheduled_at'])) {
-                $seminar->scheduled_at = $validated['scheduled_at'];
-            }
-            if (array_key_exists('room_link', $validated)) {
-                $seminar->room_link = $validated['room_link'];
-            }
-            if (isset($validated['active'])) {
-                $seminar->active = $validated['active'];
-            }
-            if (isset($validated['seminar_location_id'])) {
-                $seminar->seminar_location_id = $validated['seminar_location_id'];
-            }
-            if (array_key_exists('seminar_type_id', $validated)) {
-                $seminar->seminar_type_id = $validated['seminar_type_id'];
-            }
-            if (array_key_exists('workshop_id', $validated)) {
-                $seminar->workshop_id = $validated['workshop_id'];
+            $fields = Arr::only($validated, [
+                'name', 'description', 'scheduled_at', 'room_link',
+                'active', 'seminar_location_id', 'seminar_type_id', 'workshop_id',
+            ]);
+
+            if (isset($fields['name'])) {
+                $fields['slug'] = $this->slugService->generateUnique(
+                    $fields['name'], Seminar::class, 'slug', $seminar->id
+                );
             }
 
-            $seminar->save();
+            $seminar->fill($fields)->save();
 
             // Handle subject auto-creation and syncing
             if (isset($validated['subject_names'])) {
