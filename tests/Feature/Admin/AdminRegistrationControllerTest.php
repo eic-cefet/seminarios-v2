@@ -36,12 +36,20 @@ describe('GET /api/admin/registrations', function () {
         $response->assertForbidden();
     });
 
-    it('returns 403 for teacher user', function () {
-        actingAsTeacher();
+    it('allows teacher to list registrations scoped to their seminars', function () {
+        $teacher = actingAsTeacher();
+
+        $teacherSeminar = \App\Models\Seminar::factory()->create(['created_by' => $teacher->id]);
+        $otherSeminar = \App\Models\Seminar::factory()->create();
+
+        $teacherRegistration = \App\Models\Registration::factory()->create(['seminar_id' => $teacherSeminar->id]);
+        $otherRegistration = \App\Models\Registration::factory()->create(['seminar_id' => $otherSeminar->id]);
 
         $response = $this->getJson('/api/admin/registrations');
 
-        $response->assertForbidden();
+        $response->assertSuccessful();
+        $response->assertJsonCount(1, 'data');
+        $response->assertJsonPath('data.0.id', $teacherRegistration->id);
     });
 
     it('filters registrations by seminar_id', function () {
