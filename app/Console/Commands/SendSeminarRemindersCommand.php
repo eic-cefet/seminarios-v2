@@ -2,14 +2,18 @@
 
 namespace App\Console\Commands;
 
+use App\Concerns\TracksAuditContext;
 use App\Console\Commands\Concerns\DispatchesGroupedJobs;
+use App\Enums\AuditEvent;
+use App\Enums\AuditEventType;
 use App\Jobs\SendSeminarReminderJob;
+use App\Models\AuditLog;
 use App\Models\Registration;
 use Illuminate\Console\Command;
 
 class SendSeminarRemindersCommand extends Command
 {
-    use DispatchesGroupedJobs;
+    use DispatchesGroupedJobs, TracksAuditContext;
 
     protected $signature = 'reminders:seminars
                             {--sync : Send emails synchronously instead of queuing}';
@@ -18,6 +22,7 @@ class SendSeminarRemindersCommand extends Command
 
     public function handle(): int
     {
+        $this->setAuditContext();
         $this->info('Finding seminars happening tomorrow...');
 
         $tomorrowStart = now()->addDay()->startOfDay();
@@ -42,6 +47,12 @@ class SendSeminarRemindersCommand extends Command
         $dispatched = $this->dispatchGroupedByUser($registrations, SendSeminarReminderJob::class, 'users to remind');
 
         $this->info("Dispatched {$dispatched} reminder(s).");
+
+        if ($dispatched > 0) {
+            AuditLog::record(AuditEvent::SeminarRemindersSent, AuditEventType::System, eventData: [
+                'dispatched' => $dispatched,
+            ]);
+        }
 
         return self::SUCCESS;
     }

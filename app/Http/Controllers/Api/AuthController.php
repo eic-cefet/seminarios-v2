@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Enums\AuditEvent;
 use App\Exceptions\ApiException;
 use App\Http\Controllers\Concerns\FormatsUserResponse;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\UserRegistrationRequest;
 use App\Mail\WelcomeUser;
+use App\Models\AuditLog;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -57,6 +59,8 @@ class AuthController extends Controller
 
         Auth::login($user, $request->boolean('remember', false));
 
+        AuditLog::record(AuditEvent::UserLogin, auditable: $user);
+
         return response()->json([
             'user' => $this->formatUserResponse($user),
         ]);
@@ -67,10 +71,14 @@ class AuthController extends Controller
      */
     public function logout(Request $request): JsonResponse
     {
+        $user = $request->user();
+
         Auth::logout();
 
         $request->session()->invalidate();
         $request->session()->regenerateToken();
+
+        AuditLog::record(AuditEvent::UserLogout, auditable: $user, userId: $user?->id);
 
         return response()->json([
             'message' => 'Logout realizado com sucesso',
@@ -116,6 +124,8 @@ class AuthController extends Controller
 
         Auth::login($user);
 
+        AuditLog::record(AuditEvent::UserRegister, auditable: $user);
+
         return response()->json([
             'user' => $this->formatUserResponse($user),
         ], 201);
@@ -134,6 +144,10 @@ class AuthController extends Controller
         $status = Password::sendResetLink(
             $request->only('email')
         );
+
+        AuditLog::record(AuditEvent::UserForgotPassword, eventData: [
+            'email' => $request->input('email'),
+        ]);
 
         return response()->json([
             'message' => 'Se o e-mail existir, você receberá um link de recuperação.',
@@ -164,6 +178,10 @@ class AuthController extends Controller
         if ($status !== Password::PASSWORD_RESET) {
             throw ApiException::invalidToken();
         }
+
+        AuditLog::record(AuditEvent::UserPasswordReset, eventData: [
+            'email' => $request->input('email'),
+        ]);
 
         return response()->json([
             'message' => 'Senha redefinida com sucesso.',

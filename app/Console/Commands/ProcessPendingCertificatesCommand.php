@@ -2,12 +2,18 @@
 
 namespace App\Console\Commands;
 
+use App\Concerns\TracksAuditContext;
+use App\Enums\AuditEvent;
+use App\Enums\AuditEventType;
 use App\Jobs\GenerateCertificateJob;
+use App\Models\AuditLog;
 use App\Models\Registration;
 use Illuminate\Console\Command;
 
 class ProcessPendingCertificatesCommand extends Command
 {
+    use TracksAuditContext;
+
     protected $signature = 'certificates:process-pending
                             {--sync : Process synchronously instead of queuing}
                             {--no-email : Skip sending emails}';
@@ -16,6 +22,7 @@ class ProcessPendingCertificatesCommand extends Command
 
     public function handle(): int
     {
+        $this->setAuditContext();
         $this->info('Finding registrations with pending certificates...');
 
         // Find registrations where:
@@ -60,6 +67,12 @@ class ProcessPendingCertificatesCommand extends Command
         }
 
         $this->info("Dispatched {$dispatched} certificate job(s).");
+
+        if ($dispatched > 0) {
+            AuditLog::record(AuditEvent::CertificatesProcessed, AuditEventType::System, eventData: [
+                'dispatched' => $dispatched,
+            ]);
+        }
 
         return self::SUCCESS;
     }

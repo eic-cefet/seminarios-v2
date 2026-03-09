@@ -2,6 +2,10 @@
 
 namespace App\Jobs;
 
+use App\Concerns\TracksAuditContext;
+use App\Enums\AuditEvent;
+use App\Enums\AuditEventType;
+use App\Models\AuditLog;
 use App\Models\Rating;
 use App\Services\AiService;
 use Illuminate\Bus\Queueable;
@@ -13,7 +17,7 @@ use Illuminate\Support\Facades\Log;
 
 class AnalyzeRatingSentiment implements ShouldQueue
 {
-    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels, TracksAuditContext;
 
     public int $tries = 3;
 
@@ -25,6 +29,8 @@ class AnalyzeRatingSentiment implements ShouldQueue
 
     public function handle(): void
     {
+        $this->setAuditContext();
+
         if (empty($this->rating->comment)) {
             return;
         }
@@ -50,6 +56,10 @@ class AnalyzeRatingSentiment implements ShouldQueue
         $this->rating->update([
             'sentiment' => $result,
             'sentiment_analyzed_at' => now(),
+        ]);
+
+        AuditLog::record(AuditEvent::SentimentAnalysisCompleted, AuditEventType::System, $this->rating, [
+            'rating_id' => $this->rating->id,
         ]);
     }
 }

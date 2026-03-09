@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Enums\AuditEvent;
 use App\Exceptions\ApiException;
 use App\Http\Controllers\Controller;
+use App\Models\AuditLog;
 use App\Models\PresenceLink;
 use App\Models\Registration;
 use App\Services\QrCodeService;
@@ -64,6 +66,11 @@ class PresenceController extends Controller
                 $registration->update(['present' => true]);
             }
         });
+
+        AuditLog::record(AuditEvent::PresenceRegistered, auditable: $presenceLink, eventData: [
+            'seminar_id' => $seminar->id,
+            'user_id' => $user->id,
+        ]);
 
         return response()->json([
             'message' => 'Presença registrada com sucesso!',

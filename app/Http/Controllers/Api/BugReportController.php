@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Enums\AuditEvent;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\BugReportRequest;
 use App\Mail\BugReportMail;
+use App\Models\AuditLog;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Mail;
 
@@ -25,6 +27,10 @@ class BugReportController extends Controller
                 reporterEmail: $validated['email'] ?? null,
                 files: $files,
             ));
+
+        AuditLog::record(AuditEvent::BugReportSubmitted, eventData: [
+            'subject' => $validated['subject'],
+        ]);
 
         return response()->json([
             'message' => 'Bug report enviado com sucesso!',

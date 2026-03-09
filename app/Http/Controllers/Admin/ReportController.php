@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\AuditEvent;
 use App\Exports\SemestralReportExport;
 use App\Http\Controllers\Controller;
+use App\Models\AuditLog;
 use App\Models\Course;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
@@ -127,6 +129,16 @@ class ReportController extends Controller
 
         // Sort by name
         $reportData = $reportData->sortBy('name')->values();
+
+        AuditLog::record(AuditEvent::ReportGenerated, eventData: [
+            'semester' => $validated['semester'],
+            'format' => $validated['format'],
+            'filters' => array_filter([
+                'courses' => $validated['courses'] ?? null,
+                'types' => $validated['types'] ?? null,
+                'situations' => $validated['situations'] ?? null,
+            ]),
+        ]);
 
         if ($validated['format'] === 'excel') {
             // Generate Excel file
