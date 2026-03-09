@@ -22,8 +22,8 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function ()
 
     Route::apiResource('locations', AdminLocationController::class);
 
-    Route::apiResource('subjects', AdminSubjectController::class);
     Route::post('/subjects/merge', [AdminSubjectController::class, 'merge']);
+    Route::apiResource('subjects', AdminSubjectController::class);
 
     // Registrations (not a full resource — only index + custom action)
     Route::get('/registrations', [AdminRegistrationController::class, 'index']);
