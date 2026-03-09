@@ -36,7 +36,7 @@ class AdminUserController extends Controller
 
         // Search by name, email, or username
         if ($search = $request->string('search')->trim()->toString()) {
-            $escaped = str_replace(['%', '_'], ['\\%', '\\_'], $search);
+            $escaped = str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $search);
             $query->where(function ($q) use ($escaped) {
                 $q->where('name', 'like', "%{$escaped}%")
                     ->orWhere('email', 'like', "%{$escaped}%")

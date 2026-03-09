@@ -21,7 +21,7 @@ class AdminWorkshopController extends Controller
         $query = Workshop::withCount('seminars');
 
         if ($search = $request->string('search')->trim()->toString()) {
-            $escaped = str_replace(['%', '_'], ['\\%', '\\_'], $search);
+            $escaped = str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $search);
             $query->where('name', 'like', "%{$escaped}%");
         }
 
@@ -133,7 +133,7 @@ class AdminWorkshopController extends Controller
             });
 
         if ($search) {
-            $escaped = str_replace(['%', '_'], ['\\%', '\\_'], $search);
+            $escaped = str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $search);
             $query->where('name', 'like', "%{$escaped}%");
         }
 

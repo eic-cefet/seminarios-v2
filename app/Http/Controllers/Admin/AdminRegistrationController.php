@@ -25,7 +25,7 @@ class AdminRegistrationController extends Controller
 
         if ($request->filled('search')) {
             $search = $request->input('search');
-            $escaped = str_replace(['%', '_'], ['\\%', '\\_'], $search);
+            $escaped = str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $search);
             $query->whereHas('user', function ($q) use ($escaped) {
                 $q->where('name', 'like', "%{$escaped}%")
                     ->orWhere('email', 'like', "%{$escaped}%");
