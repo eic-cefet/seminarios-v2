@@ -12,6 +12,7 @@ use App\Policies\SeminarLocationPolicy;
 use App\Policies\SeminarPolicy;
 use App\Policies\SubjectPolicy;
 use App\Policies\UserPolicy;
+use App\Services\AiService;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -26,7 +27,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        $this->app->singleton(\App\Services\AiService::class, fn () => \App\Services\AiService::fromConfig());
+        $this->app->singleton(AiService::class, fn () => AiService::fromConfig());
     }
 
     /**
