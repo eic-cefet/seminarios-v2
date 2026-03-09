@@ -15,6 +15,9 @@ vi.mock('../../api/adminClient', () => ({
         delete: vi.fn(),
         restore: vi.fn(),
     },
+    aiApi: {
+        transformText: vi.fn(),
+    },
     AdminApiError: class extends Error {},
 }));
 
@@ -1339,6 +1342,33 @@ describe('UserList', () => {
         // Resolve to clean up
         await act(async () => {
             resolveCreate!({ data: { id: 50 } });
+        });
+    });
+
+    it('updates speaker description via AiTextToolbar onChange callback', async () => {
+        const { aiApi } = await import('../../api/adminClient');
+        vi.mocked(aiApi.transformText).mockResolvedValue({ data: { text: 'AI generated bio' } } as any);
+
+        render(<UserList />);
+        const user = userEvent.setup();
+
+        await user.click(screen.getByText('Novo Usuario'));
+        await waitFor(() => {
+            expect(screen.getByLabelText('Descricao')).toBeInTheDocument();
+        });
+
+        // Type some text first so AiTextToolbar has value
+        await user.type(screen.getByLabelText('Descricao'), 'Original bio');
+
+        // Click the IA button (in the speaker section AiTextToolbar)
+        const iaButtons = screen.getAllByRole('button').filter(b => b.textContent?.trim() === 'IA');
+        await user.click(iaButtons[0]);
+
+        // Click an AI action
+        await user.click(screen.getByText('Resumir'));
+
+        await waitFor(() => {
+            expect(screen.getByLabelText('Descricao')).toHaveValue('AI generated bio');
         });
     });
 });

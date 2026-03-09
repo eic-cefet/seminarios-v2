@@ -101,6 +101,8 @@ export function AiTextToolbar({ value, onChange, onLoadingChange }: AiTextToolba
     }
 
     function handleUndo() {
+        // Defensive: undo button is disabled when !canUndo, but guard against programmatic calls
+        /* istanbul ignore if -- @preserve */
         if (!canUndo) return;
         const newIndex = versionIndex - 1;
 
@@ -109,6 +111,8 @@ export function AiTextToolbar({ value, onChange, onLoadingChange }: AiTextToolba
     }
 
     function handleRedo() {
+        // Defensive: redo button is disabled when !canRedo, but guard against programmatic calls
+        /* istanbul ignore if -- @preserve */
         if (!canRedo) return;
         const newIndex = versionIndex + 1;
 

@@ -192,6 +192,8 @@ export default function SubjectList() {
 
     const handleSuggestMergeName = async () => {
         const names = selectedSubjects.map((s) => s.name);
+        // Defensive: merge dialog only opens with 2+ subjects selected
+        /* istanbul ignore if -- @preserve */
         if (names.length < 2) return;
         setSuggestingName(true);
         try {

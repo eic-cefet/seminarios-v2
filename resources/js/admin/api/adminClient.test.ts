@@ -1,4 +1,4 @@
-import { AdminApiError, dashboardApi, usersApi, locationsApi, subjectsApi, workshopsApi, registrationsApi, seminarsApi, presenceLinkApi } from './adminClient';
+import { AdminApiError, dashboardApi, usersApi, locationsApi, subjectsApi, workshopsApi, registrationsApi, seminarsApi, presenceLinkApi, aiApi } from './adminClient';
 import { getCookie } from '@shared/api/httpUtils';
 
 vi.mock('@shared/api/httpUtils', async (importOriginal) => {
@@ -636,6 +636,36 @@ describe('Admin API endpoints', () => {
                 expect.not.stringContaining('?'),
                 expect.any(Object),
             );
+        });
+    });
+
+    describe('aiApi', () => {
+        it('transformText sends text and action', async () => {
+            mockSuccess({ data: { text: 'result' } });
+            const result = await aiApi.transformText('hello', 'shorten');
+
+            expect(fetchSpy).toHaveBeenCalledWith(
+                expect.stringContaining('/ai/transform-text'),
+                expect.objectContaining({
+                    method: 'POST',
+                    body: JSON.stringify({ text: 'hello', action: 'shorten' }),
+                }),
+            );
+            expect(result.data.text).toBe('result');
+        });
+
+        it('suggestMergeName sends names array', async () => {
+            mockSuccess({ data: { text: 'Merged Name' } });
+            const result = await aiApi.suggestMergeName(['AI', 'ML']);
+
+            expect(fetchSpy).toHaveBeenCalledWith(
+                expect.stringContaining('/ai/suggest-merge-name'),
+                expect.objectContaining({
+                    method: 'POST',
+                    body: JSON.stringify({ names: ['AI', 'ML'] }),
+                }),
+            );
+            expect(result.data.text).toBe('Merged Name');
         });
     });
 });
