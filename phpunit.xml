@@ -37,5 +37,6 @@
         <env name="NIGHTWATCH_ENABLED" value="false"/>
         <env name="LOGGING_ENABLE_REQUEST_LOGGING" value="false"/>
         <env name="LOGGING_ENABLE_CLOUDWATCH_BOOT" value="false"/>
+        <env name="LOG_STACK" value="single"/>
     </php>
 </phpunit>
