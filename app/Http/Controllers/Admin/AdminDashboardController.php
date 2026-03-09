@@ -36,9 +36,8 @@ class AdminDashboardController extends Controller
             ->where('seminar_locations.max_vacancies', '>', 0)
             ->upcoming()
             ->active()
+            ->whereRaw('(SELECT COUNT(*) FROM registrations WHERE registrations.seminar_id = seminars.id) >= (seminar_locations.max_vacancies * 0.8)')
             ->select('seminars.*')
-            ->groupBy('seminars.id', 'seminar_locations.max_vacancies')
-            ->havingRaw('registrations_count >= seminar_locations.max_vacancies * 0.8')
             ->limit(5)
             ->get();
 
