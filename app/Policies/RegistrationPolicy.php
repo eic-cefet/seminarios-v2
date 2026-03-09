@@ -20,7 +20,7 @@ class RegistrationPolicy
         }
 
         return $user->hasRole(Role::Teacher)
-            && $registration->seminar->created_by === $user->id;
+            && $registration->seminar?->created_by === $user->id;
     }
 
     public function updatePresence(User $user, Registration $registration): bool
@@ -30,6 +30,6 @@ class RegistrationPolicy
         }
 
         return $user->hasRole(Role::Teacher)
-            && $registration->seminar->created_by === $user->id;
+            && $registration->seminar?->created_by === $user->id;
     }
 }
