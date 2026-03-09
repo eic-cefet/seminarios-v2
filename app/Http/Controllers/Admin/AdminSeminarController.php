@@ -137,6 +137,7 @@ class AdminSeminarController extends Controller
         $validated = $request->validated();
 
         DB::transaction(function () use ($validated, $seminar) {
+            // Keep in sync with Seminar::$fillable and SeminarUpdateRequest rules
             $fields = Arr::only($validated, [
                 'name', 'description', 'scheduled_at', 'room_link',
                 'active', 'seminar_location_id', 'seminar_type_id', 'workshop_id',
