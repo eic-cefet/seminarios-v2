@@ -2,15 +2,19 @@
 
 namespace App\Console\Commands;
 
+use App\Concerns\TracksAuditContext;
 use App\Console\Commands\Concerns\DispatchesGroupedJobs;
+use App\Enums\AuditEvent;
+use App\Enums\AuditEventType;
 use App\Jobs\SendEvaluationReminderJob;
+use App\Models\AuditLog;
 use App\Models\Registration;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 
 class SendEvaluationRemindersCommand extends Command
 {
-    use DispatchesGroupedJobs;
+    use DispatchesGroupedJobs, TracksAuditContext;
 
     protected $signature = 'reminders:evaluations
                             {--sync : Send emails synchronously instead of queuing}';
@@ -19,6 +23,7 @@ class SendEvaluationRemindersCommand extends Command
 
     public function handle(): int
     {
+        $this->setAuditContext();
         $this->info('Finding users with pending evaluations...');
 
         $twoDaysAgo = now()->subDays(2)->endOfDay();
@@ -50,6 +55,12 @@ class SendEvaluationRemindersCommand extends Command
         $dispatched = $this->dispatchGroupedByUser($registrations, SendEvaluationReminderJob::class, 'users with pending evaluations');
 
         $this->info("Dispatched {$dispatched} evaluation reminder(s).");
+
+        if ($dispatched > 0) {
+            AuditLog::record(AuditEvent::EvaluationRemindersSent, AuditEventType::System, eventData: [
+                'dispatched' => $dispatched,
+            ]);
+        }
 
         return self::SUCCESS;
     }

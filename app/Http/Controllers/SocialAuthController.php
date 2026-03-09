@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\AuditEvent;
 use App\Exceptions\ApiException;
+use App\Models\AuditLog;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -90,6 +92,8 @@ class SocialAuthController extends Controller
 
         // Log the user in
         Auth::login($user, remember: true);
+
+        AuditLog::record(AuditEvent::UserSocialLogin, auditable: $user);
 
         return response()->json([
             'user' => [

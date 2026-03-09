@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\AuditEvent;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\AiSuggestMergeNameRequest;
 use App\Http\Requests\Admin\AiTransformTextRequest;
 use App\Http\Resources\Admin\AdminRatingResource;
+use App\Models\AuditLog;
 use App\Models\Rating;
 use App\Services\AiService;
 use RuntimeException;
@@ -35,6 +37,10 @@ class AiTextController extends Controller
             return $this->aiRequestFailed();
         }
 
+        AuditLog::record(AuditEvent::AiTextTransform, eventData: [
+            'action' => $validated['action'],
+        ]);
+
         return response()->json(['data' => ['text' => $text]]);
     }
 
@@ -54,6 +60,10 @@ class AiTextController extends Controller
         } catch (RuntimeException) {
             return $this->aiRequestFailed();
         }
+
+        AuditLog::record(AuditEvent::AiSuggestMergeName, eventData: [
+            'names' => $validated['names'],
+        ]);
 
         return response()->json(['data' => ['text' => $text]]);
     }

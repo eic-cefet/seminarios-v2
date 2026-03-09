@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\AuditEvent;
 use App\Exceptions\ApiException;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Admin\AdminSubjectResource;
+use App\Models\AuditLog;
 use App\Models\Subject;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -139,6 +141,13 @@ class AdminSubjectController extends Controller
             Subject::whereIn('id', $sourceIds)->delete();
 
             DB::commit();
+
+            AuditLog::record(AuditEvent::SubjectsMerged, auditable: $target, eventData: [
+                'target_id' => $targetId,
+                'source_ids' => $sourceIds,
+                'new_name' => $validated['new_name'] ?? null,
+                'affected_seminar_ids' => $seminarIds->values()->toArray(),
+            ]);
 
             $target->loadCount('seminars');
 

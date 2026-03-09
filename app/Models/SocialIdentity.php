@@ -2,11 +2,16 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Auditable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class SocialIdentity extends Model
 {
+    use Auditable;
+
+    protected array $auditExclude = ['token', 'refresh_token'];
+
     protected $fillable = [
         'user_id',
         'provider',

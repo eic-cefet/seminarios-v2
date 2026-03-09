@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\Role;
+use App\Models\Concerns\Auditable;
 use App\Notifications\ResetPassword;
 use Illuminate\Contracts\Auth\CanResetPassword;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -16,7 +17,9 @@ use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable implements CanResetPassword
 {
-    use HasFactory, HasRoles, Notifiable, SoftDeletes;
+    use Auditable, HasFactory, HasRoles, Notifiable, SoftDeletes;
+
+    protected array $auditExclude = ['password', 'remember_token'];
 
     protected $fillable = [
         'name',
