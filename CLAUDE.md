@@ -133,6 +133,7 @@ Use `buildUrl(path)` from shared utils for non-React-Router navigation (handles 
 - `CertificateService` - PDF generation with S3 storage
 - `QrCodeService` - QR code generation for presence tracking
 - `SlugService` - Unique slug generation
+- `AiService` - OpenAI-compatible API wrapper for text tools and sentiment analysis
 
 ### API Error Handling
 
@@ -150,12 +151,41 @@ Domain-specific factory methods also exist: `seminarFull()`, `alreadyRegistered(
 - `Role` (`app/Enums/Role.php`) - Admin, Teacher, User — used with Spatie Permission (PHP backed enum, supports `hasRole()` directly)
 - `CourseRole` - Aluno, Professor, Outro — student registration course roles
 - `CourseSituation` - Studying, Graduated — student status
+- `AuditEvent` (`app/Enums/AuditEvent.php`) - All manual audit event names (auth, admin, AI, system jobs)
+- `AuditEventType` (`app/Enums/AuditEventType.php`) - Manual / System
 
 ### Domain Models
 
 Core entities: Seminar, Subject, Workshop, SeminarType, User, Registration, Rating
 - Seminars belong to Workshops (optional), have many Subjects (pivot), and Speakers (pivot with UserSpeakerData)
 - Users can be speakers (UserSpeakerData) or students (UserStudentData)
+
+### Audit Logging
+
+Every database-impacting action is tracked via `AuditLog`. Two recording methods:
+
+```php
+// Manual events — use AuditEvent enum for IDE traceability
+AuditLog::record(AuditEvent::UserLogin, auditable: $user);
+
+// Automatic model events — handled by the Auditable trait
+// No code needed; create/update/delete are logged automatically
+```
+
+- **Auditable trait** (`app/Models/Concerns/Auditable.php`) — opt-in per model, logs create/update/delete with old/new values
+- **Sensitive fields** excluded globally (`password`, `remember_token`, `token`, `refresh_token`, `two_factor_secret`) + per-model via `$auditExclude`
+- **Origin tracking** — `AuditContextMiddleware` sets controller@method; jobs/commands use `TracksAuditContext` trait
+- **Pruning** — `php artisan audit:prune --days=90` scheduled daily at 04:00
+
+### AI Features
+
+Admin panel AI tools powered by OpenAI-compatible API (`config/ai.php`):
+
+- **Text transformation** — format, shorten, explain, formalize, casualize text (`AiTextController`)
+- **Topic merge assistant** — suggests merged name for multiple subjects
+- **Sentiment analysis** — `AnalyzeRatingSentiment` job analyzes rating comments asynchronously, stores result on `Rating.sentiment`
+
+Configuration: `AI_API_KEY`, `AI_API_BASE_URL` (default: OpenAI), `AI_MODEL` (default: `gpt-4o-mini`)
 
 ### Legacy Migration System
 
