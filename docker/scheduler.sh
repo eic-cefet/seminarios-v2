@@ -1,6 +1,13 @@
 #!/bin/bash
 set -e
 
+# Run migrations before anything else (scheduler is single-instance, safe from races)
+if [ "$AUTO_MIGRATE" = "true" ]; then
+    echo "Running database migrations..."
+    php artisan migrate --force
+    echo "Migrations complete."
+fi
+
 # Graceful shutdown: stop the loop after the current schedule:run finishes
 SHUTDOWN=false
 trap 'SHUTDOWN=true; echo "Received shutdown signal, waiting for current schedule run to finish..."' SIGTERM SIGINT
