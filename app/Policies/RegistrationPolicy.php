@@ -10,16 +10,26 @@ class RegistrationPolicy
 {
     public function viewAny(User $user): bool
     {
-        return $user->hasRole(Role::Admin);
+        return $user->hasAnyRole([Role::Admin, Role::Teacher]);
     }
 
     public function view(User $user, Registration $registration): bool
     {
-        return $user->hasRole(Role::Admin);
+        if ($user->hasRole(Role::Admin)) {
+            return true;
+        }
+
+        return $user->hasRole(Role::Teacher)
+            && $registration->seminar->created_by === $user->id;
     }
 
     public function updatePresence(User $user, Registration $registration): bool
     {
-        return $user->hasRole(Role::Admin);
+        if ($user->hasRole(Role::Admin)) {
+            return true;
+        }
+
+        return $user->hasRole(Role::Teacher)
+            && $registration->seminar->created_by === $user->id;
     }
 }
