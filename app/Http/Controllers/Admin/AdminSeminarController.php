@@ -46,7 +46,8 @@ class AdminSeminarController extends Controller
 
         // Search by name
         if ($search = $request->string('search')->trim()->toString()) {
-            $query->where('name', 'like', "%{$search}%");
+            $escaped = str_replace(['%', '_'], ['\\%', '\\_'], $search);
+            $query->where('name', 'like', "%{$escaped}%");
         }
 
         // Filter by active status
