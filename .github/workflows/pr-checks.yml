@@ -424,17 +424,19 @@ jobs:
           if not review:
               review = text
 
-          inline = extract(text, "===INLINE_START===", "===INLINE_END===")
+          inline_raw = extract(text, "===INLINE_START===", "===INLINE_END===")
           try:
-              parsed = json.loads(inline)
+              parsed = json.loads(inline_raw)
               assert isinstance(parsed, list)
+              inline = json.dumps(parsed, separators=(",", ":"))
           except Exception:
               inline = "[]"
 
-          labels = extract(text, "===LABELS_START===", "===LABELS_END===")
+          labels_raw = extract(text, "===LABELS_START===", "===LABELS_END===")
           try:
-              parsed = json.loads(labels)
+              parsed = json.loads(labels_raw)
               assert isinstance(parsed, list)
+              labels = json.dumps(parsed, separators=(",", ":"))
           except Exception:
               labels = "[]"
 
