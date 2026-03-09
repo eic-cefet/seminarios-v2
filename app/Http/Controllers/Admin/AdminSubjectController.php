@@ -140,14 +140,14 @@ class AdminSubjectController extends Controller
             // Delete source subjects
             Subject::whereIn('id', $sourceIds)->delete();
 
+            DB::commit();
+
             AuditLog::record(AuditEvent::SubjectsMerged, auditable: $target, eventData: [
                 'target_id' => $targetId,
                 'source_ids' => $sourceIds,
                 'new_name' => $validated['new_name'] ?? null,
                 'affected_seminar_ids' => $seminarIds->values()->toArray(),
             ]);
-
-            DB::commit();
 
             $target->loadCount('seminars');
 

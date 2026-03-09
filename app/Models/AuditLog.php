@@ -118,9 +118,9 @@ class AuditLog extends Model
             ->where('auditable_id', $model->getKey());
     }
 
-    public function scopeForEvent(Builder $query, string $eventName): Builder
+    public function scopeForEvent(Builder $query, string|AuditEvent $eventName): Builder
     {
-        return $query->where('event_name', $eventName);
+        return $query->where('event_name', $eventName instanceof AuditEvent ? $eventName->value : $eventName);
     }
 
     public function scopeForUser(Builder $query, int $userId): Builder

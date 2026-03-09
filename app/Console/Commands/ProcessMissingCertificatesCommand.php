@@ -2,7 +2,11 @@
 
 namespace App\Console\Commands;
 
+use App\Concerns\TracksAuditContext;
+use App\Enums\AuditEvent;
+use App\Enums\AuditEventType;
 use App\Jobs\GenerateCertificateJob;
+use App\Models\AuditLog;
 use App\Models\Registration;
 use App\Services\CertificateService;
 use Illuminate\Console\Command;
@@ -10,6 +14,8 @@ use Illuminate\Support\Facades\Log;
 
 class ProcessMissingCertificatesCommand extends Command
 {
+    use TracksAuditContext;
+
     protected $signature = 'certificates:process-missing
                             {--send-email : Send email to users after generating certificate}
                             {--sync : Process synchronously instead of queuing}
@@ -25,6 +31,7 @@ class ProcessMissingCertificatesCommand extends Command
 
     public function handle(): int
     {
+        $this->setAuditContext();
         $this->info('Buscando registros com presença confirmada...');
 
         $query = Registration::query()
@@ -50,12 +57,13 @@ class ProcessMissingCertificatesCommand extends Command
             try {
                 $this->certificateService->ensureCertificateCode($registration);
 
-                $jpgMissing = !$this->certificateService->jpgExists($registration);
-                $pdfMissing = !$this->certificateService->pdfExists($registration);
+                $jpgMissing = ! $this->certificateService->jpgExists($registration);
+                $pdfMissing = ! $this->certificateService->pdfExists($registration);
 
-                if (!$jpgMissing && !$pdfMissing) {
+                if (! $jpgMissing && ! $pdfMissing) {
                     $skipped++;
                     $bar->advance();
+
                     continue;
                 }
 
@@ -93,7 +101,7 @@ class ProcessMissingCertificatesCommand extends Command
         $bar->finish();
         $this->newLine(2);
 
-        $this->info("Processamento concluído!");
+        $this->info('Processamento concluído!');
         $this->table(
             ['Métrica', 'Quantidade'],
             [
@@ -103,6 +111,14 @@ class ProcessMissingCertificatesCommand extends Command
                 ['Erros', $errors],
             ]
         );
+
+        if ($processed > 0) {
+            AuditLog::record(AuditEvent::MissingCertificatesProcessed, AuditEventType::System, eventData: [
+                'processed' => $processed,
+                'skipped' => $skipped,
+                'errors' => $errors,
+            ]);
+        }
 
         return Command::SUCCESS;
     }

@@ -30,6 +30,7 @@ enum AuditEvent: string
     case CertificateGenerated = 'certificate.generated';
     case SentimentAnalysisCompleted = 'sentiment_analysis.completed';
     case CertificatesProcessed = 'command.certificates_processed';
+    case MissingCertificatesProcessed = 'command.missing_certificates_processed';
     case EvaluationRemindersSent = 'command.evaluation_reminders_sent';
     case SeminarRemindersSent = 'command.seminar_reminders_sent';
 }
