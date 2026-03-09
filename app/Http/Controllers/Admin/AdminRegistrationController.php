@@ -43,6 +43,7 @@ class AdminRegistrationController extends Controller
 
     public function togglePresence(Registration $registration): JsonResponse
     {
+        $registration->loadMissing('seminar');
         Gate::authorize('updatePresence', $registration);
 
         $registration->present = ! $registration->present;
