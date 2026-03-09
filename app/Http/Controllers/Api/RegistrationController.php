@@ -33,26 +33,26 @@ class RegistrationController extends Controller
         $user = $request->user();
         $seminar = $this->findSeminar($slug);
 
-        // Check if seminar is expired
         if ($seminar->scheduled_at->isPast()) {
             throw ApiException::seminarExpired();
         }
 
-        // Check if seminar has reached capacity
-        $seminar->load('seminarLocation');
-        if ($seminar->seminarLocation?->max_vacancies) {
-            $registrationCount = $seminar->registrations()->count();
-            if ($registrationCount >= $seminar->seminarLocation->max_vacancies) {
-                throw ApiException::seminarFull();
-            }
-        }
-
-        // Create registration (unique constraint on seminar_id+user_id prevents duplicates)
         try {
-            $registration = DB::transaction(fn () => $seminar->registrations()->create([
-                'user_id' => $user->id,
-                'present' => false,
-            ]));
+            $registration = DB::transaction(function () use ($seminar, $user) {
+                $seminar->load('seminarLocation');
+
+                if ($seminar->seminarLocation?->max_vacancies) {
+                    $registrationCount = $seminar->registrations()->lockForUpdate()->count();
+                    if ($registrationCount >= $seminar->seminarLocation->max_vacancies) {
+                        throw ApiException::seminarFull();
+                    }
+                }
+
+                return $seminar->registrations()->create([
+                    'user_id' => $user->id,
+                    'present' => false,
+                ]);
+            });
         } catch (UniqueConstraintViolationException) {
             throw ApiException::alreadyRegistered();
         }
