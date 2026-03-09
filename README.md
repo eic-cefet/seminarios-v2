@@ -93,6 +93,8 @@
 | **PDF/Excel** | [DomPDF](https://github.com/barryvdh/laravel-dompdf) · [Maatwebsite Excel](https://docs.laravel-excel.com/) |
 | **Queue/Jobs** | [Laravel Queues](https://laravel.com/docs/queues) |
 | **Authorization** | [Spatie Permission](https://spatie.be/docs/laravel-permission) |
+| **AI** | OpenAI-compatible API (text tools, sentiment analysis) |
+| **Audit** | Custom audit logging system (model events, manual events) |
 
 ---
 
@@ -180,6 +182,29 @@ resources/js/
 |-----|-------------|--------|
 | **System** | Public-facing for students/attendees | `/`, `/login`, `/cadastro`, `/topicos`, `/apresentacoes`, `/seminario/:slug`, `/workshops`, `/workshop/:id` |
 | **Admin** | Protected dashboard for administrators | `/admin/*` |
+
+---
+
+## AI-Powered Features
+
+The admin panel includes AI-powered tools via an OpenAI-compatible API:
+
+- **Text Transformation** — Format, shorten, explain, formalize, or casualize text content
+- **Topic Merge Assistant** — AI suggests a unified name when merging seminar topics
+- **Sentiment Analysis** — Automatically analyzes student feedback on seminars in the background
+
+Configure with `AI_API_KEY`, `AI_API_BASE_URL`, and `AI_MODEL` in `.env`.
+
+---
+
+## Audit Logging
+
+Comprehensive audit trail for all database-impacting actions:
+
+- **Automatic model tracking** — Every create, update, and delete is logged with old/new values
+- **Manual event logging** — Auth events (login, register, logout), admin actions (subject merge, report generation), AI usage, and system jobs
+- **Origin tracking** — Each audit entry records the controller, job, or command that triggered it
+- **Pruning** — Old audit logs are automatically cleaned up (`audit:prune`)
 
 ---
 
