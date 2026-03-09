@@ -592,16 +592,6 @@ export const aiApi = {
         );
     },
 
-    suggestSeminarName: async (subjects: string[], speakers?: string[]) => {
-        await getCsrfCookie();
-        return fetchAdminApi<{ data: { text: string } }>(
-            "/ai/suggest-seminar-name",
-            {
-                method: "POST",
-                body: JSON.stringify({ subjects, speakers }),
-            },
-        );
-    },
 };
 
 // Presence Links (QR Code)

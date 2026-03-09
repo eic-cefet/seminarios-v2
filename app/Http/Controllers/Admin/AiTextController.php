@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\AiSuggestMergeNameRequest;
-use App\Http\Requests\Admin\AiSuggestSeminarNameRequest;
 use App\Http\Requests\Admin\AiTransformTextRequest;
 use App\Models\Rating;
 use Illuminate\Support\Facades\Http;
@@ -104,70 +103,6 @@ class AiTextController extends Controller
                 'messages' => [
                     ['role' => 'system', 'content' => $systemPrompt],
                     ['role' => 'user', 'content' => implode(', ', $names)],
-                ],
-                'max_completion_tokens' => 256,
-            ]);
-
-        if ($response->failed()) {
-            Log::error('AI service request failed. Response: '.$response->body());
-
-            return response()->json([
-                'error' => 'ai_request_failed',
-                'message' => 'AI service request failed. Please try again.',
-            ], 502);
-        }
-
-        $result = $response->json('choices.0.message.content');
-
-        if (! $result) {
-            Log::error('AI service returned an empty response.');
-
-            return response()->json([
-                'error' => 'ai_empty_response',
-                'message' => 'AI service returned an empty response.',
-            ], 502);
-        }
-
-        return response()->json([
-            'data' => [
-                'text' => trim($result),
-            ],
-        ]);
-    }
-
-    public function suggestSeminarName(AiSuggestSeminarNameRequest $request)
-    {
-        $validated = $request->validated();
-        $subjects = $validated['subjects'];
-        $speakers = $validated['speakers'] ?? [];
-
-        $apiKey = config('ai.api_key');
-        $baseUrl = config('ai.base_url');
-        $model = config('ai.model');
-
-        if (! $apiKey) {
-            Log::error('AI service is not configured. Set AI_API_KEY in your environment.');
-
-            return response()->json([
-                'error' => 'ai_not_configured',
-                'message' => 'AI service is not configured. Set AI_API_KEY in your environment.',
-            ], 503);
-        }
-
-        $systemPrompt = 'You are a naming assistant for academic seminars. Given the topics and optionally the speaker names, suggest a compelling and descriptive seminar title in Portuguese (Brazilian). Return ONLY the suggested title, nothing else.';
-
-        $userMessage = 'Tópicos: '.implode(', ', $subjects);
-        if (! empty($speakers)) {
-            $userMessage .= "\nPalestrantes: ".implode(', ', $speakers);
-        }
-
-        $response = Http::withToken($apiKey)
-            ->timeout(30)
-            ->post("{$baseUrl}/chat/completions", [
-                'model' => $model,
-                'messages' => [
-                    ['role' => 'system', 'content' => $systemPrompt],
-                    ['role' => 'user', 'content' => $userMessage],
                 ],
                 'max_completion_tokens' => 256,
             ]);

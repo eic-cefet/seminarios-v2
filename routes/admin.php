@@ -76,7 +76,6 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function ()
     Route::middleware('throttle:ai')->group(function () {
         Route::post('/ai/transform-text', [AiTextController::class, 'transform']);
         Route::post('/ai/suggest-merge-name', [AiTextController::class, 'suggestMergeName']);
-        Route::post('/ai/suggest-seminar-name', [AiTextController::class, 'suggestSeminarName']);
     });
     Route::get('/ai/rating-sentiments', [AiTextController::class, 'ratingSentiments']);
 });
