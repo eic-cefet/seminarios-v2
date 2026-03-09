@@ -39,7 +39,7 @@ class AnalyzeRatingSentiment implements ShouldQueue
             return;
         }
 
-        $ai = AiService::fromConfig();
+        $ai = app(AiService::class);
 
         if (! $ai) {
             Log::error('AI service is not configured. Set AI_API_KEY in your environment.');
