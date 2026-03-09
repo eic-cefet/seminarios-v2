@@ -357,18 +357,19 @@ jobs:
              - "dependencies" (package updates)
              Multiple labels are encouraged if applicable.
 
-          **Response format** (MUST follow exactly):
-          ```review
+          **Response format** (MUST follow exactly — use the sentinel markers, NOT markdown fences):
+
+          ===REVIEW_START===
           [Your code review in markdown here — summary, issues found, suggestions]
-          ```
+          ===REVIEW_END===
 
-          ```inline_comments
+          ===INLINE_START===
           [JSON array of objects with: {"path": "relative/file/path", "line": <line_number_in_diff>, "body": "comment text"}]
-          ```
+          ===INLINE_END===
 
-          ```labels
+          ===LABELS_START===
           ["label1", "label2"]
-          ```
+          ===LABELS_END===
 
           If no inline comments are needed, return an empty array: `[]`
 
@@ -400,37 +401,53 @@ jobs:
             -H "anthropic-version: 2023-06-01" \
             -d @/tmp/payload.json > /tmp/response.json
 
-          # Extract full response
-          RESPONSE=$(jq -r '.content[0].text // .error.message // "Failed to get response"' /tmp/response.json)
+          # Extract response and parse sections with Python (handles nested code blocks safely)
+          jq -r '.content[0].text // .error.message // "Failed to get response"' /tmp/response.json > /tmp/response.txt
 
-          # Extract review
-          REVIEW=$(echo "$RESPONSE" | sed -n '/```review/,/```/p' | sed '1d;$d')
-          if [ -z "$REVIEW" ]; then
-            REVIEW="$RESPONSE"
-          fi
+          python3 << 'PYEOF'
+          import json, os
 
-          # Extract inline comments
-          INLINE=$(echo "$RESPONSE" | sed -n '/```inline_comments/,/```/p' | sed '1d;$d' | tr -d '\n')
-          if ! echo "$INLINE" | jq -e 'type == "array"' > /dev/null 2>&1; then
-            INLINE="[]"
-          fi
+          with open("/tmp/response.txt") as f:
+              text = f.read()
 
-          # Extract labels
-          LABELS=$(echo "$RESPONSE" | sed -n '/```labels/,/```/p' | sed '1d;$d' | tr -d '\n')
-          if ! echo "$LABELS" | jq -e 'type == "array"' > /dev/null 2>&1; then
-            LABELS="[]"
-          fi
+          def extract(text, start_marker, end_marker):
+              s = text.find(start_marker)
+              if s == -1:
+                  return ""
+              s += len(start_marker)
+              e = text.find(end_marker, s)
+              if e == -1:
+                  return ""
+              return text[s:e].strip()
 
-          echo "Extracted labels: $LABELS"
-          echo "Inline comments count: $(echo "$INLINE" | jq 'length')"
+          review = extract(text, "===REVIEW_START===", "===REVIEW_END===")
+          if not review:
+              review = text
 
-          # Save outputs
-          echo "review<<ENDOFREVIEW" >> $GITHUB_OUTPUT
-          echo "$REVIEW" >> $GITHUB_OUTPUT
-          echo "ENDOFREVIEW" >> $GITHUB_OUTPUT
+          inline = extract(text, "===INLINE_START===", "===INLINE_END===")
+          try:
+              parsed = json.loads(inline)
+              assert isinstance(parsed, list)
+          except Exception:
+              inline = "[]"
 
-          echo "labels=$LABELS" >> $GITHUB_OUTPUT
-          echo "inline=$INLINE" >> $GITHUB_OUTPUT
+          labels = extract(text, "===LABELS_START===", "===LABELS_END===")
+          try:
+              parsed = json.loads(labels)
+              assert isinstance(parsed, list)
+          except Exception:
+              labels = "[]"
+
+          print(f"Extracted labels: {labels}")
+          print(f"Inline comments count: {len(json.loads(inline))}")
+
+          # Write to GITHUB_OUTPUT using random delimiters to avoid collisions
+          delim = "DELIM_" + os.urandom(8).hex()
+          with open(os.environ["GITHUB_OUTPUT"], "a") as out:
+              out.write(f"review<<{delim}\n{review}\n{delim}\n")
+              out.write(f"labels={labels}\n")
+              out.write(f"inline={inline}\n")
+          PYEOF
 
       - name: Post review comment, inline comments, and apply labels
         uses: actions/github-script@v7
