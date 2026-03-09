@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Enums\AuditEvent;
 use App\Exceptions\ApiException;
+use App\Http\Controllers\Admin\Concerns\EscapesLikeWildcards;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Admin\AdminSubjectResource;
 use App\Models\AuditLog;
@@ -16,6 +17,8 @@ use Illuminate\Support\Facades\Gate;
 
 class AdminSubjectController extends Controller
 {
+    use EscapesLikeWildcards;
+
     public function index(Request $request): AnonymousResourceCollection
     {
         Gate::authorize('viewAny', Subject::class);
@@ -24,7 +27,7 @@ class AdminSubjectController extends Controller
 
         // Search by name
         if ($search = $request->string('search')->trim()->toString()) {
-            $escaped = str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $search);
+            $escaped = $this->escapeLike($search);
             $query->where('name', 'like', "%{$escaped}%");
         }
 

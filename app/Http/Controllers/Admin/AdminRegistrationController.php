@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Http\Controllers\Admin\Concerns\EscapesLikeWildcards;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Admin\AdminRegistrationResource;
 use App\Models\Registration;
@@ -12,6 +13,8 @@ use Illuminate\Support\Facades\Gate;
 
 class AdminRegistrationController extends Controller
 {
+    use EscapesLikeWildcards;
+
     public function index(Request $request): AnonymousResourceCollection
     {
         Gate::authorize('viewAny', Registration::class);
@@ -25,7 +28,7 @@ class AdminRegistrationController extends Controller
 
         if ($request->filled('search')) {
             $search = $request->input('search');
-            $escaped = str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $search);
+            $escaped = $this->escapeLike($search);
             $query->whereHas('user', function ($q) use ($escaped) {
                 $q->where('name', 'like', "%{$escaped}%")
                     ->orWhere('email', 'like', "%{$escaped}%");

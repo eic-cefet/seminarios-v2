@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Enums\CourseSituation;
+use App\Http\Controllers\Admin\Concerns\EscapesLikeWildcards;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Admin\AdminUserResource;
 use App\Models\User;
@@ -19,6 +20,8 @@ use Illuminate\Validation\Rule;
 
 class AdminUserController extends Controller
 {
+    use EscapesLikeWildcards;
+
     public function __construct(
         private readonly SlugService $slugService
     ) {}
@@ -36,7 +39,7 @@ class AdminUserController extends Controller
 
         // Search by name, email, or username
         if ($search = $request->string('search')->trim()->toString()) {
-            $escaped = str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $search);
+            $escaped = $this->escapeLike($search);
             $query->where(function ($q) use ($escaped) {
                 $q->where('name', 'like', "%{$escaped}%")
                     ->orWhere('email', 'like', "%{$escaped}%")
