@@ -12,7 +12,6 @@ use App\Models\Seminar;
 use App\Models\Subject;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\DB;
 
 class AdminDashboardController extends Controller
 {
@@ -37,8 +36,9 @@ class AdminDashboardController extends Controller
             ->where('seminar_locations.max_vacancies', '>', 0)
             ->upcoming()
             ->active()
-            ->havingRaw('registrations_count >= seminar_locations.max_vacancies * 0.8')
             ->select('seminars.*')
+            ->groupBy('seminars.id', 'seminar_locations.max_vacancies')
+            ->havingRaw('registrations_count >= seminar_locations.max_vacancies * 0.8')
             ->limit(5)
             ->get();
 
@@ -53,12 +53,12 @@ class AdminDashboardController extends Controller
                 'latestRatings' => AdminRatingResource::collection($latestRatings),
                 'nearCapacity' => AdminSeminarResource::collection($nearCapacitySeminars),
                 'latestRegistrations' => AdminRegistrationResource::collection($latestRegistrations),
-                'counts' => DB::table(DB::raw('(SELECT 1) as dual'))
-                    ->selectRaw('(SELECT COUNT(*) FROM users WHERE deleted_at IS NULL) as users')
-                    ->selectRaw('(SELECT COUNT(*) FROM seminars WHERE deleted_at IS NULL) as seminars')
-                    ->selectRaw('(SELECT COUNT(*) FROM registrations) as registrations')
-                    ->selectRaw('(SELECT COUNT(*) FROM subjects) as subjects')
-                    ->first(),
+                'counts' => [
+                    'users' => User::count(),
+                    'seminars' => Seminar::count(),
+                    'registrations' => Registration::count(),
+                    'subjects' => Subject::count(),
+                ],
             ],
         ]);
     }
