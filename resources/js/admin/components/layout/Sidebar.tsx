@@ -21,6 +21,8 @@ export function Sidebar() {
         );
     };
 
+    // Defensive: hasRole() always returns boolean, ?? false is a safety net
+    /* istanbul ignore next -- @preserve */
     const filteredNav = filterNavigation(adminNavigation, isAdmin ?? false);
 
     return (

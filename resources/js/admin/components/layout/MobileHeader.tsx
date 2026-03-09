@@ -12,6 +12,8 @@ export function MobileHeader() {
     const { user, logout } = useAuth();
     const isAdmin = hasRole(user?.roles, ROLES.ADMIN);
 
+    // Defensive: hasRole() always returns boolean, ?? false is a safety net
+    /* istanbul ignore next -- @preserve */
     const filteredNav = filterNavigation(adminNavigation, isAdmin ?? false);
 
     const toggleExpanded = (label: string) => {
