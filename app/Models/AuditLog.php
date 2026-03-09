@@ -92,12 +92,7 @@ class AuditLog extends Model
             }
         }
 
-        $ipAddress = null;
-        try {
-            $ipAddress = request()->ip();
-        } catch (\Throwable) {
-            // Not in HTTP context
-        }
+        $ipAddress = Context::get('audit.ip');
 
         return self::create([
             'user_id' => $userId ?? auth()->id(),
