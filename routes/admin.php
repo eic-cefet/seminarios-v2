@@ -16,47 +16,24 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function ()
     // Dashboard
     Route::get('/dashboard/stats', [AdminDashboardController::class, 'stats']);
 
-    // Users CRUD
-    Route::get('/users', [AdminUserController::class, 'index']);
-    Route::post('/users', [AdminUserController::class, 'store']);
-    Route::get('/users/{user}', [AdminUserController::class, 'show']);
-    Route::put('/users/{user}', [AdminUserController::class, 'update']);
-    Route::delete('/users/{user}', [AdminUserController::class, 'destroy']);
+    // CRUD Resources
+    Route::apiResource('users', AdminUserController::class);
     Route::post('/users/{user}/restore', [AdminUserController::class, 'restore'])->withTrashed();
 
-    // Locations CRUD
-    Route::get('/locations', [AdminLocationController::class, 'index']);
-    Route::post('/locations', [AdminLocationController::class, 'store']);
-    Route::get('/locations/{location}', [AdminLocationController::class, 'show']);
-    Route::put('/locations/{location}', [AdminLocationController::class, 'update']);
-    Route::delete('/locations/{location}', [AdminLocationController::class, 'destroy']);
+    Route::apiResource('locations', AdminLocationController::class);
 
-    // Subjects CRUD + Merge
-    Route::get('/subjects', [AdminSubjectController::class, 'index']);
-    Route::post('/subjects', [AdminSubjectController::class, 'store']);
-    Route::get('/subjects/{subject}', [AdminSubjectController::class, 'show']);
-    Route::put('/subjects/{subject}', [AdminSubjectController::class, 'update']);
-    Route::delete('/subjects/{subject}', [AdminSubjectController::class, 'destroy']);
+    Route::apiResource('subjects', AdminSubjectController::class);
     Route::post('/subjects/merge', [AdminSubjectController::class, 'merge']);
 
-    // Registrations (subscriptions)
+    // Registrations (not a full resource — only index + custom action)
     Route::get('/registrations', [AdminRegistrationController::class, 'index']);
     Route::patch('/registrations/{registration}/presence', [AdminRegistrationController::class, 'togglePresence']);
 
-    // Seminars CRUD
-    Route::get('/seminars', [AdminSeminarController::class, 'index']);
-    Route::post('/seminars', [AdminSeminarController::class, 'store']);
-    Route::get('/seminars/{seminar}', [AdminSeminarController::class, 'show']);
-    Route::put('/seminars/{seminar}', [AdminSeminarController::class, 'update']);
-    Route::delete('/seminars/{seminar}', [AdminSeminarController::class, 'destroy']);
+    Route::apiResource('seminars', AdminSeminarController::class);
 
-    // Workshops CRUD
+    // Workshop search must be defined before the resource route
     Route::get('/workshops/search-seminars', [AdminWorkshopController::class, 'searchSeminars']);
-    Route::get('/workshops', [AdminWorkshopController::class, 'index']);
-    Route::post('/workshops', [AdminWorkshopController::class, 'store']);
-    Route::get('/workshops/{workshop}', [AdminWorkshopController::class, 'show']);
-    Route::put('/workshops/{workshop}', [AdminWorkshopController::class, 'update']);
-    Route::delete('/workshops/{workshop}', [AdminWorkshopController::class, 'destroy']);
+    Route::apiResource('workshops', AdminWorkshopController::class);
 
     // Helper endpoints for dropdowns
     Route::get('/seminar-types', [AdminSeminarController::class, 'listTypes']);
