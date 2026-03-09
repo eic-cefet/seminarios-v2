@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\Role;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Admin\AdminRegistrationResource;
 use App\Models\Registration;
@@ -16,8 +17,14 @@ class AdminRegistrationController extends Controller
     {
         Gate::authorize('viewAny', Registration::class);
 
-        $query = Registration::with(['user:id,name,email', 'seminar:id,name,slug,scheduled_at'])
+        $query = Registration::with(['user:id,name,email', 'seminar:id,name,slug,scheduled_at,created_by'])
             ->orderByDesc('created_at');
+
+        // Teachers only see registrations for their own seminars
+        $user = $request->user();
+        if ($user->hasRole(Role::Teacher) && ! $user->hasRole(Role::Admin)) {
+            $query->whereHas('seminar', fn ($q) => $q->where('created_by', $user->id));
+        }
 
         if ($request->filled('seminar_id')) {
             $query->where('seminar_id', $request->input('seminar_id'));
