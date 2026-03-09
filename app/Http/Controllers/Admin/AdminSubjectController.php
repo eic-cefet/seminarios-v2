@@ -13,6 +13,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Log;
 
 class AdminSubjectController extends Controller
 {
@@ -134,6 +135,8 @@ class AdminSubjectController extends Controller
 
                 Subject::whereIn('id', $sourceIds)->delete();
 
+                // Audit log is intentionally inside the transaction — if audit
+                // recording fails, the merge is rolled back to ensure auditability.
                 AuditLog::record(AuditEvent::SubjectsMerged, auditable: $target, eventData: [
                     'target_id' => $targetId,
                     'source_ids' => $sourceIds,
@@ -144,6 +147,11 @@ class AdminSubjectController extends Controller
                 return $target;
             });
         } catch (\Exception $e) {
+            Log::error('Subject merge failed', [
+                'exception' => $e->getMessage(),
+                'target_id' => $targetId,
+                'source_ids' => $sourceIds,
+            ]);
             throw ApiException::cannotMergeSubjects();
         }
 
