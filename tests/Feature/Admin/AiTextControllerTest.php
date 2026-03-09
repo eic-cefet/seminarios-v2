@@ -106,7 +106,7 @@ describe('POST /admin/ai/transform-text', function () {
         ]);
 
         $response->assertStatus(502)
-            ->assertJsonPath('error', 'ai_empty_response');
+            ->assertJsonPath('error', 'ai_request_failed');
     });
 
     it('validates required fields', function () {
@@ -224,7 +224,7 @@ describe('POST /admin/ai/suggest-merge-name', function () {
         ]);
 
         $response->assertStatus(502)
-            ->assertJsonPath('error', 'ai_empty_response');
+            ->assertJsonPath('error', 'ai_request_failed');
     });
 
     it('validates names is required and min 2', function () {

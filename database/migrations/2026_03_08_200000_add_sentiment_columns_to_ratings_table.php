@@ -9,7 +9,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('ratings', function (Blueprint $table) {
-            $table->string('sentiment', 500)->nullable()->after('comment');
+            $table->text('sentiment')->nullable()->after('comment');
             $table->timestamp('sentiment_analyzed_at')->nullable()->after('sentiment');
         });
     }

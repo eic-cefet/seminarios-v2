@@ -5,9 +5,10 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\AiSuggestMergeNameRequest;
 use App\Http\Requests\Admin\AiTransformTextRequest;
+use App\Http\Resources\Admin\AdminRatingResource;
 use App\Models\Rating;
-use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Log;
+use App\Services\AiService;
+use RuntimeException;
 
 class AiTextController extends Controller
 {
@@ -22,116 +23,39 @@ class AiTextController extends Controller
     public function transform(AiTransformTextRequest $request)
     {
         $validated = $request->validated();
-        $action = $validated['action'];
-        $text = $validated['text'];
 
-        $apiKey = config('ai.api_key');
-        $baseUrl = config('ai.base_url');
-        $model = config('ai.model');
-
-        if (! $apiKey) {
-            Log::error('AI service is not configured. Set AI_API_KEY in your environment.');
-
-            return response()->json([
-                'error' => 'ai_not_configured',
-                'message' => 'AI service is not configured. Set AI_API_KEY in your environment.',
-            ], 503);
+        $ai = AiService::fromConfig();
+        if (! $ai) {
+            return $this->aiNotConfigured();
         }
 
-        $response = Http::withToken($apiKey)
-            ->timeout(30)
-            ->post("{$baseUrl}/chat/completions", [
-                'model' => $model,
-                'messages' => [
-                    ['role' => 'system', 'content' => self::SYSTEM_PROMPTS[$action]],
-                    ['role' => 'user', 'content' => $text],
-                ],
-                'max_completion_tokens' => 16384,
-            ]);
-
-        if ($response->failed()) {
-            Log::error('AI service request failed. Response: '.$response->body());
-
-            return response()->json([
-                'error' => 'ai_request_failed',
-                'message' => 'AI service request failed. Please try again.',
-            ], 502);
+        try {
+            $text = $ai->chat(self::SYSTEM_PROMPTS[$validated['action']], $validated['text']);
+        } catch (RuntimeException) {
+            return $this->aiRequestFailed();
         }
 
-        $result = $response->json('choices.0.message.content');
-
-        if (! $result) {
-            Log::error('AI service returned an empty response.');
-
-            return response()->json([
-                'error' => 'ai_empty_response',
-                'message' => 'AI service returned an empty response.',
-            ], 502);
-        }
-
-        return response()->json([
-            'data' => [
-                'text' => trim($result),
-            ],
-        ]);
+        return response()->json(['data' => ['text' => $text]]);
     }
 
     public function suggestMergeName(AiSuggestMergeNameRequest $request)
     {
         $validated = $request->validated();
-        $names = $validated['names'];
 
-        $apiKey = config('ai.api_key');
-        $baseUrl = config('ai.base_url');
-        $model = config('ai.model');
-
-        if (! $apiKey) {
-            Log::error('AI service is not configured. Set AI_API_KEY in your environment.');
-
-            return response()->json([
-                'error' => 'ai_not_configured',
-                'message' => 'AI service is not configured. Set AI_API_KEY in your environment.',
-            ], 503);
+        $ai = AiService::fromConfig();
+        if (! $ai) {
+            return $this->aiNotConfigured();
         }
 
         $systemPrompt = 'You are a naming assistant for academic seminar topics. Given a list of topic names that are being merged, suggest a single concise topic name that best represents all of them. Return ONLY the suggested name, nothing else.';
 
-        $response = Http::withToken($apiKey)
-            ->timeout(30)
-            ->post("{$baseUrl}/chat/completions", [
-                'model' => $model,
-                'messages' => [
-                    ['role' => 'system', 'content' => $systemPrompt],
-                    ['role' => 'user', 'content' => implode(', ', $names)],
-                ],
-                'max_completion_tokens' => 256,
-            ]);
-
-        if ($response->failed()) {
-            Log::error('AI service request failed. Response: '.$response->body());
-
-            return response()->json([
-                'error' => 'ai_request_failed',
-                'message' => 'AI service request failed. Please try again.',
-            ], 502);
+        try {
+            $text = $ai->chat($systemPrompt, implode(', ', $validated['names']), 256);
+        } catch (RuntimeException) {
+            return $this->aiRequestFailed();
         }
 
-        $result = $response->json('choices.0.message.content');
-
-        if (! $result) {
-            Log::error('AI service returned an empty response.');
-
-            return response()->json([
-                'error' => 'ai_empty_response',
-                'message' => 'AI service returned an empty response.',
-            ], 502);
-        }
-
-        return response()->json([
-            'data' => [
-                'text' => trim($result),
-            ],
-        ]);
+        return response()->json(['data' => ['text' => $text]]);
     }
 
     public function ratingSentiments()
@@ -143,8 +67,22 @@ class AiTextController extends Controller
             ->limit(20)
             ->get();
 
+        return AdminRatingResource::collection($ratings);
+    }
+
+    private function aiNotConfigured()
+    {
         return response()->json([
-            'data' => $ratings,
-        ]);
+            'error' => 'ai_not_configured',
+            'message' => 'AI service is not configured. Set AI_API_KEY in your environment.',
+        ], 503);
+    }
+
+    private function aiRequestFailed()
+    {
+        return response()->json([
+            'error' => 'ai_request_failed',
+            'message' => 'AI service request failed. Please try again.',
+        ], 502);
     }
 }

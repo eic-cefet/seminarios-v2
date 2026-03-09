@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
 import {
     Sparkles,
     Undo2,
@@ -61,7 +61,6 @@ export function AiTextToolbar({ value, onChange, onLoadingChange }: AiTextToolba
     // Linear version stack: [original, ai_v1, ai_v2, ...]
     const [versions, setVersions] = useState<string[]>([]);
     const [versionIndex, setVersionIndex] = useState(-1);
-    const navigatingRef = useRef(false);
 
     const hasHistory = versions.length > 0;
     const canUndo = hasHistory && versionIndex > 0;
@@ -104,7 +103,7 @@ export function AiTextToolbar({ value, onChange, onLoadingChange }: AiTextToolba
     function handleUndo() {
         if (!canUndo) return;
         const newIndex = versionIndex - 1;
-        navigatingRef.current = true;
+
         setVersionIndex(newIndex);
         onChange(versions[newIndex]);
     }
@@ -112,7 +111,7 @@ export function AiTextToolbar({ value, onChange, onLoadingChange }: AiTextToolba
     function handleRedo() {
         if (!canRedo) return;
         const newIndex = versionIndex + 1;
-        navigatingRef.current = true;
+
         setVersionIndex(newIndex);
         onChange(versions[newIndex]);
     }

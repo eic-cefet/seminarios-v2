@@ -96,7 +96,7 @@ it('skips when AI is not configured', function () {
     expect($rating->sentiment)->toBeNull();
 });
 
-it('handles AI request failure gracefully', function () {
+it('throws on AI request failure to trigger retry', function () {
     Http::fake([
         'api.openai.com/*' => Http::response(['error' => 'fail'], 500),
     ]);
@@ -108,14 +108,15 @@ it('handles AI request failure gracefully', function () {
         'sentiment_analyzed_at' => null,
     ]);
 
-    (new AnalyzeRatingSentiment($rating))->handle();
+    expect(fn () => (new AnalyzeRatingSentiment($rating))->handle())
+        ->toThrow(RuntimeException::class);
 
     $rating->refresh();
     expect($rating->sentiment)->toBeNull();
     expect($rating->sentiment_analyzed_at)->toBeNull();
 });
 
-it('handles empty AI response gracefully', function () {
+it('throws on empty AI response to trigger retry', function () {
     Http::fake([
         'api.openai.com/*' => Http::response([
             'choices' => [
@@ -131,7 +132,8 @@ it('handles empty AI response gracefully', function () {
         'sentiment_analyzed_at' => null,
     ]);
 
-    (new AnalyzeRatingSentiment($rating))->handle();
+    expect(fn () => (new AnalyzeRatingSentiment($rating))->handle())
+        ->toThrow(RuntimeException::class);
 
     $rating->refresh();
     expect($rating->sentiment)->toBeNull();

@@ -3,12 +3,12 @@
 namespace App\Jobs;
 
 use App\Models\Rating;
+use App\Services\AiService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 class AnalyzeRatingSentiment implements ShouldQueue
@@ -33,11 +33,9 @@ class AnalyzeRatingSentiment implements ShouldQueue
             return;
         }
 
-        $apiKey = config('ai.api_key');
-        $baseUrl = config('ai.base_url');
-        $model = config('ai.model');
+        $ai = AiService::fromConfig();
 
-        if (! $apiKey) {
+        if (! $ai) {
             Log::error('AI service is not configured. Set AI_API_KEY in your environment.');
 
             return;
@@ -47,33 +45,10 @@ class AnalyzeRatingSentiment implements ShouldQueue
 
         $userMessage = "Nota: {$this->rating->score}/5\nComentário: {$this->rating->comment}";
 
-        $response = Http::withToken($apiKey)
-            ->timeout(30)
-            ->post("{$baseUrl}/chat/completions", [
-                'model' => $model,
-                'messages' => [
-                    ['role' => 'system', 'content' => $systemPrompt],
-                    ['role' => 'user', 'content' => $userMessage],
-                ],
-                'max_completion_tokens' => 512,
-            ]);
-
-        if ($response->failed()) {
-            Log::error('AI sentiment analysis failed. Response: '.$response->body());
-
-            return;
-        }
-
-        $result = $response->json('choices.0.message.content');
-
-        if (! $result) {
-            Log::error('AI sentiment analysis returned an empty response.');
-
-            return;
-        }
+        $result = $ai->chat($systemPrompt, $userMessage, 512);
 
         $this->rating->update([
-            'sentiment' => trim($result),
+            'sentiment' => $result,
             'sentiment_analyzed_at' => now(),
         ]);
     }
