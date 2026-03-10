@@ -5,7 +5,7 @@
 **A modern seminar and workshop management system for the School of Informatics & Computing (EIC) at CEFET-RJ**
 
 [![Tests](https://github.com/eic-cefet/seminarios-v2/actions/workflows/release.yml/badge.svg?branch=main)](https://github.com/eic-cefet/seminarios-v2/actions/workflows/release.yml)
-[![codecov](https://codecov.io/gh/eic-cefet/seminarios-v2/graph/badge.svg)](https://codecov.io/gh/eic-cefet/seminarios-v2)
+[![codecov](https://codecov.io/gh/eic-cefet/seminarios-v2/branch/main/graph/badge.svg)](https://codecov.io/gh/eic-cefet/seminarios-v2)
 [![PHP 8.4](https://img.shields.io/badge/PHP-8.4-777BB4?logo=php&logoColor=white)](https://www.php.net/)
 [![Laravel 12](https://img.shields.io/badge/Laravel-12-FF2D20?logo=laravel&logoColor=white)](https://laravel.com/)
 [![React 19](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)](https://react.dev/)

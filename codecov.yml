@@ -4,7 +4,19 @@ coverage:
       default:
         target: auto
         threshold: 0%
-        base: auto
+
+flag_management:
+  default_rules:
+    carryforward: true
+  individual_flags:
+    - name: backend
+      paths:
+        - app/
+      carryforward: true
+    - name: frontend
+      paths:
+        - resources/js/
+      carryforward: true
 
 comment:
   layout: "diff, flags, files"
