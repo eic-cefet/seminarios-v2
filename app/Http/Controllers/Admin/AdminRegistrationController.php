@@ -23,9 +23,9 @@ class AdminRegistrationController extends Controller
         $query = Registration::with(['user:id,name,email', 'seminar:id,name,slug,scheduled_at,created_by'])
             ->orderByDesc('created_at');
 
-        // Teachers only see registrations for their own seminars
+        // Non-admin users (teachers) only see registrations for their own seminars
         $user = $request->user();
-        if ($user->hasRole(Role::Teacher) && ! $user->hasRole(Role::Admin)) {
+        if (! $user->hasRole(Role::Admin)) {
             $query->whereHas('seminar', fn ($q) => $q->where('created_by', $user->id));
         }
 

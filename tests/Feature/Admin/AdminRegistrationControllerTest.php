@@ -39,17 +39,18 @@ describe('GET /api/admin/registrations', function () {
     it('allows teacher to list registrations scoped to their seminars', function () {
         $teacher = actingAsTeacher();
 
-        $teacherSeminar = \App\Models\Seminar::factory()->create(['created_by' => $teacher->id]);
-        $otherSeminar = \App\Models\Seminar::factory()->create();
+        $teacherSeminar = Seminar::factory()->create(['created_by' => $teacher->id]);
+        $otherSeminar = Seminar::factory()->create();
 
-        $teacherRegistration = \App\Models\Registration::factory()->create(['seminar_id' => $teacherSeminar->id]);
-        $otherRegistration = \App\Models\Registration::factory()->create(['seminar_id' => $otherSeminar->id]);
+        $teacherRegistration = Registration::factory()->create(['seminar_id' => $teacherSeminar->id]);
+        $otherRegistration = Registration::factory()->create(['seminar_id' => $otherSeminar->id]);
 
         $response = $this->getJson('/api/admin/registrations');
 
         $response->assertSuccessful();
         $response->assertJsonCount(1, 'data');
         $response->assertJsonPath('data.0.id', $teacherRegistration->id);
+        $response->assertJsonMissing(['id' => $otherRegistration->id]);
     });
 
     it('filters registrations by seminar_id', function () {
@@ -159,7 +160,7 @@ describe('PATCH /api/admin/registrations/{id}/presence', function () {
         $response->assertForbidden();
     });
 
-    it('returns 403 for teacher user', function () {
+    it('returns 403 for teacher on another teachers seminar', function () {
         actingAsTeacher();
 
         $registration = Registration::factory()->create();
@@ -167,6 +168,21 @@ describe('PATCH /api/admin/registrations/{id}/presence', function () {
         $response = $this->patchJson("/api/admin/registrations/{$registration->id}/presence");
 
         $response->assertForbidden();
+    });
+
+    it('allows teacher to toggle presence for their own seminar registration', function () {
+        $teacher = actingAsTeacher();
+
+        $seminar = Seminar::factory()->create(['created_by' => $teacher->id]);
+        $registration = Registration::factory()->create(['seminar_id' => $seminar->id, 'present' => false]);
+
+        $response = $this->patchJson("/api/admin/registrations/{$registration->id}/presence");
+
+        $response->assertSuccessful()
+            ->assertJsonPath('data.present', true);
+
+        $registration->refresh();
+        expect($registration->present)->toBeTrue();
     });
 
     it('returns 404 for non-existent registration', function () {

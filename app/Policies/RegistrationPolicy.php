@@ -15,19 +15,17 @@ class RegistrationPolicy
 
     public function view(User $user, Registration $registration): bool
     {
-        if ($user->hasRole(Role::Admin)) {
-            return true;
-        }
-
-        return $user->hasRole(Role::Teacher)
-            && $registration->seminar?->created_by === $user->id;
+        return $user->hasRole(Role::Admin) || $this->isOwnerOfSeminar($user, $registration);
     }
 
     public function updatePresence(User $user, Registration $registration): bool
     {
-        if ($user->hasRole(Role::Admin)) {
-            return true;
-        }
+        return $user->hasRole(Role::Admin) || $this->isOwnerOfSeminar($user, $registration);
+    }
+
+    private function isOwnerOfSeminar(User $user, Registration $registration): bool
+    {
+        $registration->loadMissing('seminar');
 
         return $user->hasRole(Role::Teacher)
             && $registration->seminar?->created_by === $user->id;
