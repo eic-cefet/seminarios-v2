@@ -177,4 +177,52 @@ describe('SeminarReminder Mail', function () {
 
         expect($mail->user->id)->toBe($user->id);
     });
+
+    it('generates ics with 1 hour duration', function () {
+        $user = User::factory()->create();
+        $seminar = Seminar::factory()->create([
+            'scheduled_at' => '2026-03-15 10:00:00',
+        ]);
+
+        $mail = new SeminarReminder($user, collect([$seminar]));
+        $rendered = $mail->render();
+        $raw = $mail->buildViewData();
+
+        // Access ICS via reflection since generateIcs is private
+        $reflection = new ReflectionMethod($mail, 'generateIcs');
+        $ics = $reflection->invoke($mail, $seminar);
+
+        expect($ics)->toContain('DTSTART;TZID=America/Sao_Paulo:20260315T100000');
+        expect($ics)->toContain('DTEND;TZID=America/Sao_Paulo:20260315T110000');
+    });
+
+    it('generates ics with proper line breaks in description', function () {
+        $user = User::factory()->create();
+        $seminar = Seminar::factory()->create([
+            'scheduled_at' => now()->addDay(),
+            'description' => "Line one\nLine two\nLine three",
+        ]);
+
+        $reflection = new ReflectionMethod(SeminarReminder::class, 'generateIcs');
+        $mail = new SeminarReminder($user, collect([$seminar]));
+        $ics = $reflection->invoke($mail, $seminar);
+
+        // Should contain \n (ICS line break encoding), not \\n
+        expect($ics)->toContain('DESCRIPTION:Line one\nLine two\nLine three');
+        expect($ics)->not->toContain('\\\\n');
+    });
+
+    it('escapes commas and semicolons in ics description', function () {
+        $user = User::factory()->create();
+        $seminar = Seminar::factory()->create([
+            'scheduled_at' => now()->addDay(),
+            'description' => 'Hello, world; test',
+        ]);
+
+        $reflection = new ReflectionMethod(SeminarReminder::class, 'generateIcs');
+        $mail = new SeminarReminder($user, collect([$seminar]));
+        $ics = $reflection->invoke($mail, $seminar);
+
+        expect($ics)->toContain('Hello\\, world\\; test');
+    });
 });
