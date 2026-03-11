@@ -11,7 +11,7 @@ automerge=false
 version_bump=patch
 ```
 
-**version_bump options:** `patch` (bug fixes), `minor` (new features), `major` (breaking changes)
+**version_bump options:** `none` (no release), `patch` (bug fixes), `minor` (new features), `major` (breaking changes)
 
 ## Checklist
 - [ ] I have tested my code locally

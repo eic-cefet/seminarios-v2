@@ -147,7 +147,7 @@ jobs:
           PR_BODY: ${{ steps.pr.outputs.body }}
         run: |
           # Match key=value format: version_bump=VALUE
-          BUMP=$(echo "$PR_BODY" | grep -oiE 'version_bump=(patch|minor|major)' | cut -d'=' -f2 | head -1 | tr '[:upper:]' '[:lower:]')
+          BUMP=$(echo "$PR_BODY" | grep -oiE 'version_bump=(none|patch|minor|major)' | cut -d'=' -f2 | head -1 | tr '[:upper:]' '[:lower:]')
           if [ -z "$BUMP" ]; then
             BUMP="patch"
           fi
@@ -155,7 +155,7 @@ jobs:
           echo "bump=$BUMP" >> $GITHUB_OUTPUT
 
       - name: Get latest tag and calculate new version
-        if: steps.pr.outputs.found == 'true'
+        if: steps.pr.outputs.found == 'true' && steps.version.outputs.bump != 'none'
         id: new-version
         run: |
           LATEST=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
@@ -185,7 +185,7 @@ jobs:
           echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
 
       - name: Create and push tag
-        if: steps.pr.outputs.found == 'true'
+        if: steps.pr.outputs.found == 'true' && steps.version.outputs.bump != 'none'
         run: |
           git config user.name "seminarios-bot[bot]"
           git config user.email "seminarios-bot[bot]@users.noreply.github.com"

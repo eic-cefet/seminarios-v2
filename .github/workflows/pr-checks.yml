@@ -41,13 +41,13 @@ jobs:
             core.setOutput('automerge', automerge);
 
             // Parse version_bump (key=value format)
-            const versionMatch = body.match(/version_bump=(patch|minor|major)/i);
+            const versionMatch = body.match(/version_bump=(none|patch|minor|major)/i);
             const versionBump = versionMatch ? versionMatch[1].toLowerCase() : '';
             core.setOutput('version_bump', versionBump);
 
             // Validate version_bump exists
             if (!versionBump) {
-              core.setFailed('version_bump is required. Valid values: patch, minor, major');
+              core.setFailed('version_bump is required. Valid values: none, patch, minor, major');
               return;
             }
 
