@@ -242,6 +242,34 @@ describe('SeminarDetails', () => {
         });
     });
 
+    it('disables unregister button on the day of the event', async () => {
+        vi.useFakeTimers({ shouldAdvanceTime: true });
+        vi.setSystemTime(new Date('2026-06-15T10:00:00'));
+
+        const seminar = createSeminar({
+            name: 'Test',
+            isExpired: false,
+            scheduledAt: '2026-06-15T18:00:00Z',
+        });
+        vi.mocked(seminarsApi.get).mockResolvedValue({ data: seminar });
+        vi.mocked(registrationApi.status).mockResolvedValue({ registered: true });
+        vi.mocked(useAuth).mockReturnValue({
+            user: createUser(), isLoading: false, isAuthenticated: true,
+            login: vi.fn(), register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(),
+        });
+
+        render(<SeminarDetails />);
+
+        await waitFor(() => {
+            const button = screen.getByRole('button', { name: /cancelar inscrição/i });
+            expect(button).toBeDisabled();
+        });
+
+        expect(screen.getByText(/não é possível cancelar a inscrição no dia do evento/i)).toBeInTheDocument();
+
+        vi.useRealTimers();
+    });
+
     it('unregisters when "Cancelar inscrição" is clicked', async () => {
         const seminar = createSeminar({ name: 'Test', isExpired: false });
         vi.mocked(seminarsApi.get).mockResolvedValue({ data: seminar });

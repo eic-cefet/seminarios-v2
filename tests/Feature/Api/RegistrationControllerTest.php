@@ -123,7 +123,7 @@ describe('DELETE /api/seminars/{slug}/register', function () {
             ->assertJsonPath('message', 'Você não está inscrito neste seminário');
     });
 
-    it('returns error for expired seminar', function () {
+    it('returns unregister_blocked for expired seminar', function () {
         $user = actingAsUser();
         $seminar = Seminar::factory()->past()->create(['active' => true]);
 
@@ -135,7 +135,26 @@ describe('DELETE /api/seminars/{slug}/register', function () {
         $response = $this->deleteJson("/api/seminars/{$seminar->slug}/register");
 
         $response->assertStatus(400)
-            ->assertJsonPath('message', 'Este seminário já foi realizado');
+            ->assertJsonPath('error', 'unregister_blocked');
+    });
+
+    it('returns unregister_blocked on the day of the event', function () {
+        $user = actingAsUser();
+        $seminar = Seminar::factory()->create([
+            'active' => true,
+            'scheduled_at' => now()->endOfDay(),
+        ]);
+
+        Registration::factory()->create([
+            'user_id' => $user->id,
+            'seminar_id' => $seminar->id,
+        ]);
+
+        $response = $this->deleteJson("/api/seminars/{$seminar->slug}/register");
+
+        $response->assertStatus(400)
+            ->assertJsonPath('error', 'unregister_blocked')
+            ->assertJsonPath('message', 'Não é possível cancelar a inscrição no dia do evento');
     });
 });
 
