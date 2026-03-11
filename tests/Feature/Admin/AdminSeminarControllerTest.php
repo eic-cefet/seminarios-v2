@@ -1,5 +1,7 @@
 <?php
 
+use App\Jobs\SendSeminarRescheduledJob;
+use App\Models\Registration;
 use App\Models\Seminar;
 use App\Models\SeminarLocation;
 use App\Models\SeminarType;
@@ -7,6 +9,7 @@ use App\Models\Subject;
 use App\Models\User;
 use App\Models\UserSpeakerData;
 use App\Models\Workshop;
+use Illuminate\Support\Facades\Queue;
 
 describe('GET /api/admin/seminars', function () {
     it('returns paginated list of seminars for admin', function () {
@@ -492,6 +495,98 @@ describe('PUT /api/admin/seminars/{id}', function () {
 
         $response->assertSuccessful();
         expect($seminar->fresh()->speakers->pluck('id')->toArray())->toBe([$newSpeaker->id]);
+    });
+
+    it('resets reminder_sent when scheduled_at changes', function () {
+        actingAsAdmin();
+
+        $seminar = Seminar::factory()->create([
+            'scheduled_at' => now()->addDays(5),
+        ]);
+
+        $registration = Registration::factory()->create([
+            'seminar_id' => $seminar->id,
+            'reminder_sent' => true,
+        ]);
+
+        Queue::fake();
+
+        $response = $this->putJson("/api/admin/seminars/{$seminar->id}", [
+            'scheduled_at' => now()->addDays(10)->toDateTimeString(),
+        ]);
+
+        $response->assertSuccessful();
+        expect($registration->fresh()->reminder_sent)->toBeFalse();
+    });
+
+    it('dispatches reschedule notification when scheduled_at changes', function () {
+        actingAsAdmin();
+
+        $seminar = Seminar::factory()->create([
+            'scheduled_at' => now()->addDays(5),
+        ]);
+
+        $user = User::factory()->create();
+        Registration::factory()->create([
+            'seminar_id' => $seminar->id,
+            'user_id' => $user->id,
+        ]);
+
+        Queue::fake();
+
+        $this->putJson("/api/admin/seminars/{$seminar->id}", [
+            'scheduled_at' => now()->addDays(10)->toDateTimeString(),
+        ]);
+
+        Queue::assertPushed(SendSeminarRescheduledJob::class, function ($job) use ($user, $seminar) {
+            return $job->user->id === $user->id && $job->seminar->id === $seminar->id;
+        });
+    });
+
+    it('does not dispatch reschedule notification when scheduled_at is unchanged', function () {
+        actingAsAdmin();
+
+        $scheduledAt = now()->addDays(5);
+        $seminar = Seminar::factory()->create([
+            'scheduled_at' => $scheduledAt,
+        ]);
+
+        Registration::factory()->create([
+            'seminar_id' => $seminar->id,
+            'reminder_sent' => true,
+        ]);
+
+        Queue::fake();
+
+        $this->putJson("/api/admin/seminars/{$seminar->id}", [
+            'name' => 'Updated Name Only',
+        ]);
+
+        Queue::assertNotPushed(SendSeminarRescheduledJob::class);
+    });
+
+    it('dispatches reschedule notification for each registered user', function () {
+        actingAsAdmin();
+
+        $seminar = Seminar::factory()->create([
+            'scheduled_at' => now()->addDays(5),
+        ]);
+
+        $users = User::factory()->count(3)->create();
+        foreach ($users as $user) {
+            Registration::factory()->create([
+                'seminar_id' => $seminar->id,
+                'user_id' => $user->id,
+            ]);
+        }
+
+        Queue::fake();
+
+        $this->putJson("/api/admin/seminars/{$seminar->id}", [
+            'scheduled_at' => now()->addDays(10)->toDateTimeString(),
+        ]);
+
+        Queue::assertPushed(SendSeminarRescheduledJob::class, 3);
     });
 });
 
