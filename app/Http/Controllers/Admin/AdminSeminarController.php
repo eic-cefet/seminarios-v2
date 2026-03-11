@@ -144,7 +144,7 @@ class AdminSeminarController extends Controller
         $validated = $request->validated();
         $oldScheduledAt = $seminar->scheduled_at?->copy();
 
-        DB::transaction(function () use ($validated, $seminar) {
+        DB::transaction(function () use ($validated, $seminar, $oldScheduledAt) {
             // Keep in sync with Seminar::$fillable and SeminarUpdateRequest rules
             $fields = Arr::only($validated, [
                 'name', 'description', 'scheduled_at', 'room_link',
@@ -159,6 +159,11 @@ class AdminSeminarController extends Controller
 
             if (! empty($fields)) {
                 $seminar->fill($fields)->save();
+            }
+
+            // Reset reminders inside the transaction so it rolls back with the date change
+            if ($oldScheduledAt && $seminar->scheduled_at && ! $oldScheduledAt->equalTo($seminar->scheduled_at)) {
+                $seminar->registrations()->update(['reminder_sent' => false]);
             }
 
             // Handle subject auto-creation and syncing
@@ -177,13 +182,13 @@ class AdminSeminarController extends Controller
             }
         });
 
-        // Notify registered users and reset reminders when date changes
-        if ($oldScheduledAt && $seminar->scheduled_at && ! $oldScheduledAt->equalTo($seminar->scheduled_at)) {
-            $seminar->registrations()->update(['reminder_sent' => false]);
+        $seminar->refresh();
 
-            $seminar->load('seminarLocation');
+        // Notify registered users when date changes (dispatched after commit)
+        if ($oldScheduledAt && $seminar->scheduled_at && ! $oldScheduledAt->equalTo($seminar->scheduled_at)) {
             $registrations = $seminar->registrations()->with('user')->get();
 
+            $dispatched = 0;
             foreach ($registrations as $registration) {
                 if ($registration->user) {
                     SendSeminarRescheduledJob::dispatch(
@@ -191,13 +196,14 @@ class AdminSeminarController extends Controller
                         $seminar,
                         $oldScheduledAt,
                     );
+                    $dispatched++;
                 }
             }
 
             AuditLog::record(AuditEvent::SeminarRescheduled, auditable: $seminar, eventData: [
                 'old_scheduled_at' => $oldScheduledAt->toISOString(),
                 'new_scheduled_at' => $seminar->scheduled_at->toISOString(),
-                'notified_users' => $registrations->count(),
+                'notified_users' => $dispatched,
             ]);
         }
 

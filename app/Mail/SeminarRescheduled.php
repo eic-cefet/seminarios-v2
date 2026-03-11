@@ -4,9 +4,7 @@ namespace App\Mail;
 
 use App\Models\Seminar;
 use App\Models\User;
-use Carbon\Carbon;
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Attachment;
 use Illuminate\Mail\Mailables\Content;
@@ -16,14 +14,14 @@ use Spatie\IcalendarGenerator\Components\Calendar;
 use Spatie\IcalendarGenerator\Components\Event;
 use Spatie\IcalendarGenerator\Enums\EventStatus;
 
-class SeminarRescheduled extends Mailable implements ShouldQueue
+class SeminarRescheduled extends Mailable
 {
     use Queueable, SerializesModels;
 
     public function __construct(
         public User $user,
         public Seminar $seminar,
-        public Carbon $oldScheduledAt,
+        public \DateTimeInterface $oldScheduledAt,
     ) {}
 
     public function envelope(): Envelope
@@ -61,10 +59,12 @@ class SeminarRescheduled extends Mailable implements ShouldQueue
 
     private function generateIcs(Seminar $seminar): string
     {
-        $dtStart = $seminar->scheduled_at->setTimezone('America/Sao_Paulo');
+        $tz = config('app.timezone', 'America/Sao_Paulo');
+        $dtStart = $seminar->scheduled_at->copy()->setTimezone($tz);
         $dtEnd = $dtStart->copy()->addHour();
 
-        $uid = 'seminar-'.$seminar->id.'@'.parse_url(config('app.url'), PHP_URL_HOST);
+        $host = parse_url(config('app.url'), PHP_URL_HOST) ?? 'app';
+        $uid = 'seminar-'.$seminar->id.'@'.$host;
 
         $description = strip_tags($seminar->description ?? '');
         if ($seminar->room_link) {

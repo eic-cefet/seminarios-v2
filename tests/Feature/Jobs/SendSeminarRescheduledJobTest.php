@@ -19,7 +19,7 @@ describe('SendSeminarRescheduledJob', function () {
         $job = new SendSeminarRescheduledJob($user, $seminar, $oldScheduledAt);
         $job->handle();
 
-        Mail::assertQueued(SeminarRescheduled::class, function ($mail) use ($user) {
+        Mail::assertSent(SeminarRescheduled::class, function ($mail) use ($user) {
             return $mail->hasTo($user->email);
         });
     });
@@ -36,7 +36,7 @@ describe('SendSeminarRescheduledJob', function () {
         $job = new SendSeminarRescheduledJob($user, $seminar, $oldScheduledAt);
         $job->handle();
 
-        Mail::assertQueued(SeminarRescheduled::class, function ($mail) use ($seminar, $oldScheduledAt) {
+        Mail::assertSent(SeminarRescheduled::class, function ($mail) use ($seminar, $oldScheduledAt) {
             return $mail->seminar->id === $seminar->id
                 && $mail->oldScheduledAt->equalTo($oldScheduledAt);
         });

@@ -4,6 +4,7 @@ use App\Mail\SeminarRescheduled;
 use App\Models\Seminar;
 use App\Models\SeminarLocation;
 use App\Models\User;
+use Carbon\Carbon;
 
 describe('SeminarRescheduled Mailable', function () {
     it('renders with old and new dates', function () {
@@ -12,7 +13,7 @@ describe('SeminarRescheduled Mailable', function () {
             'name' => 'Intro to AI',
             'scheduled_at' => '2026-06-20 14:00:00',
         ]);
-        $oldScheduledAt = now()->parse('2026-06-15 14:00:00');
+        $oldScheduledAt = Carbon::parse('2026-06-15 14:00:00');
 
         $mailable = new SeminarRescheduled($user, $seminar, $oldScheduledAt);
 

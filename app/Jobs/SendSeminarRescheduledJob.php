@@ -5,7 +5,6 @@ namespace App\Jobs;
 use App\Mail\SeminarRescheduled;
 use App\Models\Seminar;
 use App\Models\User;
-use Carbon\Carbon;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -24,11 +23,13 @@ class SendSeminarRescheduledJob implements ShouldQueue
     public function __construct(
         public User $user,
         public Seminar $seminar,
-        public Carbon $oldScheduledAt,
+        public \DateTimeInterface $oldScheduledAt,
     ) {}
 
     public function handle(): void
     {
+        $this->seminar->loadMissing('seminarLocation');
+
         Mail::to($this->user)->send(
             new SeminarRescheduled($this->user, $this->seminar, $this->oldScheduledAt)
         );
