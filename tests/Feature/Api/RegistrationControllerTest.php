@@ -156,6 +156,24 @@ describe('DELETE /api/seminars/{slug}/register', function () {
             ->assertJsonPath('error', 'unregister_blocked')
             ->assertJsonPath('message', 'Não é possível cancelar a inscrição no dia do evento');
     });
+
+    it('returns unregister_blocked even when seminar time already passed today', function () {
+        $user = actingAsUser();
+        $seminar = Seminar::factory()->create([
+            'active' => true,
+            'scheduled_at' => now()->startOfDay(),
+        ]);
+
+        Registration::factory()->create([
+            'user_id' => $user->id,
+            'seminar_id' => $seminar->id,
+        ]);
+
+        $response = $this->deleteJson("/api/seminars/{$seminar->slug}/register");
+
+        $response->assertStatus(400)
+            ->assertJsonPath('error', 'unregister_blocked');
+    });
 });
 
 describe('GET /api/seminars/{slug}/registration (status)', function () {

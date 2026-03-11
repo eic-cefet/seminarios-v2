@@ -75,12 +75,14 @@ class RegistrationController extends Controller
         $user = $request->user();
         $seminar = $this->findSeminar($slug);
 
-        if ($seminar->scheduled_at->isPast()) {
-            throw ApiException::seminarExpired();
-        }
-
+        // Block unregistration for the entire day of the event (must be checked
+        // before isPast, since a past time today would match both conditions)
         if ($seminar->scheduled_at->isToday()) {
             throw ApiException::unregisterBlocked();
+        }
+
+        if ($seminar->scheduled_at->isPast()) {
+            throw ApiException::seminarExpired();
         }
 
         $registration = $seminar->registrations()
