@@ -601,6 +601,7 @@ jobs:
                 repo: context.repo.repo,
                 pull_number: context.issue.number,
                 commit_id: pr.head.sha,
+                body: reviewEvent === 'APPROVE' ? 'LGTM' : undefined,
                 event: reviewEvent,
                 ...(reviewComments.length > 0 ? { comments: reviewComments } : {}),
               });
