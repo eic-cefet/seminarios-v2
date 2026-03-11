@@ -1,5 +1,6 @@
 <?php
 
+use App\Jobs\ProcessSeminarRescheduleJob;
 use App\Models\Seminar;
 use App\Models\SeminarLocation;
 use App\Models\SeminarType;
@@ -7,6 +8,7 @@ use App\Models\Subject;
 use App\Models\User;
 use App\Models\UserSpeakerData;
 use App\Models\Workshop;
+use Illuminate\Support\Facades\Bus;
 
 describe('GET /api/admin/seminars', function () {
     it('returns paginated list of seminars for admin', function () {
@@ -492,6 +494,59 @@ describe('PUT /api/admin/seminars/{id}', function () {
 
         $response->assertSuccessful();
         expect($seminar->fresh()->speakers->pluck('id')->toArray())->toBe([$newSpeaker->id]);
+    });
+
+    it('dispatches reschedule job when scheduled_at changes', function () {
+        Bus::fake([ProcessSeminarRescheduleJob::class]);
+        actingAsAdmin();
+
+        $seminar = Seminar::factory()->create([
+            'scheduled_at' => now()->addDays(7),
+        ]);
+
+        $newDate = now()->addDays(14)->toDateTimeString();
+
+        $response = $this->putJson("/api/admin/seminars/{$seminar->id}", [
+            'scheduled_at' => $newDate,
+        ]);
+
+        $response->assertSuccessful();
+        Bus::assertDispatched(ProcessSeminarRescheduleJob::class, function ($job) use ($seminar) {
+            return $job->seminar->id === $seminar->id;
+        });
+    });
+
+    it('does not dispatch reschedule job when scheduled_at stays the same', function () {
+        Bus::fake([ProcessSeminarRescheduleJob::class]);
+        actingAsAdmin();
+
+        $scheduledAt = now()->addDays(7);
+        $seminar = Seminar::factory()->create([
+            'scheduled_at' => $scheduledAt,
+        ]);
+
+        $response = $this->putJson("/api/admin/seminars/{$seminar->id}", [
+            'scheduled_at' => $scheduledAt->toDateTimeString(),
+        ]);
+
+        $response->assertSuccessful();
+        Bus::assertNotDispatched(ProcessSeminarRescheduleJob::class);
+    });
+
+    it('does not dispatch reschedule job when updating other fields only', function () {
+        Bus::fake([ProcessSeminarRescheduleJob::class]);
+        actingAsAdmin();
+
+        $seminar = Seminar::factory()->create([
+            'scheduled_at' => now()->addDays(7),
+        ]);
+
+        $response = $this->putJson("/api/admin/seminars/{$seminar->id}", [
+            'name' => 'Updated Name Only',
+        ]);
+
+        $response->assertSuccessful();
+        Bus::assertNotDispatched(ProcessSeminarRescheduleJob::class);
     });
 });
 

@@ -3,6 +3,7 @@
 namespace App\Mail;
 
 use App\Models\User;
+use App\Services\IcsGenerationService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
@@ -11,9 +12,6 @@ use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Collection;
-use Spatie\IcalendarGenerator\Components\Calendar;
-use Spatie\IcalendarGenerator\Components\Event;
-use Spatie\IcalendarGenerator\Enums\EventStatus;
 
 class SeminarReminder extends Mailable implements ShouldQueue
 {
@@ -55,11 +53,12 @@ class SeminarReminder extends Mailable implements ShouldQueue
      */
     public function attachments(): array
     {
+        $icsService = app(IcsGenerationService::class);
         $attachments = [];
 
         foreach ($this->seminars as $seminar) {
             if ($seminar->scheduled_at) {
-                $icsContent = $this->generateIcs($seminar);
+                $icsContent = $icsService->generateForSeminar($seminar);
                 $filename = 'seminario-'.($seminar->slug ?? $seminar->id).'.ics';
 
                 $attachments[] = Attachment::fromData(fn () => $icsContent, $filename)
@@ -68,39 +67,5 @@ class SeminarReminder extends Mailable implements ShouldQueue
         }
 
         return $attachments;
-    }
-
-    private function generateIcs(\App\Models\Seminar $seminar): string
-    {
-        $dtStart = $seminar->scheduled_at->setTimezone('America/Sao_Paulo');
-        $dtEnd = $dtStart->copy()->addHour();
-
-        $uid = 'seminar-'.$seminar->id.'@'.parse_url(config('app.url'), PHP_URL_HOST);
-
-        $description = strip_tags($seminar->description ?? '');
-        if ($seminar->room_link) {
-            $description .= ($description ? "\n\n" : '').'Link de acesso: '.$seminar->room_link;
-        }
-
-        $event = Event::create($seminar->name)
-            ->uniqueIdentifier($uid)
-            ->startsAt($dtStart)
-            ->endsAt($dtEnd)
-            ->status(EventStatus::Confirmed)
-            ->url(url('/seminario/'.$seminar->slug));
-
-        $location = $seminar->seminarLocation?->name;
-        if ($location) {
-            $event->address($location);
-        }
-
-        if ($description) {
-            $event->description($description);
-        }
-
-        return Calendar::create()
-            ->productIdentifier('-//'.config('mail.name').'//Seminarios//PT')
-            ->event($event)
-            ->get();
     }
 }
