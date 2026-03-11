@@ -185,7 +185,7 @@ class AdminSeminarController extends Controller
         ])->loadCount('registrations');
 
         if ($oldScheduledAt && $seminar->scheduled_at && ! $oldScheduledAt->equalTo($seminar->scheduled_at)) {
-            ProcessSeminarRescheduleJob::dispatch($seminar, $oldScheduledAt);
+            ProcessSeminarRescheduleJob::dispatch($seminar, $oldScheduledAt)->afterCommit();
         }
 
         return response()->json([

@@ -35,22 +35,24 @@ class ProcessSeminarRescheduleJob implements ShouldQueue
 
         $this->seminar->loadMissing('seminarLocation');
 
-        DB::transaction(function () {
+        $registrations = DB::transaction(function () {
             $this->seminar->registrations()->update(['reminder_sent' => false]);
 
             $registrations = $this->seminar->registrations()->with('user')->get();
-
-            foreach ($registrations as $registration) {
-                Mail::to($registration->user)->queue(
-                    new SeminarRescheduled($registration->user, $this->seminar, $this->oldScheduledAt)
-                );
-            }
 
             AuditLog::record(AuditEvent::SeminarRescheduled, AuditEventType::System, $this->seminar, [
                 'old_scheduled_at' => $this->oldScheduledAt->format('Y-m-d H:i:s'),
                 'new_scheduled_at' => $this->seminar->scheduled_at->format('Y-m-d H:i:s'),
                 'notified_users' => $registrations->count(),
             ]);
+
+            return $registrations;
         });
+
+        foreach ($registrations as $registration) {
+            Mail::to($registration->user)->queue(
+                new SeminarRescheduled($registration->user, $this->seminar, $this->oldScheduledAt)
+            );
+        }
     }
 }
