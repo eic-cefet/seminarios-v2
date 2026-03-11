@@ -503,6 +503,54 @@ jobs:
               });
             }
 
+            // Resolve old bot review threads before posting new ones
+            try {
+              const query = `query($owner: String!, $repo: String!, $number: Int!) {
+                repository(owner: $owner, name: $repo) {
+                  pullRequest(number: $number) {
+                    reviewThreads(first: 100) {
+                      nodes {
+                        id
+                        isResolved
+                        comments(first: 1) {
+                          nodes {
+                            author { login }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }`;
+
+              const result = await github.graphql(query, {
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                number: context.issue.number,
+              });
+
+              const threads = result.repository.pullRequest.reviewThreads.nodes;
+              const botLogin = (await github.rest.apps.getAuthenticated()).data.slug + '[bot]';
+
+              const unresolvedBotThreads = threads.filter(t =>
+                !t.isResolved &&
+                t.comments.nodes.length > 0 &&
+                t.comments.nodes[0].author.login === botLogin
+              );
+
+              for (const thread of unresolvedBotThreads) {
+                await github.graphql(`mutation($id: ID!) {
+                  resolveReviewThread(input: { threadId: $id }) {
+                    thread { id }
+                  }
+                }`, { id: thread.id });
+              }
+
+              console.log(`Resolved ${unresolvedBotThreads.length} old bot review threads`);
+            } catch (e) {
+              console.log('Failed to resolve old threads (non-fatal):', e.message);
+            }
+
             // Post inline comments as a PR review
             const inlineJson = process.env.INLINE_COMMENTS || '[]';
             let inlineComments = [];
