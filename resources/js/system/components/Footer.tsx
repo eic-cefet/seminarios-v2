@@ -1,7 +1,8 @@
 import { Link } from "react-router-dom";
+import { getYear } from "@shared/lib/date";
 
 export function Footer() {
-    const currentYear = new Date().getFullYear();
+    const currentYear = getYear();
 
     return (
         <footer className="bg-white border-t border-gray-200">

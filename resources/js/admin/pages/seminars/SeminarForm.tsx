@@ -34,6 +34,7 @@ import {
     SelectValue,
 } from "../../components/ui/select";
 import { Switch } from "../../components/ui/switch";
+import { toDatetimeLocal } from "@shared/lib/date";
 import { seminarSchema, type SeminarFormData } from "./seminarSchema";
 
 function generateSlug(name: string): string {
@@ -139,15 +140,9 @@ export default function SeminarForm() {
             const seminar = seminarData.data;
 
             // Convert scheduled_at from ISO to datetime-local format
-            let scheduledAt = "";
-            if (seminar.scheduled_at) {
-                const date = new Date(seminar.scheduled_at);
-                scheduledAt = new Date(
-                    date.getTime() - date.getTimezoneOffset() * 60000,
-                )
-                    .toISOString()
-                    .slice(0, 16);
-            }
+            const scheduledAt = seminar.scheduled_at
+                ? toDatetimeLocal(seminar.scheduled_at)
+                : "";
 
             // Handle IDs - try both flat and nested structures
             const locationId =
