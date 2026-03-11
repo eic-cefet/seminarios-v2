@@ -147,6 +147,10 @@ export default function SeminarDetails() {
     }
 
     const isExpired = seminar.isExpired;
+    const isToday =
+        !isExpired &&
+        new Date(seminar.scheduledAt).toDateString() ===
+            new Date().toDateString();
 
     return (
         <>
@@ -353,10 +357,10 @@ export default function SeminarDetails() {
                                             </p>
                                             <button
                                                 onClick={handleUnregisterClick}
-                                                disabled={isProcessing}
+                                                disabled={isProcessing || isToday}
                                                 className={cn(
                                                     "w-full rounded-md border border-gray-300 bg-white px-4 py-3 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 transition-colors cursor-pointer",
-                                                    isProcessing &&
+                                                    (isProcessing || isToday) &&
                                                         "opacity-70 cursor-not-allowed",
                                                 )}
                                             >
@@ -369,6 +373,12 @@ export default function SeminarDetails() {
                                                     "Cancelar inscrição"
                                                 )}
                                             </button>
+                                            {isToday && (
+                                                <p className="mt-2 text-xs text-amber-600 text-center">
+                                                    Não é possível cancelar a
+                                                    inscrição no dia do evento
+                                                </p>
+                                            )}
                                         </>
                                     ) : (
                                         <>

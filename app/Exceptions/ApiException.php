@@ -115,4 +115,9 @@ class ApiException extends Exception
     {
         return new self('seminar_full', 'Este seminário atingiu sua capacidade máxima', 409);
     }
+
+    public static function unregisterBlocked(): self
+    {
+        return new self('unregister_blocked', 'Não é possível cancelar a inscrição no dia do evento', 400);
+    }
 }
