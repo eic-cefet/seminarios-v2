@@ -18,7 +18,8 @@ import { Badge } from "../components/Badge";
 import { LoginModal } from "../components/LoginModal";
 import { PageTitle } from "@shared/components/PageTitle";
 import { seminarsApi, registrationApi } from "@shared/api/client";
-import { formatDateTime, cn, containsHTML } from "@shared/lib/utils";
+import { cn, containsHTML } from "@shared/lib/utils";
+import { formatDateTime, isToday as isTodayDate } from "@shared/lib/date";
 import { getErrorMessage } from "@shared/lib/errors";
 import { useAuth } from "@shared/contexts/AuthContext";
 import { analytics } from "@shared/lib/analytics";
@@ -147,10 +148,7 @@ export default function SeminarDetails() {
     }
 
     const isExpired = seminar.isExpired;
-    const isToday =
-        !isExpired &&
-        new Date(seminar.scheduledAt).toDateString() ===
-            new Date().toDateString();
+    const isToday = !isExpired && isTodayDate(seminar.scheduledAt);
 
     return (
         <>
