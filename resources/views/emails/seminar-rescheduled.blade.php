@@ -6,7 +6,7 @@ Olá, **{{ $userName }}**!
 O seminário **{{ $seminar->name }}** foi reagendado:
 
 <x-mail::panel>
-**Data anterior:** ~~{{ $oldScheduledAt->format('d/m/Y') }} às {{ $oldScheduledAt->format('H:i') }}~~
+**Data anterior:** <del>{{ $oldScheduledAt->format('d/m/Y') }} às {{ $oldScheduledAt->format('H:i') }}</del>
 
 **Nova data:** {{ $newScheduledAt->format('d/m/Y') }} às {{ $newScheduledAt->format('H:i') }} (horário de Brasília)
 @if($seminar->seminarLocation)
