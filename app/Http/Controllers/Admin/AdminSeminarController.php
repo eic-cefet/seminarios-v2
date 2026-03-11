@@ -2,12 +2,15 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\AuditEvent;
 use App\Enums\Role;
 use App\Http\Controllers\Admin\Concerns\EscapesLikeWildcards;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\SeminarStoreRequest;
 use App\Http\Requests\Admin\SeminarUpdateRequest;
 use App\Http\Resources\Admin\AdminSeminarResource;
+use App\Jobs\SendSeminarRescheduledJob;
+use App\Models\AuditLog;
 use App\Models\Seminar;
 use App\Models\SeminarLocation;
 use App\Models\SeminarType;
@@ -139,8 +142,9 @@ class AdminSeminarController extends Controller
     public function update(SeminarUpdateRequest $request, Seminar $seminar): JsonResponse
     {
         $validated = $request->validated();
+        $oldScheduledAt = $seminar->scheduled_at?->copy();
 
-        DB::transaction(function () use ($validated, $seminar) {
+        DB::transaction(function () use ($validated, $seminar, $oldScheduledAt) {
             // Keep in sync with Seminar::$fillable and SeminarUpdateRequest rules
             $fields = Arr::only($validated, [
                 'name', 'description', 'scheduled_at', 'room_link',
@@ -155,6 +159,11 @@ class AdminSeminarController extends Controller
 
             if (! empty($fields)) {
                 $seminar->fill($fields)->save();
+            }
+
+            // Reset reminders inside the transaction so it rolls back with the date change
+            if ($oldScheduledAt && $seminar->scheduled_at && ! $oldScheduledAt->equalTo($seminar->scheduled_at)) {
+                $seminar->registrations()->update(['reminder_sent' => false]);
             }
 
             // Handle subject auto-creation and syncing
@@ -172,6 +181,31 @@ class AdminSeminarController extends Controller
                 $seminar->speakers()->sync($validated['speaker_ids']);
             }
         });
+
+        $seminar->refresh();
+
+        // Notify registered users when date changes (dispatched after commit)
+        if ($oldScheduledAt && $seminar->scheduled_at && ! $oldScheduledAt->equalTo($seminar->scheduled_at)) {
+            $registrations = $seminar->registrations()->with('user')->get();
+
+            $dispatched = 0;
+            foreach ($registrations as $registration) {
+                if ($registration->user) {
+                    SendSeminarRescheduledJob::dispatch(
+                        $registration->user,
+                        $seminar,
+                        $oldScheduledAt,
+                    );
+                    $dispatched++;
+                }
+            }
+
+            AuditLog::record(AuditEvent::SeminarRescheduled, auditable: $seminar, eventData: [
+                'old_scheduled_at' => $oldScheduledAt->toISOString(),
+                'new_scheduled_at' => $seminar->scheduled_at->toISOString(),
+                'notified_users' => $dispatched,
+            ]);
+        }
 
         $seminar->load([
             'seminarType',
