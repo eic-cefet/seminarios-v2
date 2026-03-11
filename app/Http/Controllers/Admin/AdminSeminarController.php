@@ -143,13 +143,9 @@ class AdminSeminarController extends Controller
     {
         $validated = $request->validated();
         $oldScheduledAt = $seminar->scheduled_at?->copy();
+        $wasRescheduled = false;
 
-        // Determine if scheduled_at is changing before mutating the model
-        $wasRescheduled = $oldScheduledAt
-            && isset($validated['scheduled_at'])
-            && ! $oldScheduledAt->equalTo($validated['scheduled_at']);
-
-        DB::transaction(function () use ($validated, $seminar, $wasRescheduled) {
+        DB::transaction(function () use ($validated, $seminar, $oldScheduledAt, &$wasRescheduled) {
             // Keep in sync with Seminar::$fillable and SeminarUpdateRequest rules
             $fields = Arr::only($validated, [
                 'name', 'description', 'scheduled_at', 'room_link',
@@ -167,6 +163,7 @@ class AdminSeminarController extends Controller
             }
 
             // Reset reminders inside the transaction so it rolls back with the date change
+            $wasRescheduled = $oldScheduledAt && $seminar->scheduled_at && ! $oldScheduledAt->equalTo($seminar->scheduled_at);
             if ($wasRescheduled) {
                 $seminar->registrations()->update(['reminder_sent' => false]);
             }
@@ -186,6 +183,8 @@ class AdminSeminarController extends Controller
                 $seminar->speakers()->sync($validated['speaker_ids']);
             }
         });
+
+        $seminar->refresh();
 
         // Notify registered users when date changes (dispatched after commit)
         if ($wasRescheduled) {

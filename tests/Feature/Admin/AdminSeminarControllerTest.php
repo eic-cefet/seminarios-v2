@@ -607,7 +607,7 @@ describe('PUT /api/admin/seminars/{id}', function () {
 
         // Create a registration with a user that will be deleted
         $deletedUser = User::factory()->create();
-        Registration::factory()->create([
+        $orphanReg = Registration::factory()->create([
             'seminar_id' => $seminar->id,
             'user_id' => $deletedUser->id,
         ]);
