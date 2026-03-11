@@ -70,7 +70,7 @@ class SeminarReminder extends Mailable implements ShouldQueue
     private function generateIcs(\App\Models\Seminar $seminar): string
     {
         $dtStart = $seminar->scheduled_at->setTimezone('America/Sao_Paulo');
-        $dtEnd = $dtStart->copy()->addHours(2);
+        $dtEnd = $dtStart->copy()->addHour();
         $dtstamp = now()->setTimezone('America/Sao_Paulo');
 
         $uid = 'seminar-'.$seminar->id.'@'.parse_url(config('app.url'), PHP_URL_HOST);
@@ -82,8 +82,6 @@ class SeminarReminder extends Mailable implements ShouldQueue
         if ($seminar->room_link) {
             $description .= ($description ? "\n\n" : '').'Link de acesso: '.$seminar->room_link;
         }
-
-        $description = str_replace(["\r\n", "\n", "\r"], '\n', $description);
 
         $seminarUrl = url('/seminario/'.$seminar->slug);
 
@@ -126,6 +124,11 @@ class SeminarReminder extends Mailable implements ShouldQueue
 
     private function escapeIcsText(string $text): string
     {
-        return preg_replace('/[\r\n]+/', '\n', addcslashes($text, ',;\\'));
+        // Escape backslashes, commas, and semicolons per RFC 5545
+        $text = addcslashes($text, ',;\\');
+        // Convert newlines to ICS line break encoding
+        $text = preg_replace('/\r\n|\r|\n/', '\n', $text);
+
+        return $text;
     }
 }
