@@ -11,6 +11,9 @@ use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Collection;
+use Spatie\IcalendarGenerator\Components\Calendar;
+use Spatie\IcalendarGenerator\Components\Event;
+use Spatie\IcalendarGenerator\Enums\EventStatus;
 
 class SeminarReminder extends Mailable implements ShouldQueue
 {
@@ -70,62 +73,34 @@ class SeminarReminder extends Mailable implements ShouldQueue
     private function generateIcs(\App\Models\Seminar $seminar): string
     {
         $dtStart = $seminar->scheduled_at->setTimezone('America/Sao_Paulo');
-        $dtEnd = $dtStart->copy()->addHours(2);
-        $dtstamp = now()->setTimezone('America/Sao_Paulo');
+        $dtEnd = $dtStart->copy()->addHour();
 
         $uid = 'seminar-'.$seminar->id.'@'.parse_url(config('app.url'), PHP_URL_HOST);
 
-        $location = $seminar->seminarLocation?->name ?? '';
         $description = strip_tags($seminar->description ?? '');
-
-        // Append meeting link to description if available
         if ($seminar->room_link) {
             $description .= ($description ? "\n\n" : '').'Link de acesso: '.$seminar->room_link;
         }
 
-        $description = str_replace(["\r\n", "\n", "\r"], '\n', $description);
+        $event = Event::create($seminar->name)
+            ->uniqueIdentifier($uid)
+            ->startsAt($dtStart)
+            ->endsAt($dtEnd)
+            ->status(EventStatus::Confirmed)
+            ->url(url('/seminario/'.$seminar->slug));
 
-        $seminarUrl = url('/seminario/'.$seminar->slug);
-
-        $ics = "BEGIN:VCALENDAR\r\n";
-        $ics .= "VERSION:2.0\r\n";
-        $ics .= 'PRODID:-//'.config('mail.name')."//Seminarios//PT\r\n";
-        $ics .= "CALSCALE:GREGORIAN\r\n";
-        $ics .= "METHOD:PUBLISH\r\n";
-        $ics .= "BEGIN:VTIMEZONE\r\n";
-        $ics .= "TZID:America/Sao_Paulo\r\n";
-        $ics .= "BEGIN:STANDARD\r\n";
-        $ics .= "DTSTART:19700101T000000\r\n";
-        $ics .= "TZOFFSETFROM:-0300\r\n";
-        $ics .= "TZOFFSETTO:-0300\r\n";
-        $ics .= "TZNAME:BRT\r\n";
-        $ics .= "END:STANDARD\r\n";
-        $ics .= "END:VTIMEZONE\r\n";
-        $ics .= "BEGIN:VEVENT\r\n";
-        $ics .= "UID:{$uid}\r\n";
-        $ics .= 'DTSTAMP:'.$dtstamp->format('Ymd\THis')."\r\n";
-        $ics .= 'DTSTART;TZID=America/Sao_Paulo:'.$dtStart->format('Ymd\THis')."\r\n";
-        $ics .= 'DTEND;TZID=America/Sao_Paulo:'.$dtEnd->format('Ymd\THis')."\r\n";
-        $ics .= 'SUMMARY:'.$this->escapeIcsText($seminar->name)."\r\n";
-
+        $location = $seminar->seminarLocation?->name;
         if ($location) {
-            $ics .= 'LOCATION:'.$this->escapeIcsText($location)."\r\n";
+            $event->address($location);
         }
 
         if ($description) {
-            $ics .= 'DESCRIPTION:'.$this->escapeIcsText($description)."\r\n";
+            $event->description($description);
         }
 
-        $ics .= 'URL:'.$seminarUrl."\r\n";
-        $ics .= "STATUS:CONFIRMED\r\n";
-        $ics .= "END:VEVENT\r\n";
-        $ics .= "END:VCALENDAR\r\n";
-
-        return $ics;
-    }
-
-    private function escapeIcsText(string $text): string
-    {
-        return preg_replace('/[\r\n]+/', '\n', addcslashes($text, ',;\\'));
+        return Calendar::create()
+            ->productIdentifier('-//'.config('mail.name').'//Seminarios//PT')
+            ->event($event)
+            ->get();
     }
 }

@@ -177,4 +177,56 @@ describe('SeminarReminder Mail', function () {
 
         expect($mail->user->id)->toBe($user->id);
     });
+
+    it('generates ics with 1 hour duration', function () {
+        $user = User::factory()->create();
+        $seminar = Seminar::factory()->create([
+            'scheduled_at' => '2026-03-15 10:00:00',
+        ]);
+
+        $reflection = new ReflectionMethod(SeminarReminder::class, 'generateIcs');
+        $mail = new SeminarReminder($user, collect([$seminar]));
+        $ics = $reflection->invoke($mail, $seminar);
+
+        expect($ics)->toContain('20260315T100000');
+        // End time should be 1 hour after start (11:00, not 12:00)
+        expect($ics)->toContain('20260315T110000');
+        expect($ics)->not->toContain('20260315T120000');
+    });
+
+    it('generates ics with description containing newlines', function () {
+        $user = User::factory()->create();
+        $seminar = Seminar::factory()->create([
+            'scheduled_at' => now()->addDay(),
+            'description' => "Line one\nLine two\nLine three",
+        ]);
+
+        $reflection = new ReflectionMethod(SeminarReminder::class, 'generateIcs');
+        $mail = new SeminarReminder($user, collect([$seminar]));
+        $ics = $reflection->invoke($mail, $seminar);
+
+        expect($ics)->toContain('DESCRIPTION');
+        expect($ics)->toContain('Line one');
+    });
+
+    it('generates valid ics structure', function () {
+        $user = User::factory()->create();
+        $seminar = Seminar::factory()->create([
+            'scheduled_at' => now()->addDay(),
+            'name' => 'Test Seminar',
+            'description' => 'A description',
+        ]);
+
+        $reflection = new ReflectionMethod(SeminarReminder::class, 'generateIcs');
+        $mail = new SeminarReminder($user, collect([$seminar]));
+        $ics = $reflection->invoke($mail, $seminar);
+
+        expect($ics)->toContain('BEGIN:VCALENDAR');
+        expect($ics)->toContain('END:VCALENDAR');
+        expect($ics)->toContain('BEGIN:VEVENT');
+        expect($ics)->toContain('END:VEVENT');
+        expect($ics)->toContain('SUMMARY:Test Seminar');
+        expect($ics)->toContain('STATUS:CONFIRMED');
+        expect($ics)->toContain('seminar-'.$seminar->id.'@');
+    });
 });
