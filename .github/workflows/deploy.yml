@@ -28,7 +28,7 @@ jobs:
               while [ $attempt -le $max_retries ]; do
                 echo "Attempt $attempt/$max_retries..."
 
-                response=$(curl -s -o /dev/null -w "%{http_code}" -X POST "https://dns.jorgejunior.dev/api/deploy/$trigger")
+                response=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 2 --max-time 2 -X POST "https://dns.jorgejunior.dev/api/deploy/$trigger")
 
                 if [ "$response" -ge 200 ] && [ "$response" -lt 300 ]; then
                   echo "✓ Success: HTTP $response"
