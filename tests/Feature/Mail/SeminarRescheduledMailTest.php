@@ -65,6 +65,18 @@ describe('SeminarRescheduled Mail', function () {
         expect($mail->oldScheduledAt)->toBe($oldDate);
     });
 
+    it('returns empty attachments when seminar has no scheduled at', function () {
+        $user = User::factory()->create();
+        $seminar = Seminar::factory()->create();
+        $seminar->scheduled_at = null;
+        $oldDate = now()->subDay();
+
+        $mail = new SeminarRescheduled($user, $seminar, $oldDate);
+        $attachments = $mail->attachments();
+
+        expect($attachments)->toBeEmpty();
+    });
+
     it('does not implement should queue', function () {
         expect(SeminarRescheduled::class)->not->toImplement(ShouldQueue::class);
     });

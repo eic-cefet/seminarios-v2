@@ -11,6 +11,10 @@ class IcsGenerationService
 {
     public function generateForSeminar(Seminar $seminar): string
     {
+        if (! $seminar->scheduled_at) {
+            throw new \InvalidArgumentException('Seminar does not have a scheduled date.');
+        }
+
         $dtStart = $seminar->scheduled_at->setTimezone('America/Sao_Paulo');
         $dtEnd = $dtStart->copy()->addHour();
 

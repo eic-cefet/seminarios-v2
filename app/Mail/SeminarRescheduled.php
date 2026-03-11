@@ -47,6 +47,10 @@ class SeminarRescheduled extends Mailable
      */
     public function attachments(): array
     {
+        if (! $this->seminar->scheduled_at) {
+            return [];
+        }
+
         $icsContent = app(IcsGenerationService::class)->generateForSeminar($this->seminar);
         $filename = 'seminario-'.($this->seminar->slug ?? $this->seminar->id).'.ics';
 

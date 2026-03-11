@@ -13,6 +13,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 
 class ProcessSeminarRescheduleJob implements ShouldQueue
@@ -34,20 +35,22 @@ class ProcessSeminarRescheduleJob implements ShouldQueue
 
         $this->seminar->loadMissing('seminarLocation');
 
-        $this->seminar->registrations()->update(['reminder_sent' => false]);
+        DB::transaction(function () {
+            $this->seminar->registrations()->update(['reminder_sent' => false]);
 
-        $registrations = $this->seminar->registrations()->with('user')->get();
+            $registrations = $this->seminar->registrations()->with('user')->get();
 
-        foreach ($registrations as $registration) {
-            Mail::to($registration->user)->queue(
-                new SeminarRescheduled($registration->user, $this->seminar, $this->oldScheduledAt)
-            );
-        }
+            foreach ($registrations as $registration) {
+                Mail::to($registration->user)->queue(
+                    new SeminarRescheduled($registration->user, $this->seminar, $this->oldScheduledAt)
+                );
+            }
 
-        AuditLog::record(AuditEvent::SeminarRescheduled, AuditEventType::System, $this->seminar, [
-            'old_scheduled_at' => $this->oldScheduledAt->format('Y-m-d H:i:s'),
-            'new_scheduled_at' => $this->seminar->scheduled_at->format('Y-m-d H:i:s'),
-            'notified_users' => $registrations->count(),
-        ]);
+            AuditLog::record(AuditEvent::SeminarRescheduled, AuditEventType::System, $this->seminar, [
+                'old_scheduled_at' => $this->oldScheduledAt->format('Y-m-d H:i:s'),
+                'new_scheduled_at' => $this->seminar->scheduled_at->format('Y-m-d H:i:s'),
+                'notified_users' => $registrations->count(),
+            ]);
+        });
     }
 }

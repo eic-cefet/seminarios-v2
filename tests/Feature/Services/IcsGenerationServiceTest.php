@@ -165,6 +165,16 @@ describe('IcsGenerationService', function () {
         expect($ics)->toContain('/seminario/my-seminar');
     });
 
+    it('throws exception when seminar has no scheduled date', function () {
+        $seminar = Seminar::factory()->create([
+            'scheduled_at' => now()->addDay(),
+        ]);
+        $seminar->scheduled_at = null;
+
+        expect(fn () => app(IcsGenerationService::class)->generateForSeminar($seminar))
+            ->toThrow(\InvalidArgumentException::class, 'Seminar does not have a scheduled date.');
+    });
+
     it('includes product identifier with config mail name', function () {
         $seminar = Seminar::factory()->create([
             'scheduled_at' => now()->addDay(),
