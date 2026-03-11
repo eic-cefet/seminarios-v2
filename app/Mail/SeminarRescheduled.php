@@ -5,7 +5,6 @@ namespace App\Mail;
 use App\Models\Seminar;
 use App\Models\User;
 use Carbon\CarbonInterface;
-use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Attachment;
 use Illuminate\Mail\Mailables\Content;
@@ -17,7 +16,7 @@ use Spatie\IcalendarGenerator\Enums\EventStatus;
 
 class SeminarRescheduled extends Mailable
 {
-    use Queueable, SerializesModels;
+    use SerializesModels;
 
     public function __construct(
         public User $user,
@@ -67,14 +66,17 @@ class SeminarRescheduled extends Mailable
         $host = parse_url(config('app.url'), PHP_URL_HOST) ?? 'app';
         $uid = 'seminar-'.$seminar->id.'@'.$host;
 
+        $sanitizedName = str_replace(["\r", "\n"], ' ', $seminar->name);
+
         $description = strip_tags($seminar->description ?? '');
+        $description = str_replace(["\r\n", "\r"], "\n", $description);
         if ($seminar->room_link) {
             $sanitizedLink = str_replace(["\r", "\n"], '', $seminar->room_link);
             $description .= ($description ? "\n\n" : '').'Link de acesso: '.$sanitizedLink;
         }
 
         $slug = $seminar->slug ?? $seminar->id;
-        $event = Event::create($seminar->name)
+        $event = Event::create($sanitizedName)
             ->uniqueIdentifier($uid)
             ->startsAt($dtStart)
             ->endsAt($dtEnd)

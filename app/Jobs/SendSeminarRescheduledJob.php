@@ -22,7 +22,7 @@ class SendSeminarRescheduledJob implements ShouldQueue
 
     public int $backoff = 60;
 
-    public int $maxExceptions = 3;
+    public string $queue = 'notifications';
 
     public string $oldScheduledAt;
 
@@ -38,8 +38,10 @@ class SendSeminarRescheduledJob implements ShouldQueue
     {
         $this->seminar->loadMissing('seminarLocation');
 
+        $oldDate = Carbon::parse($this->oldScheduledAt)->setTimezone(config('app.timezone'));
+
         Mail::to($this->user)->send(
-            new SeminarRescheduled($this->user, $this->seminar, Carbon::parse($this->oldScheduledAt))
+            new SeminarRescheduled($this->user, $this->seminar, $oldDate)
         );
     }
 

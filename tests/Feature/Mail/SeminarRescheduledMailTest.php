@@ -89,7 +89,7 @@ describe('SeminarRescheduled Mailable', function () {
         $mailable->assertSeeInHtml('/seminario/'.$seminar->id);
     });
 
-    it('sanitizes room link in ics description', function () {
+    it('sanitizes room link in ics description by stripping CRLF', function () {
         $user = User::factory()->create();
         $seminar = Seminar::factory()->create([
             'scheduled_at' => now()->addDays(10),
@@ -99,7 +99,11 @@ describe('SeminarRescheduled Mailable', function () {
 
         $mailable = new SeminarRescheduled($user, $seminar, $oldScheduledAt);
 
-        $attachments = $mailable->attachments();
-        expect($attachments)->toHaveCount(1);
+        // Use reflection to access private generateIcs and verify sanitization
+        $reflection = new ReflectionMethod(SeminarRescheduled::class, 'generateIcs');
+        $icsContent = $reflection->invoke($mailable, $seminar);
+
+        expect($icsContent)->toContain('https://meet.google.com/abcINJECTED:value');
+        expect($icsContent)->not->toMatch('/\r\nINJECTED/');
     });
 });
