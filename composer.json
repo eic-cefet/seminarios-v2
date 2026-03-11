@@ -22,6 +22,7 @@
         "league/flysystem-aws-s3-v3": "^3.0",
         "maatwebsite/excel": "^3.1",
         "pagevamp/laravel-cloudwatch-logs": "^1.1",
+        "spatie/icalendar-generator": "*",
         "spatie/laravel-permission": "*"
     },
     "require-dev": {
