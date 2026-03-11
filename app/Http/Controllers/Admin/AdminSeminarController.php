@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\SeminarStoreRequest;
 use App\Http\Requests\Admin\SeminarUpdateRequest;
 use App\Http\Resources\Admin\AdminSeminarResource;
+use App\Jobs\ProcessSeminarRescheduleJob;
 use App\Models\Seminar;
 use App\Models\SeminarLocation;
 use App\Models\SeminarType;
@@ -139,6 +140,7 @@ class AdminSeminarController extends Controller
     public function update(SeminarUpdateRequest $request, Seminar $seminar): JsonResponse
     {
         $validated = $request->validated();
+        $oldScheduledAt = $seminar->scheduled_at?->copy();
 
         DB::transaction(function () use ($validated, $seminar) {
             // Keep in sync with Seminar::$fillable and SeminarUpdateRequest rules
@@ -181,6 +183,10 @@ class AdminSeminarController extends Controller
             'subjects',
             'speakers',
         ])->loadCount('registrations');
+
+        if ($oldScheduledAt && $seminar->scheduled_at && ! $oldScheduledAt->equalTo($seminar->scheduled_at)) {
+            ProcessSeminarRescheduleJob::dispatch($seminar, $oldScheduledAt);
+        }
 
         return response()->json([
             'message' => 'Seminário atualizado com sucesso',
