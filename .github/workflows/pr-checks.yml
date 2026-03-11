@@ -376,6 +376,14 @@ jobs:
           - "dependencies" (package updates)
           Multiple labels are encouraged if applicable.
 
+          ## Approval Decision
+
+          After your review, decide whether to **APPROVE** or just **COMMENT**:
+          - **APPROVE**: The PR is clean — no bugs, no security issues, no data-loss risks, no breaking changes. Minor style differences or subjective preferences do NOT block approval. Most PRs should be approved.
+          - **COMMENT**: The PR has at least one confirmed bug, security vulnerability, data-loss risk, or breaking change that should be fixed before merging.
+
+          When in doubt, APPROVE. Only withhold approval for real, confirmed issues.
+
           ## Response format (MUST follow exactly — use the sentinel markers, NOT markdown fences)
 
           ===REVIEW_START===
@@ -389,6 +397,10 @@ jobs:
           ===LABELS_START===
           ["label1", "label2"]
           ===LABELS_END===
+
+          ===VERDICT_START===
+          APPROVE or COMMENT
+          ===VERDICT_END===
 
           Changed files:
           PROMPT
@@ -457,8 +469,12 @@ jobs:
           except Exception:
               labels = "[]"
 
+          verdict_raw = extract(text, "===VERDICT_START===", "===VERDICT_END===").upper()
+          verdict = "APPROVE" if verdict_raw == "APPROVE" else "COMMENT"
+
           print(f"Extracted labels: {labels}")
           print(f"Inline comments count: {len(json.loads(inline))}")
+          print(f"Verdict: {verdict}")
 
           # Write to GITHUB_OUTPUT using random delimiters to avoid collisions
           delim = "DELIM_" + os.urandom(8).hex()
@@ -466,6 +482,7 @@ jobs:
               out.write(f"review<<{delim}\n{review}\n{delim}\n")
               out.write(f"labels={labels}\n")
               out.write(f"inline={inline}\n")
+              out.write(f"verdict={verdict}\n")
           PYEOF
 
       - name: Post review comment, inline comments, and apply labels
@@ -551,8 +568,9 @@ jobs:
               console.log('Failed to resolve old threads (non-fatal):', e.message);
             }
 
-            // Post inline comments as a PR review
+            // Post PR review (with optional inline comments and approval verdict)
             const inlineJson = process.env.INLINE_COMMENTS || '[]';
+            const verdict = process.env.VERDICT || 'COMMENT';
             let inlineComments = [];
             try {
               inlineComments = JSON.parse(inlineJson);
@@ -560,35 +578,36 @@ jobs:
               console.log('Failed to parse inline comments:', e);
             }
 
-            if (inlineComments.length > 0) {
-              const { data: pr } = await github.rest.pulls.get({
+            const { data: pr } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number,
+            });
+
+            const reviewComments = inlineComments
+              .filter(c => c.path && c.line && c.body)
+              .map(c => ({
+                path: c.path,
+                line: c.line,
+                body: c.body,
+              }));
+
+            // Use verdict for the review event; inline comments force COMMENT event
+            const reviewEvent = reviewComments.length > 0 ? 'COMMENT' : verdict;
+
+            try {
+              await github.rest.pulls.createReview({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 pull_number: context.issue.number,
+                commit_id: pr.head.sha,
+                body: reviewEvent === 'APPROVE' ? 'LGTM' : undefined,
+                event: reviewEvent,
+                ...(reviewComments.length > 0 ? { comments: reviewComments } : {}),
               });
-
-              const reviewComments = inlineComments
-                .filter(c => c.path && c.line && c.body)
-                .map(c => ({
-                  path: c.path,
-                  line: c.line,
-                  body: c.body,
-                }));
-
-              if (reviewComments.length > 0) {
-                try {
-                  await github.rest.pulls.createReview({
-                    owner: context.repo.owner,
-                    repo: context.repo.repo,
-                    pull_number: context.issue.number,
-                    commit_id: pr.head.sha,
-                    event: 'COMMENT',
-                    comments: reviewComments,
-                  });
-                } catch (e) {
-                  console.log('Failed to post inline review (line numbers may not match diff):', e.message);
-                }
-              }
+              console.log(`Submitted review with event: ${reviewEvent}`);
+            } catch (e) {
+              console.log('Failed to post review:', e.message);
             }
 
             // Sync category labels
@@ -681,6 +700,7 @@ jobs:
           REVIEW_CONTENT: ${{ steps.claude.outputs.review }}
           INLINE_COMMENTS: ${{ steps.claude.outputs.inline }}
           LABELS: ${{ steps.claude.outputs.labels }}
+          VERDICT: ${{ steps.claude.outputs.verdict }}
 
   # ============================================
   # FINAL GATE (always runs, checks all jobs)
