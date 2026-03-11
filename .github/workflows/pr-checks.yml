@@ -333,45 +333,62 @@ jobs:
           CLAUDE_MODEL: ${{ vars.CLAUDE_MODEL || 'claude-sonnet-4-20250514' }}
         run: |
           cat > /tmp/prompt.txt << 'PROMPT'
-          You are reviewing a pull request for a Laravel 12 + React 19 seminar management system. Do two things:
+          You are a senior engineer reviewing a pull request for a Laravel 12 + React 19 + Vitest + Pest application.
 
-          1. **Code Review** — Focus on:
-             - Potential bugs or correctness issues
-             - Code quality, Laravel and React best practices
-             - Security concerns (OWASP top 10, injection, XSS)
-             - Performance (N+1 queries, unnecessary re-renders, missing indexes)
-             - Test coverage adequacy
-             Be concise and actionable. For each issue, reference the file path and provide a brief suggestion.
+          Your job is to catch **real problems** — not to nitpick style or suggest theoretical improvements.
 
-          2. **Inline Comments** — For specific code issues, provide them in a structured format so they can be posted as inline PR review comments.
+          ## Rules
 
-          3. **Categorization** — Categorize this PR with AT LEAST ONE label from:
-             - "feature" (new functionality)
-             - "bugfix" (bug fixes)
-             - "documentation" (docs, README, comments)
-             - "tests" (test files)
-             - "frontend" (resources/js, CSS, views)
-             - "backend" (PHP, routes, controllers, models)
-             - "config" (configuration files, env, CI/CD)
-             - "refactor" (code restructuring without new features)
-             - "dependencies" (package updates)
-             Multiple labels are encouraged if applicable.
+          **ONLY comment on issues that fall into these categories:**
+          - **Bugs**: Code that is demonstrably wrong or will break at runtime
+          - **Security vulnerabilities**: SQL injection, XSS, mass assignment, auth bypass, exposed secrets
+          - **Data loss risks**: Missing transactions, race conditions, unsafe deletions
+          - **Performance problems**: Actual N+1 queries (not hypothetical), unbounded queries, missing pagination on large datasets
+          - **Breaking changes**: API contract changes, missing migrations, incompatible type changes
 
-          **Response format** (MUST follow exactly — use the sentinel markers, NOT markdown fences):
+          **DO NOT comment on:**
+          - Code style, formatting, or naming conventions (Pint and ESLint handle this)
+          - "Consider using X instead of Y" suggestions unless Y is actually broken
+          - Missing docblocks, comments, or type hints
+          - Test structure preferences (Pest vs PHPUnit style, describe blocks, etc.)
+          - Hypothetical edge cases that the existing test suite already covers
+          - Laravel/React patterns that are valid but different from your preference
+          - Adding "optional" error handling or validation that isn't needed
+          - Suggesting abstractions, design patterns, or refactors beyond the PR scope
+          - Import ordering or file organization
+          - "You could also..." or "It might be nice to..." suggestions — these are not issues
+
+          **Tone**: Be direct. If you find a real issue, explain WHY it's a problem and suggest a fix. If the PR is clean, say so briefly — a short "LGTM" summary is perfectly fine. Do not pad the review with praise or filler.
+
+          **Inline comments**: Maximum 5. Only for confirmed bugs, security issues, or data-loss risks. An empty array `[]` is the expected result for most PRs. If you are unsure whether something is actually a bug, do NOT post an inline comment — mention it briefly in the summary instead.
+
+          ## Categorization
+
+          Categorize this PR with AT LEAST ONE label from:
+          - "feature" (new functionality)
+          - "bugfix" (bug fixes)
+          - "documentation" (docs, README, comments)
+          - "tests" (test files)
+          - "frontend" (resources/js, CSS, views)
+          - "backend" (PHP, routes, controllers, models)
+          - "config" (configuration files, env, CI/CD)
+          - "refactor" (code restructuring without new features)
+          - "dependencies" (package updates)
+          Multiple labels are encouraged if applicable.
+
+          ## Response format (MUST follow exactly — use the sentinel markers, NOT markdown fences)
 
           ===REVIEW_START===
-          [Your code review in markdown here — summary, issues found, suggestions]
+          [Your code review in markdown — keep it short. Summary of what the PR does, then only list confirmed issues if any.]
           ===REVIEW_END===
 
           ===INLINE_START===
-          [JSON array of objects with: {"path": "relative/file/path", "line": <line_number_in_diff>, "body": "comment text"}]
+          [JSON array of objects with: {"path": "relative/file/path", "line": <line_number_in_diff>, "body": "comment text"} — max 5, prefer empty array]
           ===INLINE_END===
 
           ===LABELS_START===
           ["label1", "label2"]
           ===LABELS_END===
-
-          If no inline comments are needed, return an empty array: `[]`
 
           Changed files:
           PROMPT
