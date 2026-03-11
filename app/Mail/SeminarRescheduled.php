@@ -50,10 +50,6 @@ class SeminarRescheduled extends Mailable implements ShouldQueue
      */
     public function attachments(): array
     {
-        if (! $this->seminar->scheduled_at) {
-            return [];
-        }
-
         $icsContent = $this->generateIcs($this->seminar);
         $filename = 'seminario-'.($this->seminar->slug ?? $this->seminar->id).'.ics';
 
