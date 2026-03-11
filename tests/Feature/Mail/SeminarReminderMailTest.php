@@ -225,4 +225,41 @@ describe('SeminarReminder Mail', function () {
 
         expect($ics)->toContain('Hello\\, world\\; test');
     });
+
+    it('folds long ics lines per RFC 5545', function () {
+        $user = User::factory()->create();
+        $longName = str_repeat('A', 100);
+        $seminar = Seminar::factory()->create([
+            'scheduled_at' => now()->addDay(),
+            'name' => $longName,
+        ]);
+
+        $reflection = new ReflectionMethod(SeminarReminder::class, 'generateIcs');
+        $mail = new SeminarReminder($user, collect([$seminar]));
+        $ics = $reflection->invoke($mail, $seminar);
+
+        // No single line should exceed 75 octets (split by CRLF)
+        $lines = explode("\r\n", $ics);
+        foreach ($lines as $line) {
+            expect(strlen($line))->toBeLessThanOrEqual(75, "Line too long: {$line}");
+        }
+
+        // The full summary should be reconstructable by unfolding (remove CRLF+space)
+        $unfolded = str_replace("\r\n ", '', $ics);
+        expect($unfolded)->toContain('SUMMARY:'.$longName);
+    });
+
+    it('prevents ics injection via CRLF in url', function () {
+        $user = User::factory()->create();
+        $seminar = Seminar::factory()->create([
+            'scheduled_at' => now()->addDay(),
+            'slug' => "valid-slug\r\nX-INJECTED:malicious",
+        ]);
+
+        $reflection = new ReflectionMethod(SeminarReminder::class, 'generateIcs');
+        $mail = new SeminarReminder($user, collect([$seminar]));
+        $ics = $reflection->invoke($mail, $seminar);
+
+        expect($ics)->not->toContain('X-INJECTED');
+    });
 });

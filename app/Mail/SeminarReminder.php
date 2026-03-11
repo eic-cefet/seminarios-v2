@@ -85,50 +85,78 @@ class SeminarReminder extends Mailable implements ShouldQueue
 
         $seminarUrl = url('/seminario/'.$seminar->slug);
 
-        $ics = "BEGIN:VCALENDAR\r\n";
-        $ics .= "VERSION:2.0\r\n";
-        $ics .= 'PRODID:-//'.config('mail.name')."//Seminarios//PT\r\n";
-        $ics .= "CALSCALE:GREGORIAN\r\n";
-        $ics .= "METHOD:PUBLISH\r\n";
-        $ics .= "BEGIN:VTIMEZONE\r\n";
-        $ics .= "TZID:America/Sao_Paulo\r\n";
-        $ics .= "BEGIN:STANDARD\r\n";
-        $ics .= "DTSTART:19700101T000000\r\n";
-        $ics .= "TZOFFSETFROM:-0300\r\n";
-        $ics .= "TZOFFSETTO:-0300\r\n";
-        $ics .= "TZNAME:BRT\r\n";
-        $ics .= "END:STANDARD\r\n";
-        $ics .= "END:VTIMEZONE\r\n";
-        $ics .= "BEGIN:VEVENT\r\n";
-        $ics .= "UID:{$uid}\r\n";
-        $ics .= 'DTSTAMP:'.$dtstamp->format('Ymd\THis')."\r\n";
-        $ics .= 'DTSTART;TZID=America/Sao_Paulo:'.$dtStart->format('Ymd\THis')."\r\n";
-        $ics .= 'DTEND;TZID=America/Sao_Paulo:'.$dtEnd->format('Ymd\THis')."\r\n";
-        $ics .= 'SUMMARY:'.$this->escapeIcsText($seminar->name)."\r\n";
+        $lines = [
+            'BEGIN:VCALENDAR',
+            'VERSION:2.0',
+            'PRODID:-//'.config('mail.name').'//Seminarios//PT',
+            'CALSCALE:GREGORIAN',
+            'METHOD:PUBLISH',
+            'BEGIN:VTIMEZONE',
+            'TZID:America/Sao_Paulo',
+            'BEGIN:STANDARD',
+            'DTSTART:19700101T000000',
+            'TZOFFSETFROM:-0300',
+            'TZOFFSETTO:-0300',
+            'TZNAME:BRT',
+            'END:STANDARD',
+            'END:VTIMEZONE',
+            'BEGIN:VEVENT',
+            "UID:{$uid}",
+            'DTSTAMP:'.$dtstamp->format('Ymd\THis'),
+            'DTSTART;TZID=America/Sao_Paulo:'.$dtStart->format('Ymd\THis'),
+            'DTEND;TZID=America/Sao_Paulo:'.$dtEnd->format('Ymd\THis'),
+            'SUMMARY:'.$this->escapeIcsText($seminar->name),
+        ];
 
         if ($location) {
-            $ics .= 'LOCATION:'.$this->escapeIcsText($location)."\r\n";
+            $lines[] = 'LOCATION:'.$this->escapeIcsText($location);
         }
 
         if ($description) {
-            $ics .= 'DESCRIPTION:'.$this->escapeIcsText($description)."\r\n";
+            $lines[] = 'DESCRIPTION:'.$this->escapeIcsText($description);
         }
 
-        $ics .= 'URL:'.$seminarUrl."\r\n";
-        $ics .= "STATUS:CONFIRMED\r\n";
-        $ics .= "END:VEVENT\r\n";
-        $ics .= "END:VCALENDAR\r\n";
+        $lines[] = 'URL:'.$this->sanitizeIcsValue($seminarUrl);
+        $lines[] = 'STATUS:CONFIRMED';
+        $lines[] = 'END:VEVENT';
+        $lines[] = 'END:VCALENDAR';
 
-        return $ics;
+        return implode("\r\n", array_map([$this, 'foldIcsLine'], $lines))."\r\n";
     }
 
     private function escapeIcsText(string $text): string
     {
         // Escape backslashes, commas, and semicolons per RFC 5545
         $text = addcslashes($text, ',;\\');
-        // Convert newlines to ICS line break encoding
+        // Convert newlines to ICS \n encoding (also prevents CRLF injection)
         $text = preg_replace('/\r\n|\r|\n/', '\n', $text);
 
         return $text;
+    }
+
+    private function sanitizeIcsValue(string $value): string
+    {
+        return str_replace(["\r\n", "\r", "\n"], '', $value);
+    }
+
+    /**
+     * Fold lines longer than 75 octets per RFC 5545 §3.1.
+     */
+    private function foldIcsLine(string $line): string
+    {
+        if (strlen($line) <= 75) {
+            return $line;
+        }
+
+        $folded = mb_substr($line, 0, 75);
+        $remaining = mb_substr($line, 75);
+
+        // Continuation lines are prefixed with a single space, max 74 chars of content
+        while ($remaining !== '') {
+            $folded .= "\r\n ".mb_substr($remaining, 0, 74);
+            $remaining = mb_substr($remaining, 74);
+        }
+
+        return $folded;
     }
 }
