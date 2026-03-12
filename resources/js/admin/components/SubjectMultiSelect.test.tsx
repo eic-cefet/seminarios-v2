@@ -7,6 +7,9 @@ vi.mock('../api/adminClient', () => ({
     subjectsApi: {
         list: vi.fn().mockResolvedValue({ data: [], meta: { last_page: 1, current_page: 1, total: 0 } }),
     },
+    aiApi: {
+        suggestSubjectTags: vi.fn().mockResolvedValue({ data: { suggestions: [] } }),
+    },
 }));
 
 vi.mock('@shared/components/DropdownPortal', () => ({
@@ -384,6 +387,146 @@ describe('SubjectMultiSelect', () => {
         // Manually call the queryFn - searchTerm is '' so `searchTerm || undefined` yields undefined
         await capturedQueryFns.queryFn!();
         expect(listMock).toHaveBeenCalledWith({ search: undefined });
+    });
+
+    it('does not show AI suggest button when no subjects are selected', () => {
+        render(<SubjectMultiSelect {...defaultProps} />);
+        expect(screen.queryByRole('button', { name: /sugerir com ia/i })).not.toBeInTheDocument();
+    });
+
+    it('shows AI suggest button when subjects are selected', () => {
+        render(<SubjectMultiSelect {...defaultProps} value={['React']} />);
+        expect(screen.getByRole('button', { name: /sugerir com ia/i })).toBeInTheDocument();
+    });
+
+    it('calls aiApi.suggestSubjectTags and displays suggestions', async () => {
+        const { aiApi } = await import('../api/adminClient');
+        vi.mocked(aiApi.suggestSubjectTags).mockResolvedValue({
+            data: { suggestions: ['Vue.js', 'Angular'] },
+        });
+
+        const mockOnChange = vi.fn();
+        render(<SubjectMultiSelect {...defaultProps} value={['React']} onChange={mockOnChange} />);
+        const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+
+        await user.click(screen.getByRole('button', { name: /sugerir com ia/i }));
+
+        await waitFor(() => {
+            expect(aiApi.suggestSubjectTags).toHaveBeenCalledWith(['React']);
+        });
+
+        await waitFor(() => {
+            expect(screen.getByText('Vue.js')).toBeInTheDocument();
+            expect(screen.getByText('Angular')).toBeInTheDocument();
+        });
+
+        expect(screen.getByText('Sugestões da IA:')).toBeInTheDocument();
+    });
+
+    it('adds a suggestion to selected values when clicked', async () => {
+        const { aiApi } = await import('../api/adminClient');
+        vi.mocked(aiApi.suggestSubjectTags).mockResolvedValue({
+            data: { suggestions: ['Vue.js', 'Angular'] },
+        });
+
+        const mockOnChange = vi.fn();
+        render(<SubjectMultiSelect {...defaultProps} value={['React']} onChange={mockOnChange} />);
+        const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+
+        await user.click(screen.getByRole('button', { name: /sugerir com ia/i }));
+
+        await waitFor(() => {
+            expect(screen.getByText('Vue.js')).toBeInTheDocument();
+        });
+
+        await user.click(screen.getByText('Vue.js'));
+        expect(mockOnChange).toHaveBeenCalledWith(['React', 'Vue.js']);
+    });
+
+    it('clears AI suggestions when "Limpar sugestões" is clicked', async () => {
+        const { aiApi } = await import('../api/adminClient');
+        vi.mocked(aiApi.suggestSubjectTags).mockResolvedValue({
+            data: { suggestions: ['Vue.js'] },
+        });
+
+        render(<SubjectMultiSelect {...defaultProps} value={['React']} />);
+        const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+
+        await user.click(screen.getByRole('button', { name: /sugerir com ia/i }));
+
+        await waitFor(() => {
+            expect(screen.getByText('Vue.js')).toBeInTheDocument();
+        });
+
+        await user.click(screen.getByText('Limpar sugestões'));
+
+        expect(screen.queryByText('Vue.js')).not.toBeInTheDocument();
+        expect(screen.queryByText('Sugestões da IA:')).not.toBeInTheDocument();
+    });
+
+    it('shows toast when AI returns no suggestions', async () => {
+        const { aiApi } = await import('../api/adminClient');
+        vi.mocked(aiApi.suggestSubjectTags).mockResolvedValue({
+            data: { suggestions: [] },
+        });
+
+        render(<SubjectMultiSelect {...defaultProps} value={['React']} />);
+        const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+
+        await user.click(screen.getByRole('button', { name: /sugerir com ia/i }));
+
+        await waitFor(() => {
+            expect(aiApi.suggestSubjectTags).toHaveBeenCalled();
+        });
+    });
+
+    it('shows error toast when AI request fails with 503', async () => {
+        const { aiApi } = await import('../api/adminClient');
+        vi.mocked(aiApi.suggestSubjectTags).mockRejectedValue({ status: 503 });
+
+        render(<SubjectMultiSelect {...defaultProps} value={['React']} />);
+        const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+
+        await user.click(screen.getByRole('button', { name: /sugerir com ia/i }));
+
+        await waitFor(() => {
+            expect(aiApi.suggestSubjectTags).toHaveBeenCalled();
+        });
+    });
+
+    it('shows generic error toast when AI request fails', async () => {
+        const { aiApi } = await import('../api/adminClient');
+        vi.mocked(aiApi.suggestSubjectTags).mockRejectedValue(new Error('fail'));
+
+        render(<SubjectMultiSelect {...defaultProps} value={['React']} />);
+        const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+
+        await user.click(screen.getByRole('button', { name: /sugerir com ia/i }));
+
+        await waitFor(() => {
+            expect(aiApi.suggestSubjectTags).toHaveBeenCalled();
+        });
+    });
+
+    it('filters out already-selected subjects from AI suggestions', async () => {
+        const { aiApi } = await import('../api/adminClient');
+        vi.mocked(aiApi.suggestSubjectTags).mockResolvedValue({
+            data: { suggestions: ['React', 'Vue.js'] },
+        });
+
+        render(<SubjectMultiSelect {...defaultProps} value={['React']} />);
+        const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+
+        await user.click(screen.getByRole('button', { name: /sugerir com ia/i }));
+
+        await waitFor(() => {
+            expect(screen.getByText('Vue.js')).toBeInTheDocument();
+        });
+
+        // React should be filtered out since it's already selected
+        const suggestionsLabel = screen.getByText('Sugestões da IA:');
+        const suggestionsContainer = suggestionsLabel.parentElement!;
+        expect(suggestionsContainer).not.toHaveTextContent('React');
     });
 
     it('shows suggestion-mode helper text when suggestions are visible', async () => {

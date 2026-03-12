@@ -142,6 +142,31 @@ describe('NormalizeSubjectNamesCommand', function () {
             ->assertExitCode(0);
     });
 
+    it('skips fix when subject is deleted before applying', function () {
+        $s = Subject::factory()->create(['name' => 'Inteligencia']);
+
+        mockNormalizeAi(json_encode([
+            ['id' => $s->id, 'name' => 'Inteligência'],
+        ]));
+
+        // Delete the subject after the AI response is prepared but
+        // the command will still try to apply the fix.
+        // We mock AiService to delete the subject mid-flow via a side effect.
+        $ai = Mockery::mock(AiService::class);
+        $ai->shouldReceive('chat')->andReturnUsing(function () use ($s) {
+            // Delete the subject so it won't be found during apply
+            $s->forceDelete();
+
+            return json_encode([['id' => $s->id, 'name' => 'Inteligência']]);
+        });
+        app()->singleton(AiService::class, fn () => $ai);
+
+        $this->artisan('subjects:ai-normalize')
+            ->expectsConfirmation('Apply all fixes?', 'yes')
+            ->expectsOutputToContain('Applied 0 fix(es)')
+            ->assertExitCode(0);
+    });
+
     it('skips subjects where ai suggests the same name', function () {
         $s = Subject::factory()->create(['name' => 'Machine Learning']);
 

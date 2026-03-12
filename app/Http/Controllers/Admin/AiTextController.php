@@ -5,14 +5,17 @@ namespace App\Http\Controllers\Admin;
 use App\Enums\AuditEvent;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\AiSuggestMergeNameRequest;
+use App\Http\Requests\Admin\AiSuggestSubjectTagsRequest;
 use App\Http\Requests\Admin\AiTransformTextRequest;
 use App\Http\Resources\Admin\AdminRatingResource;
 use App\Models\AuditLog;
 use App\Models\Rating;
+use App\Models\Subject;
 use App\Services\AiService;
 use App\Support\RatingSentimentLabel;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use RuntimeException;
 
 class AiTextController extends Controller
@@ -71,6 +74,67 @@ class AiTextController extends Controller
         ]);
 
         return response()->json(['data' => ['text' => $text]]);
+    }
+
+    public function suggestSubjectTags(AiSuggestSubjectTagsRequest $request): JsonResponse
+    {
+        $validated = $request->validated();
+        $subjectNames = $validated['subject_names'];
+
+        if (! $this->ai) {
+            return $this->aiNotConfigured();
+        }
+
+        $subjectIds = Subject::whereIn('name', $subjectNames)->pluck('id');
+
+        $coOccurring = [];
+        if ($subjectIds->isNotEmpty()) {
+            $coOccurring = DB::table('seminar_subject')
+                ->select('subjects.name', DB::raw('COUNT(*) as frequency'))
+                ->join('subjects', 'subjects.id', '=', 'seminar_subject.subject_id')
+                ->whereIn('seminar_subject.seminar_id', function ($query) use ($subjectIds) {
+                    $query->select('seminar_id')
+                        ->from('seminar_subject')
+                        ->whereIn('subject_id', $subjectIds);
+                })
+                ->whereNotIn('seminar_subject.subject_id', $subjectIds)
+                ->groupBy('subjects.name')
+                ->orderByDesc('frequency')
+                ->limit(20)
+                ->get()
+                ->map(fn ($row) => "{$row->name} ({$row->frequency}x)")
+                ->toArray();
+        }
+
+        $systemPrompt = 'You are an academic seminar topic advisor. Given a list of currently selected topics and historical co-occurrence data, suggest 3-5 related topics that would complement the selection. Return ONLY a JSON array of topic name strings, nothing else. Example: ["Topic A", "Topic B", "Topic C"]';
+
+        $userMessage = 'Selected topics: '.implode(', ', $subjectNames);
+        if (! empty($coOccurring)) {
+            $userMessage .= "\n\nHistorically co-occurring topics (with frequency): ".implode(', ', $coOccurring);
+        }
+
+        try {
+            $text = $this->ai->chat($systemPrompt, $userMessage, 512);
+        } catch (RuntimeException) {
+            return $this->aiRequestFailed();
+        }
+
+        $suggestions = json_decode($text, true);
+        if (! is_array($suggestions)) {
+            $suggestions = [];
+        }
+
+        $suggestions = array_values(array_filter(
+            $suggestions,
+            fn ($s) => is_string($s) && ! in_array($s, $subjectNames),
+        ));
+
+        AuditLog::record(AuditEvent::AiSuggestSubjectTags, eventData: [
+            'subject_names' => $subjectNames,
+            'suggestions_count' => count($suggestions),
+        ]);
+
+        return response()->json(['data' => ['suggestions' => $suggestions]]);
     }
 
     public function ratingSentiments(Request $request): JsonResponse

@@ -22,6 +22,7 @@ enum AuditEvent: string
     // AI
     case AiTextTransform = 'ai.text_transform';
     case AiSuggestMergeName = 'ai.suggest_merge_name';
+    case AiSuggestSubjectTags = 'ai.suggest_subject_tags';
 
     // Bug reports
     case BugReportSubmitted = 'bug_report.submitted';

@@ -74,7 +74,7 @@ class NormalizeSubjectNamesCommand extends Command
         $applied = 0;
 
         foreach ($fixes as $fix) {
-            $subject = $subjects->firstWhere('id', $fix['id']);
+            $subject = Subject::find($fix['id']);
 
             if (! $subject) {
                 continue;
