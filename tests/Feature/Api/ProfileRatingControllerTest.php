@@ -1,9 +1,10 @@
 <?php
 
 use App\Jobs\AnalyzeRatingSentiment;
+use App\Models\Rating;
 use App\Models\Registration;
 use App\Models\Seminar;
-use App\Services\FeatureFlags;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
 
 describe('POST /profile/ratings/{seminar} - sentiment dispatch', function () {
@@ -93,5 +94,42 @@ describe('POST /profile/ratings/{seminar} - sentiment dispatch', function () {
         ])->assertOk();
 
         Queue::assertNotPushed(AnalyzeRatingSentiment::class);
+    });
+
+    it('submits the rating even when sync sentiment analysis fails', function () {
+        config([
+            'features.sentiment_analysis' => ['enabled' => true, 'sample_rate' => 100],
+            'ai.api_key' => 'test-key',
+            'ai.base_url' => 'https://api.openai.com/v1',
+            'ai.model' => 'gpt-4o-mini',
+        ]);
+
+        Http::fake([
+            'api.openai.com/*' => Http::response(['error' => 'fail'], 500),
+        ]);
+
+        $user = actingAsUser();
+        $seminar = Seminar::factory()->create([
+            'scheduled_at' => now()->subHour(),
+        ]);
+        Registration::factory()->create([
+            'user_id' => $user->id,
+            'seminar_id' => $seminar->id,
+            'present' => true,
+        ]);
+
+        $this->postJson("/api/profile/ratings/{$seminar->id}", [
+            'score' => 4,
+            'comment' => 'Great seminar!',
+        ])->assertOk();
+
+        $rating = Rating::query()
+            ->where('user_id', $user->id)
+            ->where('seminar_id', $seminar->id)
+            ->first();
+
+        expect($rating)->not->toBeNull();
+        expect($rating->sentiment)->toBeNull();
+        expect($rating->sentiment_analyzed_at)->toBeNull();
     });
 });

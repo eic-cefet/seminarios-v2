@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\PresenceController;
 use App\Http\Controllers\CertificateController;
+use App\Http\Controllers\SeminarCalendarController;
 use App\Http\Controllers\SocialAuthController;
 use Illuminate\Support\Facades\Route;
 
@@ -18,6 +19,8 @@ Route::get('/auth/{provider}/callback', [SocialAuthController::class, 'callback'
     ->name('auth.callback');
 
 Route::get('/p/{uuid}.png', [PresenceController::class, 'qrCodePng']);
+Route::get('/seminario/{slug}/calendar.ics', SeminarCalendarController::class)
+    ->name('seminar.calendar');
 
 // System SPA (public/student)
 Route::get('/{any?}', fn () => view('system'))

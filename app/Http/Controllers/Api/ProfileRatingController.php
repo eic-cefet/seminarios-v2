@@ -10,6 +10,7 @@ use App\Models\Rating;
 use App\Services\FeatureFlags;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Throwable;
 
 class ProfileRatingController extends Controller
 {
@@ -93,7 +94,11 @@ class ProfileRatingController extends Controller
         ]);
 
         if ($rating->comment && FeatureFlags::shouldRun('sentiment_analysis')) {
-            AnalyzeRatingSentiment::dispatch($rating);
+            try {
+                AnalyzeRatingSentiment::dispatch($rating);
+            } catch (Throwable $exception) {
+                report($exception);
+            }
         }
 
         return response()->json([

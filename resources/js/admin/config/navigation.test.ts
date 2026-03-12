@@ -20,6 +20,14 @@ describe('adminNavigation', () => {
         expect(seminarios?.children).toBeDefined();
         expect(seminarios?.children?.length).toBeGreaterThan(0);
     });
+
+    it('includes Feedback IA under Relatórios', () => {
+        const reports = adminNavigation.find((item) => item.label === 'Relatórios');
+        const childLabels = reports?.children?.map((child) => child.label) ?? [];
+
+        expect(childLabels).toContain('Relatório Semestral');
+        expect(childLabels).toContain('Feedback IA');
+    });
 });
 
 describe('filterNavigation', () => {

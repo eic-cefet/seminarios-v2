@@ -1,6 +1,8 @@
 <?php
 
 use App\Models\Rating;
+use App\Models\Seminar;
+use App\Models\User;
 use Illuminate\Routing\Middleware\ThrottleRequests;
 use Illuminate\Support\Facades\Http;
 
@@ -265,7 +267,10 @@ describe('GET /admin/ai/rating-sentiments', function () {
         $response->assertOk()
             ->assertJsonCount(1, 'data')
             ->assertJsonPath('data.0.id', $rating->id)
-            ->assertJsonPath('data.0.sentiment', 'Sentimento positivo.');
+            ->assertJsonPath('data.0.sentiment', 'Sentimento positivo.')
+            ->assertJsonPath('data.0.sentiment_label', 'positive')
+            ->assertJsonPath('summary.total_ratings', 1)
+            ->assertJsonPath('summary.average_score', (float) $rating->score);
     });
 
     it('excludes ratings without sentiment analysis', function () {
@@ -293,7 +298,9 @@ describe('GET /admin/ai/rating-sentiments', function () {
         $response = $this->getJson('/api/admin/ai/rating-sentiments');
 
         $response->assertOk()
-            ->assertJsonCount(20, 'data');
+            ->assertJsonCount(20, 'data')
+            ->assertJsonPath('meta.total', 25)
+            ->assertJsonPath('meta.per_page', 20);
     });
 
     it('includes user and seminar relations', function () {
@@ -309,8 +316,100 @@ describe('GET /admin/ai/rating-sentiments', function () {
         $response->assertOk()
             ->assertJsonStructure([
                 'data' => [
-                    ['id', 'sentiment', 'sentiment_analyzed_at', 'user', 'seminar'],
+                    ['id', 'sentiment', 'sentiment_label', 'sentiment_analyzed_at', 'user', 'seminar'],
                 ],
+                'meta' => ['current_page', 'last_page', 'per_page', 'total', 'from', 'to'],
+                'summary' => ['total_ratings', 'average_score', 'low_score_count'],
             ]);
+    });
+
+    it('filters analyzed ratings by score', function () {
+        actingAsAdmin();
+
+        Rating::factory()->withComment()->create([
+            'score' => 5,
+            'sentiment' => 'Sentimento positivo.',
+            'sentiment_analyzed_at' => now(),
+        ]);
+        Rating::factory()->withComment()->create([
+            'score' => 2,
+            'sentiment' => 'Sentimento negativo.',
+            'sentiment_analyzed_at' => now()->subMinute(),
+        ]);
+
+        $response = $this->getJson('/api/admin/ai/rating-sentiments?score=5');
+
+        $response->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.score', 5)
+            ->assertJsonPath('summary.total_ratings', 1)
+            ->assertJsonPath('summary.low_score_count', 0);
+    });
+
+    it('filters analyzed ratings by derived sentiment label', function () {
+        actingAsAdmin();
+
+        Rating::factory()->withComment()->create([
+            'sentiment' => 'Sentimento positivo. Aluno gostou do conteúdo.',
+            'sentiment_analyzed_at' => now(),
+        ]);
+        Rating::factory()->withComment()->create([
+            'sentiment' => 'Sentimento misto. Houve elogios e críticas.',
+            'sentiment_analyzed_at' => now()->subMinute(),
+        ]);
+
+        $response = $this->getJson('/api/admin/ai/rating-sentiments?sentiment_label=positive');
+
+        $response->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.sentiment_label', 'positive');
+    });
+
+    it('filters analyzed ratings by search term across relations and text', function () {
+        actingAsAdmin();
+
+        $seminar = Seminar::factory()->create(['name' => 'Seminário de IA']);
+        $user = User::factory()->create(['name' => 'Maria Avaliadora']);
+
+        Rating::factory()->withComment()->create([
+            'seminar_id' => $seminar->id,
+            'user_id' => $user->id,
+            'comment' => 'Gostei bastante do encontro.',
+            'sentiment' => 'Sentimento positivo.',
+            'sentiment_analyzed_at' => now(),
+        ]);
+
+        Rating::factory()->withComment()->create([
+            'sentiment' => 'Sentimento negativo.',
+            'sentiment_analyzed_at' => now()->subMinute(),
+        ]);
+
+        $response = $this->getJson('/api/admin/ai/rating-sentiments?search=Maria');
+
+        $response->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.user.name', 'Maria Avaliadora');
+    });
+
+    it('returns summary metrics for the filtered result set', function () {
+        actingAsAdmin();
+
+        Rating::factory()->withComment()->create([
+            'score' => 5,
+            'sentiment' => 'Sentimento positivo.',
+            'sentiment_analyzed_at' => now(),
+        ]);
+        Rating::factory()->withComment()->create([
+            'score' => 3,
+            'sentiment' => 'Sentimento neutro.',
+            'sentiment_analyzed_at' => now()->subMinute(),
+        ]);
+
+        $response = $this->getJson('/api/admin/ai/rating-sentiments');
+
+        $response->assertOk()
+            ->assertJsonPath('summary.total_ratings', 2)
+            ->assertJsonPath('summary.average_score', 4.0)
+            ->assertJsonPath('summary.low_score_count', 1);
     });
 });

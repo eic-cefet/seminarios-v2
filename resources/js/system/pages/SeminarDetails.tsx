@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { Layout } from "../components/Layout";
 import { Badge } from "../components/Badge";
+import { CalendarMenu } from "../components/CalendarMenu";
 import { LoginModal } from "../components/LoginModal";
 import { PageTitle } from "@shared/components/PageTitle";
 import { seminarsApi, registrationApi } from "@shared/api/client";
@@ -427,6 +428,21 @@ export default function SeminarDetails() {
                                         </p>
                                     </>
                                 )}
+
+                                <div className="mt-6 border-t border-gray-200 pt-4">
+                                    <CalendarMenu
+                                        event={{
+                                            title: seminar.name,
+                                            startsAt: seminar.scheduledAt,
+                                            description: seminar.description,
+                                            location: seminar.location?.name,
+                                            roomLink: seminar.roomLink,
+                                            eventPath: `/seminario/${seminar.slug}`,
+                                            downloadPath: `/seminario/${seminar.slug}/calendar.ics`,
+                                        }}
+                                        className="w-full border border-primary-200 bg-primary-50 text-primary-700 hover:bg-primary-100"
+                                    />
+                                </div>
                             </div>
 
                             {/* External Link */}

@@ -242,6 +242,44 @@ describe('Admin API endpoints', () => {
         });
     });
 
+    describe('aiApi', () => {
+        it('ratingSentiments fetches feedback insights without params', async () => {
+            mockSuccess({
+                data: [],
+                meta: { current_page: 1, last_page: 1, per_page: 10, total: 0, from: null, to: null },
+                summary: { total_ratings: 0, average_score: null, low_score_count: 0 },
+            });
+
+            await aiApi.ratingSentiments();
+
+            expect(fetchSpy).toHaveBeenCalledWith(
+                'http://localhost/api/admin/ai/rating-sentiments',
+                expect.any(Object),
+            );
+        });
+
+        it('ratingSentiments fetches paginated feedback insights', async () => {
+            mockSuccess({
+                data: [],
+                meta: { current_page: 1, last_page: 1, per_page: 10, total: 0, from: null, to: null },
+                summary: { total_ratings: 0, average_score: null, low_score_count: 0 },
+            });
+
+            await aiApi.ratingSentiments({
+                page: 2,
+                per_page: 10,
+                search: 'maria',
+                score: 5,
+                sentiment_label: 'positive',
+            });
+
+            expect(fetchSpy).toHaveBeenCalledWith(
+                expect.stringContaining('/ai/rating-sentiments?page=2&per_page=10&search=maria&score=5&sentiment_label=positive'),
+                expect.any(Object),
+            );
+        });
+    });
+
     describe('seminarsApi extended', () => {
         it('get fetches a single seminar', async () => {
             mockSuccess({ data: { id: 1, name: 'Test Seminar' } });

@@ -50,6 +50,11 @@ export const adminNavigation: NavItem[] = [
                 href: "/reports/semestral",
                 adminOnly: true,
             },
+            {
+                label: "Feedback IA",
+                href: "/reports/feedback",
+                adminOnly: true,
+            },
         ],
     },
 ];

@@ -8,7 +8,6 @@ use App\Models\Seminar;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 class RegistrationController extends Controller
 {
@@ -38,21 +37,10 @@ class RegistrationController extends Controller
         }
 
         try {
-            $registration = DB::transaction(function () use ($seminar, $user) {
-                $location = $seminar->seminarLocation()->lockForUpdate()->first();
-
-                if ($location?->max_vacancies) {
-                    $registrationCount = $seminar->registrations()->sharedLock()->count();
-                    if ($registrationCount >= $location->max_vacancies) {
-                        throw ApiException::seminarFull();
-                    }
-                }
-
-                return $seminar->registrations()->create([
-                    'user_id' => $user->id,
-                    'present' => false,
-                ]);
-            });
+            $registration = $seminar->registrations()->create([
+                'user_id' => $user->id,
+                'present' => false,
+            ]);
         } catch (UniqueConstraintViolationException) {
             throw ApiException::alreadyRegistered();
         }

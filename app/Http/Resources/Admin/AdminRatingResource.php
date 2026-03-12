@@ -3,6 +3,7 @@
 namespace App\Http\Resources\Admin;
 
 use App\Http\Resources\Concerns\FormatsDates;
+use App\Support\RatingSentimentLabel;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -17,6 +18,7 @@ class AdminRatingResource extends JsonResource
             'score' => $this->score,
             'comment' => $this->comment,
             'sentiment' => $this->sentiment,
+            'sentiment_label' => RatingSentimentLabel::fromText($this->sentiment),
             'sentiment_analyzed_at' => $this->formatDate($this->sentiment_analyzed_at),
             'user' => $this->whenLoaded('user', fn () => [
                 'id' => $this->user->id,
