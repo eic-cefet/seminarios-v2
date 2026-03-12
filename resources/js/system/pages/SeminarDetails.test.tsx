@@ -183,16 +183,60 @@ describe('SeminarDetails', () => {
         });
     });
 
-    it('shows the add to calendar link', async () => {
-        const seminar = createSeminar({ slug: 'calendar-seminar' });
+    it('shows calendar provider links', async () => {
+        const seminar = createSeminar({
+            slug: 'calendar-seminar',
+            name: 'Calendar Seminar',
+            description: 'Seminar details',
+            roomLink: 'https://meet.example.com/calendar-seminar',
+            location: createLocation({ name: 'Room 202' }),
+            scheduledAt: '2026-06-15T14:00:00Z',
+        });
         vi.mocked(seminarsApi.get).mockResolvedValue({ data: seminar });
+        const user = userEvent.setup();
 
         render(<SeminarDetails />);
 
         await waitFor(() => {
-            const link = screen.getByRole('link', { name: /adicionar ao calendário/i });
-            expect(link).toHaveAttribute('href', '/seminario/calendar-seminar/calendar.ics');
+            expect(
+                screen.getByRole('button', { name: /adicionar ao calendário/i }),
+            ).toBeInTheDocument();
         });
+
+        await user.click(
+            screen.getByRole('button', { name: /adicionar ao calendário/i }),
+        );
+
+        const googleLink = (await screen.findByText('Google Calendar')).closest(
+            'a',
+        );
+        const outlookLink = screen.getByText('Outlook').closest('a');
+        const icsLink = screen.getByText('Baixar .ics').closest('a');
+
+        expect(googleLink).not.toBeNull();
+        expect(outlookLink).not.toBeNull();
+        expect(icsLink).not.toBeNull();
+
+        const googleUrl = new URL(googleLink!.getAttribute('href')!);
+        const outlookUrl = new URL(outlookLink!.getAttribute('href')!);
+
+        expect(googleUrl.origin).toBe('https://calendar.google.com');
+        expect(googleUrl.searchParams.get('text')).toBe('Calendar Seminar');
+        expect(googleUrl.searchParams.get('details')).toContain(
+            'Seminar details',
+        );
+        expect(googleUrl.searchParams.get('details')).toContain(
+            'https://meet.example.com/calendar-seminar',
+        );
+
+        expect(outlookUrl.origin).toBe('https://outlook.office.com');
+        expect(outlookUrl.searchParams.get('subject')).toBe('Calendar Seminar');
+        expect(outlookLink).toHaveAttribute('target', '_blank');
+
+        expect(icsLink).toHaveAttribute(
+            'href',
+            '/seminario/calendar-seminar/calendar.ics',
+        );
     });
 
     it('shows "Inscreva-se" heading for non-registered user', async () => {

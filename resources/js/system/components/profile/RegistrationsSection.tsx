@@ -1,10 +1,9 @@
 import { profileApi } from "@shared/api/client";
 import { Pagination } from "@shared/components/Pagination";
-import { buildUrl, formatDateTime } from "@shared/lib/utils";
+import { formatDateTime } from "@shared/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import {
     Calendar,
-    CalendarPlus,
     Check,
     ChevronRight,
     Loader2,
@@ -14,6 +13,7 @@ import {
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Badge } from "../Badge";
+import { CalendarMenu } from "../CalendarMenu";
 
 export function RegistrationsSection() {
     const [page, setPage] = useState(1);
@@ -122,15 +122,20 @@ export function RegistrationsSection() {
                                         )}
 
                                     {registration.seminar.scheduled_at && (
-                                        <a
-                                            href={buildUrl(
-                                                `/seminario/${registration.seminar.slug}/calendar.ics`,
-                                            )}
-                                            className="inline-flex items-center gap-1 text-sm font-medium text-primary-600 hover:text-primary-700"
-                                        >
-                                            <CalendarPlus className="h-4 w-4" />
-                                            Adicionar ao calendário
-                                        </a>
+                                        <CalendarMenu
+                                            event={{
+                                                title: registration.seminar.name,
+                                                startsAt:
+                                                    registration.seminar
+                                                        .scheduled_at,
+                                                location:
+                                                    registration.seminar
+                                                        .location?.name,
+                                                eventPath: `/seminario/${registration.seminar.slug}`,
+                                                downloadPath: `/seminario/${registration.seminar.slug}/calendar.ics`,
+                                            }}
+                                            className="px-0 py-0 text-primary-600 hover:text-primary-700"
+                                        />
                                     )}
                                 </div>
                             </div>

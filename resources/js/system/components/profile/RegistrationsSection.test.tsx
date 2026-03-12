@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@/test/test-utils';
+import { render, screen, userEvent, waitFor } from '@/test/test-utils';
 import { createUserRegistration } from '@/test/factories';
 import { RegistrationsSection } from './RegistrationsSection';
 
@@ -112,10 +112,59 @@ describe('RegistrationsSection', () => {
         await waitFor(() => {
             expect(screen.getByText('Inscrito')).toBeInTheDocument();
         });
+    });
 
-        expect(
-            screen.getByRole('link', { name: /adicionar ao calendário/i }),
-        ).toHaveAttribute(
+    it('shows calendar provider links for scheduled registrations', async () => {
+        const registrations = [
+            createUserRegistration({
+                id: 1,
+                seminar: {
+                    id: 10,
+                    name: 'Seminário Futuro',
+                    slug: 'seminario-futuro',
+                    scheduled_at: '2026-12-01T14:00:00Z',
+                    is_expired: false,
+                    seminar_type: null,
+                    location: { id: 1, name: 'Room 101' },
+                },
+            }),
+        ];
+
+        vi.mocked(profileApi.registrations).mockResolvedValue({
+            data: registrations,
+            meta: { current_page: 1, last_page: 1, per_page: 10, total: 1 },
+        });
+        const user = userEvent.setup();
+
+        render(<RegistrationsSection />);
+
+        await waitFor(() => {
+            expect(
+                screen.getByRole('button', { name: /adicionar ao calendário/i }),
+            ).toBeInTheDocument();
+        });
+
+        await user.click(
+            screen.getByRole('button', { name: /adicionar ao calendário/i }),
+        );
+
+        const googleLink = (await screen.findByText('Google Calendar')).closest(
+            'a',
+        );
+        const outlookLink = screen.getByText('Outlook').closest('a');
+        const icsLink = screen.getByText('Baixar .ics').closest('a');
+
+        expect(googleLink).not.toBeNull();
+        expect(outlookLink).not.toBeNull();
+        expect(icsLink).not.toBeNull();
+
+        expect(new URL(googleLink!.getAttribute('href')!).origin).toBe(
+            'https://calendar.google.com',
+        );
+        expect(new URL(outlookLink!.getAttribute('href')!).origin).toBe(
+            'https://outlook.office.com',
+        );
+        expect(icsLink).toHaveAttribute(
             'href',
             '/seminario/seminario-futuro/calendar.ics',
         );
