@@ -108,9 +108,7 @@ class AiTextController extends Controller
 
         $ratings->latest('sentiment_analyzed_at');
 
-        $summaryQuery = clone $ratings;
-        $averageScore = $summaryQuery->avg('score');
-        $totalRatings = (clone $ratings)->count();
+        $averageScore = (clone $ratings)->avg('score');
         $lowScoreCount = (clone $ratings)
             ->where('score', '<=', 3)
             ->count();
@@ -128,7 +126,7 @@ class AiTextController extends Controller
                 'to' => $paginator->lastItem(),
             ],
             'summary' => [
-                'total_ratings' => $totalRatings,
+                'total_ratings' => $paginator->total(),
                 'average_score' => $averageScore !== null ? round((float) $averageScore, 1) : null,
                 'low_score_count' => $lowScoreCount,
             ],

@@ -3,6 +3,9 @@
 namespace App\Services;
 
 use App\Models\Seminar;
+use Spatie\IcalendarGenerator\Components\Calendar;
+use Spatie\IcalendarGenerator\Components\Event;
+use Spatie\IcalendarGenerator\Enums\EventStatus;
 
 class IcsGenerationService
 {
@@ -16,43 +19,31 @@ class IcsGenerationService
         $dtEnd = $dtStart->copy()->addHour();
 
         $uid = 'seminar-'.$seminar->id.'@'.parse_url(config('app.url'), PHP_URL_HOST);
-        $timestamp = now()->utc()->format('Ymd\THis\Z');
-        $seminarUrl = url('/seminario/'.$seminar->slug);
 
         $description = strip_tags($seminar->description ?? '');
         if ($seminar->room_link) {
             $description .= ($description ? "\n\n" : '').'Link de acesso: '.$seminar->room_link;
         }
 
+        $event = Event::create($seminar->name)
+            ->uniqueIdentifier($uid)
+            ->startsAt($dtStart)
+            ->endsAt($dtEnd)
+            ->status(EventStatus::Confirmed)
+            ->url(url('/seminario/'.$seminar->slug));
+
         $location = $seminar->seminarLocation?->name;
+        if ($location) {
+            $event->address($location);
+        }
 
-        return implode("\r\n", array_filter([
-            'BEGIN:VCALENDAR',
-            'VERSION:2.0',
-            'PRODID:'.$this->escapeText('-//'.config('mail.name').'//Seminarios//PT'),
-            'CALSCALE:GREGORIAN',
-            'BEGIN:VEVENT',
-            'UID:'.$this->escapeText($uid),
-            'DTSTAMP:'.$timestamp,
-            'DTSTART;TZID=America/Sao_Paulo:'.$dtStart->format('Ymd\THis'),
-            'DTEND;TZID=America/Sao_Paulo:'.$dtEnd->format('Ymd\THis'),
-            'SUMMARY:'.$this->escapeText($seminar->name),
-            $description ? 'DESCRIPTION:'.$this->escapeText($description) : null,
-            $location ? 'LOCATION:'.$this->escapeText($location) : null,
-            'STATUS:CONFIRMED',
-            'URL:'.$this->escapeText($seminarUrl),
-            'END:VEVENT',
-            'END:VCALENDAR',
-            '',
-        ]));
-    }
+        if ($description) {
+            $event->description($description);
+        }
 
-    private function escapeText(string $value): string
-    {
-        return str_replace(
-            ['\\', ';', ',', "\r\n", "\n", "\r"],
-            ['\\\\', '\;', '\,', '\n', '\n', '\n'],
-            $value,
-        );
+        return Calendar::create()
+            ->productIdentifier('-//'.config('mail.name').'//Seminarios//PT')
+            ->event($event)
+            ->get();
     }
 }
