@@ -33,5 +33,6 @@ enum AuditEvent: string
     case MissingCertificatesProcessed = 'command.missing_certificates_processed';
     case EvaluationRemindersSent = 'command.evaluation_reminders_sent';
     case SeminarRemindersSent = 'command.seminar_reminders_sent';
+    case AiSubjectsMerged = 'command.ai_subjects_merged';
     case SeminarRescheduled = 'seminar.rescheduled';
 }
