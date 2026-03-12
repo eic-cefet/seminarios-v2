@@ -1,8 +1,16 @@
 import { profileApi } from "@shared/api/client";
 import { Pagination } from "@shared/components/Pagination";
-import { formatDateTime } from "@shared/lib/utils";
+import { buildUrl, formatDateTime } from "@shared/lib/utils";
 import { useQuery } from "@tanstack/react-query";
-import { Calendar, Check, ChevronRight, Loader2, MapPin, X } from "lucide-react";
+import {
+    Calendar,
+    CalendarPlus,
+    Check,
+    ChevronRight,
+    Loader2,
+    MapPin,
+    X,
+} from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Badge } from "../Badge";
@@ -90,7 +98,7 @@ export function RegistrationsSection() {
                                         )}
                                     </div>
                                 </div>
-                                <div className="ml-4 flex items-center gap-2">
+                                <div className="ml-4 flex flex-col items-end gap-2">
                                     {registration.seminar.is_expired &&
                                         !registration.present && (
                                             <Badge variant="expired">
@@ -112,6 +120,18 @@ export function RegistrationsSection() {
                                                 Inscrito
                                             </Badge>
                                         )}
+
+                                    {registration.seminar.scheduled_at && (
+                                        <a
+                                            href={buildUrl(
+                                                `/seminario/${registration.seminar.slug}/calendar.ics`,
+                                            )}
+                                            className="inline-flex items-center gap-1 text-sm font-medium text-primary-600 hover:text-primary-700"
+                                        >
+                                            <CalendarPlus className="h-4 w-4" />
+                                            Adicionar ao calendário
+                                        </a>
+                                    )}
                                 </div>
                             </div>
                         ))}

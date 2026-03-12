@@ -10,8 +10,9 @@ use App\Http\Resources\Admin\AdminRatingResource;
 use App\Models\AuditLog;
 use App\Models\Rating;
 use App\Services\AiService;
+use App\Support\RatingSentimentLabel;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Http\Request;
 use RuntimeException;
 
 class AiTextController extends Controller
@@ -72,16 +73,66 @@ class AiTextController extends Controller
         return response()->json(['data' => ['text' => $text]]);
     }
 
-    public function ratingSentiments(): AnonymousResourceCollection
+    public function ratingSentiments(Request $request): JsonResponse
     {
         $ratings = Rating::query()
             ->whereNotNull('sentiment_analyzed_at')
-            ->with(['user', 'seminar'])
-            ->latest('sentiment_analyzed_at')
-            ->limit(20)
-            ->get();
+            ->with(['user:id,name', 'seminar:id,name,slug']);
 
-        return AdminRatingResource::collection($ratings);
+        if ($request->filled('search')) {
+            $search = trim((string) $request->query('search'));
+
+            $ratings->where(function ($query) use ($search) {
+                $query
+                    ->where('comment', 'like', "%{$search}%")
+                    ->orWhere('sentiment', 'like', "%{$search}%")
+                    ->orWhereHas('user', function ($userQuery) use ($search) {
+                        $userQuery->where('name', 'like', "%{$search}%");
+                    })
+                    ->orWhereHas('seminar', function ($seminarQuery) use ($search) {
+                        $seminarQuery->where('name', 'like', "%{$search}%");
+                    });
+            });
+        }
+
+        if ($request->filled('score')) {
+            $ratings->where('score', (int) $request->query('score'));
+        }
+
+        if ($request->filled('sentiment_label')) {
+            RatingSentimentLabel::applyFilter(
+                $ratings,
+                (string) $request->query('sentiment_label'),
+            );
+        }
+
+        $ratings->latest('sentiment_analyzed_at');
+
+        $summaryQuery = clone $ratings;
+        $averageScore = $summaryQuery->avg('score');
+        $totalRatings = (clone $ratings)->count();
+        $lowScoreCount = (clone $ratings)
+            ->where('score', '<=', 3)
+            ->count();
+
+        $paginator = $ratings->paginate($this->getPerPage($request, 20));
+
+        return response()->json([
+            'data' => AdminRatingResource::collection($paginator->items()),
+            'meta' => [
+                'current_page' => $paginator->currentPage(),
+                'last_page' => $paginator->lastPage(),
+                'per_page' => $paginator->perPage(),
+                'total' => $paginator->total(),
+                'from' => $paginator->firstItem(),
+                'to' => $paginator->lastItem(),
+            ],
+            'summary' => [
+                'total_ratings' => $totalRatings,
+                'average_score' => $averageScore !== null ? round((float) $averageScore, 1) : null,
+                'low_score_count' => $lowScoreCount,
+            ],
+        ], 200, [], JSON_PRESERVE_ZERO_FRACTION);
     }
 
     private function aiNotConfigured(): JsonResponse

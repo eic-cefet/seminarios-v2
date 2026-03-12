@@ -34,3 +34,4 @@ composer.phar
 guide/node_modules/
 guide/dist/
 guide/screenshots/
+.pnpm-store/

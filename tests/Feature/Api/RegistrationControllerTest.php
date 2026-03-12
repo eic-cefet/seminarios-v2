@@ -2,7 +2,6 @@
 
 use App\Models\Registration;
 use App\Models\Seminar;
-use App\Models\SeminarLocation;
 
 describe('POST /api/seminars/{slug}/register', function () {
     it('registers authenticated user for a seminar', function () {
@@ -69,21 +68,23 @@ describe('POST /api/seminars/{slug}/register', function () {
         $response->assertStatus(404);
     });
 
-    it('returns error when seminar is full', function () {
-        actingAsUser();
-        $location = SeminarLocation::factory()->create(['max_vacancies' => 1]);
+    it('allows overbooking when seminar capacity is exceeded', function () {
+        $user = actingAsUser();
+        $location = \App\Models\SeminarLocation::factory()->create(['max_vacancies' => 1]);
         $seminar = Seminar::factory()->upcoming()->create([
             'active' => true,
             'seminar_location_id' => $location->id,
         ]);
 
-        // Fill the single vacancy
         Registration::factory()->create(['seminar_id' => $seminar->id]);
 
         $response = $this->postJson("/api/seminars/{$seminar->slug}/register");
 
-        $response->assertStatus(409)
-            ->assertJsonPath('message', 'Este seminário atingiu sua capacidade máxima');
+        $response->assertStatus(201)
+            ->assertJsonPath('message', 'Inscrição realizada com sucesso');
+
+        expect(Registration::where('user_id', $user->id)->where('seminar_id', $seminar->id)->exists())
+            ->toBeTrue();
     });
 });
 

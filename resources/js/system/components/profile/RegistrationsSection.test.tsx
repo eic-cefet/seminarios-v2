@@ -112,6 +112,13 @@ describe('RegistrationsSection', () => {
         await waitFor(() => {
             expect(screen.getByText('Inscrito')).toBeInTheDocument();
         });
+
+        expect(
+            screen.getByRole('link', { name: /adicionar ao calendário/i }),
+        ).toHaveAttribute(
+            'href',
+            '/seminario/seminario-futuro/calendar.ics',
+        );
     });
 
     it('renders "Presente" badge when present is true', async () => {
@@ -174,6 +181,9 @@ describe('RegistrationsSection', () => {
         // Location should be shown but no date
         expect(screen.getByText('Room 101')).toBeInTheDocument();
         expect(screen.getByText('Inscrito')).toBeInTheDocument();
+        expect(
+            screen.queryByRole('link', { name: /adicionar ao calendário/i }),
+        ).not.toBeInTheDocument();
     });
 
     it('does not render location when location is null', async () => {

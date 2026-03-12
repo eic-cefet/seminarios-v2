@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
     ArrowLeft,
     Calendar,
+    CalendarPlus,
     MapPin,
     Users,
     ExternalLink,
@@ -18,7 +19,7 @@ import { Badge } from "../components/Badge";
 import { LoginModal } from "../components/LoginModal";
 import { PageTitle } from "@shared/components/PageTitle";
 import { seminarsApi, registrationApi } from "@shared/api/client";
-import { cn, containsHTML } from "@shared/lib/utils";
+import { buildUrl, cn, containsHTML } from "@shared/lib/utils";
 import { formatDateTime, isToday as isTodayDate } from "@shared/lib/date";
 import { getErrorMessage } from "@shared/lib/errors";
 import { useAuth } from "@shared/contexts/AuthContext";
@@ -84,6 +85,9 @@ export default function SeminarDetails() {
     const isRegistered = registrationData?.registered ?? false;
     const isProcessing =
         registerMutation.isPending || unregisterMutation.isPending;
+    const calendarUrl = seminar
+        ? buildUrl(`/seminario/${seminar.slug}/calendar.ics`)
+        : "";
 
     const handleRegisterClick = () => {
         if (!user) {
@@ -427,6 +431,16 @@ export default function SeminarDetails() {
                                         </p>
                                     </>
                                 )}
+
+                                <div className="mt-6 border-t border-gray-200 pt-4">
+                                    <a
+                                        href={calendarUrl}
+                                        className="inline-flex w-full items-center justify-center gap-2 rounded-md border border-primary-200 bg-primary-50 px-4 py-3 text-sm font-medium text-primary-700 transition-colors hover:bg-primary-100"
+                                    >
+                                        <CalendarPlus className="h-4 w-4" />
+                                        Adicionar ao calendário
+                                    </a>
+                                </div>
                             </div>
 
                             {/* External Link */}

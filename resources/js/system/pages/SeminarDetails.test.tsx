@@ -183,6 +183,18 @@ describe('SeminarDetails', () => {
         });
     });
 
+    it('shows the add to calendar link', async () => {
+        const seminar = createSeminar({ slug: 'calendar-seminar' });
+        vi.mocked(seminarsApi.get).mockResolvedValue({ data: seminar });
+
+        render(<SeminarDetails />);
+
+        await waitFor(() => {
+            const link = screen.getByRole('link', { name: /adicionar ao calendário/i });
+            expect(link).toHaveAttribute('href', '/seminario/calendar-seminar/calendar.ics');
+        });
+    });
+
     it('shows "Inscreva-se" heading for non-registered user', async () => {
         const seminar = createSeminar({ name: 'Test', isExpired: false });
         vi.mocked(seminarsApi.get).mockResolvedValue({ data: seminar });

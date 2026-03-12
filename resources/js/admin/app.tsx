@@ -14,6 +14,7 @@ import UserList from "./pages/users/UserList";
 import RegistrationList from "./pages/registrations/RegistrationList";
 import { SeminarList, SeminarForm } from "./pages/seminars";
 import { WorkshopList } from "./pages/workshops";
+import FeedbackInsights from "./pages/reports/FeedbackInsights";
 import SemestralReport from "./pages/reports/SemestralReport";
 import NotFound from "./pages/NotFound";
 
@@ -26,7 +27,7 @@ const queryClient = new QueryClient({
     },
 });
 
-function AppRoutes() {
+export function AppRoutes() {
     usePageTracking();
 
     return (
@@ -42,13 +43,14 @@ function AppRoutes() {
                 <Route path="/workshops" element={<WorkshopList />} />
                 <Route path="/registrations" element={<RegistrationList />} />
                 <Route path="/reports/semestral" element={<SemestralReport />} />
+                <Route path="/reports/feedback" element={<FeedbackInsights />} />
                 <Route path="*" element={<NotFound />} />
             </Route>
         </Routes>
     );
 }
 
-function App() {
+export function App() {
     return (
         <ErrorBoundary>
             <HelmetProvider>
