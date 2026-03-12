@@ -69,4 +69,47 @@ describe("createCalendarLinks", () => {
         expect(outlook.searchParams.get("body")).toBeNull();
         expect(outlook.searchParams.get("location")).toBeNull();
     });
+
+    it("uses an explicit end date and falls back to a relative event URL when window is unavailable", () => {
+        const originalWindow = globalThis.window;
+        const originalRouterBase = app.ROUTER_BASE;
+
+        Object.defineProperty(globalThis, "window", {
+            value: undefined,
+            configurable: true,
+        });
+        app.ROUTER_BASE = "/seminarios";
+
+        try {
+            const links = createCalendarLinks({
+                title: "Seminario com horario definido",
+                startsAt: "2026-08-01T12:00:00Z",
+                endsAt: "2026-08-01T14:30:00Z",
+                eventPath: "/seminario/horario-definido",
+                downloadPath: "/seminario/horario-definido/calendar.ics",
+            });
+
+            const google = new URL(links.google);
+            const outlook = new URL(links.outlook);
+
+            expect(google.searchParams.get("dates")).toBe(
+                "20260801T120000Z/20260801T143000Z",
+            );
+            expect(google.searchParams.get("details")).toContain(
+                "Pagina do evento: /seminarios/seminario/horario-definido",
+            );
+            expect(outlook.searchParams.get("enddt")).toBe(
+                "2026-08-01T14:30:00.000Z",
+            );
+            expect(links.ics).toBe(
+                "/seminarios/seminario/horario-definido/calendar.ics",
+            );
+        } finally {
+            Object.defineProperty(globalThis, "window", {
+                value: originalWindow,
+                configurable: true,
+            });
+            app.ROUTER_BASE = originalRouterBase;
+        }
+    });
 });
