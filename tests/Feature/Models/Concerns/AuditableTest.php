@@ -54,16 +54,16 @@ describe('Auditable Trait', function () {
 
     describe('model deletion', function () {
         it('logs a deleted event for hard deletes', function () {
-            $subject = Subject::factory()->create();
+            $seminarType = \App\Models\SeminarType::factory()->create();
 
             AuditLog::query()->delete();
 
-            $subject->delete();
+            $seminarType->delete();
 
-            $log = AuditLog::where('event_name', 'subject.deleted')->first();
+            $log = AuditLog::where('event_name', 'seminar_type.deleted')->first();
 
             expect($log)->not->toBeNull()
-                ->and($log->event_data['name'])->toBe($subject->name);
+                ->and($log->event_data['name'])->toBe($seminarType->name);
         });
 
         it('logs a soft_deleted event for soft deletes', function () {
