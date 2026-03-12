@@ -1,11 +1,13 @@
-import { useQuery } from "@tanstack/react-query";
-import { Check, X } from "lucide-react";
-import { useCallback, useRef } from "react";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { Check, Loader2, Plus, Sparkles, X } from "lucide-react";
+import { useCallback, useRef, useState } from "react";
+import { toast } from "sonner";
 import { DropdownPortal } from "@shared/components/DropdownPortal";
 import { useDebouncedSearch } from "@shared/hooks/useDebouncedSearch";
 import { useDropdownNavigation } from "@shared/hooks/useDropdownNavigation";
-import { subjectsApi } from "../api/adminClient";
+import { aiApi, subjectsApi } from "../api/adminClient";
 import { Badge } from "./ui/badge";
+import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 
@@ -76,6 +78,35 @@ export function SubjectMultiSelect({
 
     const removeSubject = (subject: string) => {
         onChange(value.filter((s) => s !== subject));
+    };
+
+    const [aiSuggestions, setAiSuggestions] = useState<string[]>([]);
+
+    const suggestMutation = useMutation({
+        mutationFn: () => aiApi.suggestSubjectTags(value),
+        onSuccess: (data) => {
+            const filtered = data.data.suggestions.filter(
+                (s) => !value.includes(s),
+            );
+            setAiSuggestions(filtered);
+            if (filtered.length === 0) {
+                toast.info("Nenhuma sugestão adicional encontrada.");
+            }
+        },
+        onError: (error: any) => {
+            if (error?.status === 503) {
+                toast.error("IA não configurada. Defina AI_API_KEY no ambiente.");
+            } else {
+                toast.error("Erro ao buscar sugestões. Tente novamente.");
+            }
+        },
+    });
+
+    const addSuggestion = (name: string) => {
+        if (!value.includes(name)) {
+            onChange([...value, name]);
+        }
+        setAiSuggestions((prev) => prev.filter((s) => s !== name));
     };
 
     const wrapperRef = useRef<HTMLDivElement>(null);
@@ -159,6 +190,57 @@ export function SubjectMultiSelect({
                     </div>
                 </DropdownPortal>
             </div>
+            {value.length > 0 && (
+                <div className="flex items-center gap-2">
+                    <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => suggestMutation.mutate()}
+                        disabled={suggestMutation.isPending}
+                    >
+                        {suggestMutation.isPending ? (
+                            <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                        ) : (
+                            <Sparkles className="mr-1 h-3 w-3" />
+                        )}
+                        {suggestMutation.isPending
+                            ? "Buscando..."
+                            : "Sugerir com IA"}
+                    </Button>
+                    {aiSuggestions.length > 0 && (
+                        <button
+                            type="button"
+                            onClick={() => setAiSuggestions([])}
+                            className="text-xs text-muted-foreground hover:text-foreground"
+                        >
+                            Limpar sugestões
+                        </button>
+                    )}
+                </div>
+            )}
+
+            {aiSuggestions.length > 0 && (
+                <div className="space-y-1">
+                    <Label className="text-xs text-muted-foreground">
+                        Sugestões da IA:
+                    </Label>
+                    <div className="flex flex-wrap gap-1">
+                        {aiSuggestions.map((suggestion) => (
+                            <Badge
+                                key={suggestion}
+                                variant="outline"
+                                className="gap-1 cursor-pointer border-dashed hover:bg-accent"
+                                onClick={() => addSuggestion(suggestion)}
+                            >
+                                <Plus className="h-3 w-3" />
+                                {suggestion}
+                            </Badge>
+                        ))}
+                    </div>
+                </div>
+            )}
+
             {error && <p className="text-sm text-red-500">{error}</p>}
             <p className="text-xs text-muted-foreground">
                 {showSuggestions && suggestions.length > 0

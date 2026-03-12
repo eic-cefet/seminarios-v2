@@ -705,5 +705,19 @@ describe('Admin API endpoints', () => {
             );
             expect(result.data.text).toBe('Merged Name');
         });
+
+        it('suggestSubjectTags sends subject_names array', async () => {
+            mockSuccess({ data: { suggestions: ['Docker', 'Kubernetes'] } });
+            const result = await aiApi.suggestSubjectTags(['Cloud Computing']);
+
+            expect(fetchSpy).toHaveBeenCalledWith(
+                expect.stringContaining('/ai/suggest-subject-tags'),
+                expect.objectContaining({
+                    method: 'POST',
+                    body: JSON.stringify({ subject_names: ['Cloud Computing'] }),
+                }),
+            );
+            expect(result.data.suggestions).toEqual(['Docker', 'Kubernetes']);
+        });
     });
 });

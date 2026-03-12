@@ -251,6 +251,144 @@ describe('POST /admin/ai/suggest-merge-name', function () {
     });
 });
 
+// ─── POST /ai/suggest-subject-tags ───
+
+describe('POST /admin/ai/suggest-subject-tags', function () {
+    it('suggests related subjects based on selected topics', function () {
+        actingAsAdmin();
+        fakeAiResponse('["Docker", "Kubernetes"]');
+
+        $response = $this->postJson('/api/admin/ai/suggest-subject-tags', [
+            'subject_names' => ['Cloud Computing'],
+        ]);
+
+        $response->assertOk()
+            ->assertJsonPath('data.suggestions.0', 'Docker')
+            ->assertJsonPath('data.suggestions.1', 'Kubernetes');
+    });
+
+    it('uses historical co-occurrence data when available', function () {
+        actingAsAdmin();
+
+        $subject1 = \App\Models\Subject::factory()->create(['name' => 'React']);
+        $subject2 = \App\Models\Subject::factory()->create(['name' => 'TypeScript']);
+        $subject3 = \App\Models\Subject::factory()->create(['name' => 'Next.js']);
+
+        $seminar = Seminar::factory()->create();
+        $seminar->subjects()->attach([$subject1->id, $subject2->id, $subject3->id]);
+
+        fakeAiResponse('["Vue.js", "Tailwind CSS"]');
+
+        $response = $this->postJson('/api/admin/ai/suggest-subject-tags', [
+            'subject_names' => ['React'],
+        ]);
+
+        $response->assertOk()
+            ->assertJsonCount(2, 'data.suggestions');
+
+        Http::assertSent(function ($request) {
+            return str_contains($request->body(), 'TypeScript') &&
+                str_contains($request->body(), 'Next.js');
+        });
+    });
+
+    it('filters out already-selected subjects from suggestions', function () {
+        actingAsAdmin();
+        fakeAiResponse('["React", "Vue.js", "Angular"]');
+
+        $response = $this->postJson('/api/admin/ai/suggest-subject-tags', [
+            'subject_names' => ['React'],
+        ]);
+
+        $response->assertOk();
+
+        $suggestions = $response->json('data.suggestions');
+        expect($suggestions)->not->toContain('React');
+        expect($suggestions)->toContain('Vue.js');
+        expect($suggestions)->toContain('Angular');
+    });
+
+    it('returns empty array when AI returns invalid JSON', function () {
+        actingAsAdmin();
+        fakeAiResponse('These are my suggestions: Docker, Kubernetes');
+
+        $response = $this->postJson('/api/admin/ai/suggest-subject-tags', [
+            'subject_names' => ['Cloud Computing'],
+        ]);
+
+        $response->assertOk()
+            ->assertJsonPath('data.suggestions', []);
+    });
+
+    it('returns 503 when AI is not configured', function () {
+        actingAsAdmin();
+        config(['ai.api_key' => null]);
+
+        $response = $this->postJson('/api/admin/ai/suggest-subject-tags', [
+            'subject_names' => ['React'],
+        ]);
+
+        $response->assertStatus(503)
+            ->assertJsonPath('error', 'ai_not_configured');
+    });
+
+    it('returns 502 when AI request fails', function () {
+        actingAsAdmin();
+        fakeAiFailure();
+
+        $response = $this->postJson('/api/admin/ai/suggest-subject-tags', [
+            'subject_names' => ['React'],
+        ]);
+
+        $response->assertStatus(502)
+            ->assertJsonPath('error', 'ai_request_failed');
+    });
+
+    it('validates subject_names is required and min 1', function () {
+        actingAsAdmin();
+
+        $this->postJson('/api/admin/ai/suggest-subject-tags', [])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['subject_names']);
+
+        $this->postJson('/api/admin/ai/suggest-subject-tags', [
+            'subject_names' => [],
+        ])->assertUnprocessable()
+            ->assertJsonValidationErrors(['subject_names']);
+    });
+
+    it('validates subject_names items are strings with max length', function () {
+        actingAsAdmin();
+
+        $this->postJson('/api/admin/ai/suggest-subject-tags', [
+            'subject_names' => [123, str_repeat('a', 256)],
+        ])->assertUnprocessable();
+    });
+
+    it('rejects unauthenticated users', function () {
+        $this->postJson('/api/admin/ai/suggest-subject-tags', [
+            'subject_names' => ['React'],
+        ])->assertUnauthorized();
+    });
+
+    it('rejects non-admin users', function () {
+        actingAsUser();
+
+        $this->postJson('/api/admin/ai/suggest-subject-tags', [
+            'subject_names' => ['React'],
+        ])->assertForbidden();
+    });
+
+    it('allows teacher users', function () {
+        actingAsTeacher();
+        fakeAiResponse('["Vue.js"]');
+
+        $this->postJson('/api/admin/ai/suggest-subject-tags', [
+            'subject_names' => ['React'],
+        ])->assertOk();
+    });
+});
+
 // ─── GET /ai/rating-sentiments ───
 
 describe('GET /admin/ai/rating-sentiments', function () {

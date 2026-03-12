@@ -618,6 +618,17 @@ export const aiApi = {
             },
         );
     },
+    suggestSubjectTags: async (subjectNames: string[]) => {
+        await getCsrfCookie();
+        return fetchAdminApi<{ data: { suggestions: string[] } }>(
+            "/ai/suggest-subject-tags",
+            {
+                method: "POST",
+                body: JSON.stringify({ subject_names: subjectNames }),
+            },
+        );
+    },
+
     ratingSentiments: (params?: {
         page?: number;
         per_page?: number;
