@@ -12,6 +12,7 @@ use App\Models\Seminar;
 use App\Models\Subject;
 use App\Services\SlugService;
 use Dedoc\Scramble\Attributes\BodyParameter;
+use Dedoc\Scramble\Attributes\QueryParameter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -24,6 +25,8 @@ class ExternalSeminarController extends Controller
         private readonly SlugService $slugService
     ) {}
 
+    #[QueryParameter('search', description: 'Search seminars by name', type: 'string', example: 'Machine Learning')]
+    #[QueryParameter('active', description: 'Filter by active status', type: 'boolean', example: true)]
     public function index(Request $request): AnonymousResourceCollection
     {
         Gate::authorize('viewAny', Seminar::class);
