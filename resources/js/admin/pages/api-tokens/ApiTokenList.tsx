@@ -44,9 +44,10 @@ import {
     SelectTrigger,
     SelectValue,
 } from "../../components/ui/select";
-import { Checkbox } from "../../components/ui/checkbox";
 import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
+import { MultiSelect } from "../../components/ui/multi-select";
+import { Switch } from "../../components/ui/switch";
 import { Badge } from "../../components/ui/badge";
 import { PageTitle } from "@shared/components/PageTitle";
 import { buildUrl, formatDateTime } from "@shared/lib/utils";
@@ -142,14 +143,6 @@ export default function ApiTokenList() {
                 formExpiry === "never" ? null : parseInt(formExpiry, 10),
             abilities: fullAccess ? undefined : formAbilities,
         });
-    };
-
-    const toggleAbility = (ability: string) => {
-        setFormAbilities((prev) =>
-            prev.includes(ability)
-                ? prev.filter((a) => a !== ability)
-                : [...prev, ability],
-        );
     };
 
     const handleCopy = async () => {
@@ -417,53 +410,42 @@ export default function ApiTokenList() {
                                 </Select>
                             </div>
                             <div className="space-y-3">
-                                <Label>Permissões</Label>
-                                <div className="flex items-center gap-2">
-                                    <Checkbox
-                                        id="full-access"
-                                        checked={fullAccess}
-                                        onCheckedChange={(checked) => {
-                                            setFullAccess(!!checked);
-                                            if (checked)
-                                                setFormAbilities([]);
-                                        }}
-                                    />
-                                    <Label
-                                        htmlFor="full-access"
-                                        className="font-normal"
-                                    >
-                                        Acesso total
-                                    </Label>
+                                <div className="flex items-center justify-between">
+                                    <Label>Permissões</Label>
+                                    <div className="flex items-center gap-2">
+                                        <Label
+                                            htmlFor="full-access"
+                                            className="text-sm font-normal text-muted-foreground"
+                                        >
+                                            Acesso total
+                                        </Label>
+                                        <Switch
+                                            id="full-access"
+                                            checked={fullAccess}
+                                            onCheckedChange={(checked) => {
+                                                setFullAccess(checked);
+                                                if (checked)
+                                                    setFormAbilities([]);
+                                            }}
+                                        />
+                                    </div>
                                 </div>
                                 {!fullAccess && (
-                                    <div className="grid grid-cols-2 gap-2 pl-1">
-                                        {availableAbilities.map(
-                                            (ability) => (
-                                                <div
-                                                    key={ability}
-                                                    className="flex items-center gap-2"
-                                                >
-                                                    <Checkbox
-                                                        id={`ability-${ability}`}
-                                                        checked={formAbilities.includes(
-                                                            ability,
-                                                        )}
-                                                        onCheckedChange={() =>
-                                                            toggleAbility(
-                                                                ability,
-                                                            )
-                                                        }
-                                                    />
-                                                    <Label
-                                                        htmlFor={`ability-${ability}`}
-                                                        className="font-normal text-sm font-mono"
-                                                    >
-                                                        {ability}
-                                                    </Label>
-                                                </div>
-                                            ),
+                                    <MultiSelect
+                                        options={availableAbilities.map(
+                                            (a) => ({
+                                                value: a,
+                                                label: a,
+                                            }),
                                         )}
-                                    </div>
+                                        selected={formAbilities}
+                                        onChange={(selected) =>
+                                            setFormAbilities(
+                                                selected as string[],
+                                            )
+                                        }
+                                        placeholder="Selecione as permissões..."
+                                    />
                                 )}
                             </div>
                         </div>
