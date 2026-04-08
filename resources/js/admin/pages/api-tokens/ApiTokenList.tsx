@@ -72,6 +72,39 @@ function isExpired(expiresAt: string | null): boolean {
     return new Date(expiresAt) < new Date();
 }
 
+const RESOURCE_GROUPS = [
+    { resource: "seminars", label: "Seminários" },
+    { resource: "seminar-types", label: "Tipos de Seminário" },
+    { resource: "locations", label: "Locais" },
+    { resource: "users", label: "Usuários" },
+    { resource: "speaker-data", label: "Dados de Palestrante" },
+] as const;
+
+type AccessLevel = "none" | "read" | "read-write";
+
+function getAccessLevel(
+    abilities: string[],
+    resource: string,
+): AccessLevel {
+    if (abilities.includes(`${resource}:write`)) return "read-write";
+    if (abilities.includes(`${resource}:read`)) return "read";
+    return "none";
+}
+
+function setAccessLevel(
+    abilities: string[],
+    resource: string,
+    level: AccessLevel,
+): string[] {
+    const filtered = abilities.filter(
+        (a) => a !== `${resource}:read` && a !== `${resource}:write`,
+    );
+    if (level === "read") return [...filtered, `${resource}:read`];
+    if (level === "read-write")
+        return [...filtered, `${resource}:read`, `${resource}:write`];
+    return filtered;
+}
+
 export default function ApiTokenList() {
     const queryClient = useQueryClient();
     const [page, setPage] = useState(1);
@@ -93,14 +126,6 @@ export default function ApiTokenList() {
         queryKey: ["admin-api-tokens", page],
         queryFn: () => apiTokensApi.list({ page }),
     });
-
-    const { data: abilitiesData } = useQuery({
-        queryKey: ["admin-api-token-abilities"],
-        queryFn: () => apiTokensApi.abilities(),
-        enabled: isCreateOpen,
-    });
-
-    const availableAbilities = abilitiesData?.data ?? [];
 
     const tokens = data?.data ?? [];
     const meta = data?.meta;
@@ -430,50 +455,77 @@ export default function ApiTokenList() {
                                     </div>
                                 </div>
                                 {!fullAccess && (
-                                    <div className="grid grid-cols-2 gap-2">
-                                        {availableAbilities.map((ability) => {
-                                            const selected =
-                                                formAbilities.includes(
-                                                    ability,
-                                                );
-                                            return (
-                                                <button
-                                                    key={ability}
-                                                    type="button"
-                                                    onClick={() =>
-                                                        setFormAbilities(
-                                                            (prev) =>
-                                                                selected
-                                                                    ? prev.filter(
-                                                                          (a) =>
-                                                                              a !==
-                                                                              ability,
-                                                                      )
-                                                                    : [
-                                                                          ...prev,
-                                                                          ability,
-                                                                      ],
-                                                        )
-                                                    }
-                                                    className="text-left"
-                                                >
-                                                    <Badge
-                                                        variant={
-                                                            selected
-                                                                ? "default"
-                                                                : "outline"
-                                                        }
-                                                        className={`w-full justify-center py-1.5 cursor-pointer text-xs font-mono transition-colors ${
-                                                            selected
-                                                                ? ""
-                                                                : "text-muted-foreground hover:text-foreground"
-                                                        }`}
+                                    <div className="space-y-2">
+                                        {RESOURCE_GROUPS.map(
+                                            ({ resource, label }) => {
+                                                const level =
+                                                    getAccessLevel(
+                                                        formAbilities,
+                                                        resource,
+                                                    );
+                                                const levels: {
+                                                    value: AccessLevel;
+                                                    label: string;
+                                                }[] = [
+                                                    {
+                                                        value: "none",
+                                                        label: "Nenhum",
+                                                    },
+                                                    {
+                                                        value: "read",
+                                                        label: "Leitura",
+                                                    },
+                                                    {
+                                                        value: "read-write",
+                                                        label: "Escrita",
+                                                    },
+                                                ];
+                                                return (
+                                                    <div
+                                                        key={resource}
+                                                        className="flex items-center justify-between gap-3"
                                                     >
-                                                        {ability}
-                                                    </Badge>
-                                                </button>
-                                            );
-                                        })}
+                                                        <span className="text-sm min-w-0 truncate">
+                                                            {label}
+                                                        </span>
+                                                        <div className="flex rounded-md border border-border overflow-hidden shrink-0">
+                                                            {levels.map(
+                                                                (l) => (
+                                                                    <button
+                                                                        key={
+                                                                            l.value
+                                                                        }
+                                                                        type="button"
+                                                                        onClick={() =>
+                                                                            setFormAbilities(
+                                                                                (
+                                                                                    prev,
+                                                                                ) =>
+                                                                                    setAccessLevel(
+                                                                                        prev,
+                                                                                        resource,
+                                                                                        l.value,
+                                                                                    ),
+                                                                            )
+                                                                        }
+                                                                        className={`px-2.5 py-1 text-xs transition-colors ${
+                                                                            level ===
+                                                                            l.value
+                                                                                ? "bg-primary text-primary-foreground"
+                                                                                : "bg-background text-muted-foreground hover:text-foreground hover:bg-muted"
+                                                                        } ${l.value !== "none" ? "border-l border-border" : ""}`}
+                                                                    >
+                                                                        {
+                                                                            l.label
+                                                                        }
+                                                                    </button>
+                                                                ),
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                );
+                                            },
+                                        )}
                                     </div>
                                 )}
                             </div>
