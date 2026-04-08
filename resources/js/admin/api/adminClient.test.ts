@@ -491,6 +491,18 @@ describe('Admin API endpoints', () => {
             );
         });
 
+        it('update sends PUT with name and abilities', async () => {
+            mockSuccess({ message: 'Updated', data: { id: 1, name: 'Updated' } });
+            await apiTokensApi.update(1, { name: 'Updated', abilities: ['seminars:read'] });
+            expect(fetchSpy).toHaveBeenCalledWith(
+                expect.stringContaining('/api-tokens/1'),
+                expect.objectContaining({
+                    method: 'PUT',
+                    body: JSON.stringify({ name: 'Updated', abilities: ['seminars:read'] }),
+                }),
+            );
+        });
+
         it('abilities fetches available abilities', async () => {
             mockSuccess({ data: ['seminars:read', 'seminars:write'] });
             const result = await apiTokensApi.abilities();

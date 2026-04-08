@@ -14,6 +14,7 @@ vi.mock('../../api/adminClient', () => ({
 
 let capturedCreateOptions: any = null;
 let capturedDeleteOptions: any = null;
+let capturedUpdateOptions: any = null;
 let tokenMutationCallCount = 0;
 
 vi.mock('@tanstack/react-query', async () => {
@@ -22,9 +23,10 @@ vi.mock('@tanstack/react-query', async () => {
         ...actual,
         useMutation: (options: any) => {
             tokenMutationCallCount++;
-            const idx = ((tokenMutationCallCount - 1) % 2) + 1;
+            const idx = ((tokenMutationCallCount - 1) % 3) + 1;
             if (idx === 1) capturedCreateOptions = options;
-            else capturedDeleteOptions = options;
+            else if (idx === 2) capturedDeleteOptions = options;
+            else capturedUpdateOptions = options;
             return (actual as any).useMutation(options);
         },
     };
@@ -63,6 +65,7 @@ describe('ApiTokenList', () => {
     beforeEach(() => {
         capturedCreateOptions = null;
         capturedDeleteOptions = null;
+        capturedUpdateOptions = null;
         tokenMutationCallCount = 0;
     });
 
@@ -503,6 +506,38 @@ describe('ApiTokenList', () => {
 
         act(() => { capturedDeleteOptions.onSuccess(); });
         act(() => { capturedDeleteOptions.onError(); });
+    });
+
+    // --- Edit flow ---
+
+    it('opens edit dialog with token data', async () => {
+        vi.mocked(apiTokensApi.list).mockResolvedValue(paginated(mockTokens));
+
+        render(<ApiTokenList />);
+
+        await waitFor(() => {
+            expect(screen.getByText('Prof. Joel Token')).toBeInTheDocument();
+        });
+
+        const editButton = screen.getAllByRole('button').find(btn =>
+            btn.querySelector('svg.lucide-pencil')
+        );
+        if (editButton) await userEvent.click(editButton);
+
+        await waitFor(() => {
+            expect(screen.getByText('Editar Token')).toBeInTheDocument();
+        });
+    });
+
+    it('handles update mutation onSuccess and onError', async () => {
+        render(<ApiTokenList />);
+
+        await waitFor(() => {
+            expect(capturedUpdateOptions).not.toBeNull();
+        });
+
+        act(() => { capturedUpdateOptions.onSuccess(); });
+        act(() => { capturedUpdateOptions.onError(); });
     });
 
     // --- Pagination ---
