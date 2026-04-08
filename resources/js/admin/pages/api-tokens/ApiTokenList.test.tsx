@@ -69,7 +69,7 @@ describe('ApiTokenList', () => {
     it('renders the page heading and subtitle', () => {
         render(<ApiTokenList />);
         expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('API Tokens');
-        expect(screen.getByText('Gerenciar seus tokens de acesso para a API externa')).toBeInTheDocument();
+        expect(screen.getByText(/Gerenciar seus tokens de acesso para a API externa/)).toBeInTheDocument();
     });
 
     it('renders the new token button', () => {
