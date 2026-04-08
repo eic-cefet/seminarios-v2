@@ -64,7 +64,6 @@ export interface AdminUser {
     id: number;
     name: string;
     email: string;
-    username?: string;
     roles: string[];
     student_data?: {
         course_name?: string;

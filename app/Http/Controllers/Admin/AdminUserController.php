@@ -37,13 +37,12 @@ class AdminUserController extends Controller
             $query->onlyTrashed();
         }
 
-        // Search by name, email, or username
+        // Search by name or email
         if ($search = $request->string('search')->trim()->toString()) {
             $escaped = $this->escapeLike($search);
             $query->where(function ($q) use ($escaped) {
                 $q->where('name', 'like', "%{$escaped}%")
-                    ->orWhere('email', 'like', "%{$escaped}%")
-                    ->orWhere('username', 'like', "%{$escaped}%");
+                    ->orWhere('email', 'like', "%{$escaped}%");
             });
         }
 

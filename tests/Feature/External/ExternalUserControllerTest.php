@@ -11,7 +11,7 @@ describe('GET /api/external/v1/users', function () {
 
         $response->assertSuccessful()
             ->assertJsonStructure([
-                'data' => [['id', 'name', 'email', 'username', 'speaker_data']],
+                'data' => [['id', 'name', 'email', 'speaker_data']],
             ]);
     });
 
@@ -68,7 +68,7 @@ describe('GET /api/external/v1/users/{id}', function () {
 
         $response->assertSuccessful()
             ->assertJsonStructure([
-                'data' => ['id', 'name', 'email', 'username', 'speaker_data' => ['id', 'slug', 'institution', 'description']],
+                'data' => ['id', 'name', 'email', 'speaker_data' => ['id', 'slug', 'institution', 'description']],
             ]);
     });
 
@@ -95,13 +95,11 @@ describe('POST /api/external/v1/users', function () {
         $response = $this->postJson('/api/external/v1/users', [
             'name' => 'New User',
             'email' => 'new@test.com',
-            'username' => 'newuser',
         ]);
 
         $response->assertCreated()
             ->assertJsonPath('data.name', 'New User')
             ->assertJsonPath('data.email', 'new@test.com')
-            ->assertJsonPath('data.username', 'newuser')
             ->assertJsonPath('data.speaker_data', null);
     });
 
@@ -146,17 +144,6 @@ describe('PUT /api/external/v1/users/{id}', function () {
 
         $response->assertSuccessful();
         expect($response->json('data.name'))->toBe('Updated Name');
-    });
-
-    it('updates username', function () {
-        actingAsAdmin();
-        $user = User::factory()->create(['username' => 'old']);
-
-        $response = $this->putJson("/api/external/v1/users/{$user->id}", [
-            'username' => 'new-username',
-        ]);
-
-        expect($response->json('data.username'))->toBe('new-username');
     });
 
     it('rejects duplicate email on update', function () {

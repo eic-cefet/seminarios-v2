@@ -144,12 +144,10 @@ describe('User Model', function () {
             $user = User::factory()->create([
                 'name' => 'John Doe',
                 'email' => 'john@example.com',
-                'username' => 'johndoe',
             ]);
 
             expect($user->name)->toBe('John Doe');
             expect($user->email)->toBe('john@example.com');
-            expect($user->username)->toBe('johndoe');
         });
 
         it('hashes password automatically', function () {
