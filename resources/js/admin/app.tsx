@@ -16,6 +16,7 @@ import { SeminarList, SeminarForm } from "./pages/seminars";
 import { WorkshopList } from "./pages/workshops";
 import FeedbackInsights from "./pages/reports/FeedbackInsights";
 import SemestralReport from "./pages/reports/SemestralReport";
+import ApiTokenList from "./pages/api-tokens/ApiTokenList";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -42,6 +43,7 @@ export function AppRoutes() {
                 <Route path="/seminars/:id/edit" element={<SeminarForm />} />
                 <Route path="/workshops" element={<WorkshopList />} />
                 <Route path="/registrations" element={<RegistrationList />} />
+                <Route path="/api-tokens" element={<ApiTokenList />} />
                 <Route path="/reports/semestral" element={<SemestralReport />} />
                 <Route path="/reports/feedback" element={<FeedbackInsights />} />
                 <Route path="*" element={<NotFound />} />

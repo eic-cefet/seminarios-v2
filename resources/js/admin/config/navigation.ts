@@ -1,6 +1,7 @@
 import {
     ClipboardList,
     FileBarChart,
+    KeyRound,
     LayoutDashboard,
     Presentation,
     Users,
@@ -38,6 +39,12 @@ export const adminNavigation: NavItem[] = [
         label: "Inscrições",
         href: "/registrations",
         icon: ClipboardList,
+        adminOnly: true,
+    },
+    {
+        label: "API Tokens",
+        href: "/api-tokens",
+        icon: KeyRound,
         adminOnly: true,
     },
     {
