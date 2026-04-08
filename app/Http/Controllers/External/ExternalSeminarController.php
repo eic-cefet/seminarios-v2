@@ -217,15 +217,15 @@ class ExternalSeminarController extends Controller
                 ['name' => $data['name']]
             );
 
-            if (! empty($data['institution']) || ! empty($data['description'])) {
+            if (array_key_exists('institution', $data) || array_key_exists('description', $data)) {
                 UserSpeakerData::updateOrCreate(
                     ['user_id' => $user->id],
-                    array_filter([
+                    [
                         'slug' => $user->speakerData?->slug
                             ?? $this->slugService->generateUnique($user->name, UserSpeakerData::class),
                         'institution' => $data['institution'] ?? null,
                         'description' => $data['description'] ?? null,
-                    ], fn ($v) => $v !== null)
+                    ]
                 );
             } elseif (! $user->speakerData) {
                 UserSpeakerData::create([

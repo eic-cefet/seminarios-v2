@@ -40,14 +40,14 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withExceptions(function (Exceptions $exceptions): void {
         // Handle rate limiting for API routes
         $exceptions->render(function (ThrottleRequestsException $e, Request $request) {
-            if ($request->is('api/*') || $request->is('external/*')) {
+            if ($request->is('api/*')) {
                 return ApiException::rateLimited()->render();
             }
         });
 
         // Handle validation errors for API routes
         $exceptions->render(function (ValidationException $e, Request $request) {
-            if ($request->is('api/*') || $request->is('external/*')) {
+            if ($request->is('api/*')) {
                 return ApiException::validation($e->errors())->render();
             }
         });

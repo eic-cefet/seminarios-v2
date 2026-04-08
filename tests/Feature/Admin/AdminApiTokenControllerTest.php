@@ -105,6 +105,21 @@ describe('POST /api/admin/api-tokens', function () {
         $response->assertStatus(422);
     });
 
+    it('returned token authenticates external API requests', function () {
+        $admin = actingAsAdmin();
+
+        $response = $this->postJson('/api/admin/api-tokens', [
+            'name' => 'Integration Test Token',
+        ]);
+
+        $token = $response->json('data.token');
+
+        $externalResponse = $this->withHeader('Authorization', 'Bearer '.$token)
+            ->getJson('/api/external/v1/seminar-types');
+
+        $externalResponse->assertSuccessful();
+    });
+
     it('works for teacher users', function () {
         actingAsTeacher();
 

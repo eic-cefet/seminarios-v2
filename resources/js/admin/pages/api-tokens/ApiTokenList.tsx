@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Check, Copy, KeyRound, Plus, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { apiTokensApi, type AdminApiToken } from "../../api/adminClient";
 import { Button } from "../../components/ui/button";
@@ -84,6 +84,7 @@ export default function ApiTokenList() {
 
     const [formName, setFormName] = useState("");
     const [formExpiry, setFormExpiry] = useState("90");
+    const copyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     const { data, isLoading } = useQuery({
         queryKey: ["admin-api-tokens", page],
@@ -133,7 +134,8 @@ export default function ApiTokenList() {
         await navigator.clipboard.writeText(createdToken);
         setCopied(true);
         toast.success("Token copiado!");
-        setTimeout(() => setCopied(false), 2000);
+        if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current);
+        copyTimeoutRef.current = setTimeout(() => setCopied(false), 2000);
     };
 
     /* v8 ignore start -- @preserve react-query internal pending state */
@@ -147,6 +149,7 @@ export default function ApiTokenList() {
         setIsTokenShown(false);
         setCreatedToken("");
         setCopied(false);
+        if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current);
     };
 
     return (
