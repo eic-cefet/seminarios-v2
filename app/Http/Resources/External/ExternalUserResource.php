@@ -8,8 +8,8 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 /** @mixin User */
-#[SchemaName('SeminarSpeaker')]
-class ExternalSpeakerResource extends JsonResource
+#[SchemaName('User')]
+class ExternalUserResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
@@ -17,8 +17,8 @@ class ExternalSpeakerResource extends JsonResource
             'id' => $this->id,
             'name' => $this->name,
             'email' => $this->email,
-            'institution' => $this->speakerData?->institution,
-            'description' => $this->speakerData?->description,
+            'username' => $this->username,
+            'speaker_data' => $this->speakerData ? new ExternalSpeakerDataResource($this->speakerData) : null,
         ];
     }
 }

@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Check, Copy, KeyRound, Plus, Trash2 } from "lucide-react";
+import { Check, Copy, ExternalLink, KeyRound, Plus, Trash2 } from "lucide-react";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { apiTokensApi, type AdminApiToken } from "../../api/adminClient";
@@ -48,7 +48,7 @@ import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
 import { Badge } from "../../components/ui/badge";
 import { PageTitle } from "@shared/components/PageTitle";
-import { formatDateTime } from "@shared/lib/utils";
+import { buildUrl, formatDateTime } from "@shared/lib/utils";
 
 const EXPIRY_OPTIONS = [
     { value: "7", label: "7 dias" },
@@ -162,7 +162,16 @@ export default function ApiTokenList() {
                         API Tokens
                     </h1>
                     <p className="text-muted-foreground">
-                        Gerenciar seus tokens de acesso para a API externa
+                        Gerenciar seus tokens de acesso para a API externa.{" "}
+                        <a
+                            href={buildUrl("/api/external/docs")}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-primary hover:underline"
+                        >
+                            Documentação da API
+                            <ExternalLink className="h-3 w-3" />
+                        </a>
                     </p>
                 </div>
                 <Button onClick={() => setIsCreateOpen(true)}>
