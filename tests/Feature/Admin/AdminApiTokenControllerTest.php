@@ -218,6 +218,41 @@ describe('PUT /api/admin/api-tokens/{id}', function () {
     });
 });
 
+describe('POST /api/admin/api-tokens/{id}/regenerate', function () {
+    it('regenerates a token preserving name and abilities', function () {
+        $admin = actingAsAdmin();
+        $oldToken = $admin->createToken('my-token', ['seminars:read']);
+        $oldId = $oldToken->accessToken->id;
+
+        $response = $this->postJson("/api/admin/api-tokens/{$oldId}/regenerate");
+
+        $response->assertSuccessful();
+        expect($response->json('data.name'))->toBe('my-token');
+        expect($response->json('data.abilities'))->toBe(['seminars:read']);
+        expect($response->json('data.token'))->toStartWith('sk-');
+        expect($response->json('data.id'))->not->toBe($oldId);
+
+        // Old token should be deleted
+        expect(PersonalAccessToken::find($oldId))->toBeNull();
+    });
+
+    it('cannot regenerate another users token', function () {
+        $admin = actingAsAdmin();
+        $other = User::factory()->admin()->create();
+        $token = $other->createToken('other');
+
+        $this->postJson("/api/admin/api-tokens/{$token->accessToken->id}/regenerate")
+            ->assertNotFound();
+    });
+
+    it('returns 404 for non-existent token', function () {
+        actingAsAdmin();
+
+        $this->postJson('/api/admin/api-tokens/999/regenerate')
+            ->assertNotFound();
+    });
+});
+
 describe('DELETE /api/admin/api-tokens/{id}', function () {
     it('revokes own token', function () {
         $admin = actingAsAdmin();

@@ -7,6 +7,8 @@ vi.mock('../../api/adminClient', () => ({
             meta: { last_page: 1, current_page: 1, total: 0, from: null, to: null, per_page: 15 },
         }),
         create: vi.fn(),
+        update: vi.fn(),
+        regenerate: vi.fn(),
         delete: vi.fn(),
     },
     AdminApiError: class extends Error {},
@@ -15,6 +17,7 @@ vi.mock('../../api/adminClient', () => ({
 let capturedCreateOptions: any = null;
 let capturedDeleteOptions: any = null;
 let capturedUpdateOptions: any = null;
+let capturedRegenerateOptions: any = null;
 let tokenMutationCallCount = 0;
 
 vi.mock('@tanstack/react-query', async () => {
@@ -23,10 +26,11 @@ vi.mock('@tanstack/react-query', async () => {
         ...actual,
         useMutation: (options: any) => {
             tokenMutationCallCount++;
-            const idx = ((tokenMutationCallCount - 1) % 3) + 1;
+            const idx = ((tokenMutationCallCount - 1) % 4) + 1;
             if (idx === 1) capturedCreateOptions = options;
             else if (idx === 2) capturedDeleteOptions = options;
-            else capturedUpdateOptions = options;
+            else if (idx === 3) capturedUpdateOptions = options;
+            else capturedRegenerateOptions = options;
             return (actual as any).useMutation(options);
         },
     };
@@ -54,7 +58,7 @@ const mockTokens = [
     {
         id: 2,
         name: 'Scoped Token',
-        abilities: ['seminars:create', 'seminars:update'],
+        abilities: ['seminars:read', 'seminars:write'],
         last_used_at: null,
         expires_at: '2099-01-01T00:00:00Z',
         created_at: '2026-03-15T10:00:00Z',
@@ -66,6 +70,7 @@ describe('ApiTokenList', () => {
         capturedCreateOptions = null;
         capturedDeleteOptions = null;
         capturedUpdateOptions = null;
+        capturedRegenerateOptions = null;
         tokenMutationCallCount = 0;
     });
 
@@ -98,8 +103,8 @@ describe('ApiTokenList', () => {
             expect(screen.getByText('Prof. Joel Token')).toBeInTheDocument();
         });
         expect(screen.getByText('Acesso total')).toBeInTheDocument();
-        expect(screen.getByText('seminars:create')).toBeInTheDocument();
-        expect(screen.getByText('seminars:update')).toBeInTheDocument();
+        expect(screen.getByText('seminars:read')).toBeInTheDocument();
+        expect(screen.getByText('seminars:write')).toBeInTheDocument();
         expect(screen.getAllByText('Nunca').length).toBeGreaterThan(0);
     });
 
@@ -510,7 +515,7 @@ describe('ApiTokenList', () => {
 
     // --- Edit flow ---
 
-    it('opens edit dialog with token data', async () => {
+    it('opens edit dialog with token data and shows form', async () => {
         vi.mocked(apiTokensApi.list).mockResolvedValue(paginated(mockTokens));
 
         render(<ApiTokenList />);
@@ -527,6 +532,60 @@ describe('ApiTokenList', () => {
         await waitFor(() => {
             expect(screen.getByText('Editar Token')).toBeInTheDocument();
         });
+        expect(screen.getByText('Altere o nome e as permissões do token.')).toBeInTheDocument();
+        expect(screen.getByDisplayValue('Prof. Joel Token')).toBeInTheDocument();
+        expect(screen.getByText('Salvar')).toBeInTheDocument();
+    });
+
+    it('opens edit dialog for scoped token and shows abilities picker', async () => {
+        vi.mocked(apiTokensApi.list).mockResolvedValue(paginated([mockTokens[1]]));
+
+        render(<ApiTokenList />);
+
+        await waitFor(() => {
+            expect(screen.getByText('Scoped Token')).toBeInTheDocument();
+        });
+
+        const editButton = screen.getAllByRole('button').find(btn =>
+            btn.querySelector('svg.lucide-pencil')
+        );
+        if (editButton) await userEvent.click(editButton);
+
+        await waitFor(() => {
+            expect(screen.getByText('Editar Token')).toBeInTheDocument();
+        });
+        // Scoped token should show abilities picker (full access off)
+        expect(screen.getByText('Seminários')).toBeInTheDocument();
+    });
+
+    it('submits edit form', async () => {
+        vi.mocked(apiTokensApi.list).mockResolvedValue(paginated(mockTokens));
+        vi.mocked(apiTokensApi.update).mockResolvedValue({
+            message: 'Updated',
+            data: mockTokens[0],
+        } as any);
+
+        render(<ApiTokenList />);
+
+        await waitFor(() => {
+            expect(screen.getByText('Prof. Joel Token')).toBeInTheDocument();
+        });
+
+        const editButton = screen.getAllByRole('button').find(btn =>
+            btn.querySelector('svg.lucide-pencil')
+        );
+        if (editButton) await userEvent.click(editButton);
+
+        await waitFor(() => {
+            expect(screen.getByText('Editar Token')).toBeInTheDocument();
+        });
+
+        const form = screen.getByDisplayValue('Prof. Joel Token').closest('form');
+        await act(async () => {
+            form?.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+        });
+
+        expect(apiTokensApi.update).toHaveBeenCalled();
     });
 
     it('handles update mutation onSuccess and onError', async () => {
@@ -538,6 +597,56 @@ describe('ApiTokenList', () => {
 
         act(() => { capturedUpdateOptions.onSuccess(); });
         act(() => { capturedUpdateOptions.onError(); });
+    });
+
+    // --- Regenerate flow ---
+
+    it('opens regenerate confirmation when clicking refresh icon', async () => {
+        vi.mocked(apiTokensApi.list).mockResolvedValue(paginated(mockTokens));
+
+        render(<ApiTokenList />);
+
+        await waitFor(() => {
+            expect(screen.getByText('Prof. Joel Token')).toBeInTheDocument();
+        });
+
+        const refreshButton = screen.getAllByRole('button').find(btn =>
+            btn.querySelector('svg.lucide-refresh-cw')
+        );
+        if (refreshButton) await userEvent.click(refreshButton);
+
+        await waitFor(() => {
+            expect(screen.getByText('Regenerar token?')).toBeInTheDocument();
+        });
+        expect(screen.getByText(/token antigo precisará ser atualizado/)).toBeInTheDocument();
+        expect(screen.getByText('Regenerar')).toBeInTheDocument();
+
+        vi.mocked(apiTokensApi.regenerate).mockResolvedValue({
+            message: 'Regenerated',
+            data: { id: 2, name: 'Test', abilities: ['*'], token: 'sk-regen' },
+        });
+        await userEvent.click(screen.getByText('Regenerar'));
+    });
+
+    it('handles regenerate mutation onSuccess and onError', async () => {
+        render(<ApiTokenList />);
+
+        await waitFor(() => {
+            expect(capturedRegenerateOptions).not.toBeNull();
+        });
+
+        act(() => {
+            capturedRegenerateOptions.onSuccess({
+                message: 'Regenerated',
+                data: { id: 2, name: 'T', abilities: ['*'], token: 'sk-regenerated' },
+            });
+        });
+
+        await waitFor(() => {
+            expect(screen.getByText('sk-regenerated')).toBeInTheDocument();
+        });
+
+        act(() => { capturedRegenerateOptions.onError(); });
     });
 
     // --- Pagination ---

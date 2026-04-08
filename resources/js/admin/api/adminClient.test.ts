@@ -491,6 +491,15 @@ describe('Admin API endpoints', () => {
             );
         });
 
+        it('regenerate sends POST', async () => {
+            mockSuccess({ message: 'Regenerated', data: { id: 2, name: 'Test', token: 'sk-new' } });
+            await apiTokensApi.regenerate(1);
+            expect(fetchSpy).toHaveBeenCalledWith(
+                expect.stringContaining('/api-tokens/1/regenerate'),
+                expect.objectContaining({ method: 'POST' }),
+            );
+        });
+
         it('update sends PUT with name and abilities', async () => {
             mockSuccess({ message: 'Updated', data: { id: 1, name: 'Updated' } });
             await apiTokensApi.update(1, { name: 'Updated', abilities: ['seminars:read'] });

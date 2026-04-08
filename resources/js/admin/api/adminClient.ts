@@ -697,6 +697,14 @@ export const apiTokensApi = {
         );
     },
 
+    regenerate: async (id: number) => {
+        await getCsrfCookie();
+        return fetchAdminApi<AdminApiTokenCreateResponse>(
+            `/api-tokens/${id}/regenerate`,
+            { method: "POST" },
+        );
+    },
+
     delete: async (id: number) => {
         await getCsrfCookie();
         return fetchAdminApi<{ message: string }>(`/api-tokens/${id}`, {

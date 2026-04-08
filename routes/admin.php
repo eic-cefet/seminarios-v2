@@ -58,6 +58,7 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function ()
     Route::apiResource('api-tokens', AdminApiTokenController::class)
         ->only(['index', 'store', 'update', 'destroy']);
     Route::get('/api-tokens/abilities', [AdminApiTokenController::class, 'abilities']);
+    Route::post('/api-tokens/{id}/regenerate', [AdminApiTokenController::class, 'regenerate']);
 
     // AI
     Route::middleware('throttle:ai')->group(function () {

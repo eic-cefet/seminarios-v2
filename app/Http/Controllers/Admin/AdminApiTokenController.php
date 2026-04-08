@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\AuditLog;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Laravel\Sanctum\PersonalAccessToken;
@@ -124,6 +125,39 @@ class AdminApiTokenController extends Controller
                 'last_used_at' => $token->last_used_at?->toIso8601String(),
                 'expires_at' => $token->expires_at?->toIso8601String(),
                 'created_at' => $token->created_at?->toIso8601String(),
+            ],
+        ]);
+    }
+
+    public function regenerate(Request $request, int $id): JsonResponse
+    {
+        $oldToken = $request->user()
+            ->tokens()
+            ->findOrFail($id);
+
+        $user = $request->user();
+        $newToken = DB::transaction(function () use ($user, $oldToken) {
+            $token = $user->createToken(
+                $oldToken->name,
+                $oldToken->abilities,
+                $oldToken->expires_at,
+            );
+            $oldToken->delete();
+
+            AuditLog::record(AuditEvent::ApiTokenRegenerated, auditable: $user, eventData: [
+                'token_name' => $oldToken->name,
+            ]);
+
+            return $token;
+        });
+
+        return response()->json([
+            'message' => 'Token regenerado com sucesso. Guarde-o em um local seguro, pois não será possível visualizá-lo novamente.',
+            'data' => [
+                'id' => $newToken->accessToken->id,
+                'name' => $newToken->accessToken->name,
+                'abilities' => $newToken->accessToken->abilities,
+                'token' => Str::after($newToken->plainTextToken, '|'),
             ],
         ]);
     }
