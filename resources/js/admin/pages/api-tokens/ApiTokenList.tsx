@@ -46,7 +46,6 @@ import {
 } from "../../components/ui/select";
 import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
-import { MultiSelect } from "../../components/ui/multi-select";
 import { Switch } from "../../components/ui/switch";
 import { Badge } from "../../components/ui/badge";
 import { PageTitle } from "@shared/components/PageTitle";
@@ -431,21 +430,51 @@ export default function ApiTokenList() {
                                     </div>
                                 </div>
                                 {!fullAccess && (
-                                    <MultiSelect
-                                        options={availableAbilities.map(
-                                            (a) => ({
-                                                value: a,
-                                                label: a,
-                                            }),
-                                        )}
-                                        selected={formAbilities}
-                                        onChange={(selected) =>
-                                            setFormAbilities(
-                                                selected as string[],
-                                            )
-                                        }
-                                        placeholder="Selecione as permissões..."
-                                    />
+                                    <div className="grid grid-cols-2 gap-2">
+                                        {availableAbilities.map((ability) => {
+                                            const selected =
+                                                formAbilities.includes(
+                                                    ability,
+                                                );
+                                            return (
+                                                <button
+                                                    key={ability}
+                                                    type="button"
+                                                    onClick={() =>
+                                                        setFormAbilities(
+                                                            (prev) =>
+                                                                selected
+                                                                    ? prev.filter(
+                                                                          (a) =>
+                                                                              a !==
+                                                                              ability,
+                                                                      )
+                                                                    : [
+                                                                          ...prev,
+                                                                          ability,
+                                                                      ],
+                                                        )
+                                                    }
+                                                    className="text-left"
+                                                >
+                                                    <Badge
+                                                        variant={
+                                                            selected
+                                                                ? "default"
+                                                                : "outline"
+                                                        }
+                                                        className={`w-full justify-center py-1.5 cursor-pointer text-xs font-mono transition-colors ${
+                                                            selected
+                                                                ? ""
+                                                                : "text-muted-foreground hover:text-foreground"
+                                                        }`}
+                                                    >
+                                                        {ability}
+                                                    </Badge>
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
                                 )}
                             </div>
                         </div>
