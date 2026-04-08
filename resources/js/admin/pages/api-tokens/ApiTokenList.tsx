@@ -44,6 +44,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "../../components/ui/select";
+import { Checkbox } from "../../components/ui/checkbox";
 import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
 import { Badge } from "../../components/ui/badge";
@@ -84,12 +85,22 @@ export default function ApiTokenList() {
 
     const [formName, setFormName] = useState("");
     const [formExpiry, setFormExpiry] = useState("90");
+    const [formAbilities, setFormAbilities] = useState<string[]>([]);
+    const [fullAccess, setFullAccess] = useState(true);
     const copyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     const { data, isLoading } = useQuery({
         queryKey: ["admin-api-tokens", page],
         queryFn: () => apiTokensApi.list({ page }),
     });
+
+    const { data: abilitiesData } = useQuery({
+        queryKey: ["admin-api-token-abilities"],
+        queryFn: () => apiTokensApi.abilities(),
+        enabled: isCreateOpen,
+    });
+
+    const availableAbilities = abilitiesData?.data ?? [];
 
     const tokens = data?.data ?? [];
     const meta = data?.meta;
@@ -103,6 +114,8 @@ export default function ApiTokenList() {
             setIsTokenShown(true);
             setFormName("");
             setFormExpiry("90");
+            setFormAbilities([]);
+            setFullAccess(true);
         },
         onError: () => {
             toast.error("Erro ao criar token");
@@ -127,7 +140,16 @@ export default function ApiTokenList() {
             name: formName,
             expires_in_days:
                 formExpiry === "never" ? null : parseInt(formExpiry, 10),
+            abilities: fullAccess ? undefined : formAbilities,
         });
+    };
+
+    const toggleAbility = (ability: string) => {
+        setFormAbilities((prev) =>
+            prev.includes(ability)
+                ? prev.filter((a) => a !== ability)
+                : [...prev, ability],
+        );
     };
 
     const handleCopy = async () => {
@@ -139,7 +161,10 @@ export default function ApiTokenList() {
     };
 
     /* v8 ignore start -- @preserve react-query internal pending state */
-    const isCreateDisabled = createMutation.isPending || !formName;
+    const isCreateDisabled =
+        createMutation.isPending ||
+        !formName ||
+        (!fullAccess && formAbilities.length === 0);
     const createButtonLabel = createMutation.isPending
         ? "Criando..."
         : "Criar Token";
@@ -390,6 +415,56 @@ export default function ApiTokenList() {
                                         ))}
                                     </SelectContent>
                                 </Select>
+                            </div>
+                            <div className="space-y-3">
+                                <Label>Permissões</Label>
+                                <div className="flex items-center gap-2">
+                                    <Checkbox
+                                        id="full-access"
+                                        checked={fullAccess}
+                                        onCheckedChange={(checked) => {
+                                            setFullAccess(!!checked);
+                                            if (checked)
+                                                setFormAbilities([]);
+                                        }}
+                                    />
+                                    <Label
+                                        htmlFor="full-access"
+                                        className="font-normal"
+                                    >
+                                        Acesso total
+                                    </Label>
+                                </div>
+                                {!fullAccess && (
+                                    <div className="grid grid-cols-2 gap-2 pl-1">
+                                        {availableAbilities.map(
+                                            (ability) => (
+                                                <div
+                                                    key={ability}
+                                                    className="flex items-center gap-2"
+                                                >
+                                                    <Checkbox
+                                                        id={`ability-${ability}`}
+                                                        checked={formAbilities.includes(
+                                                            ability,
+                                                        )}
+                                                        onCheckedChange={() =>
+                                                            toggleAbility(
+                                                                ability,
+                                                            )
+                                                        }
+                                                    />
+                                                    <Label
+                                                        htmlFor={`ability-${ability}`}
+                                                        className="font-normal text-sm font-mono"
+                                                    >
+                                                        {ability}
+                                                    </Label>
+                                                </div>
+                                            ),
+                                        )}
+                                    </div>
+                                )}
                             </div>
                         </div>
                         <DialogFooter>
