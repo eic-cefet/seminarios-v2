@@ -144,12 +144,12 @@ class AdminApiTokenController extends Controller
             );
             $oldToken->delete();
 
+            AuditLog::record(AuditEvent::ApiTokenRegenerated, auditable: $user, eventData: [
+                'token_name' => $oldToken->name,
+            ]);
+
             return $token;
         });
-
-        AuditLog::record(AuditEvent::ApiTokenRegenerated, auditable: $user, eventData: [
-            'token_name' => $oldToken->name,
-        ]);
 
         return response()->json([
             'message' => 'Token regenerado com sucesso. Guarde-o em um local seguro, pois não será possível visualizá-lo novamente.',
