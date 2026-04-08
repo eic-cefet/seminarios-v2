@@ -459,7 +459,7 @@ export default function WorkshopList() {
                                 deletingWorkshop &&
                                 deleteMutation.mutate(deletingWorkshop.id)
                             }
-                            className="bg-red-500 hover:bg-red-600"
+                            className="bg-red-500 hover:bg-red-600 text-white"
                         >
                             {deleteMutation.isPending
                                 ? "Excluindo..."

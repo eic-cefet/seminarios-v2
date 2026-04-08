@@ -149,6 +149,75 @@ describe('POST /api/admin/api-tokens', function () {
     });
 });
 
+describe('PUT /api/admin/api-tokens/{id}', function () {
+    it('updates token name', function () {
+        $admin = actingAsAdmin();
+        $token = $admin->createToken('original-name');
+
+        $response = $this->putJson("/api/admin/api-tokens/{$token->accessToken->id}", [
+            'name' => 'updated-name',
+        ]);
+
+        $response->assertSuccessful();
+        expect($response->json('data.name'))->toBe('updated-name');
+    });
+
+    it('updates token abilities', function () {
+        $admin = actingAsAdmin();
+        $token = $admin->createToken('test', ['*']);
+
+        $response = $this->putJson("/api/admin/api-tokens/{$token->accessToken->id}", [
+            'abilities' => ['seminars:read', 'seminars:write'],
+        ]);
+
+        $response->assertSuccessful();
+        expect($response->json('data.abilities'))->toBe(['seminars:read', 'seminars:write']);
+    });
+
+    it('sets full access when empty abilities array', function () {
+        $admin = actingAsAdmin();
+        $token = $admin->createToken('test', ['seminars:read']);
+
+        $response = $this->putJson("/api/admin/api-tokens/{$token->accessToken->id}", [
+            'abilities' => [],
+        ]);
+
+        $response->assertSuccessful();
+        expect($response->json('data.abilities'))->toBe(['*']);
+    });
+
+    it('cannot update another users token', function () {
+        $admin = actingAsAdmin();
+        $otherAdmin = User::factory()->admin()->create();
+        $token = $otherAdmin->createToken('other');
+
+        $response = $this->putJson("/api/admin/api-tokens/{$token->accessToken->id}", [
+            'name' => 'hijacked',
+        ]);
+
+        $response->assertNotFound();
+    });
+
+    it('rejects invalid abilities', function () {
+        $admin = actingAsAdmin();
+        $token = $admin->createToken('test');
+
+        $response = $this->putJson("/api/admin/api-tokens/{$token->accessToken->id}", [
+            'abilities' => ['invalid:ability'],
+        ]);
+
+        $response->assertStatus(422);
+    });
+
+    it('returns 403 for non-admin user', function () {
+        actingAsUser();
+
+        $this->putJson('/api/admin/api-tokens/1', [
+            'name' => 'test',
+        ])->assertForbidden();
+    });
+});
+
 describe('DELETE /api/admin/api-tokens/{id}', function () {
     it('revokes own token', function () {
         $admin = actingAsAdmin();

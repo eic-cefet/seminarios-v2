@@ -399,7 +399,7 @@ export default function SeminarList() {
                                     deletingSeminar &&
                                     deleteMutation.mutate(deletingSeminar.id)
                                 }
-                                className="bg-red-500 hover:bg-red-600"
+                                className="bg-red-500 hover:bg-red-600 text-white"
                             >
                                 {deleteMutation.isPending
                                     ? "Excluindo..."

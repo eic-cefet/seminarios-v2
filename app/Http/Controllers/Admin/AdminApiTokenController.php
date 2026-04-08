@@ -88,6 +88,46 @@ class AdminApiTokenController extends Controller
         ], 201);
     }
 
+    public function update(Request $request, int $id): JsonResponse
+    {
+        $token = $request->user()
+            ->tokens()
+            ->findOrFail($id);
+
+        $validated = $request->validate([
+            'name' => ['sometimes', 'string', 'max:255'],
+            'abilities' => ['sometimes', 'array'],
+            'abilities.*' => ['string', Rule::in(self::AVAILABLE_ABILITIES)],
+        ]);
+
+        if (isset($validated['name'])) {
+            $token->name = $validated['name'];
+        }
+
+        if (isset($validated['abilities'])) {
+            $token->abilities = ! empty($validated['abilities']) ? $validated['abilities'] : ['*'];
+        }
+
+        $token->save();
+
+        AuditLog::record(AuditEvent::ApiTokenUpdated, auditable: $request->user(), eventData: [
+            'token_name' => $token->name,
+            'abilities' => $token->abilities,
+        ]);
+
+        return response()->json([
+            'message' => 'Token atualizado com sucesso.',
+            'data' => [
+                'id' => $token->id,
+                'name' => $token->name,
+                'abilities' => $token->abilities,
+                'last_used_at' => $token->last_used_at?->toIso8601String(),
+                'expires_at' => $token->expires_at?->toIso8601String(),
+                'created_at' => $token->created_at?->toIso8601String(),
+            ],
+        ]);
+    }
+
     public function destroy(Request $request, int $id): JsonResponse
     {
         $token = $request->user()

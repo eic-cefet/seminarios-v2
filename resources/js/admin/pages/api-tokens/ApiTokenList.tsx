@@ -1,5 +1,13 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Check, Copy, ExternalLink, KeyRound, Plus, Trash2 } from "lucide-react";
+import {
+    Check,
+    Copy,
+    ExternalLink,
+    KeyRound,
+    Pencil,
+    Plus,
+    Trash2,
+} from "lucide-react";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { apiTokensApi, type AdminApiToken } from "../../api/adminClient";
@@ -116,11 +124,18 @@ export default function ApiTokenList() {
     const [deletingToken, setDeletingToken] = useState<AdminApiToken | null>(
         null,
     );
+    const [editingToken, setEditingToken] = useState<AdminApiToken | null>(
+        null,
+    );
 
     const [formName, setFormName] = useState("");
     const [formExpiry, setFormExpiry] = useState("90");
     const [formAbilities, setFormAbilities] = useState<string[]>([]);
     const [fullAccess, setFullAccess] = useState(true);
+
+    const [editName, setEditName] = useState("");
+    const [editAbilities, setEditAbilities] = useState<string[]>([]);
+    const [editFullAccess, setEditFullAccess] = useState(true);
     const copyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     const { data, isLoading } = useQuery({
@@ -159,6 +174,43 @@ export default function ApiTokenList() {
             toast.error("Erro ao revogar token");
         },
     });
+
+    const updateMutation = useMutation({
+        mutationFn: ({ id, data }: { id: number; data: { name?: string; abilities?: string[] } }) =>
+            apiTokensApi.update(id, data),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["admin-api-tokens"] });
+            toast.success("Token atualizado com sucesso");
+            setEditingToken(null);
+        },
+        onError: () => {
+            toast.error("Erro ao atualizar token");
+        },
+    });
+
+    const openEditDialog = (token: AdminApiToken) => {
+        setEditingToken(token);
+        setEditName(token.name);
+        if (token.abilities.includes("*")) {
+            setEditFullAccess(true);
+            setEditAbilities([]);
+        } else {
+            setEditFullAccess(false);
+            setEditAbilities([...token.abilities]);
+        }
+    };
+
+    const handleEdit = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!editingToken) return;
+        updateMutation.mutate({
+            id: editingToken.id,
+            data: {
+                name: editName,
+                abilities: editFullAccess ? undefined : editAbilities,
+            },
+        });
+    };
 
     const handleCreate = (e: React.FormEvent) => {
         e.preventDefault();
@@ -266,7 +318,7 @@ export default function ApiTokenList() {
                                         <TableHead>Expira em</TableHead>
                                         <TableHead>Último uso</TableHead>
                                         <TableHead>Criado em</TableHead>
-                                        <TableHead className="w-16">
+                                        <TableHead className="w-24">
                                             Ações
                                         </TableHead>
                                     </TableRow>
@@ -328,15 +380,30 @@ export default function ApiTokenList() {
                                                 )}
                                             </TableCell>
                                             <TableCell>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    onClick={() =>
-                                                        setDeletingToken(token)
-                                                    }
-                                                >
-                                                    <Trash2 className="h-4 w-4 text-red-500" />
-                                                </Button>
+                                                <div className="flex items-center gap-1">
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        onClick={() =>
+                                                            openEditDialog(
+                                                                token,
+                                                            )
+                                                        }
+                                                    >
+                                                        <Pencil className="h-4 w-4" />
+                                                    </Button>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        onClick={() =>
+                                                            setDeletingToken(
+                                                                token,
+                                                            )
+                                                        }
+                                                    >
+                                                        <Trash2 className="h-4 w-4 text-red-500" />
+                                                    </Button>
+                                                </div>
                                             </TableCell>
                                         </TableRow>
                                     ))}
@@ -582,6 +649,156 @@ export default function ApiTokenList() {
                     <DialogFooter>
                         <Button onClick={handleCloseTokenDialog}>Fechar</Button>
                     </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Edit Token Dialog */}
+            <Dialog
+                open={!!editingToken}
+                onOpenChange={(open) => !open && setEditingToken(null)}
+            >
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Editar Token</DialogTitle>
+                        <DialogDescription>
+                            Altere o nome e as permissões do token.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <form onSubmit={handleEdit}>
+                        <div className="space-y-4 py-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="edit-token-name">
+                                    Nome do Token
+                                </Label>
+                                <Input
+                                    id="edit-token-name"
+                                    value={editName}
+                                    onChange={(e) =>
+                                        setEditName(e.target.value)
+                                    }
+                                    required
+                                />
+                            </div>
+                            <div className="space-y-3">
+                                <div className="flex items-center justify-between">
+                                    <Label>Permissões</Label>
+                                    <div className="flex items-center gap-2">
+                                        <Label
+                                            htmlFor="edit-full-access"
+                                            className="text-sm font-normal text-muted-foreground"
+                                        >
+                                            Acesso total
+                                        </Label>
+                                        <Switch
+                                            id="edit-full-access"
+                                            checked={editFullAccess}
+                                            onCheckedChange={(checked) => {
+                                                setEditFullAccess(checked);
+                                                if (checked)
+                                                    setEditAbilities([]);
+                                            }}
+                                        />
+                                    </div>
+                                </div>
+                                {!editFullAccess && (
+                                    <div className="space-y-2">
+                                        {RESOURCE_GROUPS.map(
+                                            ({ resource, label }) => {
+                                                const level =
+                                                    getAccessLevel(
+                                                        editAbilities,
+                                                        resource,
+                                                    );
+                                                const levels: {
+                                                    value: AccessLevel;
+                                                    label: string;
+                                                }[] = [
+                                                    {
+                                                        value: "none",
+                                                        label: "Nenhum",
+                                                    },
+                                                    {
+                                                        value: "read",
+                                                        label: "Leitura",
+                                                    },
+                                                    {
+                                                        value: "read-write",
+                                                        label: "Escrita",
+                                                    },
+                                                ];
+                                                return (
+                                                    <div
+                                                        key={resource}
+                                                        className="flex items-center justify-between gap-3"
+                                                    >
+                                                        <span className="text-sm min-w-0 truncate">
+                                                            {label}
+                                                        </span>
+                                                        <div className="flex rounded-md border border-border overflow-hidden shrink-0">
+                                                            {levels.map(
+                                                                (l) => (
+                                                                    <button
+                                                                        key={
+                                                                            l.value
+                                                                        }
+                                                                        type="button"
+                                                                        onClick={() =>
+                                                                            setEditAbilities(
+                                                                                (
+                                                                                    prev,
+                                                                                ) =>
+                                                                                    setAccessLevel(
+                                                                                        prev,
+                                                                                        resource,
+                                                                                        l.value,
+                                                                                    ),
+                                                                            )
+                                                                        }
+                                                                        className={`px-2.5 py-1 text-xs transition-colors ${
+                                                                            level ===
+                                                                            l.value
+                                                                                ? "bg-primary text-primary-foreground"
+                                                                                : "bg-background text-muted-foreground hover:text-foreground hover:bg-muted"
+                                                                        } ${l.value !== "none" ? "border-l border-border" : ""}`}
+                                                                    >
+                                                                        {
+                                                                            l.label
+                                                                        }
+                                                                    </button>
+                                                                ),
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                );
+                                            },
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                        <DialogFooter>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => setEditingToken(null)}
+                            >
+                                Cancelar
+                            </Button>
+                            <Button
+                                type="submit"
+                                disabled={
+                                    updateMutation.isPending ||
+                                    !editName ||
+                                    (!editFullAccess &&
+                                        editAbilities.length === 0)
+                                }
+                            >
+                                {updateMutation.isPending
+                                    ? "Salvando..."
+                                    : "Salvar"}
+                            </Button>
+                        </DialogFooter>
+                    </form>
                 </DialogContent>
             </Dialog>
 

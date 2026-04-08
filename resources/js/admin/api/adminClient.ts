@@ -683,6 +683,20 @@ export const apiTokensApi = {
         });
     },
 
+    update: async (
+        id: number,
+        data: { name?: string; abilities?: string[] },
+    ) => {
+        await getCsrfCookie();
+        return fetchAdminApi<{ message: string; data: AdminApiToken }>(
+            `/api-tokens/${id}`,
+            {
+                method: "PUT",
+                body: JSON.stringify(data),
+            },
+        );
+    },
+
     delete: async (id: number) => {
         await getCsrfCookie();
         return fetchAdminApi<{ message: string }>(`/api-tokens/${id}`, {
