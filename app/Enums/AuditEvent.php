@@ -27,6 +27,7 @@ enum AuditEvent: string
     // API Tokens
     case ApiTokenCreated = 'api_token.created';
     case ApiTokenUpdated = 'api_token.updated';
+    case ApiTokenRegenerated = 'api_token.regenerated';
     case ApiTokenRevoked = 'api_token.revoked';
 
     // Bug reports

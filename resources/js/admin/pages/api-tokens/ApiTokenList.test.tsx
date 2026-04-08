@@ -15,6 +15,7 @@ vi.mock('../../api/adminClient', () => ({
 let capturedCreateOptions: any = null;
 let capturedDeleteOptions: any = null;
 let capturedUpdateOptions: any = null;
+let capturedRegenerateOptions: any = null;
 let tokenMutationCallCount = 0;
 
 vi.mock('@tanstack/react-query', async () => {
@@ -23,10 +24,11 @@ vi.mock('@tanstack/react-query', async () => {
         ...actual,
         useMutation: (options: any) => {
             tokenMutationCallCount++;
-            const idx = ((tokenMutationCallCount - 1) % 3) + 1;
+            const idx = ((tokenMutationCallCount - 1) % 4) + 1;
             if (idx === 1) capturedCreateOptions = options;
             else if (idx === 2) capturedDeleteOptions = options;
-            else capturedUpdateOptions = options;
+            else if (idx === 3) capturedUpdateOptions = options;
+            else capturedRegenerateOptions = options;
             return (actual as any).useMutation(options);
         },
     };
@@ -66,6 +68,7 @@ describe('ApiTokenList', () => {
         capturedCreateOptions = null;
         capturedDeleteOptions = null;
         capturedUpdateOptions = null;
+        capturedRegenerateOptions = null;
         tokenMutationCallCount = 0;
     });
 
@@ -538,6 +541,49 @@ describe('ApiTokenList', () => {
 
         act(() => { capturedUpdateOptions.onSuccess(); });
         act(() => { capturedUpdateOptions.onError(); });
+    });
+
+    // --- Regenerate flow ---
+
+    it('opens regenerate confirmation when clicking refresh icon', async () => {
+        vi.mocked(apiTokensApi.list).mockResolvedValue(paginated(mockTokens));
+
+        render(<ApiTokenList />);
+
+        await waitFor(() => {
+            expect(screen.getByText('Prof. Joel Token')).toBeInTheDocument();
+        });
+
+        const refreshButton = screen.getAllByRole('button').find(btn =>
+            btn.querySelector('svg.lucide-refresh-cw')
+        );
+        if (refreshButton) await userEvent.click(refreshButton);
+
+        await waitFor(() => {
+            expect(screen.getByText('Regenerar token?')).toBeInTheDocument();
+        });
+        expect(screen.getByText(/token antigo precisará ser atualizado/)).toBeInTheDocument();
+    });
+
+    it('handles regenerate mutation onSuccess and onError', async () => {
+        render(<ApiTokenList />);
+
+        await waitFor(() => {
+            expect(capturedRegenerateOptions).not.toBeNull();
+        });
+
+        act(() => {
+            capturedRegenerateOptions.onSuccess({
+                message: 'Regenerated',
+                data: { id: 2, name: 'T', abilities: ['*'], token: 'sk-regenerated' },
+            });
+        });
+
+        await waitFor(() => {
+            expect(screen.getByText('sk-regenerated')).toBeInTheDocument();
+        });
+
+        act(() => { capturedRegenerateOptions.onError(); });
     });
 
     // --- Pagination ---

@@ -6,6 +6,7 @@ import {
     KeyRound,
     Pencil,
     Plus,
+    RefreshCw,
     Trash2,
 } from "lucide-react";
 import { useRef, useState } from "react";
@@ -127,6 +128,8 @@ export default function ApiTokenList() {
     const [editingToken, setEditingToken] = useState<AdminApiToken | null>(
         null,
     );
+    const [regeneratingToken, setRegeneratingToken] =
+        useState<AdminApiToken | null>(null);
 
     const [formName, setFormName] = useState("");
     const [formExpiry, setFormExpiry] = useState("90");
@@ -185,6 +188,19 @@ export default function ApiTokenList() {
         },
         onError: () => {
             toast.error("Erro ao atualizar token");
+        },
+    });
+
+    const regenerateMutation = useMutation({
+        mutationFn: (id: number) => apiTokensApi.regenerate(id),
+        onSuccess: (response) => {
+            queryClient.invalidateQueries({ queryKey: ["admin-api-tokens"] });
+            setRegeneratingToken(null);
+            setCreatedToken(response.data.token);
+            setIsTokenShown(true);
+        },
+        onError: () => {
+            toast.error("Erro ao regenerar token");
         },
     });
 
@@ -318,7 +334,7 @@ export default function ApiTokenList() {
                                         <TableHead>Expira em</TableHead>
                                         <TableHead>Último uso</TableHead>
                                         <TableHead>Criado em</TableHead>
-                                        <TableHead className="w-24">
+                                        <TableHead className="w-32">
                                             Ações
                                         </TableHead>
                                     </TableRow>
@@ -389,8 +405,21 @@ export default function ApiTokenList() {
                                                                 token,
                                                             )
                                                         }
+                                                        title="Editar"
                                                     >
                                                         <Pencil className="h-4 w-4" />
+                                                    </Button>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        onClick={() =>
+                                                            setRegeneratingToken(
+                                                                token,
+                                                            )
+                                                        }
+                                                        title="Regenerar"
+                                                    >
+                                                        <RefreshCw className="h-4 w-4" />
                                                     </Button>
                                                     <Button
                                                         variant="ghost"
@@ -400,6 +429,7 @@ export default function ApiTokenList() {
                                                                 token,
                                                             )
                                                         }
+                                                        title="Revogar"
                                                     >
                                                         <Trash2 className="h-4 w-4 text-red-500" />
                                                     </Button>
@@ -801,6 +831,42 @@ export default function ApiTokenList() {
                     </form>
                 </DialogContent>
             </Dialog>
+
+            {/* Regenerate Confirmation */}
+            <AlertDialog
+                open={!!regeneratingToken}
+                onOpenChange={(open) => !open && setRegeneratingToken(null)}
+            >
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>
+                            Regenerar token?
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                            O token atual de "{regeneratingToken?.name}" será
+                            invalidado e um novo será gerado com as mesmas
+                            permissões. Qualquer sistema que utilize o token
+                            antigo precisará ser atualizado.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={() =>
+                                regeneratingToken &&
+                                regenerateMutation.mutate(
+                                    regeneratingToken.id,
+                                )
+                            }
+                            className="bg-red-500 hover:bg-red-600 text-white"
+                        >
+                            {regenerateMutation.isPending
+                                ? "Regenerando..."
+                                : "Regenerar"}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
 
             {/* Delete Confirmation */}
             <AlertDialog

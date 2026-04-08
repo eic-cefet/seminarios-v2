@@ -128,6 +128,36 @@ class AdminApiTokenController extends Controller
         ]);
     }
 
+    public function regenerate(Request $request, int $id): JsonResponse
+    {
+        $oldToken = $request->user()
+            ->tokens()
+            ->findOrFail($id);
+
+        $user = $request->user();
+        $newToken = $user->createToken(
+            $oldToken->name,
+            $oldToken->abilities,
+            $oldToken->expires_at,
+        );
+
+        $oldToken->delete();
+
+        AuditLog::record(AuditEvent::ApiTokenRegenerated, auditable: $user, eventData: [
+            'token_name' => $oldToken->name,
+        ]);
+
+        return response()->json([
+            'message' => 'Token regenerado com sucesso. Guarde-o em um local seguro, pois não será possível visualizá-lo novamente.',
+            'data' => [
+                'id' => $newToken->accessToken->id,
+                'name' => $newToken->accessToken->name,
+                'abilities' => $newToken->accessToken->abilities,
+                'token' => Str::after($newToken->plainTextToken, '|'),
+            ],
+        ]);
+    }
+
     public function destroy(Request $request, int $id): JsonResponse
     {
         $token = $request->user()
