@@ -103,6 +103,7 @@ export function SubjectMultiSelect({
     });
 
     const addSuggestion = (name: string) => {
+        /* v8 ignore next -- @preserve defensive guard: suggestions are pre-filtered */
         if (!value.includes(name)) {
             onChange([...value, name]);
         }

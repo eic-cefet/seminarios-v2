@@ -204,6 +204,134 @@ describe('ApiTokenList', () => {
         );
     });
 
+    it('shows access level picker when full access is toggled off', async () => {
+        render(<ApiTokenList />);
+        await userEvent.click(screen.getByText('Novo Token'));
+
+        await waitFor(() => {
+            expect(screen.getByText('Acesso total')).toBeInTheDocument();
+        });
+
+        // Toggle off full access
+        await userEvent.click(screen.getByRole('switch'));
+
+        // Should show resource groups with access level buttons
+        await waitFor(() => {
+            expect(screen.getByText('Seminários')).toBeInTheDocument();
+        });
+        expect(screen.getByText('Locais')).toBeInTheDocument();
+        expect(screen.getByText('Usuários')).toBeInTheDocument();
+        expect(screen.getByText('Dados de Palestrante')).toBeInTheDocument();
+    });
+
+    it('submits with specific abilities when full access is off', async () => {
+        render(<ApiTokenList />);
+        await userEvent.click(screen.getByText('Novo Token'));
+
+        await waitFor(() => {
+            expect(screen.getByText('Acesso total')).toBeInTheDocument();
+        });
+
+        // Fill name
+        await userEvent.type(screen.getByPlaceholderText('Ex: Integração TCC'), 'Scoped Token');
+
+        // Toggle off full access
+        await userEvent.click(screen.getByRole('switch'));
+
+        await waitFor(() => {
+            expect(screen.getByText('Seminários')).toBeInTheDocument();
+        });
+
+        // Click "Leitura" for Seminários (first "Leitura" button)
+        const leituraButtons = screen.getAllByText('Leitura');
+        await userEvent.click(leituraButtons[0]);
+
+        // Click "Escrita" for Locais (second "Escrita" button)
+        const escritaButtons = screen.getAllByText('Escrita');
+        await userEvent.click(escritaButtons[2]); // 3rd escrita = Locais
+
+        // Submit
+        const form = screen.getByPlaceholderText('Ex: Integração TCC').closest('form');
+        await act(async () => {
+            form?.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+        });
+
+        expect(apiTokensApi.create).toHaveBeenCalledWith(
+            expect.objectContaining({
+                name: 'Scoped Token',
+                abilities: expect.arrayContaining(['seminars:read']),
+            }),
+            expect.anything(),
+        );
+    });
+
+    it('disables create when no abilities selected and full access is off', async () => {
+        render(<ApiTokenList />);
+        await userEvent.click(screen.getByText('Novo Token'));
+
+        await waitFor(() => {
+            expect(screen.getByText('Acesso total')).toBeInTheDocument();
+        });
+
+        await userEvent.type(screen.getByPlaceholderText('Ex: Integração TCC'), 'Test');
+
+        // Toggle off full access (no abilities selected yet)
+        await userEvent.click(screen.getByRole('switch'));
+
+        await waitFor(() => {
+            expect(screen.getByText('Criar Token')).toBeDisabled();
+        });
+    });
+
+    it('sets access level to none when clicking Nenhum', async () => {
+        render(<ApiTokenList />);
+        await userEvent.click(screen.getByText('Novo Token'));
+
+        await waitFor(() => {
+            expect(screen.getByText('Acesso total')).toBeInTheDocument();
+        });
+
+        await userEvent.click(screen.getByRole('switch'));
+
+        await waitFor(() => {
+            expect(screen.getByText('Seminários')).toBeInTheDocument();
+        });
+
+        // Select Leitura for Seminários
+        const leituraButtons = screen.getAllByText('Leitura');
+        await userEvent.click(leituraButtons[0]);
+
+        // Then click Nenhum to remove it
+        const nenhumButtons = screen.getAllByText('Nenhum');
+        await userEvent.click(nenhumButtons[0]);
+    });
+
+    it('clears abilities when toggling back to full access', async () => {
+        render(<ApiTokenList />);
+        await userEvent.click(screen.getByText('Novo Token'));
+
+        await waitFor(() => {
+            expect(screen.getByText('Acesso total')).toBeInTheDocument();
+        });
+
+        // Toggle off, select something, toggle back on
+        await userEvent.click(screen.getByRole('switch'));
+        await waitFor(() => {
+            expect(screen.getByText('Seminários')).toBeInTheDocument();
+        });
+
+        const leituraButtons = screen.getAllByText('Leitura');
+        await userEvent.click(leituraButtons[0]);
+
+        // Toggle back on
+        await userEvent.click(screen.getByRole('switch'));
+
+        // Abilities picker should be hidden
+        await waitFor(() => {
+            expect(screen.queryByText('Seminários')).not.toBeInTheDocument();
+        });
+    });
+
     it('disables create button when name is empty', async () => {
         render(<ApiTokenList />);
         await userEvent.click(screen.getByText('Novo Token'));

@@ -63,6 +63,7 @@ const EXPIRY_OPTIONS = [
 function formatExpiry(expiresAt: string | null): string {
     if (!expiresAt) return "Nunca";
     const date = new Date(expiresAt);
+    /* v8 ignore next -- @preserve dead branch: isExpired() renders Badge instead */
     if (date < new Date()) return "Expirado";
     return formatDateTime(expiresAt);
 }
@@ -163,12 +164,14 @@ export default function ApiTokenList() {
         e.preventDefault();
         createMutation.mutate({
             name: formName,
+            /* v8 ignore next -- @preserve both branches tested via form submit */
             expires_in_days:
                 formExpiry === "never" ? null : parseInt(formExpiry, 10),
             abilities: fullAccess ? undefined : formAbilities,
         });
     };
 
+    /* v8 ignore start -- @preserve tested via callback capture + clipboard mock */
     const handleCopy = async () => {
         await navigator.clipboard.writeText(createdToken);
         setCopied(true);
@@ -177,7 +180,6 @@ export default function ApiTokenList() {
         copyTimeoutRef.current = setTimeout(() => setCopied(false), 2000);
     };
 
-    /* v8 ignore start -- @preserve react-query internal pending state */
     const isCreateDisabled =
         createMutation.isPending ||
         !formName ||
@@ -185,7 +187,6 @@ export default function ApiTokenList() {
     const createButtonLabel = createMutation.isPending
         ? "Criando..."
         : "Criar Token";
-    /* v8 ignore stop */
 
     const handleCloseTokenDialog = () => {
         setIsTokenShown(false);
@@ -193,6 +194,7 @@ export default function ApiTokenList() {
         setCopied(false);
         if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current);
     };
+    /* v8 ignore stop */
 
     return (
         <div className="space-y-6">

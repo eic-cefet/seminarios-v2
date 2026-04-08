@@ -490,6 +490,16 @@ describe('Admin API endpoints', () => {
                 expect.objectContaining({ method: 'DELETE' }),
             );
         });
+
+        it('abilities fetches available abilities', async () => {
+            mockSuccess({ data: ['seminars:read', 'seminars:write'] });
+            const result = await apiTokensApi.abilities();
+            expect(result.data).toEqual(['seminars:read', 'seminars:write']);
+            expect(fetchSpy).toHaveBeenCalledWith(
+                expect.stringContaining('/api-tokens/abilities'),
+                expect.any(Object),
+            );
+        });
     });
 
     describe('error handling', () => {
