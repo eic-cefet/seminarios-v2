@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth:sanctum', 'admin'])
     ->prefix('external/v1')
+    ->name('external.')
     ->group(function () {
         Route::apiResource('seminars', ExternalSeminarController::class)
             ->only(['index', 'show', 'store', 'update']);
