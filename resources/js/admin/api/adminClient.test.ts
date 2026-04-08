@@ -1,4 +1,4 @@
-import { AdminApiError, dashboardApi, usersApi, locationsApi, subjectsApi, workshopsApi, registrationsApi, seminarsApi, presenceLinkApi, aiApi } from './adminClient';
+import { AdminApiError, dashboardApi, usersApi, locationsApi, subjectsApi, workshopsApi, registrationsApi, seminarsApi, presenceLinkApi, aiApi, apiTokensApi } from './adminClient';
 import { getCookie } from '@shared/api/httpUtils';
 
 vi.mock('@shared/api/httpUtils', async (importOriginal) => {
@@ -435,6 +435,59 @@ describe('Admin API endpoints', () => {
             expect(fetchSpy).toHaveBeenCalledWith(
                 expect.stringContaining('/seminars'),
                 expect.any(Object),
+            );
+        });
+    });
+
+    describe('apiTokensApi', () => {
+        it('list fetches tokens', async () => {
+            mockSuccess({ data: [], current_page: 1, last_page: 1, per_page: 15, total: 0 });
+            await apiTokensApi.list();
+            expect(fetchSpy).toHaveBeenCalledWith(
+                expect.stringContaining('/api-tokens'),
+                expect.any(Object),
+            );
+        });
+
+        it('list passes page param', async () => {
+            mockSuccess({ data: [], current_page: 2, last_page: 2, per_page: 15, total: 20 });
+            await apiTokensApi.list({ page: 2 });
+            expect(fetchSpy).toHaveBeenCalledWith(
+                expect.stringContaining('/api-tokens?page=2'),
+                expect.any(Object),
+            );
+        });
+
+        it('create sends POST with name and expiry', async () => {
+            mockSuccess({ message: 'Created', data: { id: 1, name: 'Test', token: 'sk-abc' } });
+            await apiTokensApi.create({ name: 'My Token', expires_in_days: 90 });
+            expect(fetchSpy).toHaveBeenCalledWith(
+                expect.stringContaining('/api-tokens'),
+                expect.objectContaining({
+                    method: 'POST',
+                    body: JSON.stringify({ name: 'My Token', expires_in_days: 90 }),
+                }),
+            );
+        });
+
+        it('create sends null expiry for no-expire', async () => {
+            mockSuccess({ message: 'Created', data: { id: 1, name: 'Test', token: 'sk-abc' } });
+            await apiTokensApi.create({ name: 'My Token', expires_in_days: null });
+            expect(fetchSpy).toHaveBeenCalledWith(
+                expect.stringContaining('/api-tokens'),
+                expect.objectContaining({
+                    method: 'POST',
+                    body: JSON.stringify({ name: 'My Token', expires_in_days: null }),
+                }),
+            );
+        });
+
+        it('delete sends DELETE', async () => {
+            mockSuccess({ message: 'Deleted' });
+            await apiTokensApi.delete(42);
+            expect(fetchSpy).toHaveBeenCalledWith(
+                expect.stringContaining('/api-tokens/42'),
+                expect.objectContaining({ method: 'DELETE' }),
             );
         });
     });

@@ -22,6 +22,10 @@ return Application::configure(basePath: dirname(__DIR__))
             Route::middleware('api')
                 ->prefix('api')
                 ->group(base_path('routes/admin.php'));
+
+            Route::middleware('api')
+                ->prefix('api')
+                ->group(base_path('routes/external.php'));
         },
     )
     ->withMiddleware(function (Middleware $middleware): void {
@@ -36,14 +40,14 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withExceptions(function (Exceptions $exceptions): void {
         // Handle rate limiting for API routes
         $exceptions->render(function (ThrottleRequestsException $e, Request $request) {
-            if ($request->is('api/*')) {
+            if ($request->is('api/*') || $request->is('external/*')) {
                 return ApiException::rateLimited()->render();
             }
         });
 
         // Handle validation errors for API routes
         $exceptions->render(function (ValidationException $e, Request $request) {
-            if ($request->is('api/*')) {
+            if ($request->is('api/*') || $request->is('external/*')) {
                 return ApiException::validation($e->errors())->render();
             }
         });

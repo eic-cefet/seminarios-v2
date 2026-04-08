@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\AdminApiTokenController;
 use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\AdminLocationController;
 use App\Http\Controllers\Admin\AdminPresenceLinkController;
@@ -52,6 +53,10 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function ()
     // Reports
     Route::get('/reports/courses', [ReportController::class, 'courses']);
     Route::get('/reports/semestral', [ReportController::class, 'semestral']);
+
+    // API Tokens
+    Route::apiResource('api-tokens', AdminApiTokenController::class)
+        ->only(['index', 'store', 'destroy']);
 
     // AI
     Route::middleware('throttle:ai')->group(function () {

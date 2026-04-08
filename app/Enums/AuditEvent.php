@@ -24,6 +24,10 @@ enum AuditEvent: string
     case AiSuggestMergeName = 'ai.suggest_merge_name';
     case AiSuggestSubjectTags = 'ai.suggest_subject_tags';
 
+    // API Tokens
+    case ApiTokenCreated = 'api_token.created';
+    case ApiTokenRevoked = 'api_token.revoked';
+
     // Bug reports
     case BugReportSubmitted = 'bug_report.submitted';
 
