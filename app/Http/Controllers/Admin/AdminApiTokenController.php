@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\AuditLog;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Laravel\Sanctum\PersonalAccessToken;
@@ -135,13 +136,16 @@ class AdminApiTokenController extends Controller
             ->findOrFail($id);
 
         $user = $request->user();
-        $newToken = $user->createToken(
-            $oldToken->name,
-            $oldToken->abilities,
-            $oldToken->expires_at,
-        );
+        $newToken = DB::transaction(function () use ($user, $oldToken) {
+            $token = $user->createToken(
+                $oldToken->name,
+                $oldToken->abilities,
+                $oldToken->expires_at,
+            );
+            $oldToken->delete();
 
-        $oldToken->delete();
+            return $token;
+        });
 
         AuditLog::record(AuditEvent::ApiTokenRegenerated, auditable: $user, eventData: [
             'token_name' => $oldToken->name,
