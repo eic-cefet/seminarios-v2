@@ -57,6 +57,7 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function ()
     // API Tokens
     Route::apiResource('api-tokens', AdminApiTokenController::class)
         ->only(['index', 'store', 'destroy']);
+    Route::get('/api-tokens/abilities', [AdminApiTokenController::class, 'abilities']);
 
     // AI
     Route::middleware('throttle:ai')->group(function () {

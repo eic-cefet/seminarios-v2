@@ -8,10 +8,24 @@ use App\Models\AuditLog;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Laravel\Sanctum\PersonalAccessToken;
 
 class AdminApiTokenController extends Controller
 {
+    public const AVAILABLE_ABILITIES = [
+        'seminars:read',
+        'seminars:write',
+        'seminar-types:read',
+        'seminar-types:write',
+        'locations:read',
+        'locations:write',
+        'users:read',
+        'users:write',
+        'speaker-data:read',
+        'speaker-data:write',
+    ];
+
     public function index(Request $request): JsonResponse
     {
         $tokens = $request->user()
@@ -46,16 +60,20 @@ class AdminApiTokenController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'expires_in_days' => ['nullable', 'integer', 'in:7,30,60,90,180'],
+            'abilities' => ['nullable', 'array'],
+            'abilities.*' => ['string', Rule::in(self::AVAILABLE_ABILITIES)],
         ]);
 
         $user = $request->user();
         $expiresAt = isset($validated['expires_in_days'])
             ? now()->addDays($validated['expires_in_days'])
             : null;
-        $token = $user->createToken($validated['name'], ['*'], $expiresAt);
+        $abilities = ! empty($validated['abilities']) ? $validated['abilities'] : ['*'];
+        $token = $user->createToken($validated['name'], $abilities, $expiresAt);
 
         AuditLog::record(AuditEvent::ApiTokenCreated, auditable: $user, eventData: [
             'token_name' => $validated['name'],
+            'abilities' => $abilities,
             'expires_at' => $token->accessToken->expires_at?->toIso8601String(),
         ]);
 
@@ -84,6 +102,13 @@ class AdminApiTokenController extends Controller
 
         return response()->json([
             'message' => 'Token revogado com sucesso.',
+        ]);
+    }
+
+    public function abilities(): JsonResponse
+    {
+        return response()->json([
+            'data' => self::AVAILABLE_ABILITIES,
         ]);
     }
 }

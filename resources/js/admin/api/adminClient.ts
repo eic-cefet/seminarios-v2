@@ -671,7 +671,11 @@ export const apiTokensApi = {
         );
     },
 
-    create: async (data: { name: string; expires_in_days?: number | null }) => {
+    create: async (data: {
+        name: string;
+        expires_in_days?: number | null;
+        abilities?: string[];
+    }) => {
         await getCsrfCookie();
         return fetchAdminApi<AdminApiTokenCreateResponse>("/api-tokens", {
             method: "POST",
@@ -685,6 +689,9 @@ export const apiTokensApi = {
             method: "DELETE",
         });
     },
+
+    abilities: () =>
+        fetchAdminApi<{ data: string[] }>("/api-tokens/abilities"),
 };
 
 // Presence Links (QR Code)

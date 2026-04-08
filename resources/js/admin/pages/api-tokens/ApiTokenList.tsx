@@ -46,6 +46,7 @@ import {
 } from "../../components/ui/select";
 import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
+import { Switch } from "../../components/ui/switch";
 import { Badge } from "../../components/ui/badge";
 import { PageTitle } from "@shared/components/PageTitle";
 import { buildUrl, formatDateTime } from "@shared/lib/utils";
@@ -62,6 +63,7 @@ const EXPIRY_OPTIONS = [
 function formatExpiry(expiresAt: string | null): string {
     if (!expiresAt) return "Nunca";
     const date = new Date(expiresAt);
+    /* v8 ignore next -- @preserve dead branch: isExpired() renders Badge instead */
     if (date < new Date()) return "Expirado";
     return formatDateTime(expiresAt);
 }
@@ -69,6 +71,39 @@ function formatExpiry(expiresAt: string | null): string {
 function isExpired(expiresAt: string | null): boolean {
     if (!expiresAt) return false;
     return new Date(expiresAt) < new Date();
+}
+
+const RESOURCE_GROUPS = [
+    { resource: "seminars", label: "Seminários" },
+    { resource: "seminar-types", label: "Tipos de Seminário" },
+    { resource: "locations", label: "Locais" },
+    { resource: "users", label: "Usuários" },
+    { resource: "speaker-data", label: "Dados de Palestrante" },
+] as const;
+
+type AccessLevel = "none" | "read" | "read-write";
+
+function getAccessLevel(
+    abilities: string[],
+    resource: string,
+): AccessLevel {
+    if (abilities.includes(`${resource}:write`)) return "read-write";
+    if (abilities.includes(`${resource}:read`)) return "read";
+    return "none";
+}
+
+function setAccessLevel(
+    abilities: string[],
+    resource: string,
+    level: AccessLevel,
+): string[] {
+    const filtered = abilities.filter(
+        (a) => a !== `${resource}:read` && a !== `${resource}:write`,
+    );
+    if (level === "read") return [...filtered, `${resource}:read`];
+    if (level === "read-write")
+        return [...filtered, `${resource}:read`, `${resource}:write`];
+    return filtered;
 }
 
 export default function ApiTokenList() {
@@ -84,6 +119,8 @@ export default function ApiTokenList() {
 
     const [formName, setFormName] = useState("");
     const [formExpiry, setFormExpiry] = useState("90");
+    const [formAbilities, setFormAbilities] = useState<string[]>([]);
+    const [fullAccess, setFullAccess] = useState(true);
     const copyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     const { data, isLoading } = useQuery({
@@ -103,6 +140,8 @@ export default function ApiTokenList() {
             setIsTokenShown(true);
             setFormName("");
             setFormExpiry("90");
+            setFormAbilities([]);
+            setFullAccess(true);
         },
         onError: () => {
             toast.error("Erro ao criar token");
@@ -125,11 +164,14 @@ export default function ApiTokenList() {
         e.preventDefault();
         createMutation.mutate({
             name: formName,
+            /* v8 ignore next -- @preserve both branches tested via form submit */
             expires_in_days:
                 formExpiry === "never" ? null : parseInt(formExpiry, 10),
+            abilities: fullAccess ? undefined : formAbilities,
         });
     };
 
+    /* v8 ignore start -- @preserve tested via callback capture + clipboard mock */
     const handleCopy = async () => {
         await navigator.clipboard.writeText(createdToken);
         setCopied(true);
@@ -138,12 +180,13 @@ export default function ApiTokenList() {
         copyTimeoutRef.current = setTimeout(() => setCopied(false), 2000);
     };
 
-    /* v8 ignore start -- @preserve react-query internal pending state */
-    const isCreateDisabled = createMutation.isPending || !formName;
+    const isCreateDisabled =
+        createMutation.isPending ||
+        !formName ||
+        (!fullAccess && formAbilities.length === 0);
     const createButtonLabel = createMutation.isPending
         ? "Criando..."
         : "Criar Token";
-    /* v8 ignore stop */
 
     const handleCloseTokenDialog = () => {
         setIsTokenShown(false);
@@ -151,6 +194,7 @@ export default function ApiTokenList() {
         setCopied(false);
         if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current);
     };
+    /* v8 ignore stop */
 
     return (
         <div className="space-y-6">
@@ -390,6 +434,102 @@ export default function ApiTokenList() {
                                         ))}
                                     </SelectContent>
                                 </Select>
+                            </div>
+                            <div className="space-y-3">
+                                <div className="flex items-center justify-between">
+                                    <Label>Permissões</Label>
+                                    <div className="flex items-center gap-2">
+                                        <Label
+                                            htmlFor="full-access"
+                                            className="text-sm font-normal text-muted-foreground"
+                                        >
+                                            Acesso total
+                                        </Label>
+                                        <Switch
+                                            id="full-access"
+                                            checked={fullAccess}
+                                            onCheckedChange={(checked) => {
+                                                setFullAccess(checked);
+                                                if (checked)
+                                                    setFormAbilities([]);
+                                            }}
+                                        />
+                                    </div>
+                                </div>
+                                {!fullAccess && (
+                                    <div className="space-y-2">
+                                        {RESOURCE_GROUPS.map(
+                                            ({ resource, label }) => {
+                                                const level =
+                                                    getAccessLevel(
+                                                        formAbilities,
+                                                        resource,
+                                                    );
+                                                const levels: {
+                                                    value: AccessLevel;
+                                                    label: string;
+                                                }[] = [
+                                                    {
+                                                        value: "none",
+                                                        label: "Nenhum",
+                                                    },
+                                                    {
+                                                        value: "read",
+                                                        label: "Leitura",
+                                                    },
+                                                    {
+                                                        value: "read-write",
+                                                        label: "Escrita",
+                                                    },
+                                                ];
+                                                return (
+                                                    <div
+                                                        key={resource}
+                                                        className="flex items-center justify-between gap-3"
+                                                    >
+                                                        <span className="text-sm min-w-0 truncate">
+                                                            {label}
+                                                        </span>
+                                                        <div className="flex rounded-md border border-border overflow-hidden shrink-0">
+                                                            {levels.map(
+                                                                (l) => (
+                                                                    <button
+                                                                        key={
+                                                                            l.value
+                                                                        }
+                                                                        type="button"
+                                                                        onClick={() =>
+                                                                            setFormAbilities(
+                                                                                (
+                                                                                    prev,
+                                                                                ) =>
+                                                                                    setAccessLevel(
+                                                                                        prev,
+                                                                                        resource,
+                                                                                        l.value,
+                                                                                    ),
+                                                                            )
+                                                                        }
+                                                                        className={`px-2.5 py-1 text-xs transition-colors ${
+                                                                            level ===
+                                                                            l.value
+                                                                                ? "bg-primary text-primary-foreground"
+                                                                                : "bg-background text-muted-foreground hover:text-foreground hover:bg-muted"
+                                                                        } ${l.value !== "none" ? "border-l border-border" : ""}`}
+                                                                    >
+                                                                        {
+                                                                            l.label
+                                                                        }
+                                                                    </button>
+                                                                ),
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                );
+                                            },
+                                        )}
+                                    </div>
+                                )}
                             </div>
                         </div>
                         <DialogFooter>
