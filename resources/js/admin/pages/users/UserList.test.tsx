@@ -78,7 +78,7 @@ describe('UserList', () => {
 
     it('renders the search input', () => {
         render(<UserList />);
-        expect(screen.getByPlaceholderText('Nome, email ou username...')).toBeInTheDocument();
+        expect(screen.getByPlaceholderText('Nome ou email...')).toBeInTheDocument();
     });
 
     it('renders the archived users toggle button', () => {
@@ -146,7 +146,7 @@ describe('UserList', () => {
     it('allows typing in the search input', async () => {
         render(<UserList />);
         const user = userEvent.setup();
-        const searchInput = screen.getByPlaceholderText('Nome, email ou username...');
+        const searchInput = screen.getByPlaceholderText('Nome ou email...');
         await user.type(searchInput, 'john');
         expect(searchInput).toHaveValue('john');
     });
@@ -453,7 +453,7 @@ describe('UserList', () => {
         render(<UserList />);
         const user = userEvent.setup();
 
-        const searchInput = screen.getByPlaceholderText('Nome, email ou username...');
+        const searchInput = screen.getByPlaceholderText('Nome ou email...');
         await user.type(searchInput, 'test search');
 
         await waitFor(() => {
@@ -465,7 +465,7 @@ describe('UserList', () => {
         render(<UserList />);
         const user = userEvent.setup();
 
-        const searchInput = screen.getByPlaceholderText('Nome, email ou username...');
+        const searchInput = screen.getByPlaceholderText('Nome ou email...');
         await user.type(searchInput, 'john');
 
         await waitFor(() => {
@@ -708,7 +708,7 @@ describe('UserList', () => {
         render(<UserList />);
         const user = userEvent.setup();
 
-        const searchInput = screen.getByPlaceholderText('Nome, email ou username...');
+        const searchInput = screen.getByPlaceholderText('Nome ou email...');
         await user.type(searchInput, 'nonexistent');
 
         await waitFor(() => {

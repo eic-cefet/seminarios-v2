@@ -63,7 +63,6 @@ class MigrateUsersCommand extends Command
                     $newId = $this->newTable('users')->insertGetId([
                         'name' => $admin->name,
                         'email' => $admin->email,
-                        'username' => $admin->user ?? null,
                         'password' => $admin->password,
                         'remember_token' => $admin->remember_token,
                         'created_at' => $admin->created_at,

@@ -17,7 +17,6 @@ class ExternalUserResource extends JsonResource
             'id' => $this->id,
             'name' => $this->name,
             'email' => $this->email,
-            'username' => $this->username,
             'speaker_data' => $this->speakerData ? new ExternalSpeakerDataResource($this->speakerData) : null,
         ];
     }

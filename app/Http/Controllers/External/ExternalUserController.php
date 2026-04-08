@@ -47,7 +47,6 @@ class ExternalUserController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
-            'username' => ['nullable', 'string', 'max:255', 'unique:users,username'],
         ]);
 
         $user = User::create($validated);
@@ -64,7 +63,6 @@ class ExternalUserController extends Controller
         $validated = $request->validate([
             'name' => ['sometimes', 'string', 'max:255'],
             'email' => ['sometimes', 'email', 'max:255', 'unique:users,email,'.$user->id],
-            'username' => ['sometimes', 'nullable', 'string', 'max:255', 'unique:users,username,'.$user->id],
         ]);
 
         $user->update($validated);
