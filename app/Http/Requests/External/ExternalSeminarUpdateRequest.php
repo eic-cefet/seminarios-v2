@@ -23,9 +23,7 @@ class ExternalSeminarUpdateRequest extends FormRequest
             'room_link' => ['nullable', 'url', 'max:500'],
             'active' => ['sometimes', 'boolean'],
 
-            'location' => ['sometimes', 'array'],
-            'location.name' => ['required_with:location', 'string', 'max:255'],
-            'location.max_vacancies' => ['nullable', 'integer', 'min:1'],
+            'seminar_location_id' => ['sometimes', 'integer', 'exists:seminar_locations,id'],
 
             'seminar_type_id' => ['nullable', 'integer', 'exists:seminar_types,id'],
             'workshop_id' => ['nullable', 'integer', 'exists:workshops,id'],
@@ -33,11 +31,8 @@ class ExternalSeminarUpdateRequest extends FormRequest
             'subjects' => ['sometimes', 'array', 'min:1'],
             'subjects.*' => ['required', 'string', 'max:255'],
 
-            'speakers' => ['sometimes', 'array', 'min:1'],
-            'speakers.*.name' => ['required', 'string', 'max:255'],
-            'speakers.*.email' => ['required', 'email', 'max:255'],
-            'speakers.*.institution' => ['nullable', 'string', 'max:255'],
-            'speakers.*.description' => ['nullable', 'string'],
+            'speaker_ids' => ['sometimes', 'array', 'min:1'],
+            'speaker_ids.*' => ['required', 'integer', 'exists:users,id'],
         ];
     }
 }

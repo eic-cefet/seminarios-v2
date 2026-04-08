@@ -73,6 +73,8 @@ class AppServiceProvider extends ServiceProvider
                 'ExternalSeminar' => 'Seminars',
                 'ExternalLocation' => 'Seminar Locations',
                 'ExternalSeminarType' => 'Seminar Types',
+                'ExternalUser' => 'Users',
+                'ExternalSpeakerData' => 'Speaker Data',
             ];
 
             foreach ($openApi->paths as $path) {
@@ -81,6 +83,10 @@ class AppServiceProvider extends ServiceProvider
                         fn (string $tag) => $tagRenames[$tag] ?? $tag,
                         $operation->tags,
                     );
+
+                    if ($operation->operationId && str_starts_with($operation->operationId, 'external.')) {
+                        $operation->operationId = substr($operation->operationId, strlen('external.'));
+                    }
                 }
             }
 
