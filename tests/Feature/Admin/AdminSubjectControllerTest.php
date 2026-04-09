@@ -321,4 +321,37 @@ describe('POST /api/admin/subjects/merge', function () {
         $response->assertStatus(422)
             ->assertJsonValidationErrors(['source_ids']);
     });
+
+    it('returns error when database exception occurs during merge', function () {
+        actingAsAdmin();
+
+        $target = Subject::factory()->create();
+        $source = Subject::factory()->create();
+
+        // Create a seminar with the source subject to ensure there's data to migrate
+        $seminar = Seminar::factory()->create();
+        $seminar->subjects()->attach($source);
+
+        // Use a DB listener to detect when the merge starts accessing seminar_subject
+        // and throw an exception before completion
+        $queryCount = 0;
+        \Illuminate\Support\Facades\DB::listen(function ($query) use (&$queryCount) {
+            // Count queries that touch seminar_subject after the transaction begins
+            if (str_contains($query->sql, 'seminar_subject')) {
+                $queryCount++;
+                // After the first select (pluck), throw on the check or insert
+                if ($queryCount >= 2) {
+                    throw new \Exception('Simulated database failure');
+                }
+            }
+        });
+
+        $response = $this->postJson('/api/admin/subjects/merge', [
+            'target_id' => $target->id,
+            'source_ids' => [$source->id],
+        ]);
+
+        $response->assertStatus(400)
+            ->assertJsonPath('message', 'Não foi possível mesclar os assuntos');
+    });
 });

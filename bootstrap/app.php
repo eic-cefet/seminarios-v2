@@ -1,7 +1,10 @@
 <?php
 
 use App\Exceptions\ApiException;
+use App\Http\Middleware\AuditContextMiddleware;
+use App\Http\Middleware\CheckTokenAbility;
 use App\Http\Middleware\EnsureUserIsAdmin;
+use App\Http\Middleware\LogRequestMiddleware;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -20,13 +23,20 @@ return Application::configure(basePath: dirname(__DIR__))
             Route::middleware('api')
                 ->prefix('api')
                 ->group(base_path('routes/admin.php'));
+
+            Route::middleware('api')
+                ->prefix('api')
+                ->group(base_path('routes/external.php'));
         },
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->statefulApi();
         $middleware->trustProxies(at: '*');
+        $middleware->append(LogRequestMiddleware::class);
+        $middleware->append(AuditContextMiddleware::class);
         $middleware->alias([
             'admin' => EnsureUserIsAdmin::class,
+            'ability' => CheckTokenAbility::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

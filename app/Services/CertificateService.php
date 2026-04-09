@@ -167,7 +167,7 @@ class CertificateService
 
         // Seminary date and type
         $date = $registration->seminar->scheduled_at->format('d/m/Y').' às '.$registration->seminar->scheduled_at->format('H:i');
-        $typeName = $registration->seminar->seminarType->name;
+        $typeName = $registration->seminar->seminarType?->name ?? 'Seminário';
         $typeDisplay = $typeName === mb_strtoupper($typeName) ? $typeName : mb_strtolower($typeName);
 
         $certificate->text(

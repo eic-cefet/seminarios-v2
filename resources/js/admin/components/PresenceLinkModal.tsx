@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Copy, QrCode } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { formatDateTime } from "@shared/lib/date";
 import { presenceLinkApi } from "../api/adminClient";
 import { Button } from "./ui/button";
 import {
@@ -79,14 +80,7 @@ export function PresenceLinkModal({
 
     const formatExpiresAt = (expiresAt: string | undefined) => {
         if (!expiresAt) return "N/A";
-        const date = new Date(expiresAt);
-        return date.toLocaleString("pt-BR", {
-            day: "2-digit",
-            month: "2-digit",
-            year: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
-        });
+        return formatDateTime(expiresAt);
     };
 
     return (

@@ -57,6 +57,12 @@ Schedule::command('queue:prune-batches --hours=48')
     ->timezone('America/Sao_Paulo')
     ->onOneServer();
 
+// Prune audit logs older than 90 days, daily at 4:00 AM
+Schedule::command('audit:prune --days=90')
+    ->dailyAt('04:00')
+    ->timezone('America/Sao_Paulo')
+    ->onOneServer();
+
 // Clear scheduler mutex cache files weekly on Sunday at 4:00 AM
 Schedule::command('schedule:clear-cache')
     ->weeklyOn(0, '04:00')

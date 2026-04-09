@@ -4,13 +4,14 @@ namespace App\Models;
 
 use App\Enums\CourseRole;
 use App\Enums\CourseSituation;
+use App\Models\Concerns\Auditable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class UserStudentData extends Model
 {
-    use HasFactory;
+    use Auditable, HasFactory;
 
     protected $table = 'user_student_data';
 
@@ -27,11 +28,6 @@ class UserStudentData extends Model
             'course_situation' => CourseSituation::class,
             'course_role' => CourseRole::class,
         ];
-    }
-
-    public function user(): BelongsTo
-    {
-        return $this->belongsTo(User::class);
     }
 
     public function course(): BelongsTo

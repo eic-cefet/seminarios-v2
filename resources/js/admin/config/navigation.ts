@@ -1,6 +1,7 @@
 import {
     ClipboardList,
     FileBarChart,
+    KeyRound,
     LayoutDashboard,
     Presentation,
     Users,
@@ -41,6 +42,12 @@ export const adminNavigation: NavItem[] = [
         adminOnly: true,
     },
     {
+        label: "API Tokens",
+        href: "/api-tokens",
+        icon: KeyRound,
+        adminOnly: true,
+    },
+    {
         label: "Relatórios",
         icon: FileBarChart,
         adminOnly: true,
@@ -48,6 +55,11 @@ export const adminNavigation: NavItem[] = [
             {
                 label: "Relatório Semestral",
                 href: "/reports/semestral",
+                adminOnly: true,
+            },
+            {
+                label: "Feedback IA",
+                href: "/reports/feedback",
                 adminOnly: true,
             },
         ],

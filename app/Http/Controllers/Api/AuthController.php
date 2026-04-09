@@ -2,10 +2,13 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Enums\AuditEvent;
 use App\Exceptions\ApiException;
+use App\Http\Controllers\Concerns\FormatsUserResponse;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\UserRegistrationRequest;
 use App\Mail\WelcomeUser;
+use App\Models\AuditLog;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -18,6 +21,8 @@ use Illuminate\Validation\Rules\Password as PasswordRule;
 
 class AuthController extends Controller
 {
+    use FormatsUserResponse;
+
     /**
      * Login with email and password
      */
@@ -43,7 +48,7 @@ class AuthController extends Controller
 
             // If matched, rehash with current algorithm for future logins
             if ($passwordMatches) {
-                $user->password = $validated['password'];
+                $user->password = Hash::make($validated['password']);
                 $user->save();
             }
         }
@@ -54,8 +59,10 @@ class AuthController extends Controller
 
         Auth::login($user, $request->boolean('remember', false));
 
+        AuditLog::record(AuditEvent::UserLogin, auditable: $user);
+
         return response()->json([
-            'user' => $this->userResponse($user),
+            'user' => $this->formatUserResponse($user),
         ]);
     }
 
@@ -64,10 +71,14 @@ class AuthController extends Controller
      */
     public function logout(Request $request): JsonResponse
     {
+        $user = $request->user();
+
         Auth::logout();
 
         $request->session()->invalidate();
         $request->session()->regenerateToken();
+
+        AuditLog::record(AuditEvent::UserLogout, auditable: $user, userId: $user?->id);
 
         return response()->json([
             'message' => 'Logout realizado com sucesso',
@@ -86,7 +97,7 @@ class AuthController extends Controller
         }
 
         return response()->json([
-            'user' => $this->userResponse($user),
+            'user' => $this->formatUserResponse($user),
         ]);
     }
 
@@ -113,8 +124,10 @@ class AuthController extends Controller
 
         Auth::login($user);
 
+        AuditLog::record(AuditEvent::UserRegister, auditable: $user);
+
         return response()->json([
-            'user' => $this->userResponse($user),
+            'user' => $this->formatUserResponse($user),
         ], 201);
     }
 
@@ -131,6 +144,10 @@ class AuthController extends Controller
         $status = Password::sendResetLink(
             $request->only('email')
         );
+
+        AuditLog::record(AuditEvent::UserForgotPassword, eventData: [
+            'email' => $request->input('email'),
+        ]);
 
         return response()->json([
             'message' => 'Se o e-mail existir, você receberá um link de recuperação.',
@@ -162,32 +179,12 @@ class AuthController extends Controller
             throw ApiException::invalidToken();
         }
 
+        AuditLog::record(AuditEvent::UserPasswordReset, eventData: [
+            'email' => $request->input('email'),
+        ]);
+
         return response()->json([
             'message' => 'Senha redefinida com sucesso.',
         ]);
-    }
-
-    /**
-     * Format user response
-     */
-    private function userResponse(User $user): array
-    {
-        $user->load('studentData.course');
-
-        return [
-            'id' => $user->id,
-            'name' => $user->name,
-            'email' => $user->email,
-            'email_verified_at' => $user->email_verified_at?->toISOString(),
-            'roles' => $user->getRoleNames()->toArray(),
-            'student_data' => $user->studentData ? [
-                'course_situation' => $user->studentData->course_situation,
-                'course_role' => $user->studentData->course_role,
-                'course' => $user->studentData->course ? [
-                    'id' => $user->studentData->course->id,
-                    'name' => $user->studentData->course->name,
-                ] : null,
-            ] : null,
-        ];
     }
 }

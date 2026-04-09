@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import { PageTitle } from "@shared/components/PageTitle";
+import { analytics } from "@shared/lib/analytics";
 import type {
     AdminUser,
     LocationDropdownItem,
@@ -33,6 +34,7 @@ import {
     SelectValue,
 } from "../../components/ui/select";
 import { Switch } from "../../components/ui/switch";
+import { toDatetimeLocal } from "@shared/lib/date";
 import { seminarSchema, type SeminarFormData } from "./seminarSchema";
 
 function generateSlug(name: string): string {
@@ -79,7 +81,6 @@ export default function SeminarForm() {
 
     const [isSpeakerModalOpen, setIsSpeakerModalOpen] = useState(false);
     const [selectedSpeakers, setSelectedSpeakers] = useState<AdminUser[]>([]);
-
     const { data: seminarData } = useQuery({
         queryKey: ["admin-seminar", id],
         queryFn: () => seminarsApi.get(Number(id)),
@@ -139,15 +140,9 @@ export default function SeminarForm() {
             const seminar = seminarData.data;
 
             // Convert scheduled_at from ISO to datetime-local format
-            let scheduledAt = "";
-            if (seminar.scheduled_at) {
-                const date = new Date(seminar.scheduled_at);
-                scheduledAt = new Date(
-                    date.getTime() - date.getTimezoneOffset() * 60000,
-                )
-                    .toISOString()
-                    .slice(0, 16);
-            }
+            const scheduledAt = seminar.scheduled_at
+                ? toDatetimeLocal(seminar.scheduled_at)
+                : "";
 
             // Handle IDs - try both flat and nested structures
             const locationId =
@@ -179,9 +174,12 @@ export default function SeminarForm() {
 
     const createMutation = useMutation({
         mutationFn: (data: SeminarFormData) => seminarsApi.create(data),
-        onSuccess: () => {
+        onSuccess: (response) => {
             queryClient.invalidateQueries({ queryKey: ["admin-seminars"] });
             toast.success("Seminário criado com sucesso");
+            analytics.event("admin_seminar_create", {
+                seminar_id: response?.data?.id,
+            });
             navigate("/seminars");
         },
         onError: () => {
@@ -196,6 +194,7 @@ export default function SeminarForm() {
             queryClient.invalidateQueries({ queryKey: ["admin-seminars"] });
             queryClient.invalidateQueries({ queryKey: ["admin-seminar", id] });
             toast.success("Seminário atualizado com sucesso");
+            analytics.event("admin_seminar_update", { seminar_id: Number(id) });
             navigate("/seminars");
         },
         onError: () => {

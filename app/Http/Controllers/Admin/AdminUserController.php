@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Enums\CourseSituation;
-use App\Exceptions\ApiException;
+use App\Http\Controllers\Admin\Concerns\EscapesLikeWildcards;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Admin\AdminUserResource;
 use App\Models\User;
@@ -20,6 +20,8 @@ use Illuminate\Validation\Rule;
 
 class AdminUserController extends Controller
 {
+    use EscapesLikeWildcards;
+
     public function __construct(
         private readonly SlugService $slugService
     ) {}
@@ -35,12 +37,12 @@ class AdminUserController extends Controller
             $query->onlyTrashed();
         }
 
-        // Search by name, email, or username
+        // Search by name or email
         if ($search = $request->string('search')->trim()->toString()) {
-            $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                    ->orWhere('email', 'like', "%{$search}%")
-                    ->orWhere('username', 'like', "%{$search}%");
+            $escaped = $this->escapeLike($search);
+            $query->where(function ($q) use ($escaped) {
+                $q->where('name', 'like', "%{$escaped}%")
+                    ->orWhere('email', 'like', "%{$escaped}%");
             });
         }
 
@@ -186,11 +188,8 @@ class AdminUserController extends Controller
 
     public function destroy(Request $request, User $user): JsonResponse
     {
+        // Note: UserPolicy::delete() already prevents self-deletion
         Gate::authorize('delete', $user);
-
-        if ($request->user()->id === $user->id) {
-            throw ApiException::cannotDeleteSelf();
-        }
 
         $user->delete();
 

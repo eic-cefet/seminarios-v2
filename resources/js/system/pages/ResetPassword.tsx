@@ -7,6 +7,7 @@ import { PageTitle } from "@shared/components/PageTitle";
 import { cn } from "@shared/lib/utils";
 import { authApi } from "@shared/api/client";
 import { getErrorMessage } from "@shared/lib/errors";
+import { analytics } from "@shared/lib/analytics";
 
 export default function ResetPassword() {
     const [searchParams] = useSearchParams();
@@ -37,6 +38,7 @@ export default function ResetPassword() {
         e.preventDefault();
         setError(null);
 
+        /* v8 ignore next 3 -- @preserve defensive guard: form only renders when token & email are present */
         if (!token || !email) {
             setError("Link de redefinição inválido");
             return;
@@ -61,6 +63,7 @@ export default function ResetPassword() {
                 password: formData.password,
                 password_confirmation: formData.passwordConfirmation,
             });
+            analytics.event("reset_password");
             setSuccess(true);
         } catch (err) {
             setError(getErrorMessage(err));

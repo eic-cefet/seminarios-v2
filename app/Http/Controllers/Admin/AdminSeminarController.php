@@ -2,10 +2,13 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\Role;
+use App\Http\Controllers\Admin\Concerns\EscapesLikeWildcards;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\SeminarStoreRequest;
 use App\Http\Requests\Admin\SeminarUpdateRequest;
 use App\Http\Resources\Admin\AdminSeminarResource;
+use App\Jobs\ProcessSeminarRescheduleJob;
 use App\Models\Seminar;
 use App\Models\SeminarLocation;
 use App\Models\SeminarType;
@@ -15,11 +18,14 @@ use App\Services\SlugService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 
 class AdminSeminarController extends Controller
 {
+    use EscapesLikeWildcards;
+
     public function __construct(
         private readonly SlugService $slugService
     ) {}
@@ -39,13 +45,14 @@ class AdminSeminarController extends Controller
         ])->withCount('registrations');
 
         // Teachers only see their own seminars
-        if ($user->hasRole('teacher') && ! $user->hasRole('admin')) {
+        if ($user->hasRole(Role::Teacher) && ! $user->hasRole(Role::Admin)) {
             $query->where('created_by', $user->id);
         }
 
         // Search by name
         if ($search = $request->string('search')->trim()->toString()) {
-            $query->where('name', 'like', "%{$search}%");
+            $escaped = $this->escapeLike($search);
+            $query->where('name', 'like', "%{$escaped}%");
         }
 
         // Filter by active status
@@ -133,37 +140,24 @@ class AdminSeminarController extends Controller
     public function update(SeminarUpdateRequest $request, Seminar $seminar): JsonResponse
     {
         $validated = $request->validated();
+        $oldScheduledAt = $seminar->scheduled_at?->copy();
 
         DB::transaction(function () use ($validated, $seminar) {
-            // Update basic fields
-            if (isset($validated['name'])) {
-                $seminar->name = $validated['name'];
-                // Regenerate slug if name changed
-                $seminar->slug = $this->slugService->generateUnique($validated['name'], Seminar::class, 'slug', $seminar->id);
-            }
-            if (array_key_exists('description', $validated)) {
-                $seminar->description = $validated['description'];
-            }
-            if (isset($validated['scheduled_at'])) {
-                $seminar->scheduled_at = $validated['scheduled_at'];
-            }
-            if (array_key_exists('room_link', $validated)) {
-                $seminar->room_link = $validated['room_link'];
-            }
-            if (isset($validated['active'])) {
-                $seminar->active = $validated['active'];
-            }
-            if (isset($validated['seminar_location_id'])) {
-                $seminar->seminar_location_id = $validated['seminar_location_id'];
-            }
-            if (array_key_exists('seminar_type_id', $validated)) {
-                $seminar->seminar_type_id = $validated['seminar_type_id'];
-            }
-            if (array_key_exists('workshop_id', $validated)) {
-                $seminar->workshop_id = $validated['workshop_id'];
+            // Keep in sync with Seminar::$fillable and SeminarUpdateRequest rules
+            $fields = Arr::only($validated, [
+                'name', 'description', 'scheduled_at', 'room_link',
+                'active', 'seminar_location_id', 'seminar_type_id', 'workshop_id',
+            ]);
+
+            if (isset($fields['name'])) {
+                $fields['slug'] = $this->slugService->generateUnique(
+                    $fields['name'], Seminar::class, 'slug', $seminar->id
+                );
             }
 
-            $seminar->save();
+            if (! empty($fields)) {
+                $seminar->fill($fields)->save();
+            }
 
             // Handle subject auto-creation and syncing
             if (isset($validated['subject_names'])) {
@@ -189,6 +183,10 @@ class AdminSeminarController extends Controller
             'subjects',
             'speakers',
         ])->loadCount('registrations');
+
+        if ($oldScheduledAt && $seminar->scheduled_at && ! $oldScheduledAt->equalTo($seminar->scheduled_at)) {
+            ProcessSeminarRescheduleJob::dispatch($seminar, $oldScheduledAt)->afterCommit();
+        }
 
         return response()->json([
             'message' => 'Seminário atualizado com sucesso',

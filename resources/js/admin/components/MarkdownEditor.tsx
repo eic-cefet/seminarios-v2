@@ -1,7 +1,9 @@
+import { useState } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "./ui/tabs";
 import { Label } from "./ui/label";
 import ReactMarkdown from "react-markdown";
 import rehypeSanitize from "rehype-sanitize";
+import { AiTextToolbar } from "./AiTextToolbar";
 
 interface MarkdownEditorProps {
     value: string;
@@ -16,9 +18,18 @@ export function MarkdownEditor({
     label,
     error,
 }: MarkdownEditorProps) {
+    const [aiLoading, setAiLoading] = useState(false);
+
     return (
         <div className="space-y-2">
-            {label && <Label>{label}</Label>}
+            <div className="flex items-center justify-between">
+                {label && <Label>{label}</Label>}
+                <AiTextToolbar
+                    value={value}
+                    onChange={onChange}
+                    onLoadingChange={setAiLoading}
+                />
+            </div>
             <Tabs defaultValue="write" className="w-full">
                 <TabsList>
                     <TabsTrigger value="write">Escrever</TabsTrigger>
@@ -28,7 +39,8 @@ export function MarkdownEditor({
                     <textarea
                         value={value}
                         onChange={(e) => onChange(e.target.value)}
-                        className="w-full min-h-[200px] px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-ring bg-background text-foreground"
+                        disabled={aiLoading}
+                        className="w-full min-h-[200px] px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-ring bg-background text-foreground disabled:opacity-50 disabled:cursor-not-allowed"
                         placeholder="Escreva a descrição em Markdown..."
                     />
                 </TabsContent>

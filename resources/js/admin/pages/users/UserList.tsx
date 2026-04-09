@@ -2,8 +2,10 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, Pencil, Trash2, RotateCcw, Archive, Search } from "lucide-react";
 import { toast } from "sonner";
+import { analytics } from "@shared/lib/analytics";
 import { useDebouncedSearch } from "@shared/hooks/useDebouncedSearch";
 import { usersApi, type AdminUser } from "../../api/adminClient";
+import { AiTextToolbar } from "../../components/AiTextToolbar";
 import { Button } from "../../components/ui/button";
 import {
     Card,
@@ -97,6 +99,7 @@ export default function UserList() {
     const [editingUser, setEditingUser] = useState<AdminUser | null>(null);
     const [deletingUser, setDeletingUser] = useState<AdminUser | null>(null);
     const [formData, setFormData] = useState<UserFormData>(initialFormData);
+    const [aiLoading, setAiLoading] = useState<boolean>(false);
 
     const { data, isLoading } = useQuery({
         queryKey: [
@@ -120,9 +123,10 @@ export default function UserList() {
     const createMutation = useMutation({
         mutationFn: (data: Parameters<typeof usersApi.create>[0]) =>
             usersApi.create(data),
-        onSuccess: () => {
+        onSuccess: (response) => {
             queryClient.invalidateQueries({ queryKey: ["admin-users"] });
             toast.success("Usuario criado com sucesso");
+            analytics.event("admin_user_create", { user_id: response?.data?.id });
             closeDialog();
         },
         onError: () => {
@@ -138,9 +142,10 @@ export default function UserList() {
             id: number;
             data: Parameters<typeof usersApi.update>[1];
         }) => usersApi.update(id, data),
-        onSuccess: () => {
+        onSuccess: (_, variables) => {
             queryClient.invalidateQueries({ queryKey: ["admin-users"] });
             toast.success("Usuario atualizado com sucesso");
+            analytics.event("admin_user_update", { user_id: variables.id });
             closeDialog();
         },
         onError: () => {
@@ -150,9 +155,10 @@ export default function UserList() {
 
     const deleteMutation = useMutation({
         mutationFn: (id: number) => usersApi.delete(id),
-        onSuccess: () => {
+        onSuccess: (_, id) => {
             queryClient.invalidateQueries({ queryKey: ["admin-users"] });
             toast.success("Usuario excluido com sucesso");
+            analytics.event("admin_user_archive", { user_id: id });
             setIsDeleteDialogOpen(false);
             setDeletingUser(null);
         },
@@ -163,9 +169,10 @@ export default function UserList() {
 
     const restoreMutation = useMutation({
         mutationFn: (id: number) => usersApi.restore(id),
-        onSuccess: () => {
+        onSuccess: (_, id) => {
             queryClient.invalidateQueries({ queryKey: ["admin-users"] });
             toast.success("Usuario restaurado com sucesso");
+            analytics.event("admin_user_restore", { user_id: id });
         },
         onError: () => {
             toast.error("Erro ao restaurar usuario");
@@ -334,7 +341,7 @@ export default function UserList() {
                                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                                 <Input
                                     id="search"
-                                    placeholder="Nome, email ou username..."
+                                    placeholder="Nome ou email..."
                                     value={searchInput}
                                     onChange={(e) =>
                                         setSearchInput(e.target.value)
@@ -789,12 +796,30 @@ export default function UserList() {
                                     </div>
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="description">
-                                        Descricao
-                                    </Label>
+                                    <div className="flex items-center justify-between">
+                                        <Label htmlFor="description">
+                                            Descricao
+                                        </Label>
+                                        <AiTextToolbar
+                                            value={
+                                                formData.speaker_data
+                                                    .description
+                                            }
+                                            onChange={(value) =>
+                                                setFormData({
+                                                    ...formData,
+                                                    speaker_data: {
+                                                        ...formData.speaker_data,
+                                                        description: value,
+                                                    },
+                                                })
+                                            }
+                                            onLoadingChange={setAiLoading}
+                                        />
+                                    </div>
                                     <textarea
                                         id="description"
-                                        className="flex min-h-20 w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                                        className="flex min-h-20 w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-50 disabled:cursor-not-allowed"
                                         value={
                                             formData.speaker_data.description
                                         }
@@ -807,6 +832,7 @@ export default function UserList() {
                                                 },
                                             })
                                         }
+                                        disabled={aiLoading}
                                     />
                                 </div>
                             </div>
@@ -857,7 +883,7 @@ export default function UserList() {
                                 deletingUser &&
                                 deleteMutation.mutate(deletingUser.id)
                             }
-                            className="bg-red-500 hover:bg-red-600"
+                            className="bg-red-500 hover:bg-red-600 text-white"
                         >
                             {deleteMutation.isPending
                                 ? "Excluindo..."

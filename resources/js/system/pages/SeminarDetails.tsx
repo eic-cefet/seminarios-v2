@@ -15,12 +15,15 @@ import {
 } from "lucide-react";
 import { Layout } from "../components/Layout";
 import { Badge } from "../components/Badge";
+import { CalendarMenu } from "../components/CalendarMenu";
 import { LoginModal } from "../components/LoginModal";
 import { PageTitle } from "@shared/components/PageTitle";
 import { seminarsApi, registrationApi } from "@shared/api/client";
-import { formatDateTime, cn, containsHTML } from "@shared/lib/utils";
+import { cn, containsHTML } from "@shared/lib/utils";
+import { formatDateTime, isToday as isTodayDate } from "@shared/lib/date";
 import { getErrorMessage } from "@shared/lib/errors";
 import { useAuth } from "@shared/contexts/AuthContext";
+import { analytics } from "@shared/lib/analytics";
 import DOMPurify from "dompurify";
 import ReactMarkdown from "react-markdown";
 import rehypeSanitize from "rehype-sanitize";
@@ -55,11 +58,13 @@ export default function SeminarDetails() {
         mutationFn: () => registrationApi.register(slug!),
         onSuccess: () => {
             setRegistrationError(null);
+            analytics.event("seminar_register", { seminar_slug: slug });
             queryClient.invalidateQueries({ queryKey: ["registration", slug] });
             queryClient.invalidateQueries({ queryKey: ["seminar", slug] });
         },
         onError: (error) => {
             setRegistrationError(getErrorMessage(error));
+            analytics.event("seminar_register_error", { seminar_slug: slug });
         },
     });
 
@@ -67,6 +72,7 @@ export default function SeminarDetails() {
         mutationFn: () => registrationApi.unregister(slug!),
         onSuccess: () => {
             setRegistrationError(null);
+            analytics.event("seminar_unregister", { seminar_slug: slug });
             queryClient.invalidateQueries({ queryKey: ["registration", slug] });
             queryClient.invalidateQueries({ queryKey: ["seminar", slug] });
         },
@@ -82,6 +88,9 @@ export default function SeminarDetails() {
 
     const handleRegisterClick = () => {
         if (!user) {
+            analytics.event("seminar_register_attempt_unauthenticated", {
+                seminar_slug: slug,
+            });
             setLoginModalOpen(true);
             return;
         }
@@ -140,6 +149,7 @@ export default function SeminarDetails() {
     }
 
     const isExpired = seminar.isExpired;
+    const isToday = !isExpired && isTodayDate(seminar.scheduledAt);
 
     return (
         <>
@@ -346,10 +356,10 @@ export default function SeminarDetails() {
                                             </p>
                                             <button
                                                 onClick={handleUnregisterClick}
-                                                disabled={isProcessing}
+                                                disabled={isProcessing || isToday}
                                                 className={cn(
                                                     "w-full rounded-md border border-gray-300 bg-white px-4 py-3 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 transition-colors cursor-pointer",
-                                                    isProcessing &&
+                                                    (isProcessing || isToday) &&
                                                         "opacity-70 cursor-not-allowed",
                                                 )}
                                             >
@@ -362,6 +372,12 @@ export default function SeminarDetails() {
                                                     "Cancelar inscrição"
                                                 )}
                                             </button>
+                                            {isToday && (
+                                                <p className="mt-2 text-xs text-amber-600 text-center">
+                                                    Não é possível cancelar a
+                                                    inscrição no dia do evento
+                                                </p>
+                                            )}
                                         </>
                                     ) : (
                                         <>
@@ -412,6 +428,21 @@ export default function SeminarDetails() {
                                         </p>
                                     </>
                                 )}
+
+                                <div className="mt-6 border-t border-gray-200 pt-4">
+                                    <CalendarMenu
+                                        event={{
+                                            title: seminar.name,
+                                            startsAt: seminar.scheduledAt,
+                                            description: seminar.description,
+                                            location: seminar.location?.name,
+                                            roomLink: seminar.roomLink,
+                                            eventPath: `/seminario/${seminar.slug}`,
+                                            downloadPath: `/seminario/${seminar.slug}/calendar.ics`,
+                                        }}
+                                        className="w-full border border-primary-200 bg-primary-50 text-primary-700 hover:bg-primary-100"
+                                    />
+                                </div>
                             </div>
 
                             {/* External Link */}
@@ -443,16 +474,13 @@ export default function SeminarDetails() {
                             )}
 
                             {/* Location Details */}
-                            {seminar.location && seminar.location.address && (
+                            {seminar.location && (
                                 <div className="rounded-lg border border-gray-200 bg-white p-6">
                                     <h3 className="font-semibold text-gray-900 mb-2">
                                         Local
                                     </h3>
                                     <p className="text-sm text-gray-600">
                                         {seminar.location.name}
-                                    </p>
-                                    <p className="text-sm text-gray-500">
-                                        {seminar.location.address}
                                     </p>
                                 </div>
                             )}

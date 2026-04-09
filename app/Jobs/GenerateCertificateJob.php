@@ -2,7 +2,11 @@
 
 namespace App\Jobs;
 
+use App\Concerns\TracksAuditContext;
+use App\Enums\AuditEvent;
+use App\Enums\AuditEventType;
 use App\Mail\CertificateGenerated;
+use App\Models\AuditLog;
 use App\Models\Registration;
 use App\Services\CertificateService;
 use Illuminate\Bus\Queueable;
@@ -15,9 +19,10 @@ use Illuminate\Support\Facades\Storage;
 
 class GenerateCertificateJob implements ShouldQueue
 {
-    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels, TracksAuditContext;
 
     public int $tries = 3;
+
     public int $backoff = 60;
 
     public function __construct(
@@ -27,9 +32,10 @@ class GenerateCertificateJob implements ShouldQueue
 
     public function handle(CertificateService $certificateService): void
     {
+        $this->setAuditContext();
         $this->registration->load(['user', 'seminar.seminarType']);
 
-        if (!$this->registration->present) {
+        if (! $this->registration->present) {
             return;
         }
 
@@ -39,19 +45,19 @@ class GenerateCertificateJob implements ShouldQueue
         $pdfGenerated = false;
 
         // Generate JPG if not exists
-        if (!$certificateService->jpgExists($this->registration)) {
+        if (! $certificateService->jpgExists($this->registration)) {
             $certificateService->generateJpg($this->registration);
             $jpgGenerated = true;
         }
 
         // Generate PDF if not exists
-        if (!$certificateService->pdfExists($this->registration)) {
+        if (! $certificateService->pdfExists($this->registration)) {
             $certificateService->generatePdf($this->registration);
             $pdfGenerated = true;
         }
 
         // Send email with PDF attachment if requested and not already sent
-        if ($this->sendEmail && !$this->registration->certificate_sent) {
+        if ($this->sendEmail && ! $this->registration->certificate_sent) {
             $pdfPath = $certificateService->getPdfPath($this->registration);
             $pdfContent = Storage::disk('s3')->get($pdfPath);
 
@@ -60,6 +66,14 @@ class GenerateCertificateJob implements ShouldQueue
 
             $this->registration->certificate_sent = true;
             $this->registration->save();
+        }
+
+        if ($jpgGenerated || $pdfGenerated) {
+            AuditLog::record(AuditEvent::CertificateGenerated, AuditEventType::System, $this->registration, [
+                'registration_id' => $this->registration->id,
+                'jpg_generated' => $jpgGenerated,
+                'pdf_generated' => $pdfGenerated,
+            ]);
         }
     }
 }

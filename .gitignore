@@ -26,3 +26,12 @@ Thumbs.db
 **/caddy
 frankenphp
 frankenphp-worker.php
+
+coverage/
+coverage.xml
+composer.phar
+
+guide/node_modules/
+guide/dist/
+guide/screenshots/
+.pnpm-store/

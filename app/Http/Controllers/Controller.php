@@ -11,6 +11,6 @@ abstract class Controller
      */
     protected function getPerPage(Request $request, int $default = 10, int $max = 50): int
     {
-        return min((int) $request->query('per_page', $default), $max);
+        return max(1, min((int) $request->query('per_page', $default), $max));
     }
 }

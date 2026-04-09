@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\Role;
+use App\Http\Controllers\Admin\Concerns\EscapesLikeWildcards;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Admin\AdminRegistrationResource;
 use App\Models\Registration;
@@ -12,12 +14,20 @@ use Illuminate\Support\Facades\Gate;
 
 class AdminRegistrationController extends Controller
 {
+    use EscapesLikeWildcards;
+
     public function index(Request $request): AnonymousResourceCollection
     {
         Gate::authorize('viewAny', Registration::class);
 
-        $query = Registration::with(['user:id,name,email', 'seminar:id,name,slug,scheduled_at'])
+        $query = Registration::with(['user:id,name,email', 'seminar:id,name,slug,scheduled_at,created_by'])
             ->orderByDesc('created_at');
+
+        // Non-admin users (teachers) only see registrations for their own seminars
+        $user = $request->user();
+        if (! $user->hasRole(Role::Admin)) {
+            $query->whereHas('seminar', fn ($q) => $q->where('created_by', $user->id));
+        }
 
         if ($request->filled('seminar_id')) {
             $query->where('seminar_id', $request->input('seminar_id'));
@@ -25,9 +35,10 @@ class AdminRegistrationController extends Controller
 
         if ($request->filled('search')) {
             $search = $request->input('search');
-            $query->whereHas('user', function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                    ->orWhere('email', 'like', "%{$search}%");
+            $escaped = $this->escapeLike($search);
+            $query->whereHas('user', function ($q) use ($escaped) {
+                $q->where('name', 'like', "%{$escaped}%")
+                    ->orWhere('email', 'like', "%{$escaped}%");
             });
         }
 
@@ -36,6 +47,7 @@ class AdminRegistrationController extends Controller
 
     public function togglePresence(Registration $registration): JsonResponse
     {
+        $registration->loadMissing('seminar');
         Gate::authorize('updatePresence', $registration);
 
         $registration->present = ! $registration->present;

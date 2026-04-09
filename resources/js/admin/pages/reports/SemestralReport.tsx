@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { getSemester, formatDateTime as formatDateTimeUtil } from "@shared/lib/date";
 import { PageTitle } from "@shared/components/PageTitle";
 import { Button } from "../../components/ui/button";
 import {
@@ -62,9 +63,7 @@ interface ReportData {
 
 // Generate semesters for the last 5 years
 function generateSemesters() {
-    const currentYear = new Date().getFullYear();
-    const currentMonth = new Date().getMonth() + 1; // 1-12
-    const currentSemester = currentMonth <= 6 ? 1 : 2;
+    const { year: currentYear, semester: currentSemester } = getSemester();
 
     const semesters: { value: string; label: string }[] = [];
 
@@ -223,13 +222,7 @@ export default function SemestralReport() {
     };
 
     const formatDate = (dateString: string) => {
-        return new Date(dateString).toLocaleDateString("pt-BR", {
-            day: "2-digit",
-            month: "2-digit",
-            year: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
-        });
+        return formatDateTimeUtil(dateString);
     };
 
     const handleSubmit = (e: React.FormEvent) => {

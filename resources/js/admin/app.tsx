@@ -3,7 +3,9 @@ import { createRoot } from "react-dom/client";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { HelmetProvider } from "react-helmet-async";
+import { ErrorBoundary } from "@shared/components/ErrorBoundary";
 import { AuthProvider } from "@shared/contexts/AuthContext";
+import { usePageTracking } from "@shared/hooks/usePageTracking";
 import { AdminLayout } from "./components/layout/AdminLayout";
 import Dashboard from "./pages/Dashboard";
 import LocationList from "./pages/locations/LocationList";
@@ -12,7 +14,9 @@ import UserList from "./pages/users/UserList";
 import RegistrationList from "./pages/registrations/RegistrationList";
 import { SeminarList, SeminarForm } from "./pages/seminars";
 import { WorkshopList } from "./pages/workshops";
+import FeedbackInsights from "./pages/reports/FeedbackInsights";
 import SemestralReport from "./pages/reports/SemestralReport";
+import ApiTokenList from "./pages/api-tokens/ApiTokenList";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -24,55 +28,45 @@ const queryClient = new QueryClient({
     },
 });
 
-function App() {
+export function AppRoutes() {
+    usePageTracking();
+
     return (
-        <HelmetProvider>
-            <QueryClientProvider client={queryClient}>
-                <AuthProvider>
-                    <BrowserRouter basename={`${app.ROUTER_BASE || ""}/admin`}>
-                        <Routes>
-                            <Route element={<AdminLayout />}>
-                                <Route path="/" element={<Dashboard />} />
-                                <Route path="/users" element={<UserList />} />
-                                <Route
-                                    path="/locations"
-                                    element={<LocationList />}
-                                />
-                                <Route
-                                    path="/subjects"
-                                    element={<SubjectList />}
-                                />
-                                <Route
-                                    path="/seminars"
-                                    element={<SeminarList />}
-                                />
-                                <Route
-                                    path="/seminars/new"
-                                    element={<SeminarForm />}
-                                />
-                                <Route
-                                    path="/seminars/:id/edit"
-                                    element={<SeminarForm />}
-                                />
-                                <Route
-                                    path="/workshops"
-                                    element={<WorkshopList />}
-                                />
-                                <Route
-                                    path="/registrations"
-                                    element={<RegistrationList />}
-                                />
-                                <Route
-                                    path="/reports/semestral"
-                                    element={<SemestralReport />}
-                                />
-                                <Route path="*" element={<NotFound />} />
-                            </Route>
-                        </Routes>
-                    </BrowserRouter>
-                </AuthProvider>
-            </QueryClientProvider>
-        </HelmetProvider>
+        <Routes>
+            <Route element={<AdminLayout />}>
+                <Route path="/" element={<Dashboard />} />
+                <Route path="/users" element={<UserList />} />
+                <Route path="/locations" element={<LocationList />} />
+                <Route path="/subjects" element={<SubjectList />} />
+                <Route path="/seminars" element={<SeminarList />} />
+                <Route path="/seminars/new" element={<SeminarForm />} />
+                <Route path="/seminars/:id/edit" element={<SeminarForm />} />
+                <Route path="/workshops" element={<WorkshopList />} />
+                <Route path="/registrations" element={<RegistrationList />} />
+                <Route path="/api-tokens" element={<ApiTokenList />} />
+                <Route path="/reports/semestral" element={<SemestralReport />} />
+                <Route path="/reports/feedback" element={<FeedbackInsights />} />
+                <Route path="*" element={<NotFound />} />
+            </Route>
+        </Routes>
+    );
+}
+
+export function App() {
+    return (
+        <ErrorBoundary>
+            <HelmetProvider>
+                <QueryClientProvider client={queryClient}>
+                    <AuthProvider>
+                        <BrowserRouter
+                            basename={`${app.ROUTER_BASE || ""}/admin`}
+                        >
+                            <AppRoutes />
+                        </BrowserRouter>
+                    </AuthProvider>
+                </QueryClientProvider>
+            </HelmetProvider>
+        </ErrorBoundary>
     );
 }
 

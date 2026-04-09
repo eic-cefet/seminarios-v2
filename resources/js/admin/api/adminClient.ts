@@ -1,5 +1,5 @@
 import type { PaginatedResponse } from "@shared/types";
-import { getCookie, getCsrfCookie } from "@shared/api/httpUtils";
+import { buildQueryString, getCookie, getCsrfCookie } from "@shared/api/httpUtils";
 
 const API_BASE = () => app.API_URL + "/admin";
 
@@ -64,7 +64,6 @@ export interface AdminUser {
     id: number;
     name: string;
     email: string;
-    username?: string;
     roles: string[];
     student_data?: {
         course_name?: string;
@@ -183,14 +182,41 @@ export interface AdminRegistration {
     updated_at: string;
 }
 
+export type AdminSentimentLabel =
+    | "positive"
+    | "negative"
+    | "neutral"
+    | "mixed"
+    | null;
+
 export interface AdminRating {
     id: number;
     score: number;
-    comment?: string;
+    comment?: string | null;
+    sentiment?: string | null;
+    sentiment_label?: AdminSentimentLabel;
+    sentiment_analyzed_at?: string | null;
     user?: { id: number; name: string };
     seminar?: { id: number; name: string; slug: string };
     created_at: string;
     updated_at: string;
+}
+
+export interface AdminRatingSentimentsResponse {
+    data: AdminRating[];
+    meta: {
+        current_page: number;
+        last_page: number;
+        per_page: number;
+        total: number;
+        from: number | null;
+        to: number | null;
+    };
+    summary: {
+        total_ratings: number;
+        average_score: number | null;
+        low_score_count: number;
+    };
 }
 
 export interface DashboardStats {
@@ -220,15 +246,8 @@ export const usersApi = {
         search?: string;
         role?: string;
     }) => {
-        const searchParams = new URLSearchParams();
-        if (params?.page) searchParams.set("page", params.page.toString());
-        if (params?.trashed) searchParams.set("trashed", "1");
-        if (params?.search) searchParams.set("search", params.search);
-        if (params?.role) searchParams.set("role", params.role);
-        const query = searchParams.toString();
-        return fetchAdminApi<PaginatedResponse<AdminUser>>(
-            `/users${query ? `?${query}` : ""}`,
-        );
+        const qs = buildQueryString(params ?? {});
+        return fetchAdminApi<PaginatedResponse<AdminUser>>(`/users${qs}`);
     },
 
     get: (id: number) => fetchAdminApi<{ data: AdminUser }>(`/users/${id}`),
@@ -302,11 +321,9 @@ export const usersApi = {
 // Locations
 export const locationsApi = {
     list: (params?: { page?: number }) => {
-        const searchParams = new URLSearchParams();
-        if (params?.page) searchParams.set("page", params.page.toString());
-        const query = searchParams.toString();
+        const qs = buildQueryString(params ?? {});
         return fetchAdminApi<PaginatedResponse<AdminLocation>>(
-            `/locations${query ? `?${query}` : ""}`,
+            `/locations${qs}`,
         );
     },
 
@@ -349,12 +366,9 @@ export const locationsApi = {
 // Subjects
 export const subjectsApi = {
     list: (params?: { page?: number; search?: string }) => {
-        const searchParams = new URLSearchParams();
-        if (params?.page) searchParams.set("page", params.page.toString());
-        if (params?.search) searchParams.set("search", params.search);
-        const query = searchParams.toString();
+        const qs = buildQueryString(params ?? {});
         return fetchAdminApi<PaginatedResponse<AdminSubject>>(
-            `/subjects${query ? `?${query}` : ""}`,
+            `/subjects${qs}`,
         );
     },
 
@@ -409,12 +423,9 @@ export const subjectsApi = {
 // Workshops
 export const workshopsApi = {
     list: (params?: { page?: number; search?: string }) => {
-        const searchParams = new URLSearchParams();
-        if (params?.page) searchParams.set("page", params.page.toString());
-        if (params?.search) searchParams.set("search", params.search);
-        const query = searchParams.toString();
+        const qs = buildQueryString(params ?? {});
         return fetchAdminApi<PaginatedResponse<AdminWorkshop>>(
-            `/workshops${query ? `?${query}` : ""}`,
+            `/workshops${qs}`,
         );
     },
 
@@ -462,13 +473,9 @@ export const workshopsApi = {
     },
 
     searchSeminars: (params: { search?: string; workshop_id?: number }) => {
-        const searchParams = new URLSearchParams();
-        if (params.search) searchParams.set("search", params.search);
-        if (params.workshop_id)
-            searchParams.set("workshop_id", params.workshop_id.toString());
-        const query = searchParams.toString();
+        const qs = buildQueryString(params);
         return fetchAdminApi<{ data: SeminarSearchResult[] }>(
-            `/workshops/search-seminars${query ? `?${query}` : ""}`,
+            `/workshops/search-seminars${qs}`,
         );
     },
 };
@@ -480,14 +487,9 @@ export const registrationsApi = {
         seminar_id?: number;
         search?: string;
     }) => {
-        const searchParams = new URLSearchParams();
-        if (params?.page) searchParams.set("page", params.page.toString());
-        if (params?.seminar_id)
-            searchParams.set("seminar_id", params.seminar_id.toString());
-        if (params?.search) searchParams.set("search", params.search);
-        const query = searchParams.toString();
+        const qs = buildQueryString(params ?? {});
         return fetchAdminApi<PaginatedResponse<AdminRegistration>>(
-            `/registrations${query ? `?${query}` : ""}`,
+            `/registrations${qs}`,
         );
     },
 
@@ -510,15 +512,20 @@ export const seminarsApi = {
         active?: boolean;
         upcoming?: boolean;
     }) => {
-        const searchParams = new URLSearchParams();
-        if (params?.page) searchParams.set("page", params.page.toString());
-        if (params?.search) searchParams.set("search", params.search);
-        if (params?.active !== undefined)
-            searchParams.set("active", params.active ? "1" : "0");
-        if (params?.upcoming) searchParams.set("upcoming", "1");
-        const query = searchParams.toString();
+        const qs = buildQueryString({
+            page: params?.page,
+            search: params?.search,
+            // active is tri-state: undefined (all), true ("1"), false ("0")
+            active:
+                params?.active !== undefined
+                    ? params.active
+                        ? "1"
+                        : "0"
+                    : undefined,
+            upcoming: params?.upcoming,
+        });
         return fetchAdminApi<PaginatedResponse<AdminSeminar>>(
-            `/seminars${query ? `?${query}` : ""}`,
+            `/seminars${qs}`,
         );
     },
 
@@ -578,6 +585,134 @@ export const seminarsApi = {
             method: "DELETE",
         });
     },
+};
+
+// AI
+export type AiAction =
+    | "format_markdown"
+    | "shorten"
+    | "explain"
+    | "formal"
+    | "casual";
+
+export const aiApi = {
+    transformText: async (text: string, action: AiAction) => {
+        await getCsrfCookie();
+        return fetchAdminApi<{ data: { text: string } }>(
+            "/ai/transform-text",
+            {
+                method: "POST",
+                body: JSON.stringify({ text, action }),
+            },
+        );
+    },
+
+    suggestMergeName: async (names: string[]) => {
+        await getCsrfCookie();
+        return fetchAdminApi<{ data: { text: string } }>(
+            "/ai/suggest-merge-name",
+            {
+                method: "POST",
+                body: JSON.stringify({ names }),
+            },
+        );
+    },
+    suggestSubjectTags: async (subjectNames: string[]) => {
+        await getCsrfCookie();
+        return fetchAdminApi<{ data: { suggestions: string[] } }>(
+            "/ai/suggest-subject-tags",
+            {
+                method: "POST",
+                body: JSON.stringify({ subject_names: subjectNames }),
+            },
+        );
+    },
+
+    ratingSentiments: (params?: {
+        page?: number;
+        per_page?: number;
+        search?: string;
+        score?: number;
+        sentiment_label?: Exclude<AdminSentimentLabel, null> | "null";
+    }) => {
+        const qs = buildQueryString(params ?? {});
+        return fetchAdminApi<AdminRatingSentimentsResponse>(
+            `/ai/rating-sentiments${qs}`,
+        );
+    },
+};
+
+// API Tokens
+export interface AdminApiToken {
+    id: number;
+    name: string;
+    abilities: string[];
+    last_used_at: string | null;
+    expires_at: string | null;
+    created_at: string;
+}
+
+export interface AdminApiTokenCreateResponse {
+    message: string;
+    data: {
+        id: number;
+        name: string;
+        abilities: string[];
+        token: string;
+    };
+}
+
+export const apiTokensApi = {
+    list: (params?: { page?: number }) => {
+        const qs = buildQueryString(params ?? {});
+        return fetchAdminApi<PaginatedResponse<AdminApiToken>>(
+            `/api-tokens${qs}`,
+        );
+    },
+
+    create: async (data: {
+        name: string;
+        expires_in_days?: number | null;
+        abilities?: string[];
+    }) => {
+        await getCsrfCookie();
+        return fetchAdminApi<AdminApiTokenCreateResponse>("/api-tokens", {
+            method: "POST",
+            body: JSON.stringify(data),
+        });
+    },
+
+    update: async (
+        id: number,
+        data: { name?: string; abilities?: string[] },
+    ) => {
+        await getCsrfCookie();
+        return fetchAdminApi<{ message: string; data: AdminApiToken }>(
+            `/api-tokens/${id}`,
+            {
+                method: "PUT",
+                body: JSON.stringify(data),
+            },
+        );
+    },
+
+    regenerate: async (id: number) => {
+        await getCsrfCookie();
+        return fetchAdminApi<AdminApiTokenCreateResponse>(
+            `/api-tokens/${id}/regenerate`,
+            { method: "POST" },
+        );
+    },
+
+    delete: async (id: number) => {
+        await getCsrfCookie();
+        return fetchAdminApi<{ message: string }>(`/api-tokens/${id}`, {
+            method: "DELETE",
+        });
+    },
+
+    abilities: () =>
+        fetchAdminApi<{ data: string[] }>("/api-tokens/abilities"),
 };
 
 // Presence Links (QR Code)

@@ -1,0 +1,765 @@
+name: PR Checks
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, edited, reopened]
+
+concurrency:
+  group: pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  # ============================================
+  # GATE: Checklist Validation (runs first)
+  # ============================================
+  checklist:
+    name: Checklist Validation
+    runs-on: ubuntu-latest
+    outputs:
+      automerge: ${{ steps.parse.outputs.automerge }}
+      version_bump: ${{ steps.parse.outputs.version_bump }}
+    steps:
+      - name: Generate GitHub App Token
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+
+      - name: Parse and validate PR template
+        id: parse
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ steps.app-token.outputs.token }}
+          script: |
+            const body = context.payload.pull_request.body || '';
+
+            // Parse automerge (key=value format)
+            const automergeMatch = body.match(/automerge=(true|false)/i);
+            const automerge = automergeMatch ? automergeMatch[1].toLowerCase() : 'false';
+            core.setOutput('automerge', automerge);
+
+            // Parse version_bump (key=value format)
+            const versionMatch = body.match(/version_bump=(none|patch|minor|major)/i);
+            const versionBump = versionMatch ? versionMatch[1].toLowerCase() : '';
+            core.setOutput('version_bump', versionBump);
+
+            // Validate version_bump exists
+            if (!versionBump) {
+              core.setFailed('version_bump is required. Valid values: none, patch, minor, major');
+              return;
+            }
+
+            // Validate checklist items are checked
+            const requiredChecks = [
+              'I have tested my code locally',
+              'All tests are passing',
+              'New code has adequate test coverage'
+            ];
+
+            const unchecked = requiredChecks.filter(check => {
+              const pattern = new RegExp(`-\\s*\\[x\\]\\s*${check.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, 'i');
+              return !pattern.test(body);
+            });
+
+            if (unchecked.length > 0) {
+              core.setFailed(`Unchecked items:\n${unchecked.map(c => '- ' + c).join('\n')}`);
+            }
+
+  # ============================================
+  # PARALLEL JOBS (depend on checklist)
+  # ============================================
+
+  tests:
+    name: Tests & Coverage (95%)
+    needs: checklist
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: password
+          MYSQL_DATABASE: testing
+        ports:
+          - 3306:3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check for backend/test changes
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            backend:
+              - 'app/**'
+              - 'bootstrap/**'
+              - 'config/**'
+              - 'database/**'
+              - 'resources/**'
+              - 'routes/**'
+              - 'tests/**'
+              - 'composer.json'
+              - 'composer.lock'
+
+      - name: Setup PHP
+        if: steps.filter.outputs.backend == 'true'
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.4"
+          extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, pdo_mysql, bcmath, intl, gd, exif, iconv
+          coverage: pcov
+
+      - name: Setup Node.js
+        if: steps.filter.outputs.backend == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install pnpm
+        if: steps.filter.outputs.backend == 'true'
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Get pnpm store directory
+        if: steps.filter.outputs.backend == 'true'
+        id: pnpm-cache
+        shell: bash
+        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
+
+      - name: Get composer cache directory
+        if: steps.filter.outputs.backend == 'true'
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+
+      - name: Cache composer dependencies
+        if: steps.filter.outputs.backend == 'true'
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: ${{ runner.os }}-composer-
+
+      - name: Cache pnpm dependencies
+        if: steps.filter.outputs.backend == 'true'
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: ${{ runner.os }}-pnpm-
+
+      - name: Install composer dependencies
+        if: steps.filter.outputs.backend == 'true'
+        run: composer install --no-interaction --prefer-dist --optimize-autoloader
+
+      - name: Install pnpm dependencies
+        if: steps.filter.outputs.backend == 'true'
+        run: pnpm install --frozen-lockfile
+
+      - name: Build frontend assets
+        if: steps.filter.outputs.backend == 'true'
+        run: pnpm run build
+
+      - name: Copy environment file
+        if: steps.filter.outputs.backend == 'true'
+        run: cp .env.example .env
+
+      - name: Generate application key
+        if: steps.filter.outputs.backend == 'true'
+        run: php artisan key:generate
+
+      - name: Run tests with coverage
+        if: steps.filter.outputs.backend == 'true'
+        run: php artisan test --compact --min=95 --coverage-clover=coverage/backend-clover.xml
+        env:
+          DB_CONNECTION: mysql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_DATABASE: testing
+          DB_USERNAME: root
+          DB_PASSWORD: password
+
+      - name: Upload backend coverage to Codecov
+        if: steps.filter.outputs.backend == 'true'
+        uses: codecov/codecov-action@v5
+        with:
+          files: ./coverage/backend-clover.xml
+          flags: backend
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: Skip message
+        if: steps.filter.outputs.backend != 'true'
+        run: echo "No backend/test changes detected, skipping tests"
+
+  frontend-tests:
+    name: Frontend Tests & Coverage (90%)
+    needs: checklist
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check for frontend changes
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            frontend:
+              - 'resources/js/**'
+              - 'vitest.config.ts'
+              - 'package.json'
+              - 'pnpm-lock.yaml'
+              - 'tsconfig.json'
+
+      - name: Setup Node.js
+        if: steps.filter.outputs.frontend == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install pnpm
+        if: steps.filter.outputs.frontend == 'true'
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Get pnpm store directory
+        if: steps.filter.outputs.frontend == 'true'
+        id: pnpm-cache
+        shell: bash
+        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
+
+      - name: Cache pnpm dependencies
+        if: steps.filter.outputs.frontend == 'true'
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: ${{ runner.os }}-pnpm-
+
+      - name: Install dependencies
+        if: steps.filter.outputs.frontend == 'true'
+        run: pnpm install --frozen-lockfile
+
+      - name: Run frontend tests with coverage
+        if: steps.filter.outputs.frontend == 'true'
+        run: pnpm test:coverage
+
+      - name: Upload frontend coverage to Codecov
+        if: steps.filter.outputs.frontend == 'true'
+        uses: codecov/codecov-action@v5
+        with:
+          files: ./coverage/coverage-final.json
+          flags: frontend
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: Skip message
+        if: steps.filter.outputs.frontend != 'true'
+        run: echo "No frontend changes detected, skipping frontend tests"
+
+  typecheck:
+    name: TypeScript Check
+    needs: checklist
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check for frontend changes
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            frontend:
+              - 'resources/**'
+
+      - name: Setup Node.js
+        if: steps.filter.outputs.frontend == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install pnpm
+        if: steps.filter.outputs.frontend == 'true'
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Install dependencies
+        if: steps.filter.outputs.frontend == 'true'
+        run: pnpm install --frozen-lockfile
+
+      - name: Run typecheck
+        if: steps.filter.outputs.frontend == 'true'
+        run: pnpm typecheck
+
+      - name: Skip message
+        if: steps.filter.outputs.frontend != 'true'
+        run: echo "No frontend changes detected, skipping typecheck"
+
+  claude-review:
+    name: Claude Code Review
+    needs: checklist
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Generate GitHub App Token
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+
+      - name: Get PR diff and context
+        id: context
+        run: |
+          git fetch origin ${{ github.base_ref }}
+          git diff origin/${{ github.base_ref }}...HEAD > /tmp/diff.txt
+          git diff origin/${{ github.base_ref }}...HEAD --name-only > /tmp/files.txt
+          git diff origin/${{ github.base_ref }}...HEAD --stat > /tmp/stats.txt
+
+          # Truncate diff if too large (keep under 100KB for API limits)
+          head -c 100000 /tmp/diff.txt > /tmp/diff_truncated.txt
+
+      - name: Call Claude API for review
+        id: claude
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          CLAUDE_MODEL: ${{ vars.CLAUDE_MODEL || 'claude-sonnet-4-20250514' }}
+        run: |
+          cat > /tmp/prompt.txt << 'PROMPT'
+          You are a senior engineer reviewing a pull request for a Laravel 12 + React 19 + Vitest + Pest application.
+
+          Your job is to catch **real problems** — not to nitpick style or suggest theoretical improvements.
+
+          ## Rules
+
+          **ONLY comment on issues that fall into these categories:**
+          - **Bugs**: Code that is demonstrably wrong or will break at runtime
+          - **Security vulnerabilities**: SQL injection, XSS, mass assignment, auth bypass, exposed secrets
+          - **Data loss risks**: Missing transactions, race conditions, unsafe deletions
+          - **Performance problems**: Actual N+1 queries (not hypothetical), unbounded queries, missing pagination on large datasets
+          - **Breaking changes**: API contract changes, missing migrations, incompatible type changes
+
+          **DO NOT comment on:**
+          - Code style, formatting, or naming conventions (Pint and ESLint handle this)
+          - "Consider using X instead of Y" suggestions unless Y is actually broken
+          - Missing docblocks, comments, or type hints
+          - Test structure preferences (Pest vs PHPUnit style, describe blocks, etc.)
+          - Hypothetical edge cases that the existing test suite already covers
+          - Laravel/React patterns that are valid but different from your preference
+          - Adding "optional" error handling or validation that isn't needed
+          - Suggesting abstractions, design patterns, or refactors beyond the PR scope
+          - Import ordering or file organization
+          - "You could also..." or "It might be nice to..." suggestions — these are not issues
+
+          **Tone**: Be direct. If you find a real issue, explain WHY it's a problem and suggest a fix. If the PR is clean, say so briefly — a short "LGTM" summary is perfectly fine. Do not pad the review with praise or filler.
+
+          **Inline comments**: Maximum 5. Only for confirmed bugs, security issues, or data-loss risks. An empty array `[]` is the expected result for most PRs. If you are unsure whether something is actually a bug, do NOT post an inline comment — mention it briefly in the summary instead.
+
+          ## Categorization
+
+          Categorize this PR with AT LEAST ONE label from:
+          - "feature" (new functionality)
+          - "bugfix" (bug fixes)
+          - "documentation" (docs, README, comments)
+          - "tests" (test files)
+          - "frontend" (resources/js, CSS, views)
+          - "backend" (PHP, routes, controllers, models)
+          - "config" (configuration files, env, CI/CD)
+          - "refactor" (code restructuring without new features)
+          - "dependencies" (package updates)
+          Multiple labels are encouraged if applicable.
+
+          ## Approval Decision
+
+          After your review, decide whether to **APPROVE** or just **COMMENT**:
+          - **APPROVE**: The PR is clean — no bugs, no security issues, no data-loss risks, no breaking changes. Minor style differences or subjective preferences do NOT block approval. Most PRs should be approved.
+          - **COMMENT**: The PR has at least one confirmed bug, security vulnerability, data-loss risk, or breaking change that should be fixed before merging.
+
+          When in doubt, APPROVE. Only withhold approval for real, confirmed issues.
+
+          ## Response format (MUST follow exactly — use the sentinel markers, NOT markdown fences)
+
+          ===REVIEW_START===
+          [Your code review in markdown — keep it short. Summary of what the PR does, then only list confirmed issues if any.]
+          ===REVIEW_END===
+
+          ===INLINE_START===
+          [JSON array of objects with: {"path": "relative/file/path", "line": <line_number_in_diff>, "body": "comment text"} — max 5, prefer empty array]
+          ===INLINE_END===
+
+          ===LABELS_START===
+          ["label1", "label2"]
+          ===LABELS_END===
+
+          ===VERDICT_START===
+          APPROVE or COMMENT
+          ===VERDICT_END===
+
+          Changed files:
+          PROMPT
+
+          cat /tmp/files.txt >> /tmp/prompt.txt
+          echo -e "\n\nChange statistics:" >> /tmp/prompt.txt
+          cat /tmp/stats.txt >> /tmp/prompt.txt
+          echo -e "\n\nDiff:\n\`\`\`" >> /tmp/prompt.txt
+          cat /tmp/diff_truncated.txt >> /tmp/prompt.txt
+          echo -e "\n\`\`\`" >> /tmp/prompt.txt
+
+          jq -n --rawfile prompt /tmp/prompt.txt \
+            --arg model "$CLAUDE_MODEL" \
+            '{
+              model: $model,
+              max_tokens: 8192,
+              messages: [{
+                role: "user",
+                content: $prompt
+              }]
+            }' > /tmp/payload.json
+
+          # Call Claude API
+          curl -s https://api.anthropic.com/v1/messages \
+            -H "Content-Type: application/json" \
+            -H "x-api-key: $ANTHROPIC_API_KEY" \
+            -H "anthropic-version: 2023-06-01" \
+            -d @/tmp/payload.json > /tmp/response.json
+
+          # Extract response and parse sections with Python (handles nested code blocks safely)
+          jq -r '.content[0].text // .error.message // "Failed to get response"' /tmp/response.json > /tmp/response.txt
+
+          python3 << 'PYEOF'
+          import json, os
+
+          with open("/tmp/response.txt") as f:
+              text = f.read()
+
+          def extract(text, start_marker, end_marker):
+              s = text.find(start_marker)
+              if s == -1:
+                  return ""
+              s += len(start_marker)
+              e = text.find(end_marker, s)
+              if e == -1:
+                  return ""
+              return text[s:e].strip()
+
+          review = extract(text, "===REVIEW_START===", "===REVIEW_END===")
+          if not review:
+              review = text
+
+          inline_raw = extract(text, "===INLINE_START===", "===INLINE_END===")
+          try:
+              parsed = json.loads(inline_raw)
+              assert isinstance(parsed, list)
+              inline = json.dumps(parsed, separators=(",", ":"))
+          except Exception:
+              inline = "[]"
+
+          labels_raw = extract(text, "===LABELS_START===", "===LABELS_END===")
+          try:
+              parsed = json.loads(labels_raw)
+              assert isinstance(parsed, list)
+              labels = json.dumps(parsed, separators=(",", ":"))
+          except Exception:
+              labels = "[]"
+
+          verdict_raw = extract(text, "===VERDICT_START===", "===VERDICT_END===").upper()
+          verdict = "APPROVE" if verdict_raw == "APPROVE" else "COMMENT"
+
+          print(f"Extracted labels: {labels}")
+          print(f"Inline comments count: {len(json.loads(inline))}")
+          print(f"Verdict: {verdict}")
+
+          # Write to GITHUB_OUTPUT using random delimiters to avoid collisions
+          delim = "DELIM_" + os.urandom(8).hex()
+          with open(os.environ["GITHUB_OUTPUT"], "a") as out:
+              out.write(f"review<<{delim}\n{review}\n{delim}\n")
+              out.write(f"labels={labels}\n")
+              out.write(f"inline={inline}\n")
+              out.write(f"verdict={verdict}\n")
+          PYEOF
+
+      - name: Post review comment, inline comments, and apply labels
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ steps.app-token.outputs.token }}
+          script: |
+            const review = process.env.REVIEW_CONTENT;
+            const body = `## Claude Code Review\n\n${review}`;
+
+            // Upsert sticky comment
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const botComment = comments.find(c =>
+              c.user.type === 'Bot' && c.body.includes('Claude Code Review')
+            );
+
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: body
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: body
+              });
+            }
+
+            // Resolve old bot review threads before posting new ones
+            try {
+              const query = `query($owner: String!, $repo: String!, $number: Int!) {
+                repository(owner: $owner, name: $repo) {
+                  pullRequest(number: $number) {
+                    reviewThreads(first: 100) {
+                      nodes {
+                        id
+                        isResolved
+                        comments(first: 1) {
+                          nodes {
+                            author { login }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }`;
+
+              const result = await github.graphql(query, {
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                number: context.issue.number,
+              });
+
+              const threads = result.repository.pullRequest.reviewThreads.nodes;
+              const botLogin = (await github.rest.apps.getAuthenticated()).data.slug + '[bot]';
+
+              const unresolvedBotThreads = threads.filter(t =>
+                !t.isResolved &&
+                t.comments.nodes.length > 0 &&
+                t.comments.nodes[0].author.login === botLogin
+              );
+
+              for (const thread of unresolvedBotThreads) {
+                await github.graphql(`mutation($id: ID!) {
+                  resolveReviewThread(input: { threadId: $id }) {
+                    thread { id }
+                  }
+                }`, { id: thread.id });
+              }
+
+              console.log(`Resolved ${unresolvedBotThreads.length} old bot review threads`);
+            } catch (e) {
+              console.log('Failed to resolve old threads (non-fatal):', e.message);
+            }
+
+            // Post PR review (with optional inline comments and approval verdict)
+            const inlineJson = process.env.INLINE_COMMENTS || '[]';
+            const verdict = process.env.VERDICT || 'COMMENT';
+            let inlineComments = [];
+            try {
+              inlineComments = JSON.parse(inlineJson);
+            } catch (e) {
+              console.log('Failed to parse inline comments:', e);
+            }
+
+            const { data: pr } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number,
+            });
+
+            const reviewComments = inlineComments
+              .filter(c => c.path && c.line && c.body)
+              .map(c => ({
+                path: c.path,
+                line: c.line,
+                body: c.body,
+              }));
+
+            // Use verdict for the review event; inline comments force COMMENT event
+            const reviewEvent = reviewComments.length > 0 ? 'COMMENT' : verdict;
+
+            try {
+              await github.rest.pulls.createReview({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: context.issue.number,
+                commit_id: pr.head.sha,
+                body: reviewEvent === 'APPROVE' ? 'LGTM' : undefined,
+                event: reviewEvent,
+                ...(reviewComments.length > 0 ? { comments: reviewComments } : {}),
+              });
+              console.log(`Submitted review with event: ${reviewEvent}`);
+            } catch (e) {
+              console.log('Failed to post review:', e.message);
+            }
+
+            // Sync category labels
+            const labelsJson = process.env.LABELS || '[]';
+            let newLabels = [];
+            try {
+              newLabels = JSON.parse(labelsJson);
+            } catch (e) {
+              console.log('Failed to parse labels:', e);
+              return;
+            }
+
+            const validLabels = ['feature', 'bugfix', 'documentation', 'tests', 'frontend', 'backend', 'config', 'refactor', 'dependencies'];
+            const labelColors = {
+              'feature': '0e8a16',
+              'bugfix': 'd73a4a',
+              'documentation': '0075ca',
+              'tests': 'fbca04',
+              'frontend': '1d76db',
+              'backend': '5319e7',
+              'config': 'c5def5',
+              'refactor': 'fef2c0',
+              'dependencies': '006b75'
+            };
+
+            const filteredNew = newLabels.filter(l => validLabels.includes(l));
+            if (filteredNew.length === 0) {
+              console.log('No valid labels from Claude, skipping label sync');
+              return;
+            }
+
+            // Ensure all new labels exist in the repo
+            for (const label of filteredNew) {
+              try {
+                await github.rest.issues.getLabel({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  name: label
+                });
+              } catch (e) {
+                if (e.status === 404) {
+                  await github.rest.issues.createLabel({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    name: label,
+                    color: labelColors[label] || 'ededed'
+                  });
+                }
+              }
+            }
+
+            // Get current category labels on the PR
+            const { data: currentLabelsData } = await github.rest.issues.listLabelsOnIssue({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            const currentCategoryLabels = currentLabelsData
+              .map(l => l.name)
+              .filter(l => validLabels.includes(l));
+
+            // Remove labels no longer in the new set
+            const labelsToRemove = currentCategoryLabels.filter(l => !filteredNew.includes(l));
+            for (const label of labelsToRemove) {
+              try {
+                await github.rest.issues.removeLabel({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: context.issue.number,
+                  name: label
+                });
+              } catch (e) {
+                console.log('Failed to remove label:', label, e.message);
+              }
+            }
+
+            // Add labels not already present
+            const labelsToAdd = filteredNew.filter(l => !currentCategoryLabels.includes(l));
+            if (labelsToAdd.length > 0) {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                labels: labelsToAdd
+              });
+            }
+
+            console.log('Label sync complete. Removed:', labelsToRemove, 'Added:', labelsToAdd);
+        env:
+          REVIEW_CONTENT: ${{ steps.claude.outputs.review }}
+          INLINE_COMMENTS: ${{ steps.claude.outputs.inline }}
+          LABELS: ${{ steps.claude.outputs.labels }}
+          VERDICT: ${{ steps.claude.outputs.verdict }}
+
+  # ============================================
+  # FINAL GATE (always runs, checks all jobs)
+  # ============================================
+
+  final-status:
+    name: Final Status
+    needs: [checklist, tests, frontend-tests, typecheck, claude-review]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check job results
+        run: |
+          echo "Checklist: ${{ needs.checklist.result }}"
+          echo "Tests: ${{ needs.tests.result }}"
+          echo "Frontend Tests: ${{ needs.frontend-tests.result }}"
+          echo "Typecheck: ${{ needs.typecheck.result }}"
+          echo "Claude Review: ${{ needs.claude-review.result }}"
+
+          # Fail if any required job failed
+          if [[ "${{ needs.checklist.result }}" == "failure" ]]; then
+            echo "::error::Checklist validation failed"
+            exit 1
+          fi
+          if [[ "${{ needs.tests.result }}" == "failure" ]]; then
+            echo "::error::Tests failed"
+            exit 1
+          fi
+          if [[ "${{ needs.frontend-tests.result }}" == "failure" ]]; then
+            echo "::error::Frontend tests failed"
+            exit 1
+          fi
+          if [[ "${{ needs.typecheck.result }}" == "failure" ]]; then
+            echo "::error::TypeScript check failed"
+            exit 1
+          fi
+          if [[ "${{ needs.claude-review.result }}" == "failure" ]]; then
+            echo "::error::Claude review failed"
+            exit 1
+          fi
+
+          echo "All checks passed or were appropriately skipped"
+
+      - name: Checkout code
+        if: needs.checklist.outputs.automerge == 'true'
+        uses: actions/checkout@v4
+
+      - name: Generate GitHub App Token for automerge
+        if: needs.checklist.outputs.automerge == 'true'
+        id: app-token-automerge
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+
+      - name: Add automerge label and enable automerge
+        if: needs.checklist.outputs.automerge == 'true'
+        env:
+          GH_TOKEN: ${{ steps.app-token-automerge.outputs.token }}
+        run: |
+          gh pr edit ${{ github.event.pull_request.number }} --add-label "automerge"
+          gh pr merge ${{ github.event.pull_request.number }} --auto --squash

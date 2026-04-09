@@ -279,4 +279,28 @@ describe('PATCH /api/admin/seminars/{seminar}/presence-link/toggle', function ()
 
         $response->assertSuccessful();
     });
+
+    it('uses minimum expiry when seminar scheduled time is in the past', function () {
+        actingAsAdmin();
+
+        // Seminar scheduled in the past (so scheduled_at + 4 hours is still before now + 1 hour)
+        $seminar = Seminar::factory()->create([
+            'scheduled_at' => now()->subDays(2),
+        ]);
+        $presenceLink = PresenceLink::factory()->create([
+            'seminar_id' => $seminar->id,
+            'active' => false,
+            'expires_at' => now()->subDay(),
+        ]);
+
+        $response = $this->patchJson("/api/admin/seminars/{$seminar->id}/presence-link/toggle");
+
+        $response->assertSuccessful();
+
+        $presenceLink->refresh();
+        // Expiry should be approximately now + 1 hour (minimum expiry)
+        expect($presenceLink->expires_at->gte(now()->addMinutes(59)))->toBeTrue();
+        expect($presenceLink->expires_at->lte(now()->addMinutes(61)))->toBeTrue();
+    });
+
 });

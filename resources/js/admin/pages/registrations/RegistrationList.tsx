@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Search, Calendar, User, Mail } from "lucide-react";
 import { toast } from "sonner";
 import { debounce } from "lodash";
+import { analytics } from "@shared/lib/analytics";
 import {
     registrationsApi,
     dashboardApi,
@@ -36,7 +37,7 @@ import {
 import { Badge } from "../../components/ui/badge";
 import { Button } from "../../components/ui/button";
 import { PageTitle } from "@shared/components/PageTitle";
-import { formatDateTime } from "@shared/lib/utils";
+import { formatDateTime, compareDateDesc } from "@shared/lib/date";
 
 export default function RegistrationList() {
     const queryClient = useQueryClient();
@@ -124,6 +125,10 @@ export default function RegistrationList() {
             toast.success(
                 isPresent ? "Presenca confirmada" : "Presenca removida",
             );
+            analytics.event("admin_registration_toggle_presence", {
+                registration_id: data.data.id,
+                present: isPresent,
+            });
         },
         onSettled: () => {
             queryClient.invalidateQueries({
@@ -137,10 +142,8 @@ export default function RegistrationList() {
     const meta = registrationsData?.meta;
 
     // Sort seminars by scheduled_at DESC for dropdown
-    const sortedSeminars = [...seminars].sort(
-        (a, b) =>
-            new Date(b.scheduled_at).getTime() -
-            new Date(a.scheduled_at).getTime(),
+    const sortedSeminars = [...seminars].sort((a, b) =>
+        compareDateDesc(a.scheduled_at, b.scheduled_at),
     );
 
     const handleSeminarChange = (value: string) => {

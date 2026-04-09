@@ -1,8 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, Pencil, Trash2, Merge } from "lucide-react";
+import { Plus, Pencil, Trash2, Merge, Sparkles, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
-import { subjectsApi, type AdminSubject } from "../../api/adminClient";
+import { analytics } from "@shared/lib/analytics";
+import { subjectsApi, aiApi, type AdminSubject } from "../../api/adminClient";
 import { useCRUDListState } from "../../hooks/useCRUDListState";
 import { useDebouncedSearch } from "@shared/hooks/useDebouncedSearch";
 import { Button } from "../../components/ui/button";
@@ -98,6 +99,7 @@ export default function SubjectList() {
     const [selectedIds, setSelectedIds] = useState<number[]>([]);
     const [targetId, setTargetId] = useState<string>("");
     const [newMergeName, setNewMergeName] = useState("");
+    const [suggestingName, setSuggestingName] = useState(false);
 
     const { data, isLoading } = useQuery({
         queryKey: ["admin-subjects", { search: searchTerm, page }],
@@ -107,9 +109,12 @@ export default function SubjectList() {
 
     const createMutation = useMutation({
         mutationFn: (data: { name: string }) => subjectsApi.create(data),
-        onSuccess: () => {
+        onSuccess: (response) => {
             queryClient.invalidateQueries({ queryKey: ["admin-subjects"] });
             toast.success("Tópico criado com sucesso");
+            analytics.event("admin_subject_create", {
+                subject_id: response?.data?.id,
+            });
             closeDialog();
         },
         onError: () => {
@@ -120,9 +125,10 @@ export default function SubjectList() {
     const updateMutation = useMutation({
         mutationFn: ({ id, data }: { id: number; data: { name: string } }) =>
             subjectsApi.update(id, data),
-        onSuccess: () => {
+        onSuccess: (_, variables) => {
             queryClient.invalidateQueries({ queryKey: ["admin-subjects"] });
             toast.success("Tópico atualizado com sucesso");
+            analytics.event("admin_subject_update", { subject_id: variables.id });
             closeDialog();
         },
         onError: () => {
@@ -132,9 +138,10 @@ export default function SubjectList() {
 
     const deleteMutation = useMutation({
         mutationFn: (id: number) => subjectsApi.delete(id),
-        onSuccess: () => {
+        onSuccess: (_, id) => {
             queryClient.invalidateQueries({ queryKey: ["admin-subjects"] });
             toast.success("Tópico excluído com sucesso");
+            analytics.event("admin_subject_delete", { subject_id: id });
             closeDeleteDialog();
         },
         onError: (error: Error) => {
@@ -152,9 +159,13 @@ export default function SubjectList() {
             source_ids: number[];
             new_name?: string;
         }) => subjectsApi.merge(data),
-        onSuccess: () => {
+        onSuccess: (_, variables) => {
             queryClient.invalidateQueries({ queryKey: ["admin-subjects"] });
             toast.success("Tópicos mesclados com sucesso");
+            analytics.event("admin_subject_merge", {
+                target_id: variables.target_id,
+                merged_count: variables.source_ids.length,
+            });
             closeMergeDialog();
         },
         onError: () => {
@@ -177,6 +188,22 @@ export default function SubjectList() {
         setSelectedIds([]);
         setTargetId("");
         setNewMergeName("");
+    };
+
+    const handleSuggestMergeName = async () => {
+        const names = selectedSubjects.map((s) => s.name);
+        // Defensive: merge dialog only opens with 2+ subjects selected
+        /* istanbul ignore if -- @preserve */
+        if (names.length < 2) return;
+        setSuggestingName(true);
+        try {
+            const response = await aiApi.suggestMergeName(names);
+            setNewMergeName(response.data.text);
+        } catch {
+            toast.error("Erro ao sugerir nome com IA.");
+        } finally {
+            setSuggestingName(false);
+        }
     };
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -532,9 +559,26 @@ export default function SubjectList() {
                         </div>
 
                         <div className="space-y-2">
-                            <Label htmlFor="newName">
-                                Nome final (opcional)
-                            </Label>
+                            <div className="flex items-center justify-between">
+                                <Label htmlFor="newName">
+                                    Nome final (opcional)
+                                </Label>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    disabled={suggestingName}
+                                    onClick={handleSuggestMergeName}
+                                    className="gap-1.5"
+                                >
+                                    {suggestingName ? (
+                                        <Loader2 className="size-3.5 animate-spin" />
+                                    ) : (
+                                        <Sparkles className="size-3.5" />
+                                    )}
+                                    Sugerir
+                                </Button>
+                            </div>
                             <Input
                                 id="newName"
                                 value={newMergeName}
@@ -586,7 +630,7 @@ export default function SubjectList() {
                                 deletingSubject &&
                                 deleteMutation.mutate(deletingSubject.id)
                             }
-                            className="bg-red-500 hover:bg-red-600"
+                            className="bg-red-500 hover:bg-red-600 text-white"
                         >
                             {deleteMutation.isPending
                                 ? "Excluindo..."

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\AdminApiTokenController;
 use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\AdminLocationController;
 use App\Http\Controllers\Admin\AdminPresenceLinkController;
@@ -8,6 +9,7 @@ use App\Http\Controllers\Admin\AdminSeminarController;
 use App\Http\Controllers\Admin\AdminSubjectController;
 use App\Http\Controllers\Admin\AdminUserController;
 use App\Http\Controllers\Admin\AdminWorkshopController;
+use App\Http\Controllers\Admin\AiTextController;
 use App\Http\Controllers\Admin\ReportController;
 use Illuminate\Support\Facades\Route;
 
@@ -15,47 +17,28 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function ()
     // Dashboard
     Route::get('/dashboard/stats', [AdminDashboardController::class, 'stats']);
 
-    // Users CRUD
-    Route::get('/users', [AdminUserController::class, 'index']);
-    Route::post('/users', [AdminUserController::class, 'store']);
-    Route::get('/users/{user}', [AdminUserController::class, 'show']);
-    Route::put('/users/{user}', [AdminUserController::class, 'update']);
-    Route::delete('/users/{user}', [AdminUserController::class, 'destroy']);
+    // CRUD Resources
+    // apiResource registers both PUT and PATCH for update routes.
+    // All update requests use 'sometimes' validation, supporting partial payloads.
+    Route::apiResource('users', AdminUserController::class);
     Route::post('/users/{user}/restore', [AdminUserController::class, 'restore'])->withTrashed();
 
-    // Locations CRUD
-    Route::get('/locations', [AdminLocationController::class, 'index']);
-    Route::post('/locations', [AdminLocationController::class, 'store']);
-    Route::get('/locations/{location}', [AdminLocationController::class, 'show']);
-    Route::put('/locations/{location}', [AdminLocationController::class, 'update']);
-    Route::delete('/locations/{location}', [AdminLocationController::class, 'destroy']);
+    Route::apiResource('locations', AdminLocationController::class);
 
-    // Subjects CRUD + Merge
-    Route::get('/subjects', [AdminSubjectController::class, 'index']);
-    Route::post('/subjects', [AdminSubjectController::class, 'store']);
-    Route::get('/subjects/{subject}', [AdminSubjectController::class, 'show']);
-    Route::put('/subjects/{subject}', [AdminSubjectController::class, 'update']);
-    Route::delete('/subjects/{subject}', [AdminSubjectController::class, 'destroy']);
+    // Defined before apiResource for consistency with the workshop pattern below.
+    // POST won't conflict with apiResource's GET /{subject}, but ordering makes intent clear.
     Route::post('/subjects/merge', [AdminSubjectController::class, 'merge']);
+    Route::apiResource('subjects', AdminSubjectController::class);
 
-    // Registrations (subscriptions)
+    // Registrations (not a full resource — only index + custom action)
     Route::get('/registrations', [AdminRegistrationController::class, 'index']);
     Route::patch('/registrations/{registration}/presence', [AdminRegistrationController::class, 'togglePresence']);
 
-    // Seminars CRUD
-    Route::get('/seminars', [AdminSeminarController::class, 'index']);
-    Route::post('/seminars', [AdminSeminarController::class, 'store']);
-    Route::get('/seminars/{seminar}', [AdminSeminarController::class, 'show']);
-    Route::put('/seminars/{seminar}', [AdminSeminarController::class, 'update']);
-    Route::delete('/seminars/{seminar}', [AdminSeminarController::class, 'destroy']);
+    Route::apiResource('seminars', AdminSeminarController::class);
 
-    // Workshops CRUD
+    // Workshop search must be defined before the resource route
     Route::get('/workshops/search-seminars', [AdminWorkshopController::class, 'searchSeminars']);
-    Route::get('/workshops', [AdminWorkshopController::class, 'index']);
-    Route::post('/workshops', [AdminWorkshopController::class, 'store']);
-    Route::get('/workshops/{workshop}', [AdminWorkshopController::class, 'show']);
-    Route::put('/workshops/{workshop}', [AdminWorkshopController::class, 'update']);
-    Route::delete('/workshops/{workshop}', [AdminWorkshopController::class, 'destroy']);
+    Route::apiResource('workshops', AdminWorkshopController::class);
 
     // Helper endpoints for dropdowns
     Route::get('/seminar-types', [AdminSeminarController::class, 'listTypes']);
@@ -70,4 +53,18 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function ()
     // Reports
     Route::get('/reports/courses', [ReportController::class, 'courses']);
     Route::get('/reports/semestral', [ReportController::class, 'semestral']);
+
+    // API Tokens
+    Route::apiResource('api-tokens', AdminApiTokenController::class)
+        ->only(['index', 'store', 'update', 'destroy']);
+    Route::get('/api-tokens/abilities', [AdminApiTokenController::class, 'abilities']);
+    Route::post('/api-tokens/{id}/regenerate', [AdminApiTokenController::class, 'regenerate']);
+
+    // AI
+    Route::middleware('throttle:ai')->group(function () {
+        Route::post('/ai/transform-text', [AiTextController::class, 'transform']);
+        Route::post('/ai/suggest-merge-name', [AiTextController::class, 'suggestMergeName']);
+        Route::post('/ai/suggest-subject-tags', [AiTextController::class, 'suggestSubjectTags']);
+    });
+    Route::get('/ai/rating-sentiments', [AiTextController::class, 'ratingSentiments']);
 });

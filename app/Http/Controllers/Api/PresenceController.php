@@ -2,13 +2,17 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Enums\AuditEvent;
+use App\Exceptions\ApiException;
 use App\Http\Controllers\Controller;
+use App\Models\AuditLog;
 use App\Models\PresenceLink;
 use App\Models\Registration;
 use App\Services\QrCodeService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\DB;
 
 class PresenceController extends Controller
 {
@@ -18,24 +22,7 @@ class PresenceController extends Controller
 
     public function show(string $uuid): JsonResponse
     {
-        $presenceLink = PresenceLink::where('uuid', $uuid)
-            ->with('seminar')
-            ->first();
-
-        if (! $presenceLink) {
-            return response()->json([
-                'message' => 'Link de presença não encontrado',
-            ], 404);
-        }
-
-        if (! $presenceLink->isValid()) {
-            return response()->json([
-                'message' => 'Link de presença inválido ou expirado',
-                'is_valid' => false,
-                'is_expired' => $presenceLink->isExpired(),
-                'is_active' => $presenceLink->active,
-            ], 400);
-        }
+        $presenceLink = $this->findValidPresenceLink($uuid);
 
         return response()->json([
             'data' => [
@@ -52,7 +39,6 @@ class PresenceController extends Controller
 
     public function register(Request $request, string $uuid): JsonResponse
     {
-        // Check if user is authenticated
         if (! $request->user()) {
             return response()->json([
                 'message' => 'Você precisa estar autenticado para registrar presença',
@@ -60,56 +46,31 @@ class PresenceController extends Controller
             ], 401);
         }
 
-        $presenceLink = PresenceLink::where('uuid', $uuid)
-            ->with('seminar')
-            ->first();
-
-        if (! $presenceLink) {
-            return response()->json([
-                'message' => 'Link de presença não encontrado',
-            ], 404);
-        }
-
-        // Check if link is valid (active and not expired)
-        if (! $presenceLink->isValid()) {
-            return response()->json([
-                'message' => 'Link de presença inválido ou expirado',
-                'is_valid' => false,
-                'is_expired' => $presenceLink->isExpired(),
-                'is_active' => $presenceLink->active,
-            ], 400);
-        }
+        $presenceLink = $this->findValidPresenceLink($uuid);
 
         $user = $request->user();
         $seminar = $presenceLink->seminar;
 
-        // Find or create registration for this seminar
-        $registration = Registration::firstOrCreate(
-            [
-                'seminar_id' => $seminar->id,
-                'user_id' => $user->id,
-            ],
-            [
-                'present' => true,
-            ]
-        );
-
-        // If already present, return success (idempotent)
-        if ($registration->wasRecentlyCreated || $registration->present) {
-            return response()->json([
-                'message' => 'Presença registrada com sucesso!',
-                'data' => [
-                    'present' => true,
-                    'seminar' => [
-                        'id' => $seminar->id,
-                        'name' => $seminar->name,
-                    ],
+        DB::transaction(function () use ($seminar, $user) {
+            $registration = Registration::firstOrCreate(
+                [
+                    'seminar_id' => $seminar->id,
+                    'user_id' => $user->id,
                 ],
-            ]);
-        }
+                [
+                    'present' => true,
+                ]
+            );
 
-        // Mark as present if not already
-        $registration->update(['present' => true]);
+            if (! $registration->wasRecentlyCreated && ! $registration->present) {
+                $registration->update(['present' => true]);
+            }
+        });
+
+        AuditLog::record(AuditEvent::PresenceRegistered, auditable: $presenceLink, eventData: [
+            'seminar_id' => $seminar->id,
+            'user_id' => $user->id,
+        ]);
 
         return response()->json([
             'message' => 'Presença registrada com sucesso!',
@@ -125,20 +86,32 @@ class PresenceController extends Controller
 
     public function qrCodePng(string $uuid): Response
     {
-        $presenceLink = PresenceLink::where('uuid', $uuid)->first();
-
-        if (! $presenceLink) {
-            abort(404, 'Link de presença não encontrado');
-        }
-
-        // Only allow PNG download for active and non-expired links
-        if (! $presenceLink->isValid()) {
-            abort(400, 'Link de presença inválido ou expirado');
-        }
+        $presenceLink = $this->findValidPresenceLink($uuid);
 
         $url = url("/p/{$presenceLink->uuid}");
         $pngData = $this->qrCodeService->toPng($url);
 
         return response($pngData)->header('Content-Type', 'image/png');
+    }
+
+    private function findValidPresenceLink(string $uuid): PresenceLink
+    {
+        $presenceLink = PresenceLink::where('uuid', $uuid)
+            ->with('seminar')
+            ->first();
+
+        if (! $presenceLink) {
+            throw ApiException::notFound('Link de presença');
+        }
+
+        if (! $presenceLink->isValid()) {
+            throw new ApiException(
+                'invalid_presence_link',
+                'Link de presença inválido ou expirado',
+                400,
+            );
+        }
+
+        return $presenceLink;
     }
 }

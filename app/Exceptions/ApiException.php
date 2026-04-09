@@ -71,11 +71,6 @@ class ApiException extends Exception
         return new self('invalid_token', 'Token inválido ou expirado', 400);
     }
 
-    public static function emailNotVerified(): self
-    {
-        return new self('email_not_verified', 'E-mail não verificado', 403);
-    }
-
     public static function serverError(): self
     {
         return new self('server_error', 'Erro interno do servidor', 500);
@@ -114,5 +109,15 @@ class ApiException extends Exception
     public static function cannotDeleteSelf(): self
     {
         return new self('cannot_delete_self', 'Você não pode excluir sua própria conta', 400);
+    }
+
+    public static function seminarFull(): self
+    {
+        return new self('seminar_full', 'Este seminário atingiu sua capacidade máxima', 409);
+    }
+
+    public static function unregisterBlocked(): self
+    {
+        return new self('unregister_blocked', 'Não é possível cancelar a inscrição no dia do evento', 400);
     }
 }

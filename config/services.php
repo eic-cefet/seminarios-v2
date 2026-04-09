@@ -51,4 +51,8 @@ return [
         'site_key' => env('RECAPTCHA_SITE_KEY'),
     ],
 
+    'google_analytics' => [
+        'measurement_id' => env('GA_MEASUREMENT_ID'),
+    ],
+
 ];

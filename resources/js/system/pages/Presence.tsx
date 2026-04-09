@@ -10,23 +10,13 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import { getCookie, getCsrfCookie } from "@shared/api/httpUtils";
 import { useAuth } from "@shared/contexts/AuthContext";
+import { formatDateTimeLong } from "@shared/lib/utils";
 import { Layout } from "../components/Layout";
 import { LoginModal } from "../components/LoginModal";
 
 const API_BASE = app.API_URL;
-
-function getCookie(name: string): string | null {
-    const match = document.cookie.match(new RegExp(`(^|;\\s*)${name}=([^;]*)`));
-    return match ? decodeURIComponent(match[2]) : null;
-}
-
-async function getCsrfCookie(): Promise<void> {
-    const basePath = app.BASE_PATH || "";
-    await fetch(`${basePath}/sanctum/csrf-cookie`, {
-        credentials: "same-origin",
-    });
-}
 
 interface PresenceResponse {
     data?: {
@@ -42,18 +32,6 @@ interface PresenceResponse {
     is_valid?: boolean;
     is_expired?: boolean;
     is_active?: boolean;
-}
-
-function formatDateTime(dateString: string | null | undefined): string {
-    if (!dateString) return "Data não definida";
-    const date = new Date(dateString);
-    return date.toLocaleDateString("pt-BR", {
-        day: "2-digit",
-        month: "long",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-    });
 }
 
 export default function Presence() {
@@ -230,7 +208,7 @@ export default function Presence() {
                                     {seminar.scheduled_at && (
                                         <p className="text-sm text-gray-500 flex items-center gap-2">
                                             <Calendar className="h-4 w-4" />
-                                            {formatDateTime(
+                                            {formatDateTimeLong(
                                                 seminar.scheduled_at,
                                             )}
                                         </p>
@@ -354,7 +332,7 @@ export default function Presence() {
                                     {seminar.scheduled_at && (
                                         <p className="text-sm text-gray-600 flex items-center gap-2">
                                             <Calendar className="h-4 w-4" />
-                                            {formatDateTime(
+                                            {formatDateTimeLong(
                                                 seminar.scheduled_at,
                                             )}
                                         </p>

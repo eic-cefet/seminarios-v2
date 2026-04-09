@@ -3,7 +3,9 @@ import { createRoot } from "react-dom/client";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { HelmetProvider } from "react-helmet-async";
+import { ErrorBoundary } from "@shared/components/ErrorBoundary";
 import { AuthProvider } from "@shared/contexts/AuthContext";
+import { usePageTracking } from "@shared/hooks/usePageTracking";
 
 // Pages
 import Home from "./pages/Home";
@@ -34,63 +36,46 @@ const queryClient = new QueryClient({
     },
 });
 
+function AppRoutes() {
+    usePageTracking();
+
+    return (
+        <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/cadastro" element={<Register />} />
+            <Route path="/recuperar-senha" element={<ForgotPassword />} />
+            <Route path="/redefinir-senha" element={<ResetPassword />} />
+            <Route path="/auth/callback" element={<AuthCallback />} />
+            <Route path="/perfil" element={<Profile />} />
+            <Route path="/certificados" element={<Certificates />} />
+            <Route path="/topicos" element={<Subjects />} />
+            <Route path="/topico/:id" element={<SubjectSeminars />} />
+            <Route path="/apresentacoes" element={<Presentations />} />
+            <Route path="/seminario/:slug" element={<SeminarDetails />} />
+            <Route path="/workshops" element={<Workshops />} />
+            <Route path="/workshop/:id" element={<WorkshopDetails />} />
+            <Route path="/p/:uuid" element={<Presence />} />
+            <Route path="/avaliar" element={<Evaluations />} />
+            <Route path="/reportar-bug" element={<BugReport />} />
+            <Route path="*" element={<NotFound />} />
+        </Routes>
+    );
+}
+
 function App() {
     return (
-        <HelmetProvider>
-            <QueryClientProvider client={queryClient}>
-                <AuthProvider>
-                    <BrowserRouter basename={app.ROUTER_BASE || undefined}>
-                        <Routes>
-                            <Route path="/" element={<Home />} />
-                            <Route path="/login" element={<Login />} />
-                            <Route path="/cadastro" element={<Register />} />
-                            <Route
-                                path="/recuperar-senha"
-                                element={<ForgotPassword />}
-                            />
-                            <Route
-                                path="/redefinir-senha"
-                                element={<ResetPassword />}
-                            />
-                            <Route
-                                path="/auth/callback"
-                                element={<AuthCallback />}
-                            />
-                            <Route path="/perfil" element={<Profile />} />
-                            <Route
-                                path="/certificados"
-                                element={<Certificates />}
-                            />
-                            <Route path="/topicos" element={<Subjects />} />
-                            <Route
-                                path="/topico/:id"
-                                element={<SubjectSeminars />}
-                            />
-                            <Route
-                                path="/apresentacoes"
-                                element={<Presentations />}
-                            />
-                            <Route
-                                path="/seminario/:slug"
-                                element={<SeminarDetails />}
-                            />
-                            <Route path="/workshops" element={<Workshops />} />
-                            <Route
-                                path="/workshop/:id"
-                                element={<WorkshopDetails />}
-                            />
-                            <Route path="/p/:uuid" element={<Presence />} />
-                            <Route path="/avaliar" element={<Evaluations />} />
-                            <Route
-                                path="/reportar-bug"
-                                element={<BugReport />}
-                            />
-                            <Route path="*" element={<NotFound />} />
-                        </Routes>
-                    </BrowserRouter>
-                </AuthProvider>
-            </QueryClientProvider>
-        </HelmetProvider>
+        <ErrorBoundary>
+            <HelmetProvider>
+                <QueryClientProvider client={queryClient}>
+                    <AuthProvider>
+                        <BrowserRouter basename={app.ROUTER_BASE || undefined}>
+                            <AppRoutes />
+                        </BrowserRouter>
+                    </AuthProvider>
+                </QueryClientProvider>
+            </HelmetProvider>
+        </ErrorBoundary>
     );
 }
 

@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Enums\Role;
+use App\Models\Concerns\Auditable;
 use App\Notifications\ResetPassword;
 use Illuminate\Contracts\Auth\CanResetPassword;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -11,16 +13,18 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable implements CanResetPassword
 {
-    use HasFactory, HasRoles, Notifiable, SoftDeletes;
+    use Auditable, HasApiTokens, HasFactory, HasRoles, Notifiable, SoftDeletes;
+
+    protected array $auditExclude = ['password', 'remember_token'];
 
     protected $fillable = [
         'name',
         'email',
-        'username',
         'password',
     ];
 
@@ -69,17 +73,17 @@ class User extends Authenticatable implements CanResetPassword
 
     public function isAdmin(): bool
     {
-        return $this->hasRole('admin');
+        return $this->hasRole(Role::Admin);
     }
 
     public function isTeacher(): bool
     {
-        return $this->hasRole('teacher');
+        return $this->hasRole(Role::Teacher);
     }
 
     public function isUser(): bool
     {
-        return $this->hasRole('user');
+        return $this->hasRole(Role::User);
     }
 
     /**

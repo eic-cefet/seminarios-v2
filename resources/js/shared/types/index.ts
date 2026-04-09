@@ -44,7 +44,6 @@ export interface Speaker {
 export interface SeminarLocation {
     id: number;
     name: string;
-    address?: string;
 }
 
 export interface Workshop {
@@ -70,6 +69,7 @@ export interface Seminar {
     speakers?: Speaker[];
     location?: SeminarLocation;
     registrationsCount?: number;
+    averageRating?: number;
 }
 
 export interface Registration {

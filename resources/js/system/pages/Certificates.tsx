@@ -1,41 +1,23 @@
 import { useQuery } from "@tanstack/react-query";
-import { Link, Navigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { FileText, Download, Calendar, Loader2, ArrowLeft } from "lucide-react";
 import { Layout } from "../components/Layout";
+import { ProtectedRoute } from "../components/ProtectedRoute";
 import { Badge } from "../components/Badge";
 import { PageTitle } from "@shared/components/PageTitle";
-import { useAuth } from "@shared/contexts/AuthContext";
 import { profileApi } from "@shared/api/client";
 import { formatDateTime } from "@shared/lib/utils";
 
 export default function Certificates() {
-    const { user, isLoading: authLoading } = useAuth();
-
     const { data, isLoading } = useQuery({
         queryKey: ["profile", "certificates"],
         queryFn: () => profileApi.certificates(),
-        enabled: !!user,
     });
-
-    // Redirect if not authenticated
-    if (!authLoading && !user) {
-        return <Navigate to="/login" replace />;
-    }
-
-    if (authLoading) {
-        return (
-            <Layout>
-                <div className="flex min-h-[calc(100vh-4rem-4rem)] items-center justify-center">
-                    <Loader2 className="h-8 w-8 animate-spin text-primary-600" />
-                </div>
-            </Layout>
-        );
-    }
 
     const certificates = data?.data ?? [];
 
     return (
-        <>
+        <ProtectedRoute>
             <PageTitle title="Certificados" />
             <Layout>
                 <div className="bg-white border-b border-gray-200">
@@ -132,6 +114,6 @@ export default function Certificates() {
                     </div>
                 </div>
             </Layout>
-        </>
+        </ProtectedRoute>
     );
 }

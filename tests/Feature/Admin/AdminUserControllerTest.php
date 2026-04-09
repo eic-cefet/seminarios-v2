@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\User;
+use App\Models\UserSpeakerData;
 use App\Models\UserStudentData;
 
 describe('GET /api/admin/users', function () {
@@ -352,6 +353,26 @@ describe('PUT /api/admin/users/{id}', function () {
         $user->refresh();
         expect($user->speakerData)->not->toBeNull();
         expect($user->speakerData->slug)->toBe('test-speaker');
+    });
+
+    it('removes speaker data when null', function () {
+        actingAsAdmin();
+
+        $user = User::factory()->create();
+        UserSpeakerData::create([
+            'user_id' => $user->id,
+            'slug' => 'test-speaker',
+            'institution' => 'CEFET-RJ',
+        ]);
+
+        $response = $this->putJson("/api/admin/users/{$user->id}", [
+            'speaker_data' => null,
+        ]);
+
+        $response->assertSuccessful();
+
+        $user->refresh();
+        expect($user->speakerData)->toBeNull();
     });
 });
 

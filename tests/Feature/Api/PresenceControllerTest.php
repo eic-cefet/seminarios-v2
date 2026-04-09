@@ -32,8 +32,7 @@ it('returns 400 for expired presence link', function () {
     $response = $this->getJson("/api/presence/{$presenceLink->uuid}");
 
     $response->assertStatus(400)
-        ->assertJsonPath('is_valid', false)
-        ->assertJsonPath('is_expired', true);
+        ->assertJsonPath('error', 'invalid_presence_link');
 });
 
 it('returns 400 for inactive presence link', function () {
@@ -42,8 +41,7 @@ it('returns 400 for inactive presence link', function () {
     $response = $this->getJson("/api/presence/{$presenceLink->uuid}");
 
     $response->assertStatus(400)
-        ->assertJsonPath('is_valid', false)
-        ->assertJsonPath('is_active', false);
+        ->assertJsonPath('error', 'invalid_presence_link');
 });
 
 it('requires authentication to register presence', function () {
@@ -124,5 +122,36 @@ it('returns 400 when registering with expired link', function () {
         ->postJson("/api/presence/{$presenceLink->uuid}/register");
 
     $response->assertStatus(400)
-        ->assertJsonPath('is_valid', false);
+        ->assertJsonPath('error', 'invalid_presence_link');
+});
+
+it('returns QR code PNG for valid presence link', function () {
+    $presenceLink = PresenceLink::factory()->create();
+
+    $response = $this->get("/p/{$presenceLink->uuid}.png");
+
+    $response->assertSuccessful()
+        ->assertHeader('Content-Type', 'image/png');
+});
+
+it('returns 404 for QR code PNG with non-existent link', function () {
+    $response = $this->get('/p/non-existent-uuid.png');
+
+    $response->assertNotFound();
+});
+
+it('returns 400 for QR code PNG with expired link', function () {
+    $presenceLink = PresenceLink::factory()->expired()->create();
+
+    $response = $this->get("/p/{$presenceLink->uuid}.png");
+
+    $response->assertStatus(400);
+});
+
+it('returns 400 for QR code PNG with inactive link', function () {
+    $presenceLink = PresenceLink::factory()->inactive()->create();
+
+    $response = $this->get("/p/{$presenceLink->uuid}.png");
+
+    $response->assertStatus(400);
 });

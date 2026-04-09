@@ -67,6 +67,25 @@ describe('POST /api/seminars/{slug}/register', function () {
 
         $response->assertStatus(404);
     });
+
+    it('allows overbooking when seminar capacity is exceeded', function () {
+        $user = actingAsUser();
+        $location = \App\Models\SeminarLocation::factory()->create(['max_vacancies' => 1]);
+        $seminar = Seminar::factory()->upcoming()->create([
+            'active' => true,
+            'seminar_location_id' => $location->id,
+        ]);
+
+        Registration::factory()->create(['seminar_id' => $seminar->id]);
+
+        $response = $this->postJson("/api/seminars/{$seminar->slug}/register");
+
+        $response->assertStatus(201)
+            ->assertJsonPath('message', 'Inscrição realizada com sucesso');
+
+        expect(Registration::where('user_id', $user->id)->where('seminar_id', $seminar->id)->exists())
+            ->toBeTrue();
+    });
 });
 
 describe('DELETE /api/seminars/{slug}/register', function () {
@@ -103,6 +122,40 @@ describe('DELETE /api/seminars/{slug}/register', function () {
 
         $response->assertStatus(400)
             ->assertJsonPath('message', 'Você não está inscrito neste seminário');
+    });
+
+    it('returns unregister_blocked for expired seminar', function () {
+        $user = actingAsUser();
+        $seminar = Seminar::factory()->past()->create(['active' => true]);
+
+        Registration::factory()->create([
+            'user_id' => $user->id,
+            'seminar_id' => $seminar->id,
+        ]);
+
+        $response = $this->deleteJson("/api/seminars/{$seminar->slug}/register");
+
+        $response->assertStatus(400)
+            ->assertJsonPath('error', 'unregister_blocked');
+    });
+
+    it('returns unregister_blocked on the day of the event', function () {
+        $user = actingAsUser();
+        $seminar = Seminar::factory()->create([
+            'active' => true,
+            'scheduled_at' => now()->endOfDay(),
+        ]);
+
+        Registration::factory()->create([
+            'user_id' => $user->id,
+            'seminar_id' => $seminar->id,
+        ]);
+
+        $response = $this->deleteJson("/api/seminars/{$seminar->slug}/register");
+
+        $response->assertStatus(400)
+            ->assertJsonPath('error', 'unregister_blocked')
+            ->assertJsonPath('message', 'Não é possível cancelar a inscrição no dia do evento');
     });
 });
 

@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\AuditEvent;
 use App\Exports\SemestralReportExport;
 use App\Http\Controllers\Controller;
+use App\Models\AuditLog;
 use App\Models\Course;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
@@ -28,7 +30,7 @@ class ReportController extends Controller
     public function semestral(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'semester' => 'required|string',
+            'semester' => ['required', 'string', 'regex:/^\d{4}\.[12]$/'],
             'courses' => 'nullable|array',
             'courses.*' => 'integer',
             'types' => 'nullable|array',
@@ -77,7 +79,7 @@ class ReportController extends Controller
                         }
                     })
                         ->with([
-                            'seminar:id,name,scheduled_at',
+                            'seminar:id,name,scheduled_at,seminar_type_id',
                             'seminar.seminarType:id,name',
                         ]);
                 },
@@ -127,6 +129,16 @@ class ReportController extends Controller
 
         // Sort by name
         $reportData = $reportData->sortBy('name')->values();
+
+        AuditLog::record(AuditEvent::ReportGenerated, eventData: [
+            'semester' => $validated['semester'],
+            'format' => $validated['format'],
+            'filters' => array_filter([
+                'courses' => $validated['courses'] ?? null,
+                'types' => $validated['types'] ?? null,
+                'situations' => $validated['situations'] ?? null,
+            ]),
+        ]);
 
         if ($validated['format'] === 'excel') {
             // Generate Excel file
