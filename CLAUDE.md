@@ -4,6 +4,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 > NEVER RUN `pnpm run build` by your own. During the development of the solution I always will be watching using the dev command by my own.
 
+> NEVER modify an existing migration file. Always create a new migration to make schema changes (including dropping tables).
+
 ## Git Workflow
 
 **IMPORTANT:** When asked to push changes to GitHub, ALWAYS follow this workflow:
@@ -68,8 +70,6 @@ pnpm run typecheck
 # Format PHP code
 vendor/bin/pint --dirty
 
-# Legacy data migration (from old database)
-php artisan migrate:legacy --fresh --seed
 ```
 
 ## CI Coverage Requirements
@@ -186,13 +186,6 @@ Admin panel AI tools powered by OpenAI-compatible API (`config/ai.php`):
 - **Sentiment analysis** — `AnalyzeRatingSentiment` job analyzes rating comments asynchronously, stores result on `Rating.sentiment`
 
 Configuration: `AI_API_KEY`, `AI_API_BASE_URL` (default: OpenAI), `AI_MODEL` (default: `gpt-4o-mini`)
-
-### Legacy Migration System
-
-Data is migrated from a legacy database using artisan commands in `app/Console/Commands/Migration/`:
-- `php artisan migrate:legacy` runs all migrations in order
-- Individual commands: `migrate:seminars`, `migrate:users`, `migrate:workshops`, etc.
-- Legacy DB connection configured as `legacy` in `config/database.php`
 
 ## Key Conventions
 

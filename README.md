@@ -208,15 +208,6 @@ Comprehensive audit trail for all database-impacting actions:
 
 ---
 
-## Legacy Data Migration
-
-```bash
-# Configure LEGACY_DB_* variables in .env, then:
-php artisan migrate:legacy --fresh --seed
-```
-
----
-
 ## License
 
 [MIT](https://opensource.org/licenses/MIT)
