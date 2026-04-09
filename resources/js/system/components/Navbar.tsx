@@ -1,7 +1,7 @@
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { useAuth } from "@shared/contexts/AuthContext";
 import { hasAdminAccess } from "@shared/lib/roles";
-import { cn } from "@shared/lib/utils";
+import { buildUrl, cn } from "@shared/lib/utils";
 import { analytics } from "@shared/lib/analytics";
 import {
     ChevronDown,
@@ -55,7 +55,7 @@ export function Navbar() {
                                 ))}
                                 {isAdmin && (
                                     <a
-                                        href="/admin"
+                                        href={buildUrl("/admin")}
                                         className="inline-flex items-center gap-1.5 border-b-2 border-transparent px-1 pt-1 text-sm font-medium text-primary-600 hover:border-primary-300 hover:text-primary-700 transition-colors"
                                     >
                                         <Shield className="h-4 w-4" />
@@ -122,7 +122,7 @@ export function Navbar() {
                         ))}
                         {isAdmin && (
                             <a
-                                href="/admin"
+                                href={buildUrl("/admin")}
                                 className="flex items-center gap-2 border-l-4 border-primary-600 bg-primary-50 py-2 pl-3 pr-4 text-base font-medium text-primary-600"
                                 onClick={() => setMobileMenuOpen(false)}
                             >
