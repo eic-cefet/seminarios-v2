@@ -1,20 +1,25 @@
 import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { FileText, Download, Calendar, Loader2, ArrowLeft } from "lucide-react";
 import { Layout } from "../components/Layout";
 import { ProtectedRoute } from "../components/ProtectedRoute";
 import { Badge } from "../components/Badge";
 import { PageTitle } from "@shared/components/PageTitle";
+import { Pagination } from "@shared/components/Pagination";
 import { profileApi } from "@shared/api/client";
 import { buildUrl, formatDateTime } from "@shared/lib/utils";
 
 export default function Certificates() {
+    const [page, setPage] = useState(1);
+
     const { data, isLoading } = useQuery({
-        queryKey: ["profile", "certificates"],
-        queryFn: () => profileApi.certificates(),
+        queryKey: ["profile", "certificates", page],
+        queryFn: () => profileApi.certificates({ page, per_page: 10 }),
     });
 
     const certificates = data?.data ?? [];
+    const meta = data?.meta;
 
     return (
         <ProtectedRoute>
@@ -29,9 +34,17 @@ export default function Certificates() {
                             <ArrowLeft className="mr-1 h-4 w-4" />
                             Voltar ao perfil
                         </Link>
-                        <h1 className="text-2xl font-bold text-gray-900">
-                            Meus Certificados
-                        </h1>
+                        <div className="flex items-center justify-between">
+                            <h1 className="text-2xl font-bold text-gray-900">
+                                Meus Certificados
+                            </h1>
+                            {meta && meta.total > 0 && (
+                                <span className="text-sm text-gray-500">
+                                    {meta.total} certificado
+                                    {meta.total !== 1 ? "s" : ""}
+                                </span>
+                            )}
+                        </div>
                         <p className="mt-1 text-sm text-gray-500">
                             Certificados emitidos para os seminários que você
                             participou
@@ -63,53 +76,60 @@ export default function Certificates() {
                                 </Link>
                             </div>
                         ) : (
-                            <div className="divide-y divide-gray-200">
-                                {certificates.map((certificate) => (
-                                    <div
-                                        key={certificate.id}
-                                        className="flex flex-col sm:flex-row sm:items-center justify-between px-6 py-4 gap-4"
-                                    >
-                                        <div className="flex-1 min-w-0">
-                                            <Link
-                                                to={`/seminario/${certificate.seminar.slug}`}
-                                                className="font-medium text-gray-900 hover:text-primary-600 cursor-pointer"
-                                            >
-                                                {certificate.seminar.name}
-                                            </Link>
-                                            <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-gray-500">
-                                                {certificate.seminar
-                                                    .seminar_type && (
-                                                    <Badge variant="default">
-                                                        {
-                                                            certificate.seminar
-                                                                .seminar_type
-                                                                .name
-                                                        }
-                                                    </Badge>
-                                                )}
-                                                {certificate.seminar
-                                                    .scheduled_at && (
-                                                    <span className="flex items-center gap-1">
-                                                        <Calendar className="h-3.5 w-3.5" />
-                                                        {formatDateTime(
-                                                            certificate.seminar
-                                                                .scheduled_at,
-                                                        )}
-                                                    </span>
-                                                )}
-                                            </div>
-                                        </div>
-                                        <a
-                                            href={buildUrl(`/certificado/${certificate.certificate_code}`)}
-                                            download
-                                            className="inline-flex items-center gap-1.5 rounded-md bg-primary-600 px-3 py-2 text-sm font-medium text-white shadow-sm hover:bg-primary-700 transition-colors cursor-pointer"
+                            <>
+                                <div className="divide-y divide-gray-200">
+                                    {certificates.map((certificate) => (
+                                        <div
+                                            key={certificate.id}
+                                            className="flex flex-col sm:flex-row sm:items-center justify-between px-6 py-4 gap-4"
                                         >
-                                            <Download className="h-4 w-4" />
-                                            Baixar PDF
-                                        </a>
-                                    </div>
-                                ))}
-                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <Link
+                                                    to={`/seminario/${certificate.seminar.slug}`}
+                                                    className="font-medium text-gray-900 hover:text-primary-600 cursor-pointer"
+                                                >
+                                                    {certificate.seminar.name}
+                                                </Link>
+                                                <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-gray-500">
+                                                    {certificate.seminar
+                                                        .seminar_type && (
+                                                        <Badge variant="default">
+                                                            {
+                                                                certificate.seminar
+                                                                    .seminar_type
+                                                                    .name
+                                                            }
+                                                        </Badge>
+                                                    )}
+                                                    {certificate.seminar
+                                                        .scheduled_at && (
+                                                        <span className="flex items-center gap-1">
+                                                            <Calendar className="h-3.5 w-3.5" />
+                                                            {formatDateTime(
+                                                                certificate.seminar
+                                                                    .scheduled_at,
+                                                            )}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                            <a
+                                                href={buildUrl(`/certificado/${certificate.certificate_code}`)}
+                                                download
+                                                className="inline-flex items-center gap-1.5 rounded-md bg-primary-600 px-3 py-2 text-sm font-medium text-white shadow-sm hover:bg-primary-700 transition-colors cursor-pointer"
+                                            >
+                                                <Download className="h-4 w-4" />
+                                                Baixar PDF
+                                            </a>
+                                        </div>
+                                    ))}
+                                </div>
+                                <Pagination
+                                    currentPage={meta?.current_page ?? page}
+                                    lastPage={meta?.last_page ?? 1}
+                                    onPageChange={setPage}
+                                />
+                            </>
                         )}
                     </div>
                 </div>

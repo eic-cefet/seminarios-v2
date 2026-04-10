@@ -375,6 +375,36 @@ class DevelopmentSeeder extends Seeder
         }
 
         $this->command->line("  Created {$registrationCount} registrations, {$ratingCount} ratings");
+
+        // --- Ensure deterministic student has a certificate for every past seminar ---
+        $docStudentCertificates = 0;
+        foreach ($pastSeminars as $seminar) {
+            $existing = Registration::where('seminar_id', $seminar->id)
+                ->where('user_id', $docStudent->id)
+                ->first();
+
+            if ($existing) {
+                if (! $existing->present || ! $existing->certificate_code) {
+                    $existing->update([
+                        'present' => true,
+                        'certificate_code' => $existing->certificate_code ?? fake()->uuid(),
+                        'certificate_sent' => true,
+                    ]);
+                }
+            } else {
+                Registration::factory()->create([
+                    'seminar_id' => $seminar->id,
+                    'user_id' => $docStudent->id,
+                    'present' => true,
+                    'certificate_code' => fake()->uuid(),
+                    'certificate_sent' => true,
+                    'reminder_sent' => true,
+                ]);
+            }
+            $docStudentCertificates++;
+        }
+
+        $this->command->line("  Ensured {$docStudentCertificates} certificates for student@cefet-rj.br");
         $this->command->info('Development data seeded successfully.');
     }
 
