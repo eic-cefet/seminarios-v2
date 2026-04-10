@@ -16,7 +16,7 @@ concurrency:
 jobs:
   generate:
     name: Generate & Deploy Guide
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: ubuntu-latest
     services:
       mysql:
         image: mysql:8.0
