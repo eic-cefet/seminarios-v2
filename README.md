@@ -6,7 +6,7 @@
 
 [![Tests](https://github.com/eic-cefet/seminarios-v2/actions/workflows/release.yml/badge.svg?branch=main)](https://github.com/eic-cefet/seminarios-v2/actions/workflows/release.yml)
 [![codecov](https://codecov.io/gh/eic-cefet/seminarios-v2/branch/main/graph/badge.svg)](https://codecov.io/gh/eic-cefet/seminarios-v2)
-[![PHP 8.4](https://img.shields.io/badge/PHP-8.4-777BB4?logo=php&logoColor=white)](https://www.php.net/)
+[![PHP 8.3](https://img.shields.io/badge/PHP-8.3-777BB4?logo=php&logoColor=white)](https://www.php.net/)
 [![Laravel 12](https://img.shields.io/badge/Laravel-12-FF2D20?logo=laravel&logoColor=white)](https://laravel.com/)
 [![React 19](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.7-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
@@ -25,7 +25,7 @@
 
 [![PHP](https://img.shields.io/badge/-PHP-777BB4?style=for-the-badge&logo=php&logoColor=white)](https://www.php.net/docs.php)
 
-**8.4+**
+**8.3+**
 
 </td>
 <td align="center" width="150">
@@ -102,7 +102,7 @@
 
 | Requirement | Version |
 |-------------|---------|
-| PHP | 8.2+ |
+| PHP | 8.3+ |
 | Composer | Latest |
 | Node.js | 18+ |
 | pnpm | Latest |
