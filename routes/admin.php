@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\AdminApiTokenController;
+use App\Http\Controllers\Admin\AdminAuditLogController;
 use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\AdminLocationController;
 use App\Http\Controllers\Admin\AdminPresenceLinkController;
@@ -53,6 +54,11 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function ()
     // Reports
     Route::get('/reports/courses', [ReportController::class, 'courses']);
     Route::get('/reports/semestral', [ReportController::class, 'semestral']);
+
+    // Audit Logs
+    Route::get('/audit-logs/summary', [AdminAuditLogController::class, 'summary']);
+    Route::get('/audit-logs/export', [AdminAuditLogController::class, 'export']);
+    Route::get('/audit-logs/event-names', [AdminAuditLogController::class, 'eventNames']);
 
     // API Tokens
     Route::apiResource('api-tokens', AdminApiTokenController::class)

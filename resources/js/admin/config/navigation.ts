@@ -62,6 +62,11 @@ export const adminNavigation: NavItem[] = [
                 href: "/reports/feedback",
                 adminOnly: true,
             },
+            {
+                label: "Logs de Auditoria",
+                href: "/reports/audit-logs",
+                adminOnly: true,
+            },
         ],
     },
 ];

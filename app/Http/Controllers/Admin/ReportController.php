@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Enums\AuditEvent;
 use App\Exports\SemestralReportExport;
 use App\Http\Controllers\Controller;
+use App\Jobs\DeleteS3FileJob;
 use App\Models\AuditLog;
 use App\Models\Course;
 use App\Models\User;
@@ -155,6 +156,8 @@ class ReportController extends Controller
 
             // Generate signed URL (valid for 1 hour)
             $url = Storage::disk('s3')->temporaryUrl($filename, now()->addHour());
+
+            DeleteS3FileJob::dispatch($filename)->delay(now()->addHours(2));
 
             return response()->json([
                 'message' => 'Relatório gerado com sucesso',

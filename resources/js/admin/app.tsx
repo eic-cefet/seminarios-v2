@@ -14,6 +14,7 @@ import UserList from "./pages/users/UserList";
 import RegistrationList from "./pages/registrations/RegistrationList";
 import { SeminarList, SeminarForm } from "./pages/seminars";
 import { WorkshopList } from "./pages/workshops";
+import AuditLogReport from "./pages/reports/AuditLogReport";
 import FeedbackInsights from "./pages/reports/FeedbackInsights";
 import SemestralReport from "./pages/reports/SemestralReport";
 import ApiTokenList from "./pages/api-tokens/ApiTokenList";
@@ -46,6 +47,7 @@ export function AppRoutes() {
                 <Route path="/api-tokens" element={<ApiTokenList />} />
                 <Route path="/reports/semestral" element={<SemestralReport />} />
                 <Route path="/reports/feedback" element={<FeedbackInsights />} />
+                <Route path="/reports/audit-logs" element={<AuditLogReport />} />
                 <Route path="*" element={<NotFound />} />
             </Route>
         </Routes>
