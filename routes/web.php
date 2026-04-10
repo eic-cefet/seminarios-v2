@@ -24,7 +24,7 @@ Route::get('/seminario/{slug}/calendar.ics', SeminarCalendarController::class)
 
 // System SPA (public/student)
 Route::get('/{any?}', fn () => view('system'))
-    ->where('any', '^(?!admin|api|sanctum|certificado|auth/(?:google|github)(?:/callback)?).*$')
+    ->where('any', '^(?!admin|api|sanctum|certificado/|auth/(?:google|github)(?:/callback)?).*$')
     ->name('system');
 
 // Admin SPA (auth handled by React SPA via API)
