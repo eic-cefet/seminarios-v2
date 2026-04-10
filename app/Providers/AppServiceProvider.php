@@ -2,11 +2,13 @@
 
 namespace App\Providers;
 
+use App\Models\AuditLog;
 use App\Models\Registration;
 use App\Models\Seminar;
 use App\Models\SeminarLocation;
 use App\Models\Subject;
 use App\Models\User;
+use App\Policies\AuditLogPolicy;
 use App\Policies\RegistrationPolicy;
 use App\Policies\SeminarLocationPolicy;
 use App\Policies\SeminarPolicy;
@@ -59,6 +61,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Subject::class, SubjectPolicy::class);
         Gate::policy(SeminarLocation::class, SeminarLocationPolicy::class);
         Gate::policy(Registration::class, RegistrationPolicy::class);
+        Gate::policy(AuditLog::class, AuditLogPolicy::class);
 
         Scramble::registerUiRoute('api/external/docs');
         Scramble::registerJsonSpecificationRoute('api/external/docs.json');

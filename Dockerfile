@@ -15,7 +15,7 @@ COPY public ./public
 RUN pnpm run build
 
 # PHP application with FrankenPHP
-FROM dunglas/frankenphp:1.11-builder-php8.4.17 AS runner
+FROM dunglas/frankenphp:1.11-builder-php8.3.30 AS runner
 
 # Install PHP extensions
 RUN install-php-extensions \
