@@ -107,7 +107,7 @@ jobs:
         if: steps.filter.outputs.backend == 'true'
         uses: shivammathur/setup-php@v2
         with:
-          php-version: "8.4"
+          php-version: "8.3"
           extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, pdo_mysql, bcmath, intl, gd, exif, iconv
           coverage: pcov
 
