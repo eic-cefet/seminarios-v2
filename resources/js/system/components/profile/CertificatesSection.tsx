@@ -1,6 +1,6 @@
 import { profileApi } from "@shared/api/client";
 import { Pagination } from "@shared/components/Pagination";
-import { formatDateTime } from "@shared/lib/utils";
+import { buildUrl, formatDateTime } from "@shared/lib/utils";
 import { analytics } from "@shared/lib/analytics";
 import { useQuery } from "@tanstack/react-query";
 import { Download, FileText, Loader2 } from "lucide-react";
@@ -89,7 +89,7 @@ export function CertificatesSection() {
                                 </div>
                                 <div className="ml-4">
                                     <a
-                                        href={`/certificado/${certificate.certificate_code}`}
+                                        href={buildUrl(`/certificado/${certificate.certificate_code}`)}
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         onClick={() =>
