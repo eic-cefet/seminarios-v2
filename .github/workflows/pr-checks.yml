@@ -15,7 +15,7 @@ jobs:
   # ============================================
   checklist:
     name: Checklist Validation
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-2vcpu-ubuntu-2404
     outputs:
       automerge: ${{ steps.parse.outputs.automerge }}
       version_bump: ${{ steps.parse.outputs.version_bump }}
@@ -74,7 +74,7 @@ jobs:
   tests:
     name: Tests & Coverage (95%)
     needs: checklist
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-2vcpu-ubuntu-2404
     services:
       mysql:
         image: mysql:8.0
@@ -196,7 +196,7 @@ jobs:
   frontend-tests:
     name: Frontend Tests & Coverage (90%)
     needs: checklist
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-2vcpu-ubuntu-2404
     steps:
       - uses: actions/checkout@v4
 
@@ -261,7 +261,7 @@ jobs:
   typecheck:
     name: TypeScript Check
     needs: checklist
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-2vcpu-ubuntu-2404
     steps:
       - uses: actions/checkout@v4
 
@@ -301,7 +301,7 @@ jobs:
     name: Claude Code Review
     needs: checklist
     if: github.event.pull_request.head.repo.full_name == github.repository
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-2vcpu-ubuntu-2404
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -710,7 +710,7 @@ jobs:
     name: Final Status
     needs: [checklist, tests, frontend-tests, typecheck, claude-review]
     if: always()
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-2vcpu-ubuntu-2404
     steps:
       - name: Check job results
         run: |
