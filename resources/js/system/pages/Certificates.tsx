@@ -6,7 +6,7 @@ import { ProtectedRoute } from "../components/ProtectedRoute";
 import { Badge } from "../components/Badge";
 import { PageTitle } from "@shared/components/PageTitle";
 import { profileApi } from "@shared/api/client";
-import { formatDateTime } from "@shared/lib/utils";
+import { buildUrl, formatDateTime } from "@shared/lib/utils";
 
 export default function Certificates() {
     const { data, isLoading } = useQuery({
@@ -100,7 +100,7 @@ export default function Certificates() {
                                             </div>
                                         </div>
                                         <a
-                                            href={`/certificado/${certificate.certificate_code}`}
+                                            href={buildUrl(`/certificado/${certificate.certificate_code}`)}
                                             download
                                             className="inline-flex items-center gap-1.5 rounded-md bg-primary-600 px-3 py-2 text-sm font-medium text-white shadow-sm hover:bg-primary-700 transition-colors cursor-pointer"
                                         >
