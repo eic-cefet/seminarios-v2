@@ -150,25 +150,20 @@ jobs:
           key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: ${{ runner.os }}-pnpm-
 
-      - name: Install composer dependencies
+      - name: Install dependencies (parallel)
         if: steps.filter.outputs.backend == 'true'
-        run: composer install --no-interaction --prefer-dist --optimize-autoloader
+        run: |
+          composer install --no-interaction --prefer-dist --optimize-autoloader &
+          pnpm install --frozen-lockfile &
+          wait
 
-      - name: Install pnpm dependencies
+      - name: Build frontend assets and prepare environment
         if: steps.filter.outputs.backend == 'true'
-        run: pnpm install --frozen-lockfile
-
-      - name: Build frontend assets
-        if: steps.filter.outputs.backend == 'true'
-        run: pnpm run build
-
-      - name: Copy environment file
-        if: steps.filter.outputs.backend == 'true'
-        run: cp .env.example .env
-
-      - name: Generate application key
-        if: steps.filter.outputs.backend == 'true'
-        run: php artisan key:generate
+        run: |
+          pnpm run build &
+          cp .env.example .env
+          wait
+          php artisan key:generate
 
       - name: Run tests with coverage
         if: steps.filter.outputs.backend == 'true'
@@ -193,8 +188,8 @@ jobs:
         if: steps.filter.outputs.backend != 'true'
         run: echo "No backend/test changes detected, skipping tests"
 
-  frontend-tests:
-    name: Frontend Tests & Coverage (90%)
+  frontend:
+    name: Frontend Tests, Coverage (90%) & Typecheck
     needs: checklist
     runs-on: ubuntu-latest
     steps:
@@ -206,7 +201,7 @@ jobs:
         with:
           filters: |
             frontend:
-              - 'resources/js/**'
+              - 'resources/**'
               - 'vitest.config.ts'
               - 'package.json'
               - 'pnpm-lock.yaml'
@@ -242,6 +237,10 @@ jobs:
         if: steps.filter.outputs.frontend == 'true'
         run: pnpm install --frozen-lockfile
 
+      - name: Run typecheck
+        if: steps.filter.outputs.frontend == 'true'
+        run: pnpm typecheck
+
       - name: Run frontend tests with coverage
         if: steps.filter.outputs.frontend == 'true'
         run: pnpm test:coverage
@@ -256,46 +255,7 @@ jobs:
 
       - name: Skip message
         if: steps.filter.outputs.frontend != 'true'
-        run: echo "No frontend changes detected, skipping frontend tests"
-
-  typecheck:
-    name: TypeScript Check
-    needs: checklist
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Check for frontend changes
-        uses: dorny/paths-filter@v3
-        id: filter
-        with:
-          filters: |
-            frontend:
-              - 'resources/**'
-
-      - name: Setup Node.js
-        if: steps.filter.outputs.frontend == 'true'
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-
-      - name: Install pnpm
-        if: steps.filter.outputs.frontend == 'true'
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9
-
-      - name: Install dependencies
-        if: steps.filter.outputs.frontend == 'true'
-        run: pnpm install --frozen-lockfile
-
-      - name: Run typecheck
-        if: steps.filter.outputs.frontend == 'true'
-        run: pnpm typecheck
-
-      - name: Skip message
-        if: steps.filter.outputs.frontend != 'true'
-        run: echo "No frontend changes detected, skipping typecheck"
+        run: echo "No frontend changes detected, skipping frontend checks"
 
   claude-review:
     name: Claude Code Review
@@ -708,7 +668,7 @@ jobs:
 
   final-status:
     name: Final Status
-    needs: [checklist, tests, frontend-tests, typecheck, claude-review]
+    needs: [checklist, tests, frontend, claude-review]
     if: always()
     runs-on: ubuntu-latest
     steps:
@@ -716,8 +676,7 @@ jobs:
         run: |
           echo "Checklist: ${{ needs.checklist.result }}"
           echo "Tests: ${{ needs.tests.result }}"
-          echo "Frontend Tests: ${{ needs.frontend-tests.result }}"
-          echo "Typecheck: ${{ needs.typecheck.result }}"
+          echo "Frontend: ${{ needs.frontend.result }}"
           echo "Claude Review: ${{ needs.claude-review.result }}"
 
           # Fail if any required job failed
@@ -729,12 +688,8 @@ jobs:
             echo "::error::Tests failed"
             exit 1
           fi
-          if [[ "${{ needs.frontend-tests.result }}" == "failure" ]]; then
-            echo "::error::Frontend tests failed"
-            exit 1
-          fi
-          if [[ "${{ needs.typecheck.result }}" == "failure" ]]; then
-            echo "::error::TypeScript check failed"
+          if [[ "${{ needs.frontend.result }}" == "failure" ]]; then
+            echo "::error::Frontend checks failed"
             exit 1
           fi
           if [[ "${{ needs.claude-review.result }}" == "failure" ]]; then
