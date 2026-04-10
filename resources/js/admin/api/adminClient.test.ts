@@ -1,4 +1,4 @@
-import { AdminApiError, dashboardApi, usersApi, locationsApi, subjectsApi, workshopsApi, registrationsApi, seminarsApi, presenceLinkApi, aiApi, apiTokensApi } from './adminClient';
+import { AdminApiError, dashboardApi, usersApi, locationsApi, subjectsApi, workshopsApi, registrationsApi, seminarsApi, presenceLinkApi, aiApi, apiTokensApi, auditLogsApi } from './adminClient';
 import { getCookie } from '@shared/api/httpUtils';
 
 vi.mock('@shared/api/httpUtils', async (importOriginal) => {
@@ -756,6 +756,60 @@ describe('Admin API endpoints', () => {
             await seminarsApi.list();
             expect(fetchSpy).toHaveBeenCalledWith(
                 expect.not.stringContaining('?'),
+                expect.any(Object),
+            );
+        });
+    });
+
+    describe('auditLogsApi', () => {
+        it('summary fetches without params', async () => {
+            mockSuccess({ data: { total: 100, manual_count: 60, system_count: 40, top_events: {} } });
+            const result = await auditLogsApi.summary();
+            expect(result.data.total).toBe(100);
+            expect(fetchSpy).toHaveBeenCalledWith(
+                expect.stringContaining('/audit-logs/summary'),
+                expect.any(Object),
+            );
+        });
+
+        it('summary passes days param', async () => {
+            mockSuccess({ data: { total: 50, manual_count: 30, system_count: 20, top_events: {} } });
+            await auditLogsApi.summary({ days: 30 });
+            expect(fetchSpy).toHaveBeenCalledWith(
+                expect.stringContaining('/audit-logs/summary?days=30'),
+                expect.any(Object),
+            );
+        });
+
+        it('export fetches without params', async () => {
+            mockSuccess({ message: 'Export ready', url: 'https://example.com/export.xlsx' });
+            const result = await auditLogsApi.export();
+            expect(result.url).toBe('https://example.com/export.xlsx');
+            expect(fetchSpy).toHaveBeenCalledWith(
+                expect.stringContaining('/audit-logs/export'),
+                expect.any(Object),
+            );
+        });
+
+        it('export passes filter params', async () => {
+            mockSuccess({ message: 'Export ready', url: 'https://example.com/export.xlsx' });
+            await auditLogsApi.export({ days: 7, event_type: 'manual', event_name: 'login', search: 'admin' });
+            expect(fetchSpy).toHaveBeenCalledWith(
+                expect.stringContaining('days=7'),
+                expect.any(Object),
+            );
+            expect(fetchSpy).toHaveBeenCalledWith(
+                expect.stringContaining('event_type=manual'),
+                expect.any(Object),
+            );
+        });
+
+        it('eventNames fetches available event names', async () => {
+            mockSuccess({ data: ['user.login', 'seminar.created'] });
+            const result = await auditLogsApi.eventNames();
+            expect(result.data).toEqual(['user.login', 'seminar.created']);
+            expect(fetchSpy).toHaveBeenCalledWith(
+                expect.stringContaining('/audit-logs/event-names'),
                 expect.any(Object),
             );
         });
