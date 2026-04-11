@@ -117,6 +117,9 @@
 git clone https://github.com/eic-cefet/seminarios-v2.git
 cd seminarios-v2
 
+# Start infrastructure services
+docker compose up -d
+
 # Run the setup script (installs dependencies, generates key, runs migrations, builds assets)
 composer run setup
 ```
@@ -125,6 +128,7 @@ composer run setup
 <summary><strong>Manual Installation</strong></summary>
 
 ```bash
+docker compose up -d
 composer install
 cp .env.example .env
 php artisan key:generate
@@ -149,6 +153,35 @@ This runs concurrently:
 - 📬 Queue worker (`php artisan queue:listen`)
 - 📋 Log viewer (`php artisan pail`)
 - ⚡ Vite dev server (`pnpm run dev`)
+
+### Docker Services
+
+The `docker-compose.yml` provides all infrastructure for local development:
+
+| Service | Port(s) | Description |
+|---------|---------|-------------|
+| **MySQL** (MariaDB 10.11) | `3306` | Database (`seminarios` / `seminarios`) |
+| **phpMyAdmin** | [`8080`](http://localhost:8080) | Database web UI |
+| **Mailhog** | [`8025`](http://localhost:8025) | Email testing UI (SMTP on `1025`) |
+| **MinIO** | [`9000`](http://localhost:9000) / [`9001`](http://localhost:9001) | S3-compatible storage (API / web console) |
+
+MinIO credentials: `minioadmin` / `minioadmin`. The `seminarios-eic` bucket is created automatically on first startup.
+
+The `.env.example` ships pre-configured for all these services -- just `cp .env.example .env` and everything connects out of the box.
+
+### Seed Data
+
+```bash
+php artisan migrate:fresh --seed
+```
+
+This creates test users with password `password`:
+
+| Role | Email |
+|------|-------|
+| Admin | `admin@cefet-rj.br` |
+| Teacher | `teacher@cefet-rj.br` |
+| Student | `student@cefet-rj.br` |
 
 ---
 
