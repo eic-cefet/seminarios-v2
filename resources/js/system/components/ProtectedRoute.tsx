@@ -9,6 +9,9 @@ export function ProtectedRoute({ children }: { children: ReactNode }) {
     const location = useLocation();
 
     if (!isLoading && !user) {
+        if (location.pathname === "/login") {
+            return null;
+        }
         return (
             <Navigate
                 to="/login"
