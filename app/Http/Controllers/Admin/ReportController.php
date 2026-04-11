@@ -41,28 +41,22 @@ class ReportController extends Controller
             'format' => 'required|in:browser,excel',
         ]);
 
-        // Parse semester (e.g., "2026.1" -> year: 2026, semester: 1)
         [$year, $semester] = explode('.', $validated['semester']);
 
-        // Calculate date range for the semester
         if ($semester == 1) {
-            // First semester: January 1 to June 30
             $startDate = "{$year}-01-01 00:00:00";
             $endDate = "{$year}-06-30 23:59:59";
         } else {
-            // Second semester: July 1 to December 31
             $startDate = "{$year}-07-01 00:00:00";
             $endDate = "{$year}-12-31 23:59:59";
         }
 
-        // Query users with their registrations in the given semester
         $query = User::query()
             ->whereHas('registrations', function ($q) use ($startDate, $endDate, $validated) {
                 $q->whereHas('seminar', function ($sq) use ($startDate, $endDate, $validated) {
                     $sq->whereBetween('scheduled_at', [$startDate, $endDate])
                         ->where('active', true);
 
-                    // Filter by seminar types if provided
                     if (! empty($validated['types'])) {
                         $sq->whereIn('seminar_type_id', $validated['types']);
                     }
@@ -86,14 +80,12 @@ class ReportController extends Controller
                 },
             ]);
 
-        // Filter by course if provided
         if (! empty($validated['courses'])) {
             $query->whereHas('studentData', function ($q) use ($validated) {
                 $q->whereIn('course_id', $validated['courses']);
             });
         }
 
-        // Filter by course situation if provided
         if (! empty($validated['situations'])) {
             $query->whereHas('studentData', function ($q) use ($validated) {
                 $q->whereIn('course_situation', $validated['situations']);
@@ -102,33 +94,24 @@ class ReportController extends Controller
 
         $users = $query->get();
 
-        // Calculate report data
         $reportData = $users->map(function ($user) {
             $registrations = $user->registrations;
-            $totalHours = $registrations->sum(function ($registration) {
-                // Assuming each seminar is 1 hour by default
-                // You can adjust this based on actual seminar duration
-                return 1;
-            });
 
-            $presentations = $registrations->map(function ($registration) {
-                return [
-                    'name' => $registration->seminar->name,
-                    'date' => $registration->seminar->scheduled_at,
-                    'type' => $registration->seminar->seminarType?->name,
-                ];
-            })->sortBy('date')->values();
+            $presentations = $registrations->map(fn ($registration) => [
+                'name' => $registration->seminar->name,
+                'date' => $registration->seminar->scheduled_at,
+                'type' => $registration->seminar->seminarType?->name,
+            ])->sortBy('date')->values();
 
             return [
                 'name' => $user->name,
                 'email' => $user->email,
                 'course' => $user->studentData?->course?->name ?? 'N/A',
-                'total_hours' => $totalHours,
+                'total_hours' => $registrations->count(),
                 'presentations' => $presentations,
             ];
         });
 
-        // Sort by name
         $reportData = $reportData->sortBy('name')->values();
 
         AuditLog::record(AuditEvent::ReportGenerated, eventData: [
@@ -142,11 +125,9 @@ class ReportController extends Controller
         ]);
 
         if ($validated['format'] === 'excel') {
-            // Generate Excel file
             $timestamp = now()->format('YmdHis');
             $filename = "reports/{$timestamp}-relatorio-semestral-{$year}-{$semester}.xlsx";
 
-            // Store in S3
             Excel::store(
                 new SemestralReportExport($reportData, $year, $semester),
                 $filename,
@@ -154,7 +135,6 @@ class ReportController extends Controller
                 \Maatwebsite\Excel\Excel::XLSX
             );
 
-            // Generate signed URL (valid for 1 hour)
             $url = Storage::disk('s3')->temporaryUrl($filename, now()->addHour());
 
             DeleteS3FileJob::dispatch($filename)->delay(now()->addHours(2));
@@ -165,7 +145,6 @@ class ReportController extends Controller
             ]);
         }
 
-        // Return JSON for browser view
         return response()->json([
             'data' => $reportData,
             'summary' => [

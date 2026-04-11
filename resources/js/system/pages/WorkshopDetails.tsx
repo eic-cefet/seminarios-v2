@@ -84,7 +84,6 @@ export default function WorkshopDetails() {
         <>
             <PageTitle title={workshop.name} />
             <Layout>
-                {/* Header */}
                 <div className="bg-primary-600">
                     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
                         <Link
@@ -116,7 +115,6 @@ export default function WorkshopDetails() {
                     </div>
                 </div>
 
-                {/* Sessions */}
                 <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
                     <h2 className="text-xl font-semibold text-gray-900 mb-6">
                         Sessões do Workshop

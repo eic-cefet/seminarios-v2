@@ -8,7 +8,17 @@ export function ProtectedRoute({ children }: { children: ReactNode }) {
     const { user, isLoading } = useAuth();
     const location = useLocation();
 
-    if (!isLoading && !user) {
+    if (isLoading) {
+        return (
+            <Layout>
+                <div className="flex min-h-[calc(100vh-4rem-4rem)] items-center justify-center">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary-600" />
+                </div>
+            </Layout>
+        );
+    }
+
+    if (!user) {
         if (location.pathname === "/login") {
             return null;
         }
@@ -18,16 +28,6 @@ export function ProtectedRoute({ children }: { children: ReactNode }) {
                 state={{ from: location.pathname + location.search }}
                 replace
             />
-        );
-    }
-
-    if (isLoading) {
-        return (
-            <Layout>
-                <div className="flex min-h-[calc(100vh-4rem-4rem)] items-center justify-center">
-                    <Loader2 className="h-8 w-8 animate-spin text-primary-600" />
-                </div>
-            </Layout>
         );
     }
 

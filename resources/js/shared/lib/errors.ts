@@ -46,12 +46,13 @@ export function getErrorMessage(error: unknown): string {
 export function getFieldErrors(
     error: unknown,
 ): Record<string, string> | undefined {
-    if (error instanceof ApiRequestError && error.errors) {
-        const fieldErrors: Record<string, string> = {};
-        for (const [field, messages] of Object.entries(error.errors)) {
-            fieldErrors[field] = messages[0];
-        }
-        return fieldErrors;
+    if (!(error instanceof ApiRequestError) || !error.errors) {
+        return undefined;
     }
-    return undefined;
+    return Object.fromEntries(
+        Object.entries(error.errors).map(([field, messages]) => [
+            field,
+            messages[0],
+        ]),
+    );
 }

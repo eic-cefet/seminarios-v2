@@ -715,6 +715,18 @@ export const apiTokensApi = {
         fetchAdminApi<{ data: string[] }>("/api-tokens/abilities"),
 };
 
+// Dropdown helpers (used by SeminarForm, SemestralReport, etc.)
+export const dropdownApi = {
+    seminarTypes: () =>
+        fetchAdminApi<{ data: SeminarTypeDropdownItem[] }>("/seminar-types"),
+    workshops: () =>
+        fetchAdminApi<{ data: WorkshopDropdownItem[] }>("/workshops-dropdown"),
+    locations: () =>
+        fetchAdminApi<{ data: LocationDropdownItem[] }>("/locations-dropdown"),
+    courses: () =>
+        fetchAdminApi<{ data: { value: string | number; label: string }[] }>("/reports/courses"),
+};
+
 // Audit Logs
 export interface AuditLogSummary {
     total: number;

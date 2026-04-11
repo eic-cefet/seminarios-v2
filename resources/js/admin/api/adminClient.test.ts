@@ -1,4 +1,4 @@
-import { AdminApiError, dashboardApi, usersApi, locationsApi, subjectsApi, workshopsApi, registrationsApi, seminarsApi, presenceLinkApi, aiApi, apiTokensApi, auditLogsApi } from './adminClient';
+import { AdminApiError, dashboardApi, usersApi, locationsApi, subjectsApi, workshopsApi, registrationsApi, seminarsApi, presenceLinkApi, aiApi, apiTokensApi, dropdownApi, auditLogsApi } from './adminClient';
 import { getCookie } from '@shared/api/httpUtils';
 
 vi.mock('@shared/api/httpUtils', async (importOriginal) => {
@@ -758,6 +758,52 @@ describe('Admin API endpoints', () => {
                 expect.not.stringContaining('?'),
                 expect.any(Object),
             );
+        });
+    });
+
+    describe('dropdownApi', () => {
+        it('seminarTypes fetches seminar types', async () => {
+            mockSuccess({ data: [{ id: 1, name: 'Palestra' }] });
+            const result = await dropdownApi.seminarTypes();
+
+            expect(fetchSpy).toHaveBeenCalledWith(
+                expect.stringContaining('/seminar-types'),
+                expect.any(Object),
+            );
+            expect(result.data).toEqual([{ id: 1, name: 'Palestra' }]);
+        });
+
+        it('workshops fetches workshops dropdown', async () => {
+            mockSuccess({ data: [{ id: 1, name: 'Workshop A' }] });
+            const result = await dropdownApi.workshops();
+
+            expect(fetchSpy).toHaveBeenCalledWith(
+                expect.stringContaining('/workshops-dropdown'),
+                expect.any(Object),
+            );
+            expect(result.data).toEqual([{ id: 1, name: 'Workshop A' }]);
+        });
+
+        it('locations fetches locations dropdown', async () => {
+            mockSuccess({ data: [{ id: 1, name: 'Room 101' }] });
+            const result = await dropdownApi.locations();
+
+            expect(fetchSpy).toHaveBeenCalledWith(
+                expect.stringContaining('/locations-dropdown'),
+                expect.any(Object),
+            );
+            expect(result.data).toEqual([{ id: 1, name: 'Room 101' }]);
+        });
+
+        it('courses fetches courses dropdown', async () => {
+            mockSuccess({ data: [{ value: 1, label: 'BCC' }] });
+            const result = await dropdownApi.courses();
+
+            expect(fetchSpy).toHaveBeenCalledWith(
+                expect.stringContaining('/reports/courses'),
+                expect.any(Object),
+            );
+            expect(result.data).toEqual([{ value: 1, label: 'BCC' }]);
         });
     });
 

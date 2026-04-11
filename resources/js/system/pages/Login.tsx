@@ -15,7 +15,6 @@ export default function Login() {
     const [searchParams] = useSearchParams();
     const { login } = useAuth();
 
-    // Redirect target: from ProtectedRoute state, from AdminLayout query param, or fallback to "/"
     const raw =
         (location.state as { from?: string })?.from ||
         searchParams.get("redirect") ||

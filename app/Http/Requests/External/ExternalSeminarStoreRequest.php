@@ -15,6 +15,9 @@ class ExternalSeminarStoreRequest extends FormRequest
         return Gate::allows('create', Seminar::class);
     }
 
+    /**
+     * @return array<string, array<int, mixed>>
+     */
     public function rules(): array
     {
         return [

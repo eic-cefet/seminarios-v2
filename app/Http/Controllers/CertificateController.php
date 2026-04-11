@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\Registration;
 use App\Services\CertificateService;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 
 class CertificateController extends Controller
 {
@@ -19,8 +18,8 @@ class CertificateController extends Controller
             ->with(['seminar', 'user'])
             ->firstOrFail();
 
-        if (!$this->certificateService->pdfExists($registration)) {
-            if (!$this->certificateService->jpgExists($registration)) {
+        if (! $this->certificateService->pdfExists($registration)) {
+            if (! $this->certificateService->jpgExists($registration)) {
                 $this->certificateService->generateJpg($registration);
             }
             $this->certificateService->generatePdf($registration);
@@ -37,7 +36,7 @@ class CertificateController extends Controller
             ->with(['seminar', 'user'])
             ->firstOrFail();
 
-        if (!$this->certificateService->jpgExists($registration)) {
+        if (! $this->certificateService->jpgExists($registration)) {
             $this->certificateService->generateJpg($registration);
         }
 

@@ -30,7 +30,6 @@ class ApiException extends Exception
         return response()->json($response, $this->statusCode);
     }
 
-    // Common error factory methods
     public static function unauthenticated(): self
     {
         return new self('unauthenticated', 'Não autenticado', 401);

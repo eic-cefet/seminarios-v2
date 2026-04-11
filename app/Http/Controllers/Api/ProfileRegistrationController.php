@@ -10,9 +10,6 @@ use Illuminate\Http\Request;
 
 class ProfileRegistrationController extends Controller
 {
-    /**
-     * Get the authenticated user's registrations (seminars attended)
-     */
     public function registrations(Request $request): JsonResponse
     {
         $user = $request->user();
@@ -35,9 +32,6 @@ class ProfileRegistrationController extends Controller
         ]);
     }
 
-    /**
-     * Get the authenticated user's certificates
-     */
     public function certificates(Request $request): JsonResponse
     {
         $user = $request->user();

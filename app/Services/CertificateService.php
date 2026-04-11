@@ -201,10 +201,7 @@ class CertificateService
             $font->align('center');
         });
 
-        // Encode to JPG
         $jpgContent = $certificate->toJpeg(100)->toString();
-
-        // Upload to S3
         Storage::disk('s3')->put($this->getJpgPath($registration), $jpgContent, 'private');
         $this->markJpgExists($registration);
 
@@ -225,8 +222,6 @@ class CertificateService
         }
 
         $jpgContent = Storage::disk('s3')->get($jpgPath);
-
-        // Create PDF with the JPG image
         $pdf = app('dompdf.wrapper');
         $base64Image = base64_encode($jpgContent);
 
@@ -280,13 +275,11 @@ HTML;
 
     protected function formatName(string $name): string
     {
-        $words = collect(explode(' ', trim($name)));
-
-        return $words->map(function ($word) {
-            return collect(explode("'", $word))->map(function ($w) {
-                return ucfirst(strtolower($w));
-            })->implode("'");
-        })->implode(' ');
+        return collect(explode(' ', trim($name)))
+            ->map(fn (string $word) => collect(explode("'", $word))
+                ->map(fn (string $w) => ucfirst(strtolower($w)))
+                ->implode("'"))
+            ->implode(' ');
     }
 
     protected function calculateFontSize(int $length, array $thresholds, int $default): int

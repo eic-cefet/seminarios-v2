@@ -16,27 +16,16 @@ use Laravel\Socialite\Facades\Socialite;
 
 class SocialAuthController extends Controller
 {
-    /**
-     * Redirect to OAuth provider
-     *
-     * Note: Route constraint (->where('provider', 'google|github')) ensures only valid providers reach this method
-     */
     public function redirect(string $provider): RedirectResponse
     {
         return Socialite::driver($provider)->redirect();
     }
 
-    /**
-     * Handle OAuth provider callback
-     *
-     * Note: Route constraint (->where('provider', 'google|github')) ensures only valid providers reach this method
-     */
     public function callback(string $provider): RedirectResponse
     {
         try {
             $socialUser = Socialite::driver($provider)->user();
 
-            // Find or create user
             $user = User::where('email', $socialUser->getEmail())->first();
 
             if (! $user) {
@@ -50,23 +39,15 @@ class SocialAuthController extends Controller
                 $user->assignRole('user');
             }
 
-            // Generate one-time code
             $code = Str::random(64);
-
-            // Store in cache with 5-minute expiration
             Cache::put("auth_code:{$code}", $user->id, now()->addMinutes(5));
 
-            // Redirect to frontend callback with code
             return redirect("/auth/callback?code={$code}");
-
-        } catch (\Exception $e) {
+        } catch (\Throwable) {
             return redirect('/auth/callback?error=authentication_failed');
         }
     }
 
-    /**
-     * Exchange one-time code for session
-     */
     public function exchange(Request $request): JsonResponse
     {
         $request->validate([
@@ -75,7 +56,6 @@ class SocialAuthController extends Controller
 
         $code = $request->input('code');
 
-        // Pull (get and delete) the user ID from cache
         $userId = Cache::pull("auth_code:{$code}");
 
         if (! $userId) {
@@ -90,7 +70,6 @@ class SocialAuthController extends Controller
 
         $user->load('studentData');
 
-        // Log the user in
         Auth::login($user, remember: true);
 
         AuditLog::record(AuditEvent::UserSocialLogin, auditable: $user);

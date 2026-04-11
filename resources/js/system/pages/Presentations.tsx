@@ -11,6 +11,15 @@ import { cn } from "@shared/lib/utils";
 
 type TimeFilter = "all" | "upcoming" | "expired";
 
+function tabTriggerClass(active: boolean): string {
+    return cn(
+        "px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors",
+        active
+            ? "border-primary-600 text-primary-600"
+            : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300",
+    );
+}
+
 export default function Presentations() {
     const [timeFilter, setTimeFilter] = useState<TimeFilter>("all");
     const [typeFilter, setTypeFilter] = useState<string>("all");
@@ -54,7 +63,6 @@ export default function Presentations() {
                 </div>
 
                 <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-                    {/* Time Filter Tabs */}
                     <Tabs.Root
                         value={timeFilter}
                         onValueChange={(v) => setTimeFilter(v as TimeFilter)}
@@ -62,48 +70,31 @@ export default function Presentations() {
                         <Tabs.List className="flex border-b border-gray-200">
                             <Tabs.Trigger
                                 value="all"
-                                className={cn(
-                                    "px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors",
-                                    timeFilter === "all"
-                                        ? "border-primary-600 text-primary-600"
-                                        : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300",
-                                )}
+                                className={tabTriggerClass(timeFilter === "all")}
                             >
                                 Todos
                             </Tabs.Trigger>
                             <Tabs.Trigger
                                 value="upcoming"
-                                className={cn(
-                                    "px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors",
-                                    timeFilter === "upcoming"
-                                        ? "border-primary-600 text-primary-600"
-                                        : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300",
-                                )}
+                                className={tabTriggerClass(timeFilter === "upcoming")}
                             >
                                 Próximos
                             </Tabs.Trigger>
                             <Tabs.Trigger
                                 value="expired"
-                                className={cn(
-                                    "px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors",
-                                    timeFilter === "expired"
-                                        ? "border-primary-600 text-primary-600"
-                                        : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300",
-                                )}
+                                className={tabTriggerClass(timeFilter === "expired")}
                             >
                                 Encerrados
                             </Tabs.Trigger>
                         </Tabs.List>
                     </Tabs.Root>
 
-                    {/* Filters */}
                     <div className="mt-6 flex flex-wrap items-center gap-4">
                         <div className="flex items-center gap-2 text-sm text-gray-500">
                             <Filter className="h-4 w-4" />
                             Filtrar por:
                         </div>
 
-                        {/* Type Filter */}
                         <Select.Root
                             value={typeFilter}
                             onValueChange={setTypeFilter}
@@ -147,7 +138,6 @@ export default function Presentations() {
                             </Select.Portal>
                         </Select.Root>
 
-                        {/* Clear Filters */}
                         {typeFilter !== "all" && (
                             <button
                                 onClick={() => setTypeFilter("all")}
@@ -158,7 +148,6 @@ export default function Presentations() {
                         )}
                     </div>
 
-                    {/* Results */}
                     <div className="mt-8">
                         {isLoading ? (
                             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -180,7 +169,6 @@ export default function Presentations() {
                                     ))}
                                 </div>
 
-                                {/* Pagination */}
                                 {pagination && pagination.last_page > 1 && (
                                     <div className="mt-8 flex items-center justify-center gap-2">
                                         <button

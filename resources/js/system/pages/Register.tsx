@@ -18,7 +18,6 @@ export default function Register() {
     const location = useLocation();
     const { register, isAuthenticated } = useAuth();
 
-    // Redirect target passed from Login page via state
     const raw = (location.state as { from?: string })?.from || "/";
     const redirectTo = isSafeRedirect(raw) ? raw : "/";
     const recaptchaRef = useRef<ReCAPTCHA>(null);
@@ -42,7 +41,6 @@ export default function Register() {
 
     const courses = coursesData?.data ?? [];
 
-    // Redirect if already authenticated
     useEffect(() => {
         if (isAuthenticated) {
             navigate(redirectTo, { replace: true });

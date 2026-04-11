@@ -82,25 +82,16 @@ class Seminar extends Model
         return $this->hasMany(Rating::class);
     }
 
-    /**
-     * Scope a query to only include active seminars.
-     */
     public function scopeActive(Builder $query): Builder
     {
         return $query->where('active', true);
     }
 
-    /**
-     * Scope a query to only include upcoming seminars.
-     */
     public function scopeUpcoming(Builder $query): Builder
     {
         return $query->where('scheduled_at', '>=', now());
     }
 
-    /**
-     * Scope a query to only include expired seminars.
-     */
     public function scopeExpired(Builder $query): Builder
     {
         return $query->where('scheduled_at', '<', now());

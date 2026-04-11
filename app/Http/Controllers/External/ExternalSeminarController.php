@@ -16,6 +16,7 @@ use Dedoc\Scramble\Attributes\QueryParameter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 
@@ -122,17 +123,10 @@ class ExternalSeminarController extends Controller
         $oldScheduledAt = $seminar->scheduled_at?->copy();
 
         DB::transaction(function () use ($validated, $seminar) {
-            $fields = [];
-
-            foreach (['name', 'description', 'scheduled_at', 'room_link', 'active', 'workshop_id', 'seminar_location_id'] as $field) {
-                if (array_key_exists($field, $validated)) {
-                    $fields[$field] = $validated[$field];
-                }
-            }
-
-            if (array_key_exists('seminar_type_id', $validated)) {
-                $fields['seminar_type_id'] = $validated['seminar_type_id'];
-            }
+            $fields = Arr::only($validated, [
+                'name', 'description', 'scheduled_at', 'room_link',
+                'active', 'workshop_id', 'seminar_location_id', 'seminar_type_id',
+            ]);
 
             if (isset($fields['name'])) {
                 $fields['slug'] = $this->slugService->generateUnique(

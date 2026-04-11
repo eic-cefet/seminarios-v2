@@ -23,7 +23,7 @@ export function buildQueryString(
     params: Record<string, string | number | boolean | null | undefined>,
 ): string {
     const searchParams = new URLSearchParams();
-    Object.entries(params).forEach(([key, value]) => {
+    for (const [key, value] of Object.entries(params)) {
         if (
             value !== undefined &&
             value !== null &&
@@ -32,7 +32,7 @@ export function buildQueryString(
         ) {
             searchParams.append(key, String(value));
         }
-    });
+    }
     const queryString = searchParams.toString();
     return queryString ? `?${queryString}` : "";
 }

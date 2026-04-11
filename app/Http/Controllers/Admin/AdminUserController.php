@@ -37,7 +37,6 @@ class AdminUserController extends Controller
             $query->onlyTrashed();
         }
 
-        // Search by name or email
         if ($search = $request->string('search')->trim()->toString()) {
             $escaped = $this->escapeLike($search);
             $query->where(function ($q) use ($escaped) {
@@ -46,7 +45,6 @@ class AdminUserController extends Controller
             });
         }
 
-        // Filter by role
         if ($role = $request->string('role')->trim()->toString()) {
             $query->role($role);
         }
@@ -81,7 +79,6 @@ class AdminUserController extends Controller
             'speaker_data.description' => ['nullable', 'string'],
         ]);
 
-        // Generate random 24-char password if not provided
         $password = $validated['password'] ?? Str::random(24);
 
         $user = DB::transaction(function () use ($validated, $password) {
@@ -188,7 +185,6 @@ class AdminUserController extends Controller
 
     public function destroy(Request $request, User $user): JsonResponse
     {
-        // Note: UserPolicy::delete() already prevents self-deletion
         Gate::authorize('delete', $user);
 
         $user->delete();

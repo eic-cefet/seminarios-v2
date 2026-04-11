@@ -29,14 +29,10 @@ class PresenceLink extends Model
         ];
     }
 
-    protected static function boot(): void
+    protected static function booted(): void
     {
-        parent::boot();
-
         static::creating(function (PresenceLink $link) {
-            if (empty($link->uuid)) {
-                $link->uuid = Str::uuid()->toString();
-            }
+            $link->uuid ??= Str::uuid()->toString();
         });
     }
 

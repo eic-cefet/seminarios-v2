@@ -9,11 +9,7 @@ use Symfony\Component\HttpFoundation\Response;
 
 class LogRequestMiddleware
 {
-    /**
-     * Sensitive headers that should not be logged.
-     *
-     * @var array<string>
-     */
+    /** @var array<string> */
     protected array $sensitiveHeaders = [
         'authorization',
         'cookie',
@@ -21,18 +17,12 @@ class LogRequestMiddleware
         'x-xsrf-token',
     ];
 
-    /**
-     * Handle an incoming request.
-     *
-     * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
-     */
     public function handle(Request $request, Closure $next): Response
     {
         $request->attributes->set('_log_start_time', microtime(true));
 
         $response = $next($request);
 
-        // Store response data for terminate()
         $request->attributes->set('_log_response_status', $response->getStatusCode());
         if ($response->headers->has('Content-Length')) {
             $request->attributes->set('_log_response_size', (int) $response->headers->get('Content-Length'));
@@ -41,9 +31,6 @@ class LogRequestMiddleware
         return $response;
     }
 
-    /**
-     * Handle tasks after the response has been sent to the browser.
-     */
     public function terminate(Request $request, Response $response): void
     {
         if (! config('logging.enable_request_logging', true)) {
@@ -85,8 +72,6 @@ class LogRequestMiddleware
     }
 
     /**
-     * Filter out sensitive headers from the log.
-     *
      * @param  array<string, array<string>>  $headers
      * @return array<string, array<string>>
      */

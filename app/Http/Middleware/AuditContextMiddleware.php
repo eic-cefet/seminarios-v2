@@ -15,7 +15,6 @@ class AuditContextMiddleware
         $action = $request->route()?->getActionName();
 
         if ($action && $action !== 'Closure') {
-            // "App\Http\Controllers\Admin\AdminSeminarController@store" → "AdminSeminarController@store"
             $origin = class_basename(Str::before($action, '@')).'@'.Str::after($action, '@');
             Context::add('audit.origin', $origin);
         }

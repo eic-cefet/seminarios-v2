@@ -21,6 +21,11 @@ vi.mock('../../api/adminClient', () => ({
     workshopsApi: {
         searchSeminars: vi.fn().mockResolvedValue({ data: [] }),
     },
+    dropdownApi: {
+        seminarTypes: vi.fn().mockResolvedValue({ data: [] }),
+        workshops: vi.fn().mockResolvedValue({ data: [] }),
+        locations: vi.fn().mockResolvedValue({ data: [] }),
+    },
     AdminApiError: class extends Error {},
 }));
 
@@ -802,25 +807,15 @@ describe('SeminarForm', () => {
         const { useParams } = await import('react-router-dom');
         vi.mocked(useParams).mockReturnValue({});
 
-        mockFetch
-            .mockResolvedValueOnce({
-                ok: true,
-                json: vi.fn().mockResolvedValue({ data: [{ id: 1, name: 'Seminar Type A' }] }),
-            })
-            .mockResolvedValueOnce({
-                ok: true,
-                json: vi.fn().mockResolvedValue({ data: [{ id: 2, name: 'Workshop B' }] }),
-            })
-            .mockResolvedValueOnce({
-                ok: true,
-                json: vi.fn().mockResolvedValue({ data: [{ id: 3, name: 'Room C', max_vacancies: 100 }] }),
-            });
+        const { dropdownApi } = await import('../../api/adminClient');
+        vi.mocked(dropdownApi.seminarTypes).mockResolvedValue({ data: [{ id: 1, name: 'Seminar Type A' }] });
+        vi.mocked(dropdownApi.workshops).mockResolvedValue({ data: [{ id: 2, name: 'Workshop B' }] });
+        vi.mocked(dropdownApi.locations).mockResolvedValue({ data: [{ id: 3, name: 'Room C', max_vacancies: 100 }] });
 
         render(<SeminarForm />);
 
-        // The reference data fetches are triggered
         await waitFor(() => {
-            expect(mockFetch).toHaveBeenCalled();
+            expect(dropdownApi.seminarTypes).toHaveBeenCalled();
         });
     });
 
@@ -1156,15 +1151,12 @@ describe('SeminarForm', () => {
         const { useParams } = await import('react-router-dom');
         vi.mocked(useParams).mockReturnValue({});
 
-        // Provide location data
-        mockFetch.mockResolvedValue({
-            ok: true,
-            json: vi.fn().mockResolvedValue({
-                data: [
-                    { id: 1, name: 'Room 1', max_vacancies: 50 },
-                    { id: 2, name: 'Room 2', max_vacancies: 100 },
-                ],
-            }),
+        const { dropdownApi } = await import('../../api/adminClient');
+        vi.mocked(dropdownApi.locations).mockResolvedValue({
+            data: [
+                { id: 1, name: 'Room 1', max_vacancies: 50 },
+                { id: 2, name: 'Room 2', max_vacancies: 100 },
+            ],
         });
 
         render(<SeminarForm />);
@@ -1190,25 +1182,9 @@ describe('SeminarForm', () => {
         const { useParams } = await import('react-router-dom');
         vi.mocked(useParams).mockReturnValue({});
 
-        // Return URL-specific data so each dropdown gets unique items
-        mockFetch.mockImplementation((url: string) => {
-            if (url.includes('seminar-types')) {
-                return Promise.resolve({
-                    ok: true,
-                    json: () => Promise.resolve({ data: [{ id: 2, name: 'Talk' }] }),
-                });
-            }
-            if (url.includes('locations')) {
-                return Promise.resolve({
-                    ok: true,
-                    json: () => Promise.resolve({ data: [{ id: 1, name: 'Room 1', max_vacancies: 50 }] }),
-                });
-            }
-            return Promise.resolve({
-                ok: true,
-                json: () => Promise.resolve({ data: [] }),
-            });
-        });
+        const { dropdownApi } = await import('../../api/adminClient');
+        vi.mocked(dropdownApi.seminarTypes).mockResolvedValue({ data: [{ id: 2, name: 'Talk' }] });
+        vi.mocked(dropdownApi.locations).mockResolvedValue({ data: [{ id: 1, name: 'Room 1', max_vacancies: 50 }] });
 
         render(<SeminarForm />);
 
@@ -1232,25 +1208,9 @@ describe('SeminarForm', () => {
         const { useParams } = await import('react-router-dom');
         vi.mocked(useParams).mockReturnValue({});
 
-        // Return URL-specific data
-        mockFetch.mockImplementation((url: string) => {
-            if (url.includes('workshops')) {
-                return Promise.resolve({
-                    ok: true,
-                    json: () => Promise.resolve({ data: [{ id: 5, name: 'Workshop Z' }] }),
-                });
-            }
-            if (url.includes('locations')) {
-                return Promise.resolve({
-                    ok: true,
-                    json: () => Promise.resolve({ data: [{ id: 1, name: 'Room 1', max_vacancies: 50 }] }),
-                });
-            }
-            return Promise.resolve({
-                ok: true,
-                json: () => Promise.resolve({ data: [] }),
-            });
-        });
+        const { dropdownApi } = await import('../../api/adminClient');
+        vi.mocked(dropdownApi.workshops).mockResolvedValue({ data: [{ id: 5, name: 'Workshop Z' }] });
+        vi.mocked(dropdownApi.locations).mockResolvedValue({ data: [{ id: 1, name: 'Room 1', max_vacancies: 50 }] });
 
         render(<SeminarForm />);
 
@@ -1418,37 +1378,17 @@ describe('SeminarForm', () => {
             () => new Promise((resolve) => { resolveCreate = resolve; }),
         );
 
-        mockFetch.mockImplementation((url: string) => {
-            if (url.includes('locations')) {
-                return Promise.resolve({
-                    ok: true,
-                    json: () => Promise.resolve({ data: [{ id: 1, name: 'Room 1', max_vacancies: 50 }] }),
-                });
-            }
-            if (url.includes('seminar-types')) {
-                return Promise.resolve({
-                    ok: true,
-                    json: () => Promise.resolve({ data: [{ id: 2, name: 'Talk' }] }),
-                });
-            }
-            if (url.includes('workshops')) {
-                return Promise.resolve({
-                    ok: true,
-                    json: () => Promise.resolve({ data: [{ id: 3, name: 'Workshop X' }] }),
-                });
-            }
-            return Promise.resolve({
-                ok: true,
-                json: () => Promise.resolve({ data: [] }),
-            });
-        });
+        const { dropdownApi } = await import('../../api/adminClient');
+        vi.mocked(dropdownApi.locations).mockResolvedValue({ data: [{ id: 1, name: 'Room 1', max_vacancies: 50 }] });
+        vi.mocked(dropdownApi.seminarTypes).mockResolvedValue({ data: [{ id: 2, name: 'Talk' }] });
+        vi.mocked(dropdownApi.workshops).mockResolvedValue({ data: [{ id: 3, name: 'Workshop X' }] });
 
         render(<SeminarForm />);
         const user = userEvent.setup();
 
         // Wait for reference data to load
         await waitFor(() => {
-            expect(mockFetch).toHaveBeenCalledTimes(3);
+            expect(dropdownApi.locations).toHaveBeenCalled();
         });
 
         // Fill in all required fields

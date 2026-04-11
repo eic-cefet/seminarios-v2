@@ -14,7 +14,6 @@ export default function AuthCallback() {
     const [exchangeComplete, setExchangeComplete] = useState(false);
     const hasRun = useRef(false);
 
-    // Navigate once exchange is complete and user is set
     useEffect(() => {
         if (exchangeComplete && user) {
             const raw = sessionStorage.getItem("auth_redirect");

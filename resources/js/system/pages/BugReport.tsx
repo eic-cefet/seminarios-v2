@@ -68,7 +68,6 @@ export default function BugReport() {
 
         setFiles((prev) => [...prev, ...validFiles]);
 
-        // Reset file input so the same file can be re-selected
         fileInputRef.current && (fileInputRef.current.value = "");
     };
 
@@ -115,12 +114,12 @@ export default function BugReport() {
         }
     };
 
-    const getFileIcon = (file: File) => {
-        if (file.type === "application/pdf") {
-            return <FileText className="h-4 w-4" />;
-        }
-        return <Image className="h-4 w-4" />;
-    };
+    const getFileIcon = (file: File) =>
+        file.type === "application/pdf" ? (
+            <FileText className="h-4 w-4" />
+        ) : (
+            <Image className="h-4 w-4" />
+        );
 
     if (success) {
         return (

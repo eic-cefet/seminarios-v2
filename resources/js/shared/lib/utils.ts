@@ -40,7 +40,6 @@ export function isSafeRedirect(path: unknown): path is string {
  */
 export function buildUrl(path: string): string {
     const base = app.ROUTER_BASE || "";
-    // Avoid double slashes if path already starts with / and base ends with /
     if (base && path.startsWith("/")) {
         return `${base}${path}`;
     }

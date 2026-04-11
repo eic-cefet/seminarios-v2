@@ -36,7 +36,6 @@ export function Navbar() {
             <nav className="bg-white border-b border-gray-200">
                 <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                     <div className="flex h-16 justify-between">
-                        {/* Logo and Desktop Navigation */}
                         <div className="flex">
                             <Link to="/" className="flex items-center">
                                 <span className="text-xl font-bold text-primary-600">
@@ -65,7 +64,6 @@ export function Navbar() {
                             </div>
                         </div>
 
-                        {/* Desktop Auth Section */}
                         <div className="hidden sm:ml-6 sm:flex sm:items-center">
                             {user ? (
                                 <UserDropdown user={user} onLogout={logout} />
@@ -79,7 +77,6 @@ export function Navbar() {
                             )}
                         </div>
 
-                        {/* Mobile menu button */}
                         <div className="flex items-center sm:hidden">
                             <button
                                 type="button"
@@ -102,7 +99,6 @@ export function Navbar() {
                     </div>
                 </div>
 
-                {/* Mobile menu */}
                 <div
                     className={cn(
                         "sm:hidden",
@@ -210,7 +206,7 @@ function UserDropdown({ user, onLogout }: UserDropdownProps) {
 
             <DropdownMenu.Portal>
                 <DropdownMenu.Content
-                    className="min-w-[200px] bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 p-1 z-50"
+                    className="min-w-[200px] bg-white rounded-md shadow-lg ring-1 ring-black/5 p-1 z-50"
                     sideOffset={5}
                     align="end"
                 >

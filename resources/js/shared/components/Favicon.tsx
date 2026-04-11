@@ -28,34 +28,25 @@ const META_TAGS = [
 
 export function Favicon() {
     useEffect(() => {
-        // Add link tags
-        FAVICON_LINKS.forEach((linkData) => {
-            const existingLink = document.querySelector(
-                `link[rel="${linkData.rel}"]${linkData.sizes ? `[sizes="${linkData.sizes}"]` : ""}[href="${linkData.href}"]`
-            );
-
-            if (!existingLink) {
+        for (const linkData of FAVICON_LINKS) {
+            const selector = `link[rel="${linkData.rel}"]${linkData.sizes ? `[sizes="${linkData.sizes}"]` : ""}[href="${linkData.href}"]`;
+            if (!document.querySelector(selector)) {
                 const link = document.createElement("link");
-                Object.entries(linkData).forEach(([key, value]) => {
+                for (const [key, value] of Object.entries(linkData)) {
                     link.setAttribute(key, value);
-                });
+                }
                 document.head.appendChild(link);
             }
-        });
+        }
 
-        // Add meta tags
-        META_TAGS.forEach((metaData) => {
-            const existingMeta = document.querySelector(
-                `meta[name="${metaData.name}"]`
-            );
-
-            if (!existingMeta) {
+        for (const metaData of META_TAGS) {
+            if (!document.querySelector(`meta[name="${metaData.name}"]`)) {
                 const meta = document.createElement("meta");
                 meta.setAttribute("name", metaData.name);
                 meta.setAttribute("content", metaData.content);
                 document.head.appendChild(meta);
             }
-        });
+        }
     }, []);
 
     return null;

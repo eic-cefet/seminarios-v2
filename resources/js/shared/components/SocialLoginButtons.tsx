@@ -1,4 +1,5 @@
 import { GoogleIcon, GithubIcon } from "@shared/components/icons/SocialIcons";
+import { cn } from "@shared/lib/utils";
 
 interface SocialLoginButtonsProps {
     onSocialLogin: (provider: "google" | "github") => void;
@@ -6,6 +7,9 @@ interface SocialLoginButtonsProps {
     dividerText?: string;
     dividerBgColor?: string;
 }
+
+const socialButtonClass =
+    "flex w-full items-center justify-center gap-3 rounded-md border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 transition-colors cursor-pointer";
 
 export function SocialLoginButtons({
     onSocialLogin,
@@ -19,7 +23,7 @@ export function SocialLoginButtons({
                 <button
                     type="button"
                     onClick={() => onSocialLogin("google")}
-                    className="flex w-full items-center justify-center gap-3 rounded-md border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 transition-colors cursor-pointer"
+                    className={socialButtonClass}
                 >
                     <GoogleIcon className="h-5 w-5" />
                     {actionLabel} com Google
@@ -27,7 +31,7 @@ export function SocialLoginButtons({
                 <button
                     type="button"
                     onClick={() => onSocialLogin("github")}
-                    className="flex w-full items-center justify-center gap-3 rounded-md border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 transition-colors cursor-pointer"
+                    className={socialButtonClass}
                 >
                     <GithubIcon className="h-5 w-5" />
                     {actionLabel} com GitHub
@@ -39,7 +43,7 @@ export function SocialLoginButtons({
                     <div className="w-full border-t border-gray-200" />
                 </div>
                 <div className="relative flex justify-center text-sm">
-                    <span className={`${dividerBgColor} px-2 text-gray-500`}>
+                    <span className={cn(dividerBgColor, "px-2 text-gray-500")}>
                         {dividerText}
                     </span>
                 </div>

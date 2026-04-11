@@ -41,22 +41,16 @@ class GenerateCertificateJob implements ShouldQueue
 
         $certificateService->ensureCertificateCode($this->registration);
 
-        $jpgGenerated = false;
-        $pdfGenerated = false;
-
-        // Generate JPG if not exists
-        if (! $certificateService->jpgExists($this->registration)) {
+        $jpgGenerated = ! $certificateService->jpgExists($this->registration);
+        if ($jpgGenerated) {
             $certificateService->generateJpg($this->registration);
-            $jpgGenerated = true;
         }
 
-        // Generate PDF if not exists
-        if (! $certificateService->pdfExists($this->registration)) {
+        $pdfGenerated = ! $certificateService->pdfExists($this->registration);
+        if ($pdfGenerated) {
             $certificateService->generatePdf($this->registration);
-            $pdfGenerated = true;
         }
 
-        // Send email with PDF attachment if requested and not already sent
         if ($this->sendEmail && ! $this->registration->certificate_sent) {
             $pdfPath = $certificateService->getPdfPath($this->registration);
             $pdfContent = Storage::disk('s3')->get($pdfPath);
@@ -64,8 +58,7 @@ class GenerateCertificateJob implements ShouldQueue
             Mail::to($this->registration->user->email)
                 ->send(new CertificateGenerated($this->registration, $pdfContent));
 
-            $this->registration->certificate_sent = true;
-            $this->registration->save();
+            $this->registration->update(['certificate_sent' => true]);
         }
 
         if ($jpgGenerated || $pdfGenerated) {

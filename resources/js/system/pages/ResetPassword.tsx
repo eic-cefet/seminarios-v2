@@ -24,7 +24,6 @@ export default function ResetPassword() {
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState(false);
 
-    // Validate required params
     const hasRequiredParams = token && email;
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -72,7 +71,6 @@ export default function ResetPassword() {
         }
     };
 
-    // Redirect to login after success
     useEffect(() => {
         if (success) {
             const timer = setTimeout(() => {

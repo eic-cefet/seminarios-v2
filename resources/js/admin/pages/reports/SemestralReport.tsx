@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { getSemester, formatDateTime as formatDateTimeUtil } from "@shared/lib/date";
+import { getCsrfCookie, getCookie } from "@shared/api/httpUtils";
 import { PageTitle } from "@shared/components/PageTitle";
 import { Button } from "../../components/ui/button";
 import {
@@ -34,7 +35,7 @@ import {
 } from "../../components/ui/collapsible";
 import { toast } from "sonner";
 import { FileDown, Eye, ChevronDown, Users, Clock } from "lucide-react";
-import type { SeminarTypeDropdownItem } from "../../api/adminClient";
+import { dropdownApi, type SeminarTypeDropdownItem } from "../../api/adminClient";
 
 interface Presentation {
     name: string;
@@ -80,39 +81,7 @@ function generateSemesters() {
     return semesters;
 }
 
-// Course situations
 const COURSE_SITUATIONS = ["Cursando", "Trancado", "Concluído", "Outro"];
-
-const API_BASE = app.API_URL + "/admin";
-
-// Helper to get CSRF cookie
-const getCsrfCookie = async () => {
-    await fetch("/sanctum/csrf-cookie", {
-        credentials: "same-origin",
-    });
-};
-
-// Helper to get CSRF token from cookie
-const getCsrfToken = () => {
-    const match = document.cookie.match(/XSRF-TOKEN=([^;]+)/);
-    return match ? decodeURIComponent(match[1]) : "";
-};
-
-const fetchSeminarTypes = async () => {
-    const response = await fetch(`${API_BASE}/seminar-types`, {
-        headers: { Accept: "application/json" },
-        credentials: "same-origin",
-    });
-    return response.json();
-};
-
-const fetchCourses = async () => {
-    const response = await fetch(`${API_BASE}/reports/courses`, {
-        headers: { Accept: "application/json" },
-        credentials: "same-origin",
-    });
-    return response.json();
-};
 
 export default function SemestralReport() {
     const [semester, setSemester] = useState<string>("");
@@ -127,12 +96,12 @@ export default function SemestralReport() {
 
     const { data: typesData } = useQuery({
         queryKey: ["admin-seminar-types"],
-        queryFn: fetchSeminarTypes,
+        queryFn: dropdownApi.seminarTypes,
     });
 
     const { data: coursesData } = useQuery({
         queryKey: ["admin-report-courses"],
-        queryFn: fetchCourses,
+        queryFn: dropdownApi.courses,
     });
 
     const seminarTypes = (
@@ -151,29 +120,24 @@ export default function SemestralReport() {
 
             const params = new URLSearchParams();
             params.set("semester", semester);
-            if (selectedCourses.length > 0) {
-                selectedCourses.forEach((c) =>
-                    params.append("courses[]", String(c)),
-                );
-            }
-            if (selectedTypes.length > 0) {
-                selectedTypes.forEach((t) =>
-                    params.append("types[]", String(t)),
-                );
-            }
-            if (selectedSituations.length > 0) {
-                selectedSituations.forEach((s) =>
-                    params.append("situations[]", s),
-                );
-            }
+            selectedCourses.forEach((c) =>
+                params.append("courses[]", String(c)),
+            );
+            selectedTypes.forEach((t) =>
+                params.append("types[]", String(t)),
+            );
+            selectedSituations.forEach((s) =>
+                params.append("situations[]", s),
+            );
             params.set("format", format);
 
+            const apiBase = app.API_URL + "/admin";
             const response = await fetch(
-                `${API_BASE}/reports/semestral?${params.toString()}`,
+                `${apiBase}/reports/semestral?${params.toString()}`,
                 {
                     headers: {
                         Accept: "application/json",
-                        "X-XSRF-TOKEN": getCsrfToken(),
+                        "X-XSRF-TOKEN": getCookie("XSRF-TOKEN") ?? "",
                     },
                     credentials: "same-origin",
                 },
@@ -219,10 +183,6 @@ export default function SemestralReport() {
             }
             return next;
         });
-    };
-
-    const formatDate = (dateString: string) => {
-        return formatDateTimeUtil(dateString);
     };
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -587,8 +547,8 @@ export default function SemestralReport() {
                                                                                             <span>
                                                                                                 -
                                                                                             </span>
-                                                                                            <span>
-                                                                                                {formatDate(
+                                                                                                <span>
+                                                                                                {formatDateTimeUtil(
                                                                                                     presentation.date,
                                                                                                 )}
                                                                                             </span>

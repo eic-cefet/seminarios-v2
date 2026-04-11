@@ -32,11 +32,9 @@ export function useDebouncedSearch(
     const [inputValue, setInputValueState] = useState("");
     const [debouncedValue, setDebouncedValue] = useState("");
 
-    // Store callback in ref to avoid recreating debounced function
     const onChangeRef = useRef(onDebouncedChange);
     onChangeRef.current = onDebouncedChange;
 
-    // Create debounced function
     const debouncedSetValue = useMemo(
         () =>
             debounce((value: string) => {
@@ -46,7 +44,6 @@ export function useDebouncedSearch(
         [delay],
     );
 
-    // Cleanup on unmount
     useEffect(() => {
         return () => {
             debouncedSetValue.cancel();

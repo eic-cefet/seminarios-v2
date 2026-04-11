@@ -23,9 +23,6 @@ class AuthController extends Controller
 {
     use FormatsUserResponse;
 
-    /**
-     * Login with email and password
-     */
     public function login(Request $request): JsonResponse
     {
         $validated = $request->validate([
@@ -66,9 +63,6 @@ class AuthController extends Controller
         ]);
     }
 
-    /**
-     * Logout current user
-     */
     public function logout(Request $request): JsonResponse
     {
         $user = $request->user();
@@ -85,9 +79,6 @@ class AuthController extends Controller
         ]);
     }
 
-    /**
-     * Get current authenticated user
-     */
     public function me(Request $request): JsonResponse
     {
         $user = $request->user();
@@ -101,9 +92,6 @@ class AuthController extends Controller
         ]);
     }
 
-    /**
-     * Register a new user
-     */
     public function register(UserRegistrationRequest $request): JsonResponse
     {
         $validated = $request->validated();
@@ -131,19 +119,13 @@ class AuthController extends Controller
         ], 201);
     }
 
-    /**
-     * Send password reset link
-     */
     public function forgotPassword(Request $request): JsonResponse
     {
         $request->validate([
             'email' => ['required', 'email'],
         ]);
 
-        // Always return success to prevent email enumeration
-        $status = Password::sendResetLink(
-            $request->only('email')
-        );
+        Password::sendResetLink($request->only('email'));
 
         AuditLog::record(AuditEvent::UserForgotPassword, eventData: [
             'email' => $request->input('email'),
@@ -154,9 +136,6 @@ class AuthController extends Controller
         ]);
     }
 
-    /**
-     * Reset password with token
-     */
     public function resetPassword(Request $request): JsonResponse
     {
         $request->validate([
