@@ -443,5 +443,20 @@ describe('Register', () => {
                 value: originalLocation,
             });
         });
+
+        it('rejects unsafe redirect and falls back to "/" (open redirect protection)', () => {
+            vi.mocked(useAuth).mockReturnValue({
+                user: { id: 1, name: 'Test', email: 'test@test.com' }, isLoading: false, isAuthenticated: true,
+                login: vi.fn(), register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(),
+            });
+
+            render(<Register />, {
+                routerProps: {
+                    initialEntries: [{ pathname: '/cadastro', state: { from: '//evil.com' } }],
+                },
+            });
+
+            expect(mockNavigate).toHaveBeenCalledWith('/', { replace: true });
+        });
     });
 });

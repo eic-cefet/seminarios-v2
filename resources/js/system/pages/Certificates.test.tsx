@@ -92,4 +92,41 @@ describe('Certificates', () => {
         // Should not render the heading or certificates
         expect(screen.queryByRole('heading', { name: /meus certificados/i })).not.toBeInTheDocument();
     });
+
+    it('shows singular "certificado" when total is 1', async () => {
+        vi.mocked(useAuth).mockReturnValue({
+            user: createUser({ name: 'Test User' }), isLoading: false, isAuthenticated: true,
+            login: vi.fn(), register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(),
+        });
+
+        vi.mocked(profileApi.certificates).mockResolvedValue({
+            data: [createUserCertificate({ seminar: { id: 1, name: 'Only One', slug: 'only-one', scheduled_at: '2026-06-15T14:00:00Z', seminar_type: { id: 1, name: 'Palestra' } } })],
+            meta: { current_page: 1, last_page: 1, per_page: 10, total: 1 },
+        });
+
+        render(<Certificates />);
+
+        await waitFor(() => {
+            expect(screen.getByText('1 certificado')).toBeInTheDocument();
+        });
+    });
+
+    it('renders pagination with fallback values when meta is undefined', async () => {
+        vi.mocked(useAuth).mockReturnValue({
+            user: createUser({ name: 'Test User' }), isLoading: false, isAuthenticated: true,
+            login: vi.fn(), register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(),
+        });
+
+        const certificates = [
+            createUserCertificate({ seminar: { id: 1, name: 'Test Cert', slug: 'test', scheduled_at: '2026-06-15T14:00:00Z', seminar_type: { id: 1, name: 'Palestra' } } }),
+        ];
+        // Return certificates but without meta to trigger the ?? fallbacks on Pagination
+        vi.mocked(profileApi.certificates).mockResolvedValue({ data: certificates, meta: undefined as any });
+
+        render(<Certificates />);
+
+        await waitFor(() => {
+            expect(screen.getByText('Test Cert')).toBeInTheDocument();
+        });
+    });
 });
