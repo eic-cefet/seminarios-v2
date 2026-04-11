@@ -17,6 +17,14 @@ export function containsHTML(text: string): boolean {
 }
 
 /**
+ * Validates that a redirect path is a safe relative path (not an open redirect).
+ * Rejects protocol-relative URLs (//evil.com), absolute URLs, and non-string values.
+ */
+export function isSafeRedirect(path: unknown): path is string {
+    return typeof path === "string" && path.startsWith("/") && !path.startsWith("//");
+}
+
+/**
  * Build a full URL path with the app's base path prefix.
  * Use this for window.location redirects and other non-React-Router navigation.
  *

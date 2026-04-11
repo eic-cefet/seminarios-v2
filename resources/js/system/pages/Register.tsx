@@ -7,7 +7,7 @@ import { Layout } from "../components/Layout";
 import { PageTitle } from "@shared/components/PageTitle";
 import { ReCaptcha, isRecaptchaEnabled } from "@shared/components/ReCaptcha";
 import { SocialLoginButtons } from "@shared/components/SocialLoginButtons";
-import { buildUrl, cn } from "@shared/lib/utils";
+import { buildUrl, cn, isSafeRedirect } from "@shared/lib/utils";
 import { useAuth } from "@shared/contexts/AuthContext";
 import { getErrorMessage } from "@shared/lib/errors";
 import { coursesApi } from "@shared/api/client";
@@ -19,8 +19,8 @@ export default function Register() {
     const { register, isAuthenticated } = useAuth();
 
     // Redirect target passed from Login page via state
-    const redirectTo =
-        (location.state as { from?: string })?.from || "/";
+    const raw = (location.state as { from?: string })?.from || "/";
+    const redirectTo = isSafeRedirect(raw) ? raw : "/";
     const recaptchaRef = useRef<ReCAPTCHA>(null);
     const [captchaToken, setCaptchaToken] = useState<string | null>(null);
     const [formData, setFormData] = useState({

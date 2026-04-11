@@ -280,5 +280,53 @@ describe('Login', () => {
             const cadastroLink = links.find((l) => l.getAttribute('href') === '/cadastro');
             expect(cadastroLink).toBeDefined();
         });
+
+        it('rejects protocol-relative redirect URLs (open redirect protection)', async () => {
+            const mockLogin = vi.fn().mockResolvedValue(undefined);
+            vi.mocked(useAuth).mockReturnValue({
+                user: null, isLoading: false, isAuthenticated: false,
+                login: mockLogin, register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(),
+            });
+            const user = userEvent.setup();
+
+            render(<Login />, {
+                routerProps: {
+                    initialEntries: ['/login?redirect=//evil.com'],
+                },
+            });
+
+            await user.type(screen.getByLabelText(/e-mail/i), 'test@example.com');
+            await user.type(screen.getByLabelText(/^senha$/i), 'mypassword123');
+            const buttons = screen.getAllByRole('button', { name: /^entrar$/i });
+            await user.click(buttons[buttons.length - 1]);
+
+            await waitFor(() => {
+                expect(mockNavigate).toHaveBeenCalledWith('/', { replace: true });
+            });
+        });
+
+        it('rejects absolute URL redirect from state (open redirect protection)', async () => {
+            const mockLogin = vi.fn().mockResolvedValue(undefined);
+            vi.mocked(useAuth).mockReturnValue({
+                user: null, isLoading: false, isAuthenticated: false,
+                login: mockLogin, register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(),
+            });
+            const user = userEvent.setup();
+
+            render(<Login />, {
+                routerProps: {
+                    initialEntries: [{ pathname: '/login', state: { from: 'https://evil.com' } }],
+                },
+            });
+
+            await user.type(screen.getByLabelText(/e-mail/i), 'test@example.com');
+            await user.type(screen.getByLabelText(/^senha$/i), 'mypassword123');
+            const buttons = screen.getAllByRole('button', { name: /^entrar$/i });
+            await user.click(buttons[buttons.length - 1]);
+
+            await waitFor(() => {
+                expect(mockNavigate).toHaveBeenCalledWith('/', { replace: true });
+            });
+        });
     });
 });

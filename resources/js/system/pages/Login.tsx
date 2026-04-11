@@ -4,7 +4,7 @@ import * as Label from "@radix-ui/react-label";
 import { Layout } from "../components/Layout";
 import { PageTitle } from "@shared/components/PageTitle";
 import { SocialLoginButtons } from "@shared/components/SocialLoginButtons";
-import { buildUrl, cn } from "@shared/lib/utils";
+import { buildUrl, cn, isSafeRedirect } from "@shared/lib/utils";
 import { analytics } from "@shared/lib/analytics";
 import { useAuth } from "@shared/contexts/AuthContext";
 import { getErrorMessage } from "@shared/lib/errors";
@@ -16,10 +16,11 @@ export default function Login() {
     const { login } = useAuth();
 
     // Redirect target: from ProtectedRoute state, from AdminLayout query param, or fallback to "/"
-    const redirectTo =
+    const raw =
         (location.state as { from?: string })?.from ||
         searchParams.get("redirect") ||
         "/";
+    const redirectTo = isSafeRedirect(raw) ? raw : "/";
     const [formData, setFormData] = useState({
         email: "",
         password: "",

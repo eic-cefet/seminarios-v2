@@ -1,4 +1,4 @@
-import { cn, formatDate, formatDateTime, formatDateTimeLong, isExpired, containsHTML, buildUrl } from './utils';
+import { cn, formatDate, formatDateTime, formatDateTimeLong, isExpired, containsHTML, buildUrl, isSafeRedirect } from './utils';
 
 describe('cn', () => {
     it('merges class names', () => {
@@ -88,6 +88,37 @@ describe('containsHTML', () => {
 
     it('returns false for non-tag angle brackets', () => {
         expect(containsHTML('5 < 10')).toBe(false);
+    });
+});
+
+describe('isSafeRedirect', () => {
+    it('accepts valid relative paths', () => {
+        expect(isSafeRedirect('/')).toBe(true);
+        expect(isSafeRedirect('/perfil')).toBe(true);
+        expect(isSafeRedirect('/admin/seminars')).toBe(true);
+        expect(isSafeRedirect('/perfil?tab=certificates')).toBe(true);
+    });
+
+    it('rejects protocol-relative URLs', () => {
+        expect(isSafeRedirect('//evil.com')).toBe(false);
+        expect(isSafeRedirect('//evil.com/path')).toBe(false);
+    });
+
+    it('rejects absolute URLs', () => {
+        expect(isSafeRedirect('https://evil.com')).toBe(false);
+        expect(isSafeRedirect('http://evil.com/login')).toBe(false);
+    });
+
+    it('rejects paths without leading slash', () => {
+        expect(isSafeRedirect('evil.com')).toBe(false);
+        expect(isSafeRedirect('relative/path')).toBe(false);
+    });
+
+    it('rejects non-string values', () => {
+        expect(isSafeRedirect(null)).toBe(false);
+        expect(isSafeRedirect(undefined)).toBe(false);
+        expect(isSafeRedirect(123)).toBe(false);
+        expect(isSafeRedirect('')).toBe(false);
     });
 });
 

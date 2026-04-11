@@ -264,5 +264,35 @@ describe('AuthCallback', () => {
                 expect(mockNavigate).toHaveBeenCalledWith('/', { replace: true });
             });
         });
+
+        it('rejects malicious sessionStorage redirect (open redirect protection)', async () => {
+            sessionStorage.setItem('auth_redirect', '//evil.com');
+            mockExchangeCode.mockResolvedValue(undefined);
+
+            const { rerender } = render(<AuthCallback />, {
+                routerProps: { initialEntries: ['/auth/callback?code=valid-code'] },
+            });
+
+            await waitFor(() => {
+                expect(mockExchangeCode).toHaveBeenCalledWith('valid-code');
+            });
+
+            vi.mocked(useAuth).mockReturnValue({
+                user: { id: 1, name: 'Test User', email: 'test@test.com' },
+                isLoading: false,
+                isAuthenticated: true,
+                login: vi.fn(),
+                register: vi.fn(),
+                logout: vi.fn(),
+                exchangeCode: mockExchangeCode,
+                refreshUser: vi.fn(),
+            });
+
+            rerender(<AuthCallback />);
+
+            await waitFor(() => {
+                expect(mockNavigate).toHaveBeenCalledWith('/', { replace: true });
+            });
+        });
     });
 });
