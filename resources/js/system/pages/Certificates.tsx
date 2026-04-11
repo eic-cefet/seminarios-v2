@@ -115,7 +115,8 @@ export default function Certificates() {
                                             </div>
                                             <a
                                                 href={buildUrl(`/certificado/${certificate.certificate_code}`)}
-                                                download
+                                                target="_blank"
+                                                rel="noopener noreferrer"
                                                 className="inline-flex items-center gap-1.5 rounded-md bg-primary-600 px-3 py-2 text-sm font-medium text-white shadow-sm hover:bg-primary-700 transition-colors cursor-pointer"
                                             >
                                                 <Download className="h-4 w-4" />
