@@ -1,14 +1,21 @@
 import { useAuth } from "@shared/contexts/AuthContext";
 import { Loader2 } from "lucide-react";
 import { type ReactNode } from "react";
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 import { Layout } from "./Layout";
 
 export function ProtectedRoute({ children }: { children: ReactNode }) {
     const { user, isLoading } = useAuth();
+    const location = useLocation();
 
     if (!isLoading && !user) {
-        return <Navigate to="/login" replace />;
+        return (
+            <Navigate
+                to="/login"
+                state={{ from: location.pathname + location.search }}
+                replace
+            />
+        );
     }
 
     if (isLoading) {

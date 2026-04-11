@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import * as Label from "@radix-ui/react-label";
 import { useQuery } from "@tanstack/react-query";
 import ReCAPTCHA from "react-google-recaptcha";
@@ -15,7 +15,12 @@ import { analytics } from "@shared/lib/analytics";
 
 export default function Register() {
     const navigate = useNavigate();
+    const location = useLocation();
     const { register, isAuthenticated } = useAuth();
+
+    // Redirect target passed from Login page via state
+    const redirectTo =
+        (location.state as { from?: string })?.from || "/";
     const recaptchaRef = useRef<ReCAPTCHA>(null);
     const [captchaToken, setCaptchaToken] = useState<string | null>(null);
     const [formData, setFormData] = useState({
@@ -40,9 +45,9 @@ export default function Register() {
     // Redirect if already authenticated
     useEffect(() => {
         if (isAuthenticated) {
-            navigate("/", { replace: true });
+            navigate(redirectTo, { replace: true });
         }
-    }, [isAuthenticated, navigate]);
+    }, [isAuthenticated, navigate, redirectTo]);
 
     const handleChange = (
         e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
@@ -95,7 +100,7 @@ export default function Register() {
                 course_situation: formData.courseSituation,
                 course_role: formData.courseRole,
             });
-            navigate("/");
+            navigate(redirectTo, { replace: true });
         } catch (err) {
             setError(getErrorMessage(err));
             recaptchaRef.current?.reset();
@@ -107,6 +112,9 @@ export default function Register() {
 
     const handleSocialLogin = (provider: "google" | "github") => {
         analytics.event("register_social", { provider });
+        if (redirectTo !== "/") {
+            sessionStorage.setItem("auth_redirect", redirectTo);
+        }
         window.location.href = buildUrl(`/auth/${provider}`);
     };
 
@@ -322,6 +330,7 @@ export default function Register() {
                             Já tem uma conta?{" "}
                             <Link
                                 to="/login"
+                                state={{ from: redirectTo !== "/" ? redirectTo : undefined }}
                                 className="font-medium text-primary-600 hover:text-primary-700"
                             >
                                 Entrar

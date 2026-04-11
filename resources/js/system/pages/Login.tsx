@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import * as Label from "@radix-ui/react-label";
 import { Layout } from "../components/Layout";
 import { PageTitle } from "@shared/components/PageTitle";
@@ -11,7 +11,15 @@ import { getErrorMessage } from "@shared/lib/errors";
 
 export default function Login() {
     const navigate = useNavigate();
+    const location = useLocation();
+    const [searchParams] = useSearchParams();
     const { login } = useAuth();
+
+    // Redirect target: from ProtectedRoute state, from AdminLayout query param, or fallback to "/"
+    const redirectTo =
+        (location.state as { from?: string })?.from ||
+        searchParams.get("redirect") ||
+        "/";
     const [formData, setFormData] = useState({
         email: "",
         password: "",
@@ -34,7 +42,7 @@ export default function Login() {
         try {
             await login(formData.email, formData.password);
             analytics.event("login_email");
-            navigate("/");
+            navigate(redirectTo, { replace: true });
         } catch (err) {
             setError(getErrorMessage(err));
             analytics.event("login_failed", { method: "email" });
@@ -45,6 +53,9 @@ export default function Login() {
 
     const handleSocialLogin = (provider: "google" | "github") => {
         analytics.event("login_social", { provider });
+        if (redirectTo !== "/") {
+            sessionStorage.setItem("auth_redirect", redirectTo);
+        }
         window.location.href = buildUrl(`/auth/${provider}`);
     };
 
@@ -139,6 +150,7 @@ export default function Login() {
                             Nao tem uma conta?{" "}
                             <Link
                                 to="/cadastro"
+                                state={{ from: redirectTo !== "/" ? redirectTo : undefined }}
                                 className="font-medium text-primary-600 hover:text-primary-700"
                             >
                                 Criar conta

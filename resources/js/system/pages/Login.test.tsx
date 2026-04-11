@@ -1,6 +1,8 @@
 import { render, screen, userEvent, waitFor } from '@/test/test-utils';
 import Login from './Login';
 
+const mockNavigate = vi.fn();
+
 vi.mock('@shared/contexts/AuthContext', () => ({
     useAuth: vi.fn(() => ({
         user: null, isLoading: false, isAuthenticated: false,
@@ -16,6 +18,11 @@ vi.mock('@shared/lib/analytics', () => ({
 vi.mock('@shared/lib/errors', () => ({
     getErrorMessage: vi.fn((err: Error) => err.message),
 }));
+
+vi.mock('react-router-dom', async () => {
+    const actual = await vi.importActual('react-router-dom');
+    return { ...actual, useNavigate: () => mockNavigate };
+});
 
 import { useAuth } from '@shared/contexts/AuthContext';
 
@@ -143,6 +150,135 @@ describe('Login', () => {
         Object.defineProperty(window, 'location', {
             writable: true,
             value: originalLocation,
+        });
+    });
+
+    describe('redirect after login', () => {
+        beforeEach(() => {
+            vi.clearAllMocks();
+            sessionStorage.clear();
+        });
+
+        it('navigates to "/" by default after email login', async () => {
+            const mockLogin = vi.fn().mockResolvedValue(undefined);
+            vi.mocked(useAuth).mockReturnValue({
+                user: null, isLoading: false, isAuthenticated: false,
+                login: mockLogin, register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(),
+            });
+            const user = userEvent.setup();
+
+            render(<Login />);
+
+            await user.type(screen.getByLabelText(/e-mail/i), 'test@example.com');
+            await user.type(screen.getByLabelText(/^senha$/i), 'mypassword123');
+            const buttons = screen.getAllByRole('button', { name: /^entrar$/i });
+            await user.click(buttons[buttons.length - 1]);
+
+            await waitFor(() => {
+                expect(mockNavigate).toHaveBeenCalledWith('/', { replace: true });
+            });
+        });
+
+        it('navigates to the intended page from ProtectedRoute state after email login', async () => {
+            const mockLogin = vi.fn().mockResolvedValue(undefined);
+            vi.mocked(useAuth).mockReturnValue({
+                user: null, isLoading: false, isAuthenticated: false,
+                login: mockLogin, register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(),
+            });
+            const user = userEvent.setup();
+
+            render(<Login />, {
+                routerProps: {
+                    initialEntries: [{ pathname: '/login', state: { from: '/perfil' } }],
+                },
+            });
+
+            await user.type(screen.getByLabelText(/e-mail/i), 'test@example.com');
+            await user.type(screen.getByLabelText(/^senha$/i), 'mypassword123');
+            const buttons = screen.getAllByRole('button', { name: /^entrar$/i });
+            await user.click(buttons[buttons.length - 1]);
+
+            await waitFor(() => {
+                expect(mockNavigate).toHaveBeenCalledWith('/perfil', { replace: true });
+            });
+        });
+
+        it('navigates to the redirect query param after email login (admin flow)', async () => {
+            const mockLogin = vi.fn().mockResolvedValue(undefined);
+            vi.mocked(useAuth).mockReturnValue({
+                user: null, isLoading: false, isAuthenticated: false,
+                login: mockLogin, register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(),
+            });
+            const user = userEvent.setup();
+
+            render(<Login />, {
+                routerProps: {
+                    initialEntries: ['/login?redirect=%2Fadmin%2Fseminars'],
+                },
+            });
+
+            await user.type(screen.getByLabelText(/e-mail/i), 'test@example.com');
+            await user.type(screen.getByLabelText(/^senha$/i), 'mypassword123');
+            const buttons = screen.getAllByRole('button', { name: /^entrar$/i });
+            await user.click(buttons[buttons.length - 1]);
+
+            await waitFor(() => {
+                expect(mockNavigate).toHaveBeenCalledWith('/admin/seminars', { replace: true });
+            });
+        });
+
+        it('saves redirect to sessionStorage before social login when redirect target exists', async () => {
+            const originalLocation = window.location;
+            Object.defineProperty(window, 'location', {
+                writable: true,
+                value: { ...originalLocation, href: '' },
+            });
+            const user = userEvent.setup();
+
+            render(<Login />, {
+                routerProps: {
+                    initialEntries: [{ pathname: '/login', state: { from: '/perfil' } }],
+                },
+            });
+
+            await user.click(screen.getByRole('button', { name: /google/i }));
+            expect(sessionStorage.getItem('auth_redirect')).toBe('/perfil');
+
+            Object.defineProperty(window, 'location', {
+                writable: true,
+                value: originalLocation,
+            });
+        });
+
+        it('does not save to sessionStorage when redirect target is "/"', async () => {
+            const originalLocation = window.location;
+            Object.defineProperty(window, 'location', {
+                writable: true,
+                value: { ...originalLocation, href: '' },
+            });
+            const user = userEvent.setup();
+
+            render(<Login />);
+
+            await user.click(screen.getByRole('button', { name: /google/i }));
+            expect(sessionStorage.getItem('auth_redirect')).toBeNull();
+
+            Object.defineProperty(window, 'location', {
+                writable: true,
+                value: originalLocation,
+            });
+        });
+
+        it('passes redirect state to the "Criar conta" link', () => {
+            render(<Login />, {
+                routerProps: {
+                    initialEntries: [{ pathname: '/login', state: { from: '/certificados' } }],
+                },
+            });
+
+            const links = screen.getAllByRole('link', { name: /criar conta/i });
+            const cadastroLink = links.find((l) => l.getAttribute('href') === '/cadastro');
+            expect(cadastroLink).toBeDefined();
         });
     });
 });

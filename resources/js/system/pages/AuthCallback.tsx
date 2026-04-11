@@ -16,7 +16,9 @@ export default function AuthCallback() {
     // Navigate once exchange is complete and user is set
     useEffect(() => {
         if (exchangeComplete && user) {
-            navigate("/", { replace: true });
+            const redirectTo = sessionStorage.getItem("auth_redirect") || "/";
+            sessionStorage.removeItem("auth_redirect");
+            navigate(redirectTo, { replace: true });
         }
     }, [exchangeComplete, user, navigate]);
 
