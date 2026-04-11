@@ -104,6 +104,10 @@ describe('isSafeRedirect', () => {
         expect(isSafeRedirect('//evil.com/path')).toBe(false);
     });
 
+    it('rejects backslash-relative URLs', () => {
+        expect(isSafeRedirect('/\\evil.com')).toBe(false);
+    });
+
     it('rejects absolute URLs', () => {
         expect(isSafeRedirect('https://evil.com')).toBe(false);
         expect(isSafeRedirect('http://evil.com/login')).toBe(false);

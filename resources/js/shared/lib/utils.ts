@@ -18,10 +18,16 @@ export function containsHTML(text: string): boolean {
 
 /**
  * Validates that a redirect path is a safe relative path (not an open redirect).
- * Rejects protocol-relative URLs (//evil.com), absolute URLs, and non-string values.
+ * Rejects protocol-relative URLs (//evil.com), backslash-relative URLs (/\evil.com),
+ * absolute URLs, and non-string values.
  */
 export function isSafeRedirect(path: unknown): path is string {
-    return typeof path === "string" && path.startsWith("/") && !path.startsWith("//");
+    return (
+        typeof path === "string" &&
+        path.startsWith("/") &&
+        !path.startsWith("//") &&
+        !path.startsWith("/\\")
+    );
 }
 
 /**
