@@ -49,3 +49,11 @@ describe('PruneAuditLogsCommand', function () {
         expect(AuditLog::count())->toBe(2);
     });
 });
+
+describe('Scheduled audit prune', function () {
+    it('schedules audit prune with 365 day retention', function () {
+        $this->artisan('schedule:list')
+            ->expectsOutputToContain('audit:prune --days=365')
+            ->assertExitCode(0);
+    });
+});
