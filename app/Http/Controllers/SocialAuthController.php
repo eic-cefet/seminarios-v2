@@ -43,7 +43,9 @@ class SocialAuthController extends Controller
             Cache::put("auth_code:{$code}", $user->id, now()->addMinutes(5));
 
             return redirect("/auth/callback?code={$code}");
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            report($e);
+
             return redirect('/auth/callback?error=authentication_failed');
         }
     }

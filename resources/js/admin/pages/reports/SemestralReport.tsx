@@ -547,7 +547,7 @@ export default function SemestralReport() {
                                                                                             <span>
                                                                                                 -
                                                                                             </span>
-                                                                                                <span>
+                                                                                            <span>
                                                                                                 {formatDateTimeUtil(
                                                                                                     presentation.date,
                                                                                                 )}

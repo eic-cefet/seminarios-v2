@@ -30,7 +30,7 @@ export function Pagination({
             </span>
             <div className="flex items-center gap-2">
                 <button
-                    onClick={() => onPageChange(currentPage - 1)}
+                    onClick={() => onPageChange(Math.max(1, currentPage - 1))}
                     disabled={isFirst}
                     aria-label="Página anterior"
                     className={cn(
@@ -44,7 +44,7 @@ export function Pagination({
                     Anterior
                 </button>
                 <button
-                    onClick={() => onPageChange(currentPage + 1)}
+                    onClick={() => onPageChange(Math.min(lastPage, currentPage + 1))}
                     disabled={isLast}
                     aria-label="Próxima página"
                     className={cn(
