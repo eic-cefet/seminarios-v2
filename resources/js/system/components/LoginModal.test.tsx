@@ -439,4 +439,27 @@ describe('LoginModal', () => {
         // onOpenChange prop should have been forwarded with true
         expect(onOpenChange).toHaveBeenCalledWith(true);
     });
+
+    it('saves current path to sessionStorage on social login when not on "/"', async () => {
+        const user = userEvent.setup();
+        const originalLocation = window.location;
+        Object.defineProperty(window, 'location', {
+            writable: true,
+            value: { ...originalLocation, href: '' },
+        });
+        sessionStorage.clear();
+
+        render(<LoginModal open={true} onOpenChange={onOpenChange} />, {
+            routerProps: { initialEntries: ['/seminario/test'] },
+        });
+
+        await user.click(screen.getByText(/continuar com google/i));
+
+        expect(sessionStorage.getItem('auth_redirect')).toBe('/seminario/test');
+
+        Object.defineProperty(window, 'location', {
+            writable: true,
+            value: originalLocation,
+        });
+    });
 });

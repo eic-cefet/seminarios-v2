@@ -105,4 +105,35 @@ describe('AdminLayout', () => {
         render(<AdminLayout />);
         expect(screen.queryByTestId('outlet')).not.toBeInTheDocument();
     });
+
+    it('redirects to login with redirect query param when not authenticated', async () => {
+        const { useAuth } = await import('@shared/contexts/AuthContext');
+        vi.mocked(useAuth).mockReturnValue({
+            user: null,
+            isLoading: false,
+            isAuthenticated: false,
+            login: vi.fn(),
+            register: vi.fn(),
+            logout: vi.fn(),
+            exchangeCode: vi.fn(),
+            refreshUser: vi.fn(),
+        });
+
+        const originalLocation = window.location;
+        Object.defineProperty(window, 'location', {
+            writable: true,
+            value: { ...originalLocation, href: '', pathname: '/admin/seminars', search: '' },
+        });
+
+        render(<AdminLayout />);
+
+        // The redirect URL should include the current admin path as a query param
+        expect(window.location.href).toContain('/login?redirect=');
+        expect(window.location.href).toContain(encodeURIComponent('/admin/seminars'));
+
+        Object.defineProperty(window, 'location', {
+            writable: true,
+            value: originalLocation,
+        });
+    });
 });

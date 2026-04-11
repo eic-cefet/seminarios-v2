@@ -168,4 +168,131 @@ describe('AuthCallback', () => {
         // because hasRun.current guard (line 24) prevents the second execution
         expect(mockExchangeCode).toHaveBeenCalledTimes(1);
     });
+
+    describe('redirect after OAuth login', () => {
+        beforeEach(() => {
+            sessionStorage.clear();
+        });
+
+        it('navigates to sessionStorage redirect path after exchange completes', async () => {
+            sessionStorage.setItem('auth_redirect', '/perfil');
+            mockExchangeCode.mockResolvedValue(undefined);
+
+            const { rerender } = render(<AuthCallback />, {
+                routerProps: { initialEntries: ['/auth/callback?code=valid-code'] },
+            });
+
+            await waitFor(() => {
+                expect(mockExchangeCode).toHaveBeenCalledWith('valid-code');
+            });
+
+            vi.mocked(useAuth).mockReturnValue({
+                user: { id: 1, name: 'Test User', email: 'test@test.com' },
+                isLoading: false,
+                isAuthenticated: true,
+                login: vi.fn(),
+                register: vi.fn(),
+                logout: vi.fn(),
+                exchangeCode: mockExchangeCode,
+                refreshUser: vi.fn(),
+            });
+
+            rerender(<AuthCallback />);
+
+            await waitFor(() => {
+                expect(mockNavigate).toHaveBeenCalledWith('/perfil', { replace: true });
+            });
+        });
+
+        it('clears sessionStorage redirect after navigating', async () => {
+            sessionStorage.setItem('auth_redirect', '/certificados');
+            mockExchangeCode.mockResolvedValue(undefined);
+
+            const { rerender } = render(<AuthCallback />, {
+                routerProps: { initialEntries: ['/auth/callback?code=valid-code'] },
+            });
+
+            await waitFor(() => {
+                expect(mockExchangeCode).toHaveBeenCalledWith('valid-code');
+            });
+
+            vi.mocked(useAuth).mockReturnValue({
+                user: { id: 1, name: 'Test User', email: 'test@test.com' },
+                isLoading: false,
+                isAuthenticated: true,
+                login: vi.fn(),
+                register: vi.fn(),
+                logout: vi.fn(),
+                exchangeCode: mockExchangeCode,
+                refreshUser: vi.fn(),
+            });
+
+            rerender(<AuthCallback />);
+
+            await waitFor(() => {
+                expect(mockNavigate).toHaveBeenCalled();
+            });
+
+            expect(sessionStorage.getItem('auth_redirect')).toBeNull();
+        });
+
+        it('navigates to "/" when no sessionStorage redirect is set', async () => {
+            mockExchangeCode.mockResolvedValue(undefined);
+
+            const { rerender } = render(<AuthCallback />, {
+                routerProps: { initialEntries: ['/auth/callback?code=valid-code'] },
+            });
+
+            await waitFor(() => {
+                expect(mockExchangeCode).toHaveBeenCalledWith('valid-code');
+            });
+
+            vi.mocked(useAuth).mockReturnValue({
+                user: { id: 1, name: 'Test User', email: 'test@test.com' },
+                isLoading: false,
+                isAuthenticated: true,
+                login: vi.fn(),
+                register: vi.fn(),
+                logout: vi.fn(),
+                exchangeCode: mockExchangeCode,
+                refreshUser: vi.fn(),
+            });
+
+            rerender(<AuthCallback />);
+
+            await waitFor(() => {
+                expect(mockNavigate).toHaveBeenCalledWith('/', { replace: true });
+            });
+        });
+
+        it('rejects malicious sessionStorage redirect (open redirect protection)', async () => {
+            sessionStorage.setItem('auth_redirect', '//evil.com');
+            mockExchangeCode.mockResolvedValue(undefined);
+
+            const { rerender } = render(<AuthCallback />, {
+                routerProps: { initialEntries: ['/auth/callback?code=valid-code'] },
+            });
+
+            await waitFor(() => {
+                expect(mockExchangeCode).toHaveBeenCalledWith('valid-code');
+            });
+
+            vi.mocked(useAuth).mockReturnValue({
+                user: { id: 1, name: 'Test User', email: 'test@test.com' },
+                isLoading: false,
+                isAuthenticated: true,
+                login: vi.fn(),
+                register: vi.fn(),
+                logout: vi.fn(),
+                exchangeCode: mockExchangeCode,
+                refreshUser: vi.fn(),
+            });
+
+            rerender(<AuthCallback />);
+
+            await waitFor(() => {
+                expect(mockNavigate).toHaveBeenCalledWith('/', { replace: true });
+            });
+        });
+    });
 });

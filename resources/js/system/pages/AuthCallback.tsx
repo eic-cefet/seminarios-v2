@@ -4,6 +4,7 @@ import { Loader2 } from "lucide-react";
 import { Layout } from "../components/Layout";
 import { useAuth } from "@shared/contexts/AuthContext";
 import { getErrorMessage } from "@shared/lib/errors";
+import { isSafeRedirect } from "@shared/lib/utils";
 
 export default function AuthCallback() {
     const [searchParams] = useSearchParams();
@@ -16,7 +17,9 @@ export default function AuthCallback() {
     // Navigate once exchange is complete and user is set
     useEffect(() => {
         if (exchangeComplete && user) {
-            navigate("/", { replace: true });
+            const raw = sessionStorage.getItem("auth_redirect");
+            sessionStorage.removeItem("auth_redirect");
+            navigate(isSafeRedirect(raw) ? raw : "/", { replace: true });
         }
     }, [exchangeComplete, user, navigate]);
 

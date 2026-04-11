@@ -187,7 +187,7 @@ describe('Register', () => {
         });
 
         await waitFor(() => {
-            expect(mockNavigate).toHaveBeenCalledWith('/');
+            expect(mockNavigate).toHaveBeenCalledWith('/', { replace: true });
         });
     });
 
@@ -375,5 +375,88 @@ describe('Register', () => {
 
         // Submit button should be disabled again
         expect(screen.getByRole('button', { name: /criar conta/i })).toBeDisabled();
+    });
+
+    describe('redirect after registration', () => {
+        beforeEach(() => {
+            sessionStorage.clear();
+        });
+
+        it('navigates to intended page from state after registration', async () => {
+            mockRegister.mockResolvedValue(undefined);
+            const user = userEvent.setup();
+
+            render(<Register />, {
+                routerProps: {
+                    initialEntries: [{ pathname: '/cadastro', state: { from: '/perfil' } }],
+                },
+            });
+
+            await user.type(screen.getByLabelText(/nome completo/i), 'Test User');
+            await user.type(screen.getByLabelText(/e-mail/i), 'test@example.com');
+            await user.selectOptions(screen.getByLabelText(/situação/i), 'studying');
+            await user.selectOptions(screen.getByLabelText(/vínculo/i), 'Aluno');
+            await user.type(screen.getByLabelText(/^senha$/i), 'password123');
+            await user.type(screen.getByLabelText(/confirmar senha/i), 'password123');
+            await user.click(screen.getByText('ReCaptcha'));
+            await user.click(screen.getByRole('button', { name: /criar conta/i }));
+
+            await waitFor(() => {
+                expect(mockNavigate).toHaveBeenCalledWith('/perfil', { replace: true });
+            });
+        });
+
+        it('redirects already-authenticated user to intended page from state', () => {
+            vi.mocked(useAuth).mockReturnValue({
+                user: { id: 1, name: 'Test', email: 'test@test.com' }, isLoading: false, isAuthenticated: true,
+                login: vi.fn(), register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(),
+            });
+
+            render(<Register />, {
+                routerProps: {
+                    initialEntries: [{ pathname: '/cadastro', state: { from: '/certificados' } }],
+                },
+            });
+
+            expect(mockNavigate).toHaveBeenCalledWith('/certificados', { replace: true });
+        });
+
+        it('saves redirect to sessionStorage before social login', async () => {
+            const originalLocation = window.location;
+            Object.defineProperty(window, 'location', {
+                writable: true,
+                value: { ...originalLocation, href: '' },
+            });
+            const user = userEvent.setup();
+
+            render(<Register />, {
+                routerProps: {
+                    initialEntries: [{ pathname: '/cadastro', state: { from: '/perfil' } }],
+                },
+            });
+
+            await user.click(screen.getByRole('button', { name: /google/i }));
+            expect(sessionStorage.getItem('auth_redirect')).toBe('/perfil');
+
+            Object.defineProperty(window, 'location', {
+                writable: true,
+                value: originalLocation,
+            });
+        });
+
+        it('rejects unsafe redirect and falls back to "/" (open redirect protection)', () => {
+            vi.mocked(useAuth).mockReturnValue({
+                user: { id: 1, name: 'Test', email: 'test@test.com' }, isLoading: false, isAuthenticated: true,
+                login: vi.fn(), register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(),
+            });
+
+            render(<Register />, {
+                routerProps: {
+                    initialEntries: [{ pathname: '/cadastro', state: { from: '//evil.com' } }],
+                },
+            });
+
+            expect(mockNavigate).toHaveBeenCalledWith('/', { replace: true });
+        });
     });
 });

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import * as Dialog from "@radix-ui/react-dialog";
 import * as Label from "@radix-ui/react-label";
 import { X } from "lucide-react";
@@ -16,6 +16,7 @@ interface LoginModalProps {
 
 export function LoginModal({ open, onOpenChange }: LoginModalProps) {
     const { login } = useAuth();
+    const location = useLocation();
     const [view, setView] = useState<"login" | "forgot">("login");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
@@ -55,6 +56,10 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
     };
 
     const handleSocialLogin = (provider: "google" | "github") => {
+        const currentPath = location.pathname + location.search;
+        if (currentPath !== "/") {
+            sessionStorage.setItem("auth_redirect", currentPath);
+        }
         window.location.href = buildUrl(`/auth/${provider}`);
     };
 

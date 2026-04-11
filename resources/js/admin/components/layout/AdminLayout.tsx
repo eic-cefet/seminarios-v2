@@ -16,8 +16,11 @@ export function AdminLayout() {
 
     useEffect(() => {
         if (!isLoading && !isAuthenticated) {
-            // Redirect to system SPA login (full page redirect since it's a different SPA)
-            window.location.href = buildUrl("/login");
+            // Redirect to system SPA login with redirect param to return here after login
+            const currentPath = window.location.pathname + window.location.search;
+            window.location.href = buildUrl(
+                `/login?redirect=${encodeURIComponent(currentPath)}`,
+            );
         } else if (!isLoading && isAuthenticated && !canAccessAdmin) {
             // User is authenticated but doesn't have admin access
             window.location.href = buildUrl("/");
