@@ -49,14 +49,12 @@ class AdminPresenceLinkController extends Controller
     {
         Gate::authorize('update', $seminar);
 
-        // Check if presence link already exists
         if ($seminar->presenceLink) {
             return response()->json([
                 'message' => 'Presence link already exists for this seminar',
             ], 409);
         }
 
-        // Calculate expiration time: 4 hours after scheduled_at
         $expiresAt = $seminar->scheduled_at?->addHours(4);
 
         $presenceLink = PresenceLink::create([
@@ -96,7 +94,7 @@ class AdminPresenceLinkController extends Controller
             ], 404);
         }
 
-        // When activating, use the later of: scheduled_at + 4 hours OR now + 1 hour
+        // When activating, expire at the later of: scheduled_at + 4h OR now + 1h
         $expiresAt = null;
         if (! $presenceLink->active) {
             $scheduledExpiry = $seminar->scheduled_at?->addHours(4);

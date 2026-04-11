@@ -14,6 +14,9 @@ class ExternalSeminarUpdateRequest extends FormRequest
         return Gate::allows('update', $this->route('seminar'));
     }
 
+    /**
+     * @return array<string, array<int, mixed>>
+     */
     public function rules(): array
     {
         return [

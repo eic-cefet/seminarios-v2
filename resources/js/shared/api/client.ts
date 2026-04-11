@@ -394,7 +394,6 @@ export const profileApi = {
     },
 };
 
-// Pending Evaluation type
 export interface PendingEvaluation {
     id: number;
     seminar: {
@@ -421,12 +420,16 @@ export const bugReportApi = {
         const formData = new FormData();
         formData.append("subject", data.subject);
         formData.append("message", data.message);
-        if (data.name) formData.append("name", data.name);
-        if (data.email) formData.append("email", data.email);
+        if (data.name) {
+            formData.append("name", data.name);
+        }
+        if (data.email) {
+            formData.append("email", data.email);
+        }
         if (data.files) {
-            data.files.forEach((file) => {
+            for (const file of data.files) {
                 formData.append("files[]", file);
-            });
+            }
         }
 
         return fetchApi<{ message: string }>("/bug-report", {

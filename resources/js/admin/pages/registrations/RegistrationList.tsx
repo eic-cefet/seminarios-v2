@@ -1,9 +1,9 @@
-import { useState, useRef, useEffect } from "react";
+import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Search, Calendar, User, Mail } from "lucide-react";
 import { toast } from "sonner";
-import { debounce } from "lodash";
 import { analytics } from "@shared/lib/analytics";
+import { useDebouncedSearch } from "@shared/hooks/useDebouncedSearch";
 import {
     registrationsApi,
     dashboardApi,
@@ -42,9 +42,16 @@ import { formatDateTime, compareDateDesc } from "@shared/lib/date";
 export default function RegistrationList() {
     const queryClient = useQueryClient();
     const [selectedSeminarId, setSelectedSeminarId] = useState<string>("");
-    const [searchInput, setSearchInput] = useState("");
-    const [searchTerm, setSearchTerm] = useState("");
     const [page, setPage] = useState(1);
+
+    const {
+        inputValue: searchInput,
+        debouncedValue: searchTerm,
+        setInputValue: setSearchInput,
+        clear: clearSearch,
+    } = useDebouncedSearch({
+        onDebouncedChange: () => setPage(1),
+    });
 
     // Fetch seminars for dropdown
     const { data: seminarsData, isLoading: isLoadingSeminars } = useQuery({
@@ -151,30 +158,9 @@ export default function RegistrationList() {
         setPage(1);
     };
 
-    // Debounced search handler
-    const debouncedSearch = useRef(
-        debounce((value: string) => {
-            setSearchTerm(value);
-            setPage(1);
-        }, 500),
-    ).current;
-
-    // Cleanup debounce on unmount
-    useEffect(() => {
-        return () => {
-            debouncedSearch.cancel();
-        };
-    }, [debouncedSearch]);
-
-    const handleSearch = (value: string) => {
-        setSearchInput(value);
-        debouncedSearch(value);
-    };
-
     const clearFilters = () => {
         setSelectedSeminarId("");
-        setSearchInput("");
-        setSearchTerm("");
+        clearSearch();
         setPage(1);
     };
 
@@ -239,7 +225,7 @@ export default function RegistrationList() {
                                     placeholder="Nome ou email..."
                                     value={searchInput}
                                     onChange={(e) =>
-                                        handleSearch(e.target.value)
+                                        setSearchInput(e.target.value)
                                     }
                                     className="pl-9"
                                 />

@@ -24,12 +24,12 @@ export class ErrorBoundary extends Component<Props, State> {
     }
 
     render() {
-        if (this.state.hasError) {
-            if (this.props.fallback) {
-                return this.props.fallback;
-            }
+        if (!this.state.hasError) {
+            return this.props.children;
+        }
 
-            return (
+        return (
+            this.props.fallback ?? (
                 <div className="flex min-h-screen items-center justify-center bg-gray-50">
                     <div className="text-center">
                         <h1 className="text-2xl font-bold text-gray-900">
@@ -48,9 +48,7 @@ export class ErrorBoundary extends Component<Props, State> {
                         </button>
                     </div>
                 </div>
-            );
-        }
-
-        return this.props.children;
+            )
+        );
     }
 }

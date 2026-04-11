@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
@@ -27,6 +27,48 @@ import { analytics } from "@shared/lib/analytics";
 import DOMPurify from "dompurify";
 import ReactMarkdown from "react-markdown";
 import rehypeSanitize from "rehype-sanitize";
+
+function ActionButton({
+    onClick,
+    disabled,
+    isPending,
+    pendingLabel = "Processando...",
+    variant = "primary",
+    children,
+}: {
+    onClick: () => void;
+    disabled: boolean;
+    isPending: boolean;
+    pendingLabel?: string;
+    variant?: "primary" | "secondary";
+    children: ReactNode;
+}) {
+    const base =
+        variant === "primary"
+            ? "bg-primary-600 text-white hover:bg-primary-700"
+            : "border border-gray-300 bg-white text-gray-700 hover:bg-gray-50";
+
+    return (
+        <button
+            onClick={onClick}
+            disabled={disabled}
+            className={cn(
+                "w-full rounded-md px-4 py-3 text-sm font-medium shadow-sm transition-colors cursor-pointer",
+                base,
+                disabled && "opacity-70 cursor-not-allowed",
+            )}
+        >
+            {isPending ? (
+                <span className="flex items-center justify-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    {pendingLabel}
+                </span>
+            ) : (
+                children
+            )}
+        </button>
+    );
+}
 
 export default function SeminarDetails() {
     const { slug } = useParams<{ slug: string }>();
@@ -155,7 +197,6 @@ export default function SeminarDetails() {
         <>
             <PageTitle title={seminar.name} />
             <Layout>
-                {/* Header */}
                 <div
                     className={cn(
                         "border-b border-gray-200",
@@ -219,12 +260,9 @@ export default function SeminarDetails() {
                     </div>
                 </div>
 
-                {/* Content */}
                 <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
                     <div className="grid gap-8 lg:grid-cols-3">
-                        {/* Main Content */}
                         <div className="lg:col-span-2 space-y-8">
-                            {/* Description */}
                             {seminar.description && (
                                 <section>
                                     <h2 className="text-lg font-semibold text-gray-900 mb-4">
@@ -251,7 +289,6 @@ export default function SeminarDetails() {
                                 </section>
                             )}
 
-                            {/* Speakers */}
                             {seminar.speakers &&
                                 seminar.speakers.length > 0 && (
                                     <section>
@@ -335,9 +372,7 @@ export default function SeminarDetails() {
                                 )}
                         </div>
 
-                        {/* Sidebar */}
                         <div className="space-y-6">
-                            {/* Action Card */}
                             <div className="rounded-lg border border-gray-200 bg-white p-6">
                                 {!isExpired ? (
                                     isRegistered ? (
@@ -354,24 +389,14 @@ export default function SeminarDetails() {
                                                 Você receberá um lembrete por
                                                 e-mail antes do evento.
                                             </p>
-                                            <button
+                                            <ActionButton
                                                 onClick={handleUnregisterClick}
                                                 disabled={isProcessing || isToday}
-                                                className={cn(
-                                                    "w-full rounded-md border border-gray-300 bg-white px-4 py-3 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 transition-colors cursor-pointer",
-                                                    (isProcessing || isToday) &&
-                                                        "opacity-70 cursor-not-allowed",
-                                                )}
+                                                isPending={isProcessing}
+                                                variant="secondary"
                                             >
-                                                {isProcessing ? (
-                                                    <span className="flex items-center justify-center gap-2">
-                                                        <Loader2 className="h-4 w-4 animate-spin" />
-                                                        Processando...
-                                                    </span>
-                                                ) : (
-                                                    "Cancelar inscrição"
-                                                )}
-                                            </button>
+                                                Cancelar inscrição
+                                            </ActionButton>
                                             {isToday && (
                                                 <p className="mt-2 text-xs text-amber-600 text-center">
                                                     Não é possível cancelar a
@@ -389,28 +414,13 @@ export default function SeminarDetails() {
                                                     {registrationError}
                                                 </div>
                                             )}
-                                            <button
+                                            <ActionButton
                                                 onClick={handleRegisterClick}
-                                                disabled={
-                                                    isProcessing ||
-                                                    isLoadingRegistration
-                                                }
-                                                className={cn(
-                                                    "w-full rounded-md bg-primary-600 px-4 py-3 text-sm font-medium text-white shadow-sm hover:bg-primary-700 transition-colors cursor-pointer",
-                                                    (isProcessing ||
-                                                        isLoadingRegistration) &&
-                                                        "opacity-70 cursor-not-allowed",
-                                                )}
+                                                disabled={isProcessing || isLoadingRegistration}
+                                                isPending={isProcessing}
                                             >
-                                                {isProcessing ? (
-                                                    <span className="flex items-center justify-center gap-2">
-                                                        <Loader2 className="h-4 w-4 animate-spin" />
-                                                        Processando...
-                                                    </span>
-                                                ) : (
-                                                    "Realizar inscrição"
-                                                )}
-                                            </button>
+                                                Realizar inscrição
+                                            </ActionButton>
                                             <p className="mt-3 text-xs text-gray-500 text-center">
                                                 Você receberá um lembrete por
                                                 e-mail antes do evento
@@ -445,7 +455,6 @@ export default function SeminarDetails() {
                                 </div>
                             </div>
 
-                            {/* External Link */}
                             {seminar.roomLink && (
                                 <a
                                     href={seminar.roomLink}
@@ -458,7 +467,6 @@ export default function SeminarDetails() {
                                 </a>
                             )}
 
-                            {/* Workshop Info */}
                             {seminar.workshop && (
                                 <div className="rounded-lg border border-gray-200 bg-white p-6">
                                     <p className="text-xs text-gray-500 uppercase tracking-wide mb-2">
@@ -473,7 +481,6 @@ export default function SeminarDetails() {
                                 </div>
                             )}
 
-                            {/* Location Details */}
                             {seminar.location && (
                                 <div className="rounded-lg border border-gray-200 bg-white p-6">
                                     <h3 className="font-semibold text-gray-900 mb-2">

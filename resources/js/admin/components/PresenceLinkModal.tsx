@@ -1,6 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Copy, QrCode } from "lucide-react";
-import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { formatDateTime } from "@shared/lib/date";
 import { presenceLinkApi } from "../api/adminClient";
@@ -30,7 +29,6 @@ export function PresenceLinkModal({
     seminarName,
 }: PresenceLinkModalProps) {
     const queryClient = useQueryClient();
-    const [hasLink, setHasLink] = useState(false);
 
     const { data, isLoading, refetch } = useQuery({
         queryKey: ["presence-link", seminarId],
@@ -39,14 +37,6 @@ export function PresenceLinkModal({
     });
 
     const presenceLink = data?.data;
-
-    useEffect(() => {
-        if (presenceLink) {
-            setHasLink(true);
-        } else {
-            setHasLink(false);
-        }
-    }, [presenceLink]);
 
     const createMutation = useMutation({
         mutationFn: () => presenceLinkApi.create(seminarId),
@@ -102,7 +92,7 @@ export function PresenceLinkModal({
                         <div className="py-8 text-center text-muted-foreground">
                             Carregando...
                         </div>
-                    ) : !hasLink || !presenceLink ? (
+                    ) : !presenceLink ? (
                         <div className="space-y-4 py-4">
                             <p className="text-sm text-muted-foreground">
                                 Nenhum link de presença foi criado para este

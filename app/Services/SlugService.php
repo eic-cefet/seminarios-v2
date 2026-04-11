@@ -8,8 +8,6 @@ use Illuminate\Support\Str;
 class SlugService
 {
     /**
-     * Generate a unique slug for the given model.
-     *
      * @param  class-string<Model>  $modelClass
      */
     public function generateUnique(
@@ -23,16 +21,13 @@ class SlugService
         $counter = 1;
 
         while ($this->slugExists($modelClass, $column, $slug, $excludeId)) {
-            $slug = $baseSlug.'-'.$counter;
-            $counter++;
+            $slug = $baseSlug.'-'.$counter++;
         }
 
         return $slug;
     }
 
     /**
-     * Check if a slug already exists in the given model.
-     *
      * @param  class-string<Model>  $modelClass
      */
     private function slugExists(

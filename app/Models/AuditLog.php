@@ -98,7 +98,7 @@ class AuditLog extends Model
             'user_id' => $userId ?? auth()->id(),
             'event_name' => $eventName,
             'event_type' => $eventType,
-            'auditable_type' => $auditable ? $auditable->getMorphClass() : null,
+            'auditable_type' => $auditable?->getMorphClass(),
             'auditable_id' => $auditable?->getKey(),
             'event_data' => $eventData ?: null,
             'origin' => $origin,

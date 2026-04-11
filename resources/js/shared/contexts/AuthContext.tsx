@@ -42,6 +42,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const [isLoading, setIsLoading] = useState(true);
     const queryClient = useQueryClient();
 
+    const invalidateAuthQueries = useCallback(() => {
+        queryClient.invalidateQueries({ queryKey: ["profile"] });
+        queryClient.invalidateQueries({ queryKey: ["registration"] });
+    }, [queryClient]);
+
     const refreshUser = useCallback(async () => {
         try {
             const response = await authApi.me();
@@ -61,10 +66,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         async (email: string, password: string, remember = false) => {
             const response = await authApi.login({ email, password, remember });
             setUser(response.user);
-            queryClient.invalidateQueries({ queryKey: ["profile"] });
-            queryClient.invalidateQueries({ queryKey: ["registration"] });
+            invalidateAuthQueries();
         },
-        [queryClient],
+        [invalidateAuthQueries],
     );
 
     const register = useCallback(
@@ -79,10 +83,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 course_id: data.courseId,
             });
             setUser(response.user);
-            queryClient.invalidateQueries({ queryKey: ["profile"] });
-            queryClient.invalidateQueries({ queryKey: ["registration"] });
+            invalidateAuthQueries();
         },
-        [queryClient],
+        [invalidateAuthQueries],
     );
 
     const logout = useCallback(async () => {
@@ -93,14 +96,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const exchangeCode = useCallback(
         async (code: string) => {
-            // Exchange the code to establish the session
             await authApi.exchangeCode(code);
-            // Fetch user data via /me to ensure consistent data shape
             await refreshUser();
-            queryClient.invalidateQueries({ queryKey: ["profile"] });
-            queryClient.invalidateQueries({ queryKey: ["registration"] });
+            invalidateAuthQueries();
         },
-        [queryClient, refreshUser],
+        [invalidateAuthQueries, refreshUser],
     );
 
     return (

@@ -14,9 +14,6 @@ use Throwable;
 
 class ProfileRatingController extends Controller
 {
-    /**
-     * Get the authenticated user's pending evaluations (seminars attended but not rated)
-     */
     public function pendingEvaluations(Request $request): JsonResponse
     {
         $user = $request->user();
@@ -45,9 +42,6 @@ class ProfileRatingController extends Controller
         ]);
     }
 
-    /**
-     * Submit a rating for a seminar
-     */
     public function submitRating(Request $request, int $seminarId): JsonResponse
     {
         $user = $request->user();
@@ -57,7 +51,6 @@ class ProfileRatingController extends Controller
             'comment' => ['nullable', 'string', 'max:1000'],
         ]);
 
-        // Check if user attended this seminar
         $registration = $user->registrations()
             ->where('seminar_id', $seminarId)
             ->where('present', true)
@@ -67,7 +60,6 @@ class ProfileRatingController extends Controller
             throw ApiException::forbidden('Você não participou deste seminário.');
         }
 
-        // Check if seminar is within 30 days
         $seminar = $registration->seminar;
         $thirtyDaysAgo = now()->subDays(30)->startOfDay();
 
@@ -75,17 +67,15 @@ class ProfileRatingController extends Controller
             throw ApiException::forbidden('O prazo para avaliar este seminário expirou.');
         }
 
-        // Check if already rated
-        $existingRating = Rating::query()
+        $alreadyRated = Rating::query()
             ->where('seminar_id', $seminarId)
             ->where('user_id', $user->id)
-            ->first();
+            ->exists();
 
-        if ($existingRating) {
+        if ($alreadyRated) {
             throw ApiException::conflict('Você já avaliou este seminário.');
         }
 
-        // Create rating
         $rating = Rating::create([
             'seminar_id' => $seminarId,
             'user_id' => $user->id,

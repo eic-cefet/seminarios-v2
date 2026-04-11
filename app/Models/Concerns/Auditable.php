@@ -4,6 +4,7 @@ namespace App\Models\Concerns;
 
 use App\Models\AuditLog;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Str;
 
 trait Auditable
 {
@@ -24,8 +25,6 @@ trait Auditable
         static::updated(function ($model) {
             $changed = $model->getDirty();
             $excluded = $model->getAuditExcludedFields();
-
-            // Remove excluded and timestamp-only changes
             $meaningful = array_diff_key($changed, array_flip($excluded), array_flip(['updated_at']));
 
             if (empty($meaningful)) {
@@ -49,18 +48,17 @@ trait Auditable
             $usesSoftDeletes = in_array(SoftDeletes::class, class_uses_recursive($model));
             $isSoftDeleting = $usesSoftDeletes && ! $model->isForceDeleting();
 
-            $eventSuffix = $isSoftDeleting ? 'soft_deleted' : 'deleted';
-
-            $model->logAuditEvent($eventSuffix, $model->getAuditableAttributes());
+            $model->logAuditEvent(
+                $isSoftDeleting ? 'soft_deleted' : 'deleted',
+                $model->getAuditableAttributes(),
+            );
         });
 
-        if (method_exists(static::class, 'restored')) {
+        if (in_array(SoftDeletes::class, class_uses_recursive(static::class))) {
             static::restored(function ($model) {
                 $model->logAuditEvent('restored', $model->getAuditableAttributes());
             });
-        }
 
-        if (method_exists(static::class, 'forceDeleted')) {
             static::forceDeleted(function ($model) {
                 $model->logAuditEvent('force_deleted', $model->getAuditableAttributes());
             });
@@ -78,18 +76,12 @@ trait Auditable
 
     protected function getAuditEventName(string $action): string
     {
-        $modelName = class_basename(static::class);
-        $modelName = strtolower(preg_replace('/(?<!^)[A-Z]/', '_$0', $modelName));
-
-        return "{$modelName}.{$action}";
+        return Str::snake(class_basename(static::class)).".{$action}";
     }
 
     protected function getAuditableAttributes(): array
     {
-        $attributes = $this->getAttributes();
-        $excluded = $this->getAuditExcludedFields();
-
-        return array_diff_key($attributes, array_flip($excluded));
+        return array_diff_key($this->getAttributes(), array_flip($this->getAuditExcludedFields()));
     }
 
     protected function getAuditExcludedFields(): array

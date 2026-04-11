@@ -16,12 +16,8 @@ class ProfileController extends Controller
 {
     use FormatsUserResponse;
 
-    /**
-     * Get the authenticated user's profile
-     */
     public function show(Request $request): JsonResponse
     {
-        // auth:sanctum middleware ensures $user is not null
         $user = $request->user();
 
         return response()->json([
@@ -29,9 +25,6 @@ class ProfileController extends Controller
         ]);
     }
 
-    /**
-     * Update the authenticated user's profile
-     */
     public function update(ProfileUpdateRequest $request): JsonResponse
     {
         $user = $request->user();
@@ -41,10 +34,8 @@ class ProfileController extends Controller
 
         $user->update($validated);
 
-        // If email changed, clear verification
         if ($emailChanged) {
-            $user->email_verified_at = null;
-            $user->save();
+            $user->forceFill(['email_verified_at' => null])->save();
         }
 
         return response()->json([
@@ -53,9 +44,6 @@ class ProfileController extends Controller
         ]);
     }
 
-    /**
-     * Update the authenticated user's student data
-     */
     public function updateStudentData(StudentDataUpdateRequest $request): JsonResponse
     {
         $user = $request->user();
@@ -73,12 +61,8 @@ class ProfileController extends Controller
         ]);
     }
 
-    /**
-     * Update the authenticated user's password
-     */
     public function updatePassword(Request $request): JsonResponse
     {
-        // auth:sanctum middleware ensures $user is not null
         $user = $request->user();
 
         $validated = $request->validate([

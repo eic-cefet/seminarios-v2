@@ -115,6 +115,62 @@ function setAccessLevel(
     return filtered;
 }
 
+const ACCESS_LEVELS: { value: AccessLevel; label: string }[] = [
+    { value: "none", label: "Nenhum" },
+    { value: "read", label: "Leitura" },
+    { value: "read-write", label: "Escrita" },
+];
+
+function AccessLevelPicker({
+    abilities,
+    onChange,
+}: {
+    abilities: string[];
+    onChange: (abilities: string[]) => void;
+}) {
+    return (
+        <div className="space-y-2">
+            {RESOURCE_GROUPS.map(({ resource, label }) => {
+                const level = getAccessLevel(abilities, resource);
+                return (
+                    <div
+                        key={resource}
+                        className="flex items-center justify-between gap-3"
+                    >
+                        <span className="text-sm min-w-0 truncate">
+                            {label}
+                        </span>
+                        <div className="flex rounded-md border border-border overflow-hidden shrink-0">
+                            {ACCESS_LEVELS.map((l) => (
+                                <button
+                                    key={l.value}
+                                    type="button"
+                                    onClick={() =>
+                                        onChange(
+                                            setAccessLevel(
+                                                abilities,
+                                                resource,
+                                                l.value,
+                                            ),
+                                        )
+                                    }
+                                    className={`px-2.5 py-1 text-xs transition-colors ${
+                                        level === l.value
+                                            ? "bg-primary text-primary-foreground"
+                                            : "bg-background text-muted-foreground hover:text-foreground hover:bg-muted"
+                                    } ${l.value !== "none" ? "border-l border-border" : ""}`}
+                                >
+                                    {l.label}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                );
+            })}
+        </div>
+    );
+}
+
 export default function ApiTokenList() {
     const queryClient = useQueryClient();
     const [page, setPage] = useState(1);
@@ -567,78 +623,10 @@ export default function ApiTokenList() {
                                     </div>
                                 </div>
                                 {!fullAccess && (
-                                    <div className="space-y-2">
-                                        {RESOURCE_GROUPS.map(
-                                            ({ resource, label }) => {
-                                                const level =
-                                                    getAccessLevel(
-                                                        formAbilities,
-                                                        resource,
-                                                    );
-                                                const levels: {
-                                                    value: AccessLevel;
-                                                    label: string;
-                                                }[] = [
-                                                    {
-                                                        value: "none",
-                                                        label: "Nenhum",
-                                                    },
-                                                    {
-                                                        value: "read",
-                                                        label: "Leitura",
-                                                    },
-                                                    {
-                                                        value: "read-write",
-                                                        label: "Escrita",
-                                                    },
-                                                ];
-                                                return (
-                                                    <div
-                                                        key={resource}
-                                                        className="flex items-center justify-between gap-3"
-                                                    >
-                                                        <span className="text-sm min-w-0 truncate">
-                                                            {label}
-                                                        </span>
-                                                        <div className="flex rounded-md border border-border overflow-hidden shrink-0">
-                                                            {levels.map(
-                                                                (l) => (
-                                                                    <button
-                                                                        key={
-                                                                            l.value
-                                                                        }
-                                                                        type="button"
-                                                                        onClick={() =>
-                                                                            setFormAbilities(
-                                                                                (
-                                                                                    prev,
-                                                                                ) =>
-                                                                                    setAccessLevel(
-                                                                                        prev,
-                                                                                        resource,
-                                                                                        l.value,
-                                                                                    ),
-                                                                            )
-                                                                        }
-                                                                        className={`px-2.5 py-1 text-xs transition-colors ${
-                                                                            level ===
-                                                                            l.value
-                                                                                ? "bg-primary text-primary-foreground"
-                                                                                : "bg-background text-muted-foreground hover:text-foreground hover:bg-muted"
-                                                                        } ${l.value !== "none" ? "border-l border-border" : ""}`}
-                                                                    >
-                                                                        {
-                                                                            l.label
-                                                                        }
-                                                                    </button>
-                                                                ),
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                );
-                                            },
-                                        )}
-                                    </div>
+                                    <AccessLevelPicker
+                                        abilities={formAbilities}
+                                        onChange={setFormAbilities}
+                                    />
                                 )}
                             </div>
                         </div>
@@ -745,78 +733,10 @@ export default function ApiTokenList() {
                                     </div>
                                 </div>
                                 {!editFullAccess && (
-                                    <div className="space-y-2">
-                                        {RESOURCE_GROUPS.map(
-                                            ({ resource, label }) => {
-                                                const level =
-                                                    getAccessLevel(
-                                                        editAbilities,
-                                                        resource,
-                                                    );
-                                                const levels: {
-                                                    value: AccessLevel;
-                                                    label: string;
-                                                }[] = [
-                                                    {
-                                                        value: "none",
-                                                        label: "Nenhum",
-                                                    },
-                                                    {
-                                                        value: "read",
-                                                        label: "Leitura",
-                                                    },
-                                                    {
-                                                        value: "read-write",
-                                                        label: "Escrita",
-                                                    },
-                                                ];
-                                                return (
-                                                    <div
-                                                        key={resource}
-                                                        className="flex items-center justify-between gap-3"
-                                                    >
-                                                        <span className="text-sm min-w-0 truncate">
-                                                            {label}
-                                                        </span>
-                                                        <div className="flex rounded-md border border-border overflow-hidden shrink-0">
-                                                            {levels.map(
-                                                                (l) => (
-                                                                    <button
-                                                                        key={
-                                                                            l.value
-                                                                        }
-                                                                        type="button"
-                                                                        onClick={() =>
-                                                                            setEditAbilities(
-                                                                                (
-                                                                                    prev,
-                                                                                ) =>
-                                                                                    setAccessLevel(
-                                                                                        prev,
-                                                                                        resource,
-                                                                                        l.value,
-                                                                                    ),
-                                                                            )
-                                                                        }
-                                                                        className={`px-2.5 py-1 text-xs transition-colors ${
-                                                                            level ===
-                                                                            l.value
-                                                                                ? "bg-primary text-primary-foreground"
-                                                                                : "bg-background text-muted-foreground hover:text-foreground hover:bg-muted"
-                                                                        } ${l.value !== "none" ? "border-l border-border" : ""}`}
-                                                                    >
-                                                                        {
-                                                                            l.label
-                                                                        }
-                                                                    </button>
-                                                                ),
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                );
-                                            },
-                                        )}
-                                    </div>
+                                    <AccessLevelPicker
+                                        abilities={editAbilities}
+                                        onChange={setEditAbilities}
+                                    />
                                 )}
                             </div>
                         </div>

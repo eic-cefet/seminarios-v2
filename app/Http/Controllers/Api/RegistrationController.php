@@ -24,9 +24,6 @@ class RegistrationController extends Controller
         return $seminar;
     }
 
-    /**
-     * Register for a seminar
-     */
     public function register(Request $request, string $slug): JsonResponse
     {
         $user = $request->user();
@@ -55,9 +52,6 @@ class RegistrationController extends Controller
         ], 201);
     }
 
-    /**
-     * Cancel registration for a seminar
-     */
     public function unregister(Request $request, string $slug): JsonResponse
     {
         $user = $request->user();
@@ -82,19 +76,13 @@ class RegistrationController extends Controller
         ]);
     }
 
-    /**
-     * Check registration status for a seminar
-     */
     public function status(Request $request, string $slug): JsonResponse
     {
         $user = $request->user();
-
         $seminar = $this->findSeminar($slug);
 
         if (! $user) {
-            return response()->json([
-                'registered' => false,
-            ]);
+            return response()->json(['registered' => false]);
         }
 
         $registration = $seminar->registrations()
@@ -102,7 +90,7 @@ class RegistrationController extends Controller
             ->first();
 
         return response()->json([
-            'registered' => (bool) $registration,
+            'registered' => $registration !== null,
             'registration' => $registration ? [
                 'id' => $registration->id,
                 'created_at' => $registration->created_at->toISOString(),

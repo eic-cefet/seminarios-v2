@@ -276,30 +276,14 @@ export default function UserList() {
         }
     };
 
-    const getRoleBadgeVariant = (role: string) => {
-        switch (role) {
-            case "admin":
-            case "teacher":
-                return "primary";
-            case "user":
-                return "secondary";
-            default:
-                return "secondary";
-        }
+    const ROLE_CONFIG: Record<string, { label: string; variant: "primary" | "secondary" }> = {
+        admin: { label: "Admin", variant: "primary" },
+        teacher: { label: "Professor", variant: "primary" },
+        user: { label: "Usuário", variant: "secondary" },
     };
 
-    const getRoleLabel = (role: string) => {
-        switch (role) {
-            case "admin":
-                return "Admin";
-            case "teacher":
-                return "Professor";
-            case "user":
-                return "Usuário";
-            default:
-                return "Usuário";
-        }
-    };
+    const getRoleConfig = (role: string) =>
+        ROLE_CONFIG[role] ?? ROLE_CONFIG.user;
 
     return (
         <div className="space-y-6">
@@ -442,16 +426,17 @@ export default function UserList() {
                                             <TableCell>{user.email}</TableCell>
                                             <TableCell>
                                                 <div className="flex items-center gap-2">
-                                                    {user.roles.map((role) => (
-                                                        <Badge
-                                                            key={role}
-                                                            variant={getRoleBadgeVariant(
-                                                                role,
-                                                            )}
-                                                        >
-                                                            {getRoleLabel(role)}
-                                                        </Badge>
-                                                    ))}
+                                                    {user.roles.map((role) => {
+                                                        const config = getRoleConfig(role);
+                                                        return (
+                                                            <Badge
+                                                                key={role}
+                                                                variant={config.variant}
+                                                            >
+                                                                {config.label}
+                                                            </Badge>
+                                                        );
+                                                    })}
                                                 </div>
                                             </TableCell>
                                             <TableCell>

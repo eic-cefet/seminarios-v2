@@ -7,12 +7,18 @@ interface PaginationProps {
     onPageChange: (page: number) => void;
 }
 
+const buttonBase =
+    "inline-flex items-center gap-1 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium shadow-sm transition-colors cursor-pointer";
+
 export function Pagination({
     currentPage,
     lastPage,
     onPageChange,
 }: PaginationProps) {
     if (lastPage <= 1) return null;
+
+    const isFirst = currentPage === 1;
+    const isLast = currentPage === lastPage;
 
     return (
         <nav
@@ -25,11 +31,11 @@ export function Pagination({
             <div className="flex items-center gap-2">
                 <button
                     onClick={() => onPageChange(Math.max(1, currentPage - 1))}
-                    disabled={currentPage === 1}
+                    disabled={isFirst}
                     aria-label="Página anterior"
                     className={cn(
-                        "inline-flex items-center gap-1 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium shadow-sm transition-colors cursor-pointer",
-                        currentPage === 1
+                        buttonBase,
+                        isFirst
                             ? "text-gray-300 cursor-not-allowed"
                             : "text-gray-700 hover:bg-gray-50",
                     )}
@@ -38,14 +44,12 @@ export function Pagination({
                     Anterior
                 </button>
                 <button
-                    onClick={() =>
-                        onPageChange(Math.min(lastPage, currentPage + 1))
-                    }
-                    disabled={currentPage === lastPage}
+                    onClick={() => onPageChange(Math.min(lastPage, currentPage + 1))}
+                    disabled={isLast}
                     aria-label="Próxima página"
                     className={cn(
-                        "inline-flex items-center gap-1 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium shadow-sm transition-colors cursor-pointer",
-                        currentPage === lastPage
+                        buttonBase,
+                        isLast
                             ? "text-gray-300 cursor-not-allowed"
                             : "text-gray-700 hover:bg-gray-50",
                     )}

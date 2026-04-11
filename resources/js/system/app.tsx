@@ -7,7 +7,6 @@ import { ErrorBoundary } from "@shared/components/ErrorBoundary";
 import { AuthProvider } from "@shared/contexts/AuthContext";
 import { usePageTracking } from "@shared/hooks/usePageTracking";
 
-// Pages
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Register from "./pages/Register";

@@ -8,9 +8,6 @@ use Illuminate\Http\JsonResponse;
 
 class CourseController extends Controller
 {
-    /**
-     * List all courses
-     */
     public function index(): JsonResponse
     {
         $courses = Course::orderBy('name')->get();

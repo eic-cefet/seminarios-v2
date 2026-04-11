@@ -13,7 +13,7 @@ class CheckTokenAbility
     {
         $user = $request->user();
 
-        // Session-based auth (admin panel) — no token abilities to check
+        // Session-based auth has no token abilities to check
         if (! $user?->currentAccessToken() || ! method_exists($user->currentAccessToken(), 'can')) {
             return $next($request);
         }

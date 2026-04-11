@@ -41,7 +41,6 @@ class WorkshopController extends Controller
             ->withCount('registrations')
             ->where('active', true);
 
-        // Filter upcoming only
         if ($request->boolean('upcoming')) {
             $query->where('scheduled_at', '>=', now());
         }

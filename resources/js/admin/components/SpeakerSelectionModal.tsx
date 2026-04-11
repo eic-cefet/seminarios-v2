@@ -98,10 +98,6 @@ export function SpeakerSelectionModal({
         );
     };
 
-    const handleSearchChange = (value: string) => {
-        setSearch(value);
-    };
-
     const handleConfirm = () => {
         // Get selected user objects
         const users = usersData?.data ?? [];
@@ -150,7 +146,7 @@ export function SpeakerSelectionModal({
                                     placeholder="Buscar usuários..."
                                     value={search}
                                     onChange={(e) =>
-                                        handleSearchChange(e.target.value)
+                                        setSearch(e.target.value)
                                     }
                                     className="pl-9"
                                 />

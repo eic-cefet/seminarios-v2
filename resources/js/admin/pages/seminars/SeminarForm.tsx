@@ -12,7 +12,7 @@ import type {
     SeminarTypeDropdownItem,
     WorkshopDropdownItem,
 } from "../../api/adminClient";
-import { seminarsApi } from "../../api/adminClient";
+import { seminarsApi, dropdownApi } from "../../api/adminClient";
 import { MarkdownEditor } from "../../components/MarkdownEditor";
 import { SpeakerSelectionModal } from "../../components/SpeakerSelectionModal";
 import { SubjectMultiSelect } from "../../components/SubjectMultiSelect";
@@ -46,33 +46,6 @@ function generateSlug(name: string): string {
         .replace(/^-|-$/g, "");
 }
 
-// Helper API functions for reference data
-const API_BASE = app.API_URL + "/admin";
-
-const listTypes = async () => {
-    const response = await fetch(`${API_BASE}/seminar-types`, {
-        headers: { Accept: "application/json" },
-        credentials: "same-origin",
-    });
-    return response.json();
-};
-
-const listWorkshops = async () => {
-    const response = await fetch(`${API_BASE}/workshops-dropdown`, {
-        headers: { Accept: "application/json" },
-        credentials: "same-origin",
-    });
-    return response.json();
-};
-
-const listLocations = async () => {
-    const response = await fetch(`${API_BASE}/locations-dropdown`, {
-        headers: { Accept: "application/json" },
-        credentials: "same-origin",
-    });
-    return response.json();
-};
-
 export default function SeminarForm() {
     const { id } = useParams();
     const navigate = useNavigate();
@@ -89,17 +62,17 @@ export default function SeminarForm() {
 
     const { data: locationsData } = useQuery({
         queryKey: ["admin-locations-all"],
-        queryFn: listLocations,
+        queryFn: dropdownApi.locations,
     });
 
     const { data: typesData } = useQuery({
         queryKey: ["admin-seminar-types"],
-        queryFn: listTypes,
+        queryFn: dropdownApi.seminarTypes,
     });
 
     const { data: workshopsData } = useQuery({
         queryKey: ["admin-workshops"],
-        queryFn: listWorkshops,
+        queryFn: dropdownApi.workshops,
     });
 
     const {

@@ -34,13 +34,42 @@ interface PresenceResponse {
     is_active?: boolean;
 }
 
+async function presenceFetch(
+    path: string,
+    { fallbackError, ...options }: RequestInit & { fallbackError?: string } = {},
+): Promise<Response> {
+    await getCsrfCookie();
+
+    const headers: Record<string, string> = {
+        Accept: "application/json",
+        ...(options.method === "POST" && { "Content-Type": "application/json" }),
+    };
+
+    const xsrfToken = getCookie("XSRF-TOKEN");
+    if (xsrfToken) {
+        headers["X-XSRF-TOKEN"] = xsrfToken;
+    }
+
+    const response = await fetch(`${API_BASE}${path}`, {
+        ...options,
+        headers,
+        credentials: "same-origin",
+    });
+
+    if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || fallbackError);
+    }
+
+    return response;
+}
+
 export default function Presence() {
     const { uuid } = useParams<{ uuid: string }>();
     const { user } = useAuth();
     const [showLoginModal, setShowLoginModal] = useState(false);
     const [registrationAttempted, setRegistrationAttempted] = useState(false);
 
-    // Check if presence link is valid
     const {
         data: linkData,
         isLoading: isCheckingLink,
@@ -48,63 +77,20 @@ export default function Presence() {
     } = useQuery({
         queryKey: ["presence-link", uuid],
         queryFn: async () => {
-            // Ensure CSRF cookie is set before making API calls
-            await getCsrfCookie();
-
-            const headers: Record<string, string> = {
-                Accept: "application/json",
-            };
-
-            const xsrfToken = getCookie("XSRF-TOKEN");
-            if (xsrfToken) {
-                headers["X-XSRF-TOKEN"] = xsrfToken;
-            }
-
-            const response = await fetch(`${API_BASE}/presence/${uuid}`, {
-                headers,
-                credentials: "same-origin",
+            const response = await presenceFetch(`/presence/${uuid}`, {
+                fallbackError: "Link inválido",
             });
-
-            if (!response.ok) {
-                const error = await response.json();
-                throw new Error(error.message || "Link inválido");
-            }
-
             return response.json() as Promise<PresenceResponse>;
         },
         enabled: !!uuid,
     });
 
-    // Register presence mutation
     const registerMutation = useMutation({
         mutationFn: async () => {
-            // Ensure CSRF cookie is fresh before POST
-            await getCsrfCookie();
-
-            const headers: Record<string, string> = {
-                Accept: "application/json",
-                "Content-Type": "application/json",
-            };
-
-            const xsrfToken = getCookie("XSRF-TOKEN");
-            if (xsrfToken) {
-                headers["X-XSRF-TOKEN"] = xsrfToken;
-            }
-
-            const response = await fetch(
-                `${API_BASE}/presence/${uuid}/register`,
-                {
-                    method: "POST",
-                    headers,
-                    credentials: "same-origin",
-                },
+            const response = await presenceFetch(
+                `/presence/${uuid}/register`,
+                { method: "POST", fallbackError: "Erro ao registrar presença" },
             );
-
-            if (!response.ok) {
-                const error = await response.json();
-                throw new Error(error.message || "Erro ao registrar presença");
-            }
-
             return response.json();
         },
     });
@@ -132,7 +118,6 @@ export default function Presence() {
 
     const seminar = linkData?.data?.seminar;
 
-    // Loading state
     if (isCheckingLink) {
         return (
             <Layout>
@@ -146,7 +131,6 @@ export default function Presence() {
         );
     }
 
-    // Invalid link state
     if (linkError || !linkData?.data?.is_valid) {
         return (
             <Layout>
@@ -180,7 +164,6 @@ export default function Presence() {
         );
     }
 
-    // Not authenticated state
     if (!user) {
         return (
             <Layout>
@@ -245,7 +228,6 @@ export default function Presence() {
         );
     }
 
-    // Registering state
     if (registerMutation.isPending) {
         return (
             <Layout>
@@ -259,7 +241,6 @@ export default function Presence() {
         );
     }
 
-    // Error state
     if (registerMutation.isError) {
         return (
             <Layout>
@@ -301,7 +282,6 @@ export default function Presence() {
         );
     }
 
-    // Success state
     if (registerMutation.isSuccess) {
         return (
             <Layout>

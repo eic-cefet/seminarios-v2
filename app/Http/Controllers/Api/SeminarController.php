@@ -18,31 +18,26 @@ class SeminarController extends Controller
             ->withCount('registrations')
             ->active();
 
-        // Filter by seminar type
         if ($request->has('type')) {
             $query->whereHas('seminarType', function ($q) use ($request) {
                 $q->where('name', $request->input('type'));
             });
         }
 
-        // Filter by subject
         if ($request->has('subject')) {
             $query->whereHas('subjects', function ($q) use ($request) {
                 $q->where('subjects.id', $request->input('subject'));
             });
         }
 
-        // Filter upcoming only
         if ($request->boolean('upcoming')) {
             $query->upcoming();
         }
 
-        // Filter expired only
         if ($request->boolean('expired')) {
             $query->expired();
         }
 
-        // Sorting
         $sortField = $request->input('sort', 'scheduled_at');
         $sortDirection = in_array($request->input('direction'), ['asc', 'desc']) ? $request->input('direction') : 'asc';
 
@@ -89,7 +84,6 @@ class SeminarController extends Controller
             ->withCount('registrations')
             ->active();
 
-        // Filter upcoming only
         if ($request->boolean('upcoming')) {
             $query->upcoming();
         }

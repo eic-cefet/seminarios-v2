@@ -11,7 +11,5 @@ class Course extends Model
 {
     use Auditable, HasFactory, SoftDeletes;
 
-    protected $fillable = [
-        'name',
-    ];
+    protected $fillable = ['name'];
 }

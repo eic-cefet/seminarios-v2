@@ -1,10 +1,24 @@
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowRight, BookOpen, Presentation, Wrench } from "lucide-react";
+import { ArrowRight, BookOpen, Presentation, Wrench, type LucideIcon } from "lucide-react";
 import { Layout } from "../components/Layout";
 import { SeminarCard } from "../components/SeminarCard";
 import { PageTitle } from "@shared/components/PageTitle";
 import { seminarsApi, subjectsApi, statsApi } from "@shared/api/client";
+
+function StatCard({ icon: Icon, value, label }: { icon: LucideIcon; value: number; label: string }) {
+    return (
+        <div className="flex items-center gap-4 rounded-lg bg-gray-50 p-4">
+            <div className="rounded-full bg-primary-100 p-3">
+                <Icon className="h-6 w-6 text-primary-600" />
+            </div>
+            <div>
+                <p className="text-2xl font-bold text-gray-900">{value}</p>
+                <p className="text-sm text-gray-500">{label}</p>
+            </div>
+        </div>
+    );
+}
 
 export default function Home() {
     const { data: seminarsData, isLoading: loadingSeminars } = useQuery({
@@ -30,7 +44,6 @@ export default function Home() {
         <>
             <PageTitle title="Início" />
             <Layout>
-                {/* Hero Section */}
                 <section className="bg-primary-600">
                     <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 lg:py-24">
                         <div className="text-center">
@@ -63,54 +76,16 @@ export default function Home() {
                     </div>
                 </section>
 
-                {/* Stats Section */}
                 <section className="border-b border-gray-200 bg-white">
                     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
                         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                            <div className="flex items-center gap-4 rounded-lg bg-gray-50 p-4">
-                                <div className="rounded-full bg-primary-100 p-3">
-                                    <BookOpen className="h-6 w-6 text-primary-600" />
-                                </div>
-                                <div>
-                                    <p className="text-2xl font-bold text-gray-900">
-                                        {stats?.subjects ?? 0}
-                                    </p>
-                                    <p className="text-sm text-gray-500">
-                                        Tópicos
-                                    </p>
-                                </div>
-                            </div>
-                            <div className="flex items-center gap-4 rounded-lg bg-gray-50 p-4">
-                                <div className="rounded-full bg-primary-100 p-3">
-                                    <Presentation className="h-6 w-6 text-primary-600" />
-                                </div>
-                                <div>
-                                    <p className="text-2xl font-bold text-gray-900">
-                                        {stats?.seminars ?? 0}
-                                    </p>
-                                    <p className="text-sm text-gray-500">
-                                        Seminários
-                                    </p>
-                                </div>
-                            </div>
-                            <div className="flex items-center gap-4 rounded-lg bg-gray-50 p-4">
-                                <div className="rounded-full bg-primary-100 p-3">
-                                    <Wrench className="h-6 w-6 text-primary-600" />
-                                </div>
-                                <div>
-                                    <p className="text-2xl font-bold text-gray-900">
-                                        {stats?.workshops ?? 0}
-                                    </p>
-                                    <p className="text-sm text-gray-500">
-                                        Workshops
-                                    </p>
-                                </div>
-                            </div>
+                            <StatCard icon={BookOpen} value={stats?.subjects ?? 0} label="Tópicos" />
+                            <StatCard icon={Presentation} value={stats?.seminars ?? 0} label="Seminários" />
+                            <StatCard icon={Wrench} value={stats?.workshops ?? 0} label="Workshops" />
                         </div>
                     </div>
                 </section>
 
-                {/* Upcoming Seminars */}
                 <section className="py-12">
                     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                         <div className="flex items-center justify-between">
@@ -170,7 +145,6 @@ export default function Home() {
                     </div>
                 </section>
 
-                {/* Subjects Section */}
                 <section className="border-t border-gray-200 bg-gray-50 py-12">
                     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                         <div className="flex items-center justify-between">

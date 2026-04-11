@@ -26,7 +26,6 @@ class AdminSubjectController extends Controller
 
         $query = Subject::withCount('seminars');
 
-        // Search by name
         if ($search = $request->string('search')->trim()->toString()) {
             $escaped = $this->escapeLike($search);
             $query->where('name', 'like', "%{$escaped}%");
@@ -84,7 +83,6 @@ class AdminSubjectController extends Controller
     {
         Gate::authorize('delete', $subject);
 
-        // Check if subject has seminars
         if ($subject->seminars()->exists()) {
             throw ApiException::subjectInUse();
         }

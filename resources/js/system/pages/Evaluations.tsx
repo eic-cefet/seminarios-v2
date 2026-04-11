@@ -143,7 +143,6 @@ function EvaluationItem({ evaluation, onRated }: EvaluationItemProps) {
                 seminar_id: evaluation.seminar.id,
                 score,
             });
-            // Invalidate and refetch
             queryClient.invalidateQueries({
                 queryKey: ["profile", "pending-evaluations"],
             });
@@ -263,11 +262,15 @@ function EvaluationItem({ evaluation, onRated }: EvaluationItemProps) {
                             ))}
                             {score > 0 && (
                                 <span className="ml-3 text-sm text-gray-600">
-                                    {score === 1 && "Muito ruim"}
-                                    {score === 2 && "Ruim"}
-                                    {score === 3 && "Regular"}
-                                    {score === 4 && "Bom"}
-                                    {score === 5 && "Excelente"}
+                                    {
+                                        {
+                                            1: "Muito ruim",
+                                            2: "Ruim",
+                                            3: "Regular",
+                                            4: "Bom",
+                                            5: "Excelente",
+                                        }[score]
+                                    }
                                 </span>
                             )}
                         </div>

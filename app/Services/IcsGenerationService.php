@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Seminar;
+use InvalidArgumentException;
 use Spatie\IcalendarGenerator\Components\Calendar;
 use Spatie\IcalendarGenerator\Components\Event;
 use Spatie\IcalendarGenerator\Enums\EventStatus;
@@ -12,7 +13,7 @@ class IcsGenerationService
     public function generateForSeminar(Seminar $seminar): string
     {
         if (! $seminar->scheduled_at) {
-            throw new \InvalidArgumentException('Seminar does not have a scheduled date.');
+            throw new InvalidArgumentException('Seminar does not have a scheduled date.');
         }
 
         $dtStart = $seminar->scheduled_at->copy()->setTimezone('America/Sao_Paulo');

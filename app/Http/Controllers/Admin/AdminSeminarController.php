@@ -44,23 +44,19 @@ class AdminSeminarController extends Controller
             'speakers',
         ])->withCount('registrations');
 
-        // Teachers only see their own seminars
         if ($user->hasRole(Role::Teacher) && ! $user->hasRole(Role::Admin)) {
             $query->where('created_by', $user->id);
         }
 
-        // Search by name
         if ($search = $request->string('search')->trim()->toString()) {
             $escaped = $this->escapeLike($search);
             $query->where('name', 'like', "%{$escaped}%");
         }
 
-        // Filter by active status
         if ($request->has('active')) {
             $query->where('active', $request->boolean('active'));
         }
 
-        // Filter upcoming seminars only
         if ($request->boolean('upcoming')) {
             $query->where('scheduled_at', '>=', now());
         }
@@ -91,10 +87,8 @@ class AdminSeminarController extends Controller
         $validated = $request->validated();
 
         $seminar = DB::transaction(function () use ($validated, $request) {
-            // Auto-generate slug from name
             $slug = $this->slugService->generateUnique($validated['name'], Seminar::class);
 
-            // Create seminar
             $seminar = Seminar::create([
                 'name' => $validated['name'],
                 'slug' => $slug,
@@ -108,15 +102,7 @@ class AdminSeminarController extends Controller
                 'created_by' => $request->user()->id,
             ]);
 
-            // Handle subject auto-creation and attachment
-            $subjectIds = [];
-            foreach ($validated['subject_names'] as $subjectName) {
-                $subject = Subject::firstOrCreate(['name' => trim($subjectName)]);
-                $subjectIds[] = $subject->id;
-            }
-            $seminar->subjects()->sync($subjectIds);
-
-            // Attach speakers
+            $seminar->subjects()->sync($this->resolveSubjectNames($validated['subject_names']));
             $seminar->speakers()->sync($validated['speaker_ids']);
 
             return $seminar;
@@ -143,7 +129,6 @@ class AdminSeminarController extends Controller
         $oldScheduledAt = $seminar->scheduled_at?->copy();
 
         DB::transaction(function () use ($validated, $seminar) {
-            // Keep in sync with Seminar::$fillable and SeminarUpdateRequest rules
             $fields = Arr::only($validated, [
                 'name', 'description', 'scheduled_at', 'room_link',
                 'active', 'seminar_location_id', 'seminar_type_id', 'workshop_id',
@@ -159,17 +144,10 @@ class AdminSeminarController extends Controller
                 $seminar->fill($fields)->save();
             }
 
-            // Handle subject auto-creation and syncing
             if (isset($validated['subject_names'])) {
-                $subjectIds = [];
-                foreach ($validated['subject_names'] as $subjectName) {
-                    $subject = Subject::firstOrCreate(['name' => trim($subjectName)]);
-                    $subjectIds[] = $subject->id;
-                }
-                $seminar->subjects()->sync($subjectIds);
+                $seminar->subjects()->sync($this->resolveSubjectNames($validated['subject_names']));
             }
 
-            // Sync speakers
             if (isset($validated['speaker_ids'])) {
                 $seminar->speakers()->sync($validated['speaker_ids']);
             }
@@ -198,7 +176,6 @@ class AdminSeminarController extends Controller
     {
         Gate::authorize('delete', $seminar);
 
-        // Soft delete
         $seminar->delete();
 
         return response()->json([
@@ -206,9 +183,6 @@ class AdminSeminarController extends Controller
         ]);
     }
 
-    /**
-     * Get all seminar types for dropdown
-     */
     public function listTypes(): JsonResponse
     {
         $types = SeminarType::orderBy('name')->get(['id', 'name']);
@@ -218,9 +192,6 @@ class AdminSeminarController extends Controller
         ]);
     }
 
-    /**
-     * Get all workshops for dropdown
-     */
     public function listWorkshops(): JsonResponse
     {
         $workshops = Workshop::orderBy('name')->get(['id', 'name']);
@@ -230,9 +201,6 @@ class AdminSeminarController extends Controller
         ]);
     }
 
-    /**
-     * Get all locations without pagination for dropdown
-     */
     public function listLocations(): JsonResponse
     {
         $locations = SeminarLocation::orderBy('name')->get(['id', 'name', 'max_vacancies']);
@@ -240,5 +208,17 @@ class AdminSeminarController extends Controller
         return response()->json([
             'data' => $locations,
         ]);
+    }
+
+    /**
+     * @param  array<string>  $names
+     * @return array<int>
+     */
+    private function resolveSubjectNames(array $names): array
+    {
+        return array_map(
+            fn (string $name) => Subject::firstOrCreate(['name' => trim($name)])->id,
+            $names
+        );
     }
 }
