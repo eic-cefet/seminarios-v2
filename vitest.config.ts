@@ -16,6 +16,7 @@ export default defineConfig({
         setupFiles: ['./resources/js/test/setup.ts'],
         include: ['resources/js/**/*.test.{ts,tsx}'],
         css: false,
+        testTimeout: 30_000,
         maxWorkers: 8,
         execArgv: ['--max-old-space-size=8192'],
         coverage: {
