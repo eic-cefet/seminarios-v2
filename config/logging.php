@@ -5,6 +5,7 @@ use Monolog\Handler\NullHandler;
 use Monolog\Handler\StreamHandler;
 use Monolog\Handler\SyslogUdpHandler;
 use Monolog\Processor\PsrLogMessageProcessor;
+use Pagevamp\Logger;
 
 return [
 
@@ -37,8 +38,8 @@ return [
         'trace' => env('LOG_DEPRECATIONS_TRACE', false),
     ],
 
-    'enable_request_logging' => env('LOGGING_ENABLE_REQUEST_LOGGING', true),
-    'enable_cloudwatch_boot' => env('LOGGING_ENABLE_CLOUDWATCH_BOOT', true),
+    'enable_request_logging' => env('LOGGING_ENABLE_REQUEST_LOGGING', false),
+    'enable_cloudwatch_boot' => env('LOGGING_ENABLE_CLOUDWATCH_BOOT', false),
 
     /*
     |--------------------------------------------------------------------------
@@ -133,7 +134,7 @@ return [
 
         'cloudwatch' => [
             'driver' => 'custom',
-            'via' => \Pagevamp\Logger::class,
+            'via' => Logger::class,
             'name' => env('APP_NAME', 'Laravel'),
             'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
             'version' => 'latest',
