@@ -16,8 +16,9 @@ class IcsGenerationService
             throw new InvalidArgumentException('Seminar does not have a scheduled date.');
         }
 
+        $durationMinutes = max((int) ($seminar->duration_minutes ?? 60), 1);
         $dtStart = $seminar->scheduled_at->copy()->setTimezone('America/Sao_Paulo');
-        $dtEnd = $dtStart->copy()->addHour();
+        $dtEnd = $dtStart->copy()->addMinutes($durationMinutes);
 
         $uid = 'seminar-'.$seminar->id.'@'.parse_url(config('app.url'), PHP_URL_HOST);
 

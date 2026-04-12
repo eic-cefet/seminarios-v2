@@ -43,6 +43,19 @@ describe('IcsGenerationService', function () {
         expect($ics)->not->toContain('20260315T120000');
     });
 
+    it('uses custom seminar duration when available', function () {
+        $seminar = Seminar::factory()->create([
+            'scheduled_at' => '2026-03-15 10:00:00',
+            'duration_minutes' => 90,
+        ]);
+
+        $ics = app(IcsGenerationService::class)->generateForSeminar($seminar);
+
+        expect($ics)->toContain('20260315T100000');
+        expect($ics)->toContain('20260315T113000');
+        expect($ics)->not->toContain('20260315T110000');
+    });
+
     it('uses america/sao_paulo timezone', function () {
         $seminar = Seminar::factory()->create([
             'scheduled_at' => now()->addDay(),
@@ -172,7 +185,7 @@ describe('IcsGenerationService', function () {
         $seminar->scheduled_at = null;
 
         expect(fn () => app(IcsGenerationService::class)->generateForSeminar($seminar))
-            ->toThrow(\InvalidArgumentException::class, 'Seminar does not have a scheduled date.');
+            ->toThrow(InvalidArgumentException::class, 'Seminar does not have a scheduled date.');
     });
 
     it('includes product identifier with config mail name', function () {

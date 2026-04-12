@@ -9,12 +9,17 @@ class SeminarResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
+        $durationMinutes = (int) ($this->duration_minutes ?? 60);
+        $endsAt = $this->scheduled_at?->copy()->addMinutes($durationMinutes);
+
         return [
             'id' => $this->id,
             'name' => $this->name,
             'slug' => $this->slug,
             'description' => $this->description,
             'scheduledAt' => $this->scheduled_at?->toIso8601String(),
+            'endsAt' => $endsAt?->toIso8601String(),
+            'durationMinutes' => $durationMinutes,
             'roomLink' => $this->room_link,
             'active' => $this->active,
             'isExpired' => $this->scheduled_at?->isPast() ?? false,

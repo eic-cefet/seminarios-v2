@@ -24,6 +24,7 @@ class Seminar extends Model
         'workshop_id',
         'seminar_type_id',
         'scheduled_at',
+        'duration_minutes',
         'room_link',
         'active',
         'created_by',
@@ -33,6 +34,7 @@ class Seminar extends Model
     {
         return [
             'scheduled_at' => 'datetime',
+            'duration_minutes' => 'integer',
             'active' => 'boolean',
         ];
     }

@@ -9,6 +9,8 @@ class UserRegistrationResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
+        $durationMinutes = (int) ($this->seminar->duration_minutes ?? 60);
+
         return [
             'id' => $this->id,
             'present' => $this->present,
@@ -19,6 +21,8 @@ class UserRegistrationResource extends JsonResource
                 'name' => $this->seminar->name,
                 'slug' => $this->seminar->slug,
                 'scheduled_at' => $this->seminar->scheduled_at?->toISOString(),
+                'ends_at' => $this->seminar->scheduled_at?->copy()->addMinutes($durationMinutes)?->toISOString(),
+                'duration_minutes' => $durationMinutes,
                 'is_expired' => $this->seminar->scheduled_at?->isPast() ?? false,
                 'seminar_type' => $this->seminar->seminarType ? [
                     'id' => $this->seminar->seminarType->id,

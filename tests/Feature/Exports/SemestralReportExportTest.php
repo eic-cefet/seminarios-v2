@@ -52,6 +52,58 @@ describe('SemestralReportExport', function () {
         expect($mapped[4])->toContain('Seminar 2 - 20/06/2024');
     });
 
+    it('includes presentation duration when available', function () {
+        $row = [
+            'name' => 'Maria Silva',
+            'email' => 'maria@test.com',
+            'course' => 'Computer Science',
+            'total_hours' => 1.5,
+            'presentations' => collect([
+                ['name' => 'Seminar 1', 'date' => '2024-06-15', 'type' => 'Palestra', 'duration_minutes' => 90],
+            ]),
+        ];
+
+        $export = new SemestralReportExport(collect([]), '2024', '1');
+        $mapped = $export->map($row);
+
+        expect($mapped[4])->toContain('Seminar 1 (Palestra) - 15/06/2024 - 1h 30min');
+    });
+
+    it('formats duration as hours only when no remaining minutes', function () {
+        $row = [
+            'name' => 'Maria Silva',
+            'email' => 'maria@test.com',
+            'course' => 'Computer Science',
+            'total_hours' => 2,
+            'presentations' => collect([
+                ['name' => 'Seminar 1', 'date' => '2024-06-15', 'type' => 'Palestra', 'duration_minutes' => 120],
+            ]),
+        ];
+
+        $export = new SemestralReportExport(collect([]), '2024', '1');
+        $mapped = $export->map($row);
+
+        expect($mapped[4])->toEndWith('- 2h');
+    });
+
+    it('formats duration as minutes only when less than one hour', function () {
+        $row = [
+            'name' => 'Maria Silva',
+            'email' => 'maria@test.com',
+            'course' => 'Computer Science',
+            'total_hours' => 0.75,
+            'presentations' => collect([
+                ['name' => 'Seminar 1', 'date' => '2024-06-15', 'type' => 'Palestra', 'duration_minutes' => 45],
+            ]),
+        ];
+
+        $export = new SemestralReportExport(collect([]), '2024', '1');
+        $mapped = $export->map($row);
+
+        expect($mapped[4])->toContain('- 45min');
+        expect($mapped[4])->not->toContain('h');
+    });
+
     it('handles empty presentations', function () {
         $row = [
             'name' => 'Test User',

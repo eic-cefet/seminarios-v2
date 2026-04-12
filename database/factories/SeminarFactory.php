@@ -2,14 +2,16 @@
 
 namespace Database\Factories;
 
+use App\Models\Seminar;
 use App\Models\SeminarLocation;
 use App\Models\SeminarType;
+use App\Models\Subject;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Seminar>
+ * @extends Factory<Seminar>
  */
 class SeminarFactory extends Factory
 {
@@ -25,6 +27,7 @@ class SeminarFactory extends Factory
             'seminar_type_id' => SeminarType::factory(),
             'workshop_id' => null,
             'scheduled_at' => fake()->dateTimeBetween('+1 day', '+1 month'),
+            'duration_minutes' => 60,
             'room_link' => fake()->optional()->url(),
             'active' => true,
             'created_by' => User::factory(),
@@ -63,7 +66,7 @@ class SeminarFactory extends Factory
     public function withSubjects(int $count = 2): static
     {
         return $this->afterCreating(function ($seminar) use ($count) {
-            $subjects = \App\Models\Subject::factory()->count($count)->create();
+            $subjects = Subject::factory()->count($count)->create();
             $seminar->subjects()->attach($subjects->pluck('id'));
         });
     }

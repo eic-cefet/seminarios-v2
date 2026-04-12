@@ -8,6 +8,8 @@ use Illuminate\Support\Facades\Gate;
 
 class SeminarUpdateRequest extends FormRequest
 {
+    private const ALLOWED_DURATIONS = [30, 60, 120, 240];
+
     public function authorize(): bool
     {
         $seminar = $this->route('seminar');
@@ -24,6 +26,7 @@ class SeminarUpdateRequest extends FormRequest
             'name' => ['sometimes', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
             'scheduled_at' => ['sometimes', 'date'],
+            'duration_minutes' => ['sometimes', 'integer', 'in:'.implode(',', self::ALLOWED_DURATIONS)],
             'room_link' => ['nullable', 'url', 'max:500'],
             'active' => ['sometimes', 'boolean'],
             'seminar_location_id' => ['sometimes', 'integer', 'exists:seminar_locations,id'],
@@ -44,6 +47,8 @@ class SeminarUpdateRequest extends FormRequest
         return [
             'name.max' => 'O nome não pode ter mais de 255 caracteres.',
             'scheduled_at.date' => 'A data deve ser válida.',
+            'duration_minutes.integer' => 'A duração deve ser um número inteiro de minutos.',
+            'duration_minutes.in' => 'A duração deve ser 30 minutos, 1 hora, 2 horas ou 4 horas.',
             'room_link.url' => 'O link da sala deve ser uma URL válida.',
             'seminar_location_id.exists' => 'O local selecionado não existe.',
             'seminar_type_id.exists' => 'O tipo de seminário selecionado não existe.',
