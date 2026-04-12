@@ -1,15 +1,25 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import * as Tabs from "@radix-ui/react-tabs";
 import * as Select from "@radix-ui/react-select";
-import { ChevronDown, Check, Presentation, Filter } from "lucide-react";
+import {
+    ChevronDown,
+    Check,
+    Presentation,
+    Filter,
+    List,
+    CalendarDays,
+} from "lucide-react";
 import { Layout } from "../components/Layout";
 import { SeminarCard } from "../components/SeminarCard";
+import { PresentationsCalendar } from "../components/PresentationsCalendar";
 import { PageTitle } from "@shared/components/PageTitle";
 import { seminarsApi, seminarTypesApi } from "@shared/api/client";
+import { toSaoPaulo } from "@shared/lib/date";
 import { cn } from "@shared/lib/utils";
 
 type TimeFilter = "all" | "upcoming" | "expired";
+type ViewMode = "list" | "calendar";
 
 function tabTriggerClass(active: boolean): string {
     return cn(
@@ -23,7 +33,11 @@ function tabTriggerClass(active: boolean): string {
 export default function Presentations() {
     const [timeFilter, setTimeFilter] = useState<TimeFilter>("all");
     const [typeFilter, setTypeFilter] = useState<string>("all");
+    const [viewMode, setViewMode] = useState<ViewMode>("list");
     const [page, setPage] = useState(1);
+    const [calendarMonth, setCalendarMonth] = useState<Date>(new Date());
+
+    const direction = timeFilter === "upcoming" ? "asc" : "desc";
 
     const { data: typesData } = useQuery({
         queryKey: ["seminarTypes"],
@@ -39,13 +53,52 @@ export default function Presentations() {
                 type: typeFilter !== "all" ? typeFilter : undefined,
                 page,
                 per_page: 12,
-                direction: timeFilter === "upcoming" ? "asc" : "desc",
+                direction,
             }),
     });
+
+    const { data: calendarSeminarsData, isLoading: isCalendarLoading } =
+        useQuery({
+            queryKey: ["seminars-calendar", timeFilter, typeFilter],
+            queryFn: () =>
+                seminarsApi.list({
+                    upcoming: timeFilter === "upcoming" ? true : undefined,
+                    expired: timeFilter === "expired" ? true : undefined,
+                    type: typeFilter !== "all" ? typeFilter : undefined,
+                    page: 1,
+                    per_page: 200,
+                    direction,
+                }),
+            enabled: viewMode === "calendar",
+        });
+
+    useEffect(() => {
+        setPage(1);
+    }, [timeFilter, typeFilter]);
+
+    useEffect(() => {
+        if (viewMode !== "calendar") {
+            return;
+        }
+
+        const firstSeminar = calendarSeminarsData?.data[0];
+        setCalendarMonth(
+            firstSeminar
+                ? toSaoPaulo(firstSeminar.scheduledAt)
+                : new Date(),
+        );
+    }, [
+        viewMode,
+        timeFilter,
+        typeFilter,
+        calendarSeminarsData?.data,
+    ]);
 
     const types = typesData?.data ?? [];
     const seminars = seminarsData?.data ?? [];
     const pagination = seminarsData?.meta;
+    const calendarSeminars = calendarSeminarsData?.data ?? [];
+    const calendarTotal = calendarSeminarsData?.meta?.total;
 
     return (
         <>
@@ -89,67 +142,108 @@ export default function Presentations() {
                         </Tabs.List>
                     </Tabs.Root>
 
-                    <div className="mt-6 flex flex-wrap items-center gap-4">
-                        <div className="flex items-center gap-2 text-sm text-gray-500">
-                            <Filter className="h-4 w-4" />
-                            Filtrar por:
-                        </div>
+                    <div className="mt-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                        <div className="flex flex-wrap items-center gap-4">
+                            <div className="flex items-center gap-2 text-sm text-gray-500">
+                                <Filter className="h-4 w-4" />
+                                Filtrar por:
+                            </div>
 
-                        <Select.Root
-                            value={typeFilter}
-                            onValueChange={setTypeFilter}
-                        >
-                            <Select.Trigger className="inline-flex items-center gap-2 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary-500">
-                                <Select.Value placeholder="Tipo" />
-                                <Select.Icon>
-                                    <ChevronDown className="h-4 w-4 text-gray-400" />
-                                </Select.Icon>
-                            </Select.Trigger>
-                            <Select.Portal>
-                                <Select.Content className="rounded-md border border-gray-200 bg-white shadow-lg z-50">
-                                    <Select.Viewport className="p-1">
-                                        <Select.Item
-                                            value="all"
-                                            className="relative flex items-center px-8 py-2 text-sm rounded cursor-pointer hover:bg-gray-100 outline-none data-[highlighted]:bg-gray-100"
-                                        >
-                                            <Select.ItemText>
-                                                Todos os tipos
-                                            </Select.ItemText>
-                                            <Select.ItemIndicator className="absolute left-2">
-                                                <Check className="h-4 w-4 text-primary-600" />
-                                            </Select.ItemIndicator>
-                                        </Select.Item>
-                                        {types.map((type) => (
+                            <Select.Root
+                                value={typeFilter}
+                                onValueChange={setTypeFilter}
+                            >
+                                <Select.Trigger className="inline-flex items-center gap-2 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary-500">
+                                    <Select.Value placeholder="Tipo" />
+                                    <Select.Icon>
+                                        <ChevronDown className="h-4 w-4 text-gray-400" />
+                                    </Select.Icon>
+                                </Select.Trigger>
+                                <Select.Portal>
+                                    <Select.Content className="rounded-md border border-gray-200 bg-white shadow-lg z-50">
+                                        <Select.Viewport className="p-1">
                                             <Select.Item
-                                                key={type.id}
-                                                value={type.name}
+                                                value="all"
                                                 className="relative flex items-center px-8 py-2 text-sm rounded cursor-pointer hover:bg-gray-100 outline-none data-[highlighted]:bg-gray-100"
                                             >
                                                 <Select.ItemText>
-                                                    {type.name}
+                                                    Todos os tipos
                                                 </Select.ItemText>
                                                 <Select.ItemIndicator className="absolute left-2">
                                                     <Check className="h-4 w-4 text-primary-600" />
                                                 </Select.ItemIndicator>
                                             </Select.Item>
-                                        ))}
-                                    </Select.Viewport>
-                                </Select.Content>
-                            </Select.Portal>
-                        </Select.Root>
+                                            {types.map((type) => (
+                                                <Select.Item
+                                                    key={type.id}
+                                                    value={type.name}
+                                                    className="relative flex items-center px-8 py-2 text-sm rounded cursor-pointer hover:bg-gray-100 outline-none data-[highlighted]:bg-gray-100"
+                                                >
+                                                    <Select.ItemText>
+                                                        {type.name}
+                                                    </Select.ItemText>
+                                                    <Select.ItemIndicator className="absolute left-2">
+                                                        <Check className="h-4 w-4 text-primary-600" />
+                                                    </Select.ItemIndicator>
+                                                </Select.Item>
+                                            ))}
+                                        </Select.Viewport>
+                                    </Select.Content>
+                                </Select.Portal>
+                            </Select.Root>
 
-                        {typeFilter !== "all" && (
+                            {typeFilter !== "all" && (
+                                <button
+                                    onClick={() => setTypeFilter("all")}
+                                    className="text-sm text-primary-600 hover:text-primary-700"
+                                >
+                                    Limpar filtro
+                                </button>
+                            )}
+                        </div>
+
+                        <div className="inline-flex w-full rounded-full border border-gray-200 bg-gray-50 p-1 sm:w-auto">
                             <button
-                                onClick={() => setTypeFilter("all")}
-                                className="text-sm text-primary-600 hover:text-primary-700"
+                                type="button"
+                                onClick={() => setViewMode("list")}
+                                aria-label="Vista em lista"
+                                className={cn(
+                                    "inline-flex flex-1 items-center justify-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition sm:flex-none",
+                                    viewMode === "list"
+                                        ? "bg-white text-gray-900 shadow-sm"
+                                        : "text-gray-500 hover:text-gray-700",
+                                )}
                             >
-                                Limpar filtro
+                                <List className="h-4 w-4" />
+                                Lista
                             </button>
-                        )}
+                            <button
+                                type="button"
+                                onClick={() => setViewMode("calendar")}
+                                aria-label="Vista em calendário"
+                                className={cn(
+                                    "inline-flex flex-1 items-center justify-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition sm:flex-none",
+                                    viewMode === "calendar"
+                                        ? "bg-white text-gray-900 shadow-sm"
+                                        : "text-gray-500 hover:text-gray-700",
+                                )}
+                            >
+                                <CalendarDays className="h-4 w-4" />
+                                Calendário
+                            </button>
+                        </div>
                     </div>
 
                     <div className="mt-8">
-                        {isLoading ? (
+                        {viewMode === "calendar" ? (
+                            <PresentationsCalendar
+                                seminars={calendarSeminars}
+                                month={calendarMonth}
+                                total={calendarTotal}
+                                isLoading={isCalendarLoading}
+                                onMonthChange={setCalendarMonth}
+                            />
+                        ) : isLoading ? (
                             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                                 {[1, 2, 3, 4, 5, 6].map((i) => (
                                     <div

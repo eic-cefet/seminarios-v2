@@ -113,6 +113,12 @@ describe('Presentations', () => {
         expect(screen.getByText(/filtrar por/i)).toBeInTheDocument();
     });
 
+    it('renders view toggle buttons', () => {
+        render(<Presentations />);
+        expect(screen.getByRole('button', { name: /vista em lista/i })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /vista em calendário/i })).toBeInTheDocument();
+    });
+
     it('renders pagination when there are multiple pages', async () => {
         const seminars = Array.from({ length: 3 }, (_, i) => createSeminar({ name: `Talk ${i + 1}` }));
         vi.mocked(seminarsApi.list).mockResolvedValue(createPaginatedResponse(seminars, {
@@ -212,6 +218,105 @@ describe('Presentations', () => {
                 direction: 'desc',
             })
         );
+    });
+
+    it('switches to calendar view and requests the expanded seminar feed', async () => {
+        const seminars = [
+            createSeminar({
+                name: 'Calendar Talk',
+                scheduledAt: '2026-06-15T14:00:00Z',
+            }),
+        ];
+        vi.mocked(seminarsApi.list).mockResolvedValue(createPaginatedResponse(seminars));
+        const user = userEvent.setup();
+
+        render(<Presentations />);
+
+        await user.click(screen.getByRole('button', { name: /vista em calendário/i }));
+
+        await waitFor(() => {
+            expect(seminarsApi.list).toHaveBeenCalledWith(
+                expect.objectContaining({ page: 1, per_page: 200 })
+            );
+        });
+
+        expect(screen.getByText('Calendar Talk')).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /mês anterior/i })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /próximo mês/i })).toBeInTheDocument();
+    });
+
+    it('returns to list view after switching to the calendar', async () => {
+        const seminars = [createSeminar({ name: 'Talk 1' })];
+        vi.mocked(seminarsApi.list).mockResolvedValue(createPaginatedResponse(seminars));
+        const user = userEvent.setup();
+
+        render(<Presentations />);
+
+        await user.click(screen.getByRole('button', { name: /vista em calendário/i }));
+        await screen.findByRole('button', { name: /mês anterior/i });
+
+        await user.click(screen.getByRole('button', { name: /vista em lista/i }));
+
+        expect(screen.queryByRole('button', { name: /mês anterior/i })).not.toBeInTheDocument();
+        expect(screen.getByText('Talk 1')).toBeInTheDocument();
+    });
+
+    it('requests the calendar feed with expired and type filters applied', async () => {
+        const seminars = [createSeminar({ name: 'Filtered Talk' })];
+        vi.mocked(seminarsApi.list).mockResolvedValue(createPaginatedResponse(seminars));
+        const user = userEvent.setup();
+
+        const origHasPointerCapture = HTMLElement.prototype.hasPointerCapture;
+        const origSetPointerCapture = HTMLElement.prototype.setPointerCapture;
+        const origReleasePointerCapture = HTMLElement.prototype.releasePointerCapture;
+        HTMLElement.prototype.hasPointerCapture = vi.fn().mockReturnValue(false);
+        HTMLElement.prototype.setPointerCapture = vi.fn();
+        HTMLElement.prototype.releasePointerCapture = vi.fn();
+
+        render(<Presentations />);
+
+        await user.click(screen.getByRole('tab', { name: /encerrados/i }));
+        await user.click(screen.getByRole('combobox'));
+        await user.click(await screen.findByRole('option', { name: /palestra/i }));
+        await user.click(screen.getByRole('button', { name: /vista em calendário/i }));
+
+        await waitFor(() => {
+            expect(seminarsApi.list).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    expired: true,
+                    type: 'Palestra',
+                    page: 1,
+                    per_page: 200,
+                }),
+            );
+        });
+
+        HTMLElement.prototype.hasPointerCapture = origHasPointerCapture;
+        HTMLElement.prototype.setPointerCapture = origSetPointerCapture;
+        HTMLElement.prototype.releasePointerCapture = origReleasePointerCapture;
+    });
+
+    it('requests the calendar feed with the upcoming filter applied', async () => {
+        const seminars = [createSeminar({ name: 'Upcoming Talk' })];
+        vi.mocked(seminarsApi.list).mockResolvedValue(createPaginatedResponse(seminars));
+        const user = userEvent.setup();
+
+        render(<Presentations />);
+
+        await user.click(screen.getByRole('tab', { name: /próximos/i }));
+        await user.click(screen.getByRole('button', { name: /vista em calendário/i }));
+
+        await waitFor(() => {
+            expect(seminarsApi.list).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    upcoming: true,
+                    expired: undefined,
+                    page: 1,
+                    per_page: 200,
+                    direction: 'asc',
+                }),
+            );
+        });
     });
 
     it('shows "Limpar filtro" button and calls API with type filter when a type is selected', async () => {
