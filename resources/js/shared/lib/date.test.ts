@@ -1,4 +1,15 @@
-import { formatDate, formatDateTime, formatDateTimeLong, isExpired, isToday, getYear, getSemester, toDatetimeLocal, compareDateDesc } from './date';
+import {
+    formatDate,
+    formatDateTime,
+    formatDateTimeLong,
+    formatDurationMinutes,
+    isExpired,
+    isToday,
+    getYear,
+    getSemester,
+    toDatetimeLocal,
+    compareDateDesc,
+} from './date';
 
 describe('formatDate', () => {
     it('formats UTC date string to dd/MM/yyyy in São Paulo timezone', () => {
@@ -36,6 +47,20 @@ describe('formatDateTimeLong', () => {
 
     it('formats June correctly', () => {
         expect(formatDateTimeLong('2026-06-15T15:00:00Z')).toBe('15 de junho de 2026, 12:00');
+    });
+});
+
+describe('formatDurationMinutes', () => {
+    it('formats minutes-only durations', () => {
+        expect(formatDurationMinutes(30)).toBe('30min');
+    });
+
+    it('formats whole-hour durations', () => {
+        expect(formatDurationMinutes(120)).toBe('2h');
+    });
+
+    it('formats mixed hour and minute durations', () => {
+        expect(formatDurationMinutes(90)).toBe('1h 30min');
     });
 });
 

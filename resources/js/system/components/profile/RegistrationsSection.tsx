@@ -128,6 +128,9 @@ export function RegistrationsSection() {
                                                 startsAt:
                                                     registration.seminar
                                                         .scheduled_at,
+                                                endsAt:
+                                                    registration.seminar
+                                                        .ends_at ?? undefined,
                                                 location:
                                                     registration.seminar
                                                         .location?.name,

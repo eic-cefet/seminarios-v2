@@ -264,15 +264,20 @@ describe('SemestralReport', () => {
                     name: 'Charlie',
                     email: 'charlie@test.com',
                     course: 'CS',
-                    total_hours: 8,
+                    total_hours: 1.5,
                     presentations: [
-                        { name: 'Talk about React', date: '2026-06-15T14:00:00Z', type: 'Workshop' },
+                        {
+                            name: 'Talk about React',
+                            date: '2026-06-15T14:00:00Z',
+                            type: 'Workshop',
+                            duration_minutes: 90,
+                        },
                     ],
                 },
             ],
             summary: {
                 total_users: 1,
-                total_hours: 8,
+                total_hours: 1.5,
                 semester: '2026.1',
             },
         };
@@ -290,6 +295,8 @@ describe('SemestralReport', () => {
         await waitFor(() => {
             expect(screen.getByText('Apresentações assistidas:')).toBeInTheDocument();
             expect(screen.getByText('Talk about React')).toBeInTheDocument();
+            expect(screen.getAllByText('1.5h')).toHaveLength(2);
+            expect(screen.getByText('1h 30min')).toBeInTheDocument();
         });
     });
 

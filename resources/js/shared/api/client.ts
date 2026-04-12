@@ -289,6 +289,8 @@ export interface UserRegistration {
         name: string;
         slug: string;
         scheduled_at: string | null;
+        ends_at?: string | null;
+        duration_minutes?: number;
         is_expired: boolean;
         seminar_type: { id: number; name: string } | null;
         location: { id: number; name: string } | null;

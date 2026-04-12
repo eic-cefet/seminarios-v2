@@ -87,6 +87,7 @@ export interface AdminSeminar {
     slug: string;
     description?: string;
     scheduled_at: string;
+    duration_minutes?: number;
     room_link?: string;
     active: boolean;
     created_by?: number;
@@ -536,6 +537,7 @@ export const seminarsApi = {
         name: string;
         description?: string;
         scheduled_at: string;
+        duration_minutes: number;
         room_link?: string;
         active: boolean;
         seminar_location_id?: number;
@@ -560,6 +562,7 @@ export const seminarsApi = {
             name?: string;
             description?: string;
             scheduled_at?: string;
+            duration_minutes?: number;
             room_link?: string;
             active?: boolean;
             seminar_location_id?: number;

@@ -10,6 +10,7 @@ import {
     User,
     Linkedin,
     Github,
+    Clock,
     Loader2,
     Check,
 } from "lucide-react";
@@ -20,7 +21,11 @@ import { LoginModal } from "../components/LoginModal";
 import { PageTitle } from "@shared/components/PageTitle";
 import { seminarsApi, registrationApi } from "@shared/api/client";
 import { cn, containsHTML } from "@shared/lib/utils";
-import { formatDateTime, isToday as isTodayDate } from "@shared/lib/date";
+import {
+    formatDateTime,
+    formatDurationMinutes,
+    isToday as isTodayDate,
+} from "@shared/lib/date";
 import { getErrorMessage } from "@shared/lib/errors";
 import { useAuth } from "@shared/contexts/AuthContext";
 import { analytics } from "@shared/lib/analytics";
@@ -256,6 +261,14 @@ export default function SeminarDetails() {
                                     {seminar.registrationsCount} inscritos
                                 </span>
                             )}
+                            {seminar.durationMinutes && (
+                                <span className="flex items-center gap-2">
+                                    <Clock className="h-5 w-5" />
+                                    {formatDurationMinutes(
+                                        seminar.durationMinutes,
+                                    )}
+                                </span>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -444,6 +457,7 @@ export default function SeminarDetails() {
                                         event={{
                                             title: seminar.name,
                                             startsAt: seminar.scheduledAt,
+                                            endsAt: seminar.endsAt,
                                             description: seminar.description,
                                             location: seminar.location?.name,
                                             roomLink: seminar.roomLink,
