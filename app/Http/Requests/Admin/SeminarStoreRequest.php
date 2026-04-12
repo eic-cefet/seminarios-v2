@@ -8,8 +8,6 @@ use Illuminate\Support\Facades\Gate;
 
 class SeminarStoreRequest extends FormRequest
 {
-    private const ALLOWED_DURATIONS = [30, 60, 120, 240];
-
     public function authorize(): bool
     {
         return Gate::allows('create', Seminar::class);
@@ -31,7 +29,7 @@ class SeminarStoreRequest extends FormRequest
             'name' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
             'scheduled_at' => ['required', 'date'],
-            'duration_minutes' => ['required', 'integer', 'in:'.implode(',', self::ALLOWED_DURATIONS)],
+            'duration_minutes' => ['required', 'integer', 'in:'.implode(',', Seminar::ALLOWED_DURATIONS)],
             'room_link' => ['nullable', 'url', 'max:500'],
             'active' => ['required', 'boolean'],
             'seminar_location_id' => ['required', 'integer', 'exists:seminar_locations,id'],

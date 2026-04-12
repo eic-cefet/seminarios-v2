@@ -16,6 +16,8 @@ class Seminar extends Model
 {
     use Auditable, HasFactory, SoftDeletes;
 
+    public const ALLOWED_DURATIONS = [30, 60, 120, 240];
+
     protected $fillable = [
         'name',
         'slug',

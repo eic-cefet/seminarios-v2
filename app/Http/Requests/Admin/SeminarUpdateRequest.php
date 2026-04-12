@@ -8,8 +8,6 @@ use Illuminate\Support\Facades\Gate;
 
 class SeminarUpdateRequest extends FormRequest
 {
-    private const ALLOWED_DURATIONS = [30, 60, 120, 240];
-
     public function authorize(): bool
     {
         $seminar = $this->route('seminar');
@@ -26,7 +24,7 @@ class SeminarUpdateRequest extends FormRequest
             'name' => ['sometimes', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
             'scheduled_at' => ['sometimes', 'date'],
-            'duration_minutes' => ['sometimes', 'integer', 'in:'.implode(',', self::ALLOWED_DURATIONS)],
+            'duration_minutes' => ['sometimes', 'integer', 'in:'.implode(',', Seminar::ALLOWED_DURATIONS)],
             'room_link' => ['nullable', 'url', 'max:500'],
             'active' => ['sometimes', 'boolean'],
             'seminar_location_id' => ['sometimes', 'integer', 'exists:seminar_locations,id'],
