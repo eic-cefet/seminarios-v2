@@ -94,6 +94,7 @@ class AdminSeminarController extends Controller
                 'slug' => $slug,
                 'description' => $validated['description'] ?? null,
                 'scheduled_at' => $validated['scheduled_at'],
+                'duration_minutes' => $validated['duration_minutes'],
                 'room_link' => $validated['room_link'] ?? null,
                 'active' => $validated['active'],
                 'seminar_location_id' => $validated['seminar_location_id'],
@@ -130,7 +131,7 @@ class AdminSeminarController extends Controller
 
         DB::transaction(function () use ($validated, $seminar) {
             $fields = Arr::only($validated, [
-                'name', 'description', 'scheduled_at', 'room_link',
+                'name', 'description', 'scheduled_at', 'duration_minutes', 'room_link',
                 'active', 'seminar_location_id', 'seminar_type_id', 'workshop_id',
             ]);
 

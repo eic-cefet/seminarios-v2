@@ -26,6 +26,22 @@ export function formatDateTimeLong(date: string | Date): string {
     });
 }
 
+export function formatDurationMinutes(minutes: number): string {
+    const totalMinutes = Math.max(Math.trunc(minutes), 0);
+    const hours = Math.floor(totalMinutes / 60);
+    const remainingMinutes = totalMinutes % 60;
+
+    if (hours > 0 && remainingMinutes > 0) {
+        return `${hours}h ${remainingMinutes}min`;
+    }
+
+    if (hours > 0) {
+        return `${hours}h`;
+    }
+
+    return `${remainingMinutes}min`;
+}
+
 export function isExpired(date: string | Date): boolean {
     const d = typeof date === "string" ? new Date(date) : date;
     return dfIsPast(d);

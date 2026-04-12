@@ -2,6 +2,7 @@
 
 namespace App\Exports;
 
+use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
@@ -44,13 +45,15 @@ class SemestralReportExport implements FromCollection, ShouldAutoSize, WithHeadi
 
     public function map($row): array
     {
-        // Format presentations as a comma-separated list with dates
         $presentations = $row['presentations']
             ->map(function ($presentation) {
-                $date = \Carbon\Carbon::parse($presentation['date'])->format('d/m/Y');
+                $date = Carbon::parse($presentation['date'])->format('d/m/Y');
                 $type = $presentation['type'] ? " ({$presentation['type']})" : '';
+                $duration = isset($presentation['duration_minutes'])
+                    ? ' - '.$this->formatDurationMinutes((int) $presentation['duration_minutes'])
+                    : '';
 
-                return "{$presentation['name']}{$type} - {$date}";
+                return "{$presentation['name']}{$type} - {$date}{$duration}";
             })
             ->join('; ');
 
@@ -61,6 +64,22 @@ class SemestralReportExport implements FromCollection, ShouldAutoSize, WithHeadi
             $row['total_hours'],
             $presentations,
         ];
+    }
+
+    private function formatDurationMinutes(int $minutes): string
+    {
+        $hours = intdiv($minutes, 60);
+        $remainingMinutes = $minutes % 60;
+
+        if ($hours > 0 && $remainingMinutes > 0) {
+            return "{$hours}h {$remainingMinutes}min";
+        }
+
+        if ($hours > 0) {
+            return "{$hours}h";
+        }
+
+        return "{$remainingMinutes}min";
     }
 
     public function title(): string

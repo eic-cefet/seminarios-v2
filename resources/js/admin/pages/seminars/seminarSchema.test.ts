@@ -4,6 +4,7 @@ describe('seminarSchema', () => {
     const validData = {
         name: 'Test Seminar',
         scheduled_at: '2026-06-15T14:00',
+        duration_minutes: 60,
         active: true,
         seminar_location_id: 1,
         subject_names: ['Topic 1'],
@@ -25,6 +26,17 @@ describe('seminarSchema', () => {
 
     it('requires scheduled_at', () => {
         const result = seminarSchema.safeParse({ ...validData, scheduled_at: '' });
+        expect(result.success).toBe(false);
+    });
+
+    it('requires duration_minutes', () => {
+        const { duration_minutes, ...withoutDuration } = validData;
+        const result = seminarSchema.safeParse(withoutDuration);
+        expect(result.success).toBe(false);
+    });
+
+    it('requires duration_minutes to be one of the allowed durations', () => {
+        const result = seminarSchema.safeParse({ ...validData, duration_minutes: 45 });
         expect(result.success).toBe(false);
     });
 

@@ -74,7 +74,7 @@ class ReportController extends Controller
                         }
                     })
                         ->with([
-                            'seminar:id,name,scheduled_at,seminar_type_id',
+                            'seminar:id,name,scheduled_at,seminar_type_id,duration_minutes',
                             'seminar.seminarType:id,name',
                         ]);
                 },
@@ -96,18 +96,23 @@ class ReportController extends Controller
 
         $reportData = $users->map(function ($user) {
             $registrations = $user->registrations;
+            $totalMinutes = $registrations->sum(
+                fn ($registration) => (int) ($registration->seminar->duration_minutes ?? 60)
+            );
 
             $presentations = $registrations->map(fn ($registration) => [
                 'name' => $registration->seminar->name,
                 'date' => $registration->seminar->scheduled_at,
                 'type' => $registration->seminar->seminarType?->name,
+                'duration_minutes' => (int) ($registration->seminar->duration_minutes ?? 60),
             ])->sortBy('date')->values();
 
             return [
                 'name' => $user->name,
                 'email' => $user->email,
                 'course' => $user->studentData?->course?->name ?? 'N/A',
-                'total_hours' => $registrations->count(),
+                'total_minutes' => $totalMinutes,
+                'total_hours' => round($totalMinutes / 60, 2),
                 'presentations' => $presentations,
             ];
         });
@@ -149,7 +154,7 @@ class ReportController extends Controller
             'data' => $reportData,
             'summary' => [
                 'total_users' => $reportData->count(),
-                'total_hours' => $reportData->sum('total_hours'),
+                'total_hours' => round($reportData->sum('total_minutes') / 60, 2),
                 'semester' => $validated['semester'],
             ],
         ]);

@@ -168,6 +168,13 @@ describe('SeminarForm', () => {
         expect(screen.getByLabelText('Data e Hora *')).toBeInTheDocument();
     });
 
+    it('renders the duration_minutes select with 1 hour as default', () => {
+        render(<SeminarForm />);
+        const nativeSelects = document.querySelectorAll('select[data-testid="mock-native-select"]');
+        expect(nativeSelects[0]).toHaveValue('60');
+        expect(screen.getByText('Padrão: 1 hora')).toBeInTheDocument();
+    });
+
     it('renders the room_link input field', () => {
         render(<SeminarForm />);
         expect(screen.getByLabelText('Link da Sala (opcional)')).toBeInTheDocument();
@@ -254,6 +261,16 @@ describe('SeminarForm', () => {
         expect(dateInput).toHaveValue('2026-06-15T14:00');
     });
 
+    it('allows selecting a preset duration', async () => {
+        const { useParams } = await import('react-router-dom');
+        vi.mocked(useParams).mockReturnValue({});
+
+        render(<SeminarForm />);
+        const nativeSelects = document.querySelectorAll('select[data-testid="mock-native-select"]');
+        fireEvent.change(nativeSelects[0], { target: { value: '120' } });
+        expect(nativeSelects[0]).toHaveValue('120');
+    });
+
     it('allows typing in the room_link field', async () => {
         const { useParams } = await import('react-router-dom');
         vi.mocked(useParams).mockReturnValue({});
@@ -322,6 +339,26 @@ describe('SeminarForm', () => {
 
         await waitFor(() => {
             expect(screen.getByText('Data é obrigatória')).toBeInTheDocument();
+        });
+    });
+
+    it('shows duration_minutes validation error when an unsupported duration is selected', async () => {
+        const { useParams } = await import('react-router-dom');
+        vi.mocked(useParams).mockReturnValue({});
+
+        render(<SeminarForm />);
+        const user = userEvent.setup();
+
+        await user.type(screen.getByLabelText('Nome *'), 'Some Seminar');
+        fireEvent.change(screen.getByLabelText('Data e Hora *'), { target: { value: '2026-06-15T14:00' } });
+
+        const nativeSelects = document.querySelectorAll('select[data-testid="mock-native-select"]');
+        fireEvent.change(nativeSelects[0], { target: { value: '' } });
+
+        await user.click(screen.getByText('Criar Seminário'));
+
+        await waitFor(() => {
+            expect(screen.getByText('Selecione uma duração válida')).toBeInTheDocument();
         });
     });
 
@@ -422,6 +459,7 @@ describe('SeminarForm', () => {
                 name: 'Existing Seminar',
                 description: 'Test description',
                 scheduled_at: '2026-06-15T14:00:00Z',
+                duration_minutes: 120,
                 room_link: 'https://zoom.us/j/123',
                 active: true,
                 seminar_location_id: 1,
@@ -442,7 +480,8 @@ describe('SeminarForm', () => {
         render(<SeminarForm />);
 
         await waitFor(() => {
-            expect(screen.getByText('Editar Seminário')).toBeInTheDocument();
+            const nativeSelects = document.querySelectorAll('select[data-testid="mock-native-select"]');
+            expect(nativeSelects[0]).toHaveValue('120');
         });
     });
 
@@ -1167,15 +1206,15 @@ describe('SeminarForm', () => {
         });
 
         // The mocked Selects render hidden native <select> elements.
-        // There are 3 selects: location (index 0), type (index 1), workshop (index 2)
+        // There are 4 selects: duration (index 0), location (index 1), type (index 2), workshop (index 3)
         const nativeSelects = document.querySelectorAll('select[data-testid="mock-native-select"]');
-        expect(nativeSelects.length).toBe(3);
+        expect(nativeSelects.length).toBe(4);
 
-        // Change location select (first one) - triggers onValueChange -> setValue("seminar_location_id", Number(value))
-        fireEvent.change(nativeSelects[0], { target: { value: '2' } });
+        // Change location select (second one) - triggers onValueChange -> setValue("seminar_location_id", Number(value))
+        fireEvent.change(nativeSelects[1], { target: { value: '2' } });
 
         // Verify the value was set (the select's value should reflect the change)
-        expect(nativeSelects[0]).toHaveValue('2');
+        expect(nativeSelects[1]).toHaveValue('2');
     });
 
     it('covers type Select onValueChange with numeric value (lines 398-400)', async () => {
@@ -1195,13 +1234,13 @@ describe('SeminarForm', () => {
 
         const nativeSelects = document.querySelectorAll('select[data-testid="mock-native-select"]');
 
-        // Change type select (second one) to a numeric value - covers line 398 with value !== "none"
-        fireEvent.change(nativeSelects[1], { target: { value: '2' } });
-        expect(nativeSelects[1]).toHaveValue('2');
+        // Change type select (third one) to a numeric value - covers line 398 with value !== "none"
+        fireEvent.change(nativeSelects[2], { target: { value: '2' } });
+        expect(nativeSelects[2]).toHaveValue('2');
 
         // Change type select back to "none" - covers the value === "none" ? undefined branch (line 400)
-        fireEvent.change(nativeSelects[1], { target: { value: 'none' } });
-        expect(nativeSelects[1]).toHaveValue('none');
+        fireEvent.change(nativeSelects[2], { target: { value: 'none' } });
+        expect(nativeSelects[2]).toHaveValue('none');
     });
 
     it('covers workshop Select onValueChange with numeric and "none" values (lines 433-435)', async () => {
@@ -1221,13 +1260,13 @@ describe('SeminarForm', () => {
 
         const nativeSelects = document.querySelectorAll('select[data-testid="mock-native-select"]');
 
-        // Change workshop select (third one) to a numeric value - covers line 433 with value !== "none"
-        fireEvent.change(nativeSelects[2], { target: { value: '5' } });
-        expect(nativeSelects[2]).toHaveValue('5');
+        // Change workshop select (fourth one) to a numeric value - covers line 433 with value !== "none"
+        fireEvent.change(nativeSelects[3], { target: { value: '5' } });
+        expect(nativeSelects[3]).toHaveValue('5');
 
         // Change workshop select back to "none" - covers the value === "none" ? undefined branch (line 435)
-        fireEvent.change(nativeSelects[2], { target: { value: 'none' } });
-        expect(nativeSelects[2]).toHaveValue('none');
+        fireEvent.change(nativeSelects[3], { target: { value: 'none' } });
+        expect(nativeSelects[3]).toHaveValue('none');
     });
 
     it('covers useEffect falsy branches (lines 161-177) with null/empty seminar data', async () => {
@@ -1397,7 +1436,7 @@ describe('SeminarForm', () => {
 
         // Set location via native select (line 361)
         const nativeSelects = document.querySelectorAll('select[data-testid="mock-native-select"]');
-        fireEvent.change(nativeSelects[0], { target: { value: '1' } });
+        fireEvent.change(nativeSelects[1], { target: { value: '1' } });
 
         // Add a subject via SubjectMultiSelect (line 471)
         const subjectInput = screen.getByPlaceholderText('Digite e pressione Enter...');

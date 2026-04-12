@@ -35,7 +35,11 @@ import {
 } from "../../components/ui/select";
 import { Switch } from "../../components/ui/switch";
 import { toDatetimeLocal } from "@shared/lib/date";
-import { seminarSchema, type SeminarFormData } from "./seminarSchema";
+import {
+    SEMINAR_DURATION_OPTIONS,
+    seminarSchema,
+    type SeminarFormData,
+} from "./seminarSchema";
 
 function generateSlug(name: string): string {
     return name
@@ -44,6 +48,24 @@ function generateSlug(name: string): string {
         .replace(/[\u0300-\u036f]/g, "")
         .replace(/[^a-z0-9]+/g, "-")
         .replace(/^-|-$/g, "");
+}
+
+function formatDurationOption(
+    minutes: (typeof SEMINAR_DURATION_OPTIONS)[number],
+): string {
+    if (minutes === 30) {
+        return "30 minutos";
+    }
+
+    if (minutes === 60) {
+        return "1 hora";
+    }
+
+    if (minutes === 120) {
+        return "2 horas";
+    }
+
+    return "4 horas";
 }
 
 export default function SeminarForm() {
@@ -88,6 +110,7 @@ export default function SeminarForm() {
             name: "",
             description: "",
             scheduled_at: "",
+            duration_minutes: 60,
             room_link: "",
             active: true,
             seminar_location_id: undefined,
@@ -128,6 +151,7 @@ export default function SeminarForm() {
                 name: seminar.name || "",
                 description: seminar.description || "",
                 scheduled_at: scheduledAt,
+                duration_minutes: seminar.duration_minutes ?? 60,
                 room_link: seminar.room_link || "",
                 active: seminar.active ?? true,
                 seminar_location_id: locationId,
@@ -287,6 +311,48 @@ export default function SeminarForm() {
                                     {errors.scheduled_at && (
                                         <p className="text-sm text-red-500">
                                             {errors.scheduled_at.message}
+                                        </p>
+                                    )}
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label htmlFor="duration_minutes">
+                                        Duração (minutos) *
+                                    </Label>
+                                    <Select
+                                        value={String(watch("duration_minutes"))}
+                                        onValueChange={(value) =>
+                                            setValue(
+                                                "duration_minutes",
+                                                Number(value),
+                                                { shouldValidate: true },
+                                            )
+                                        }
+                                    >
+                                        <SelectTrigger id="duration_minutes">
+                                            <SelectValue placeholder="Selecione a duração" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {SEMINAR_DURATION_OPTIONS.map(
+                                                (duration) => (
+                                                    <SelectItem
+                                                        key={duration}
+                                                        value={String(duration)}
+                                                    >
+                                                        {formatDurationOption(
+                                                            duration,
+                                                        )}
+                                                    </SelectItem>
+                                                ),
+                                            )}
+                                        </SelectContent>
+                                    </Select>
+                                    <p className="text-xs text-muted-foreground">
+                                        Padrão: 1 hora
+                                    </p>
+                                    {errors.duration_minutes && (
+                                        <p className="text-sm text-red-500">
+                                            {errors.duration_minutes.message}
                                         </p>
                                     )}
                                 </div>

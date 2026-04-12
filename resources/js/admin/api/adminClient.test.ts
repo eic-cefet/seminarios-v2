@@ -203,7 +203,7 @@ describe('Admin API endpoints', () => {
         it('create sends POST', async () => {
             mockSuccess({ message: 'Created', data: { id: 1 } });
             await seminarsApi.create({
-                name: 'Test', scheduled_at: '2026-01-01', active: true,
+                name: 'Test', scheduled_at: '2026-01-01', duration_minutes: 60, active: true,
                 subject_names: ['Topic'], speaker_ids: [1],
             });
             expect(fetchSpy).toHaveBeenCalledWith(

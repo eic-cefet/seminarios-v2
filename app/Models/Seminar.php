@@ -16,6 +16,8 @@ class Seminar extends Model
 {
     use Auditable, HasFactory, SoftDeletes;
 
+    public const ALLOWED_DURATIONS = [30, 60, 120, 240];
+
     protected $fillable = [
         'name',
         'slug',
@@ -24,6 +26,7 @@ class Seminar extends Model
         'workshop_id',
         'seminar_type_id',
         'scheduled_at',
+        'duration_minutes',
         'room_link',
         'active',
         'created_by',
@@ -33,6 +36,7 @@ class Seminar extends Model
     {
         return [
             'scheduled_at' => 'datetime',
+            'duration_minutes' => 'integer',
             'active' => 'boolean',
         ];
     }

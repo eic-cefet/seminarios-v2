@@ -60,6 +60,8 @@ export interface Seminar {
     slug: string;
     description?: string;
     scheduledAt: string;
+    endsAt?: string;
+    durationMinutes?: number;
     roomLink?: string;
     active: boolean;
     isExpired: boolean;

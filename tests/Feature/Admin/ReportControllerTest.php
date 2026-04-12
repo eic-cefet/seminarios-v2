@@ -72,6 +72,7 @@ describe('GET /api/admin/reports/semestral', function () {
         $seminar = Seminar::factory()->create([
             'active' => true,
             'scheduled_at' => now()->startOfYear()->addMonth(),
+            'duration_minutes' => 90,
         ]);
 
         // Create registration
@@ -90,7 +91,10 @@ describe('GET /api/admin/reports/semestral', function () {
                 ],
                 'summary' => ['total_users', 'total_hours', 'semester'],
             ])
-            ->assertJsonPath('summary.semester', "{$currentYear}.1");
+            ->assertJsonPath('summary.semester', "{$currentYear}.1")
+            ->assertJsonPath('data.0.total_hours', 1.5)
+            ->assertJsonPath('data.0.presentations.0.duration_minutes', 90)
+            ->assertJsonPath('summary.total_hours', 1.5);
     });
 
     it('filters by course', function () {

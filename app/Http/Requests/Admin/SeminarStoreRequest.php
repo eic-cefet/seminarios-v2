@@ -13,6 +13,13 @@ class SeminarStoreRequest extends FormRequest
         return Gate::allows('create', Seminar::class);
     }
 
+    protected function prepareForValidation(): void
+    {
+        if (! $this->filled('duration_minutes')) {
+            $this->merge(['duration_minutes' => 60]);
+        }
+    }
+
     /**
      * @return array<string, array<int, mixed>>
      */
@@ -22,6 +29,7 @@ class SeminarStoreRequest extends FormRequest
             'name' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
             'scheduled_at' => ['required', 'date'],
+            'duration_minutes' => ['required', 'integer', 'in:'.implode(',', Seminar::ALLOWED_DURATIONS)],
             'room_link' => ['nullable', 'url', 'max:500'],
             'active' => ['required', 'boolean'],
             'seminar_location_id' => ['required', 'integer', 'exists:seminar_locations,id'],
@@ -44,6 +52,9 @@ class SeminarStoreRequest extends FormRequest
             'name.max' => 'O nome não pode ter mais de 255 caracteres.',
             'scheduled_at.required' => 'A data do seminário é obrigatória.',
             'scheduled_at.date' => 'A data deve ser válida.',
+            'duration_minutes.required' => 'A duração do seminário é obrigatória.',
+            'duration_minutes.integer' => 'A duração deve ser um número inteiro de minutos.',
+            'duration_minutes.in' => 'A duração deve ser 30 minutos, 1 hora, 2 horas ou 4 horas.',
             'room_link.url' => 'O link da sala deve ser uma URL válida.',
             'active.required' => 'O status de ativo é obrigatório.',
             'seminar_location_id.required' => 'O local é obrigatório.',

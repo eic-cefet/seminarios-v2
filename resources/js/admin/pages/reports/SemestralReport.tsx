@@ -1,6 +1,10 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { getSemester, formatDateTime as formatDateTimeUtil } from "@shared/lib/date";
+import {
+    getSemester,
+    formatDateTime as formatDateTimeUtil,
+    formatDurationMinutes,
+} from "@shared/lib/date";
 import { getCsrfCookie, getCookie } from "@shared/api/httpUtils";
 import { PageTitle } from "@shared/components/PageTitle";
 import { Button } from "../../components/ui/button";
@@ -28,11 +32,6 @@ import {
     TableHeader,
     TableRow,
 } from "../../components/ui/table";
-import {
-    Collapsible,
-    CollapsibleContent,
-    CollapsibleTrigger,
-} from "../../components/ui/collapsible";
 import { toast } from "sonner";
 import { FileDown, Eye, ChevronDown, Users, Clock } from "lucide-react";
 import { dropdownApi, type SeminarTypeDropdownItem } from "../../api/adminClient";
@@ -41,6 +40,7 @@ interface Presentation {
     name: string;
     date: string;
     type: string | null;
+    duration_minutes?: number;
 }
 
 interface ReportUser {
@@ -82,6 +82,10 @@ function generateSemesters() {
 }
 
 const COURSE_SITUATIONS = ["Cursando", "Trancado", "Concluído", "Outro"];
+
+function formatHours(hours: number): string {
+    return hours.toFixed(2).replace(/\.?0+$/, "");
+}
 
 export default function SemestralReport() {
     const [semester, setSemester] = useState<string>("");
@@ -394,7 +398,9 @@ export default function SemestralReport() {
                                                 Total de Horas
                                             </p>
                                             <p className="text-2xl font-bold">
-                                                {reportData.summary.total_hours}
+                                                {formatHours(
+                                                    reportData.summary.total_hours,
+                                                )}
                                                 h
                                             </p>
                                         </div>
@@ -450,130 +456,128 @@ export default function SemestralReport() {
                                         <TableBody>
                                             {reportData.data.map(
                                                 (user, index) => (
-                                                    <Collapsible
+                                                    <React.Fragment
                                                         key={index}
-                                                        open={expandedRows.has(
-                                                            index,
-                                                        )}
-                                                        asChild
                                                     >
-                                                        <>
-                                                            <TableRow
-                                                                className="cursor-pointer hover:bg-muted/50"
-                                                                onClick={() =>
-                                                                    toggleRow(
-                                                                        index,
-                                                                    )
+                                                        <TableRow
+                                                            className="cursor-pointer hover:bg-muted/50"
+                                                            onClick={() =>
+                                                                toggleRow(
+                                                                    index,
+                                                                )
+                                                            }
+                                                        >
+                                                            <TableCell>
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="sm"
+                                                                    className="p-0 h-6 w-6"
+                                                                >
+                                                                    <ChevronDown
+                                                                        className={`h-4 w-4 transition-transform ${
+                                                                            expandedRows.has(
+                                                                                index,
+                                                                            )
+                                                                                ? "rotate-180"
+                                                                                : ""
+                                                                        }`}
+                                                                    />
+                                                                </Button>
+                                                            </TableCell>
+                                                            <TableCell className="font-medium">
+                                                                {user.name}
+                                                            </TableCell>
+                                                            <TableCell>
+                                                                {user.email}
+                                                            </TableCell>
+                                                            <TableCell>
+                                                                {user.course}
+                                                            </TableCell>
+                                                            <TableCell className="text-right">
+                                                                {formatHours(
+                                                                    user.total_hours,
+                                                                )}
+                                                                h
+                                                            </TableCell>
+                                                            <TableCell className="text-right">
+                                                                {
+                                                                    user
+                                                                        .presentations
+                                                                        .length
                                                                 }
-                                                            >
-                                                                <TableCell>
-                                                                    <CollapsibleTrigger
-                                                                        asChild
-                                                                    >
-                                                                        <Button
-                                                                            variant="ghost"
-                                                                            size="sm"
-                                                                            className="p-0 h-6 w-6"
-                                                                        >
-                                                                            <ChevronDown
-                                                                                className={`h-4 w-4 transition-transform ${
-                                                                                    expandedRows.has(
-                                                                                        index,
-                                                                                    )
-                                                                                        ? "rotate-180"
-                                                                                        : ""
-                                                                                }`}
-                                                                            />
-                                                                        </Button>
-                                                                    </CollapsibleTrigger>
-                                                                </TableCell>
-                                                                <TableCell className="font-medium">
-                                                                    {user.name}
-                                                                </TableCell>
-                                                                <TableCell>
-                                                                    {user.email}
-                                                                </TableCell>
-                                                                <TableCell>
-                                                                    {
-                                                                        user.course
-                                                                    }
-                                                                </TableCell>
-                                                                <TableCell className="text-right">
-                                                                    {
-                                                                        user.total_hours
-                                                                    }
-                                                                    h
-                                                                </TableCell>
-                                                                <TableCell className="text-right">
-                                                                    {
-                                                                        user
-                                                                            .presentations
-                                                                            .length
-                                                                    }
+                                                            </TableCell>
+                                                        </TableRow>
+                                                        {expandedRows.has(
+                                                            index,
+                                                        ) && (
+                                                            <TableRow className="bg-muted/30">
+                                                                <TableCell
+                                                                    colSpan={6}
+                                                                    className="p-0"
+                                                                >
+                                                                    <div className="px-8 py-4">
+                                                                        <p className="text-sm font-medium mb-2">
+                                                                            Apresentações
+                                                                            assistidas:
+                                                                        </p>
+                                                                        <ul className="space-y-1">
+                                                                            {user.presentations.map(
+                                                                                (
+                                                                                    presentation,
+                                                                                    pIndex,
+                                                                                ) => (
+                                                                                    <li
+                                                                                        key={
+                                                                                            pIndex
+                                                                                        }
+                                                                                        className="text-sm text-muted-foreground flex gap-2"
+                                                                                    >
+                                                                                        <span className="text-foreground">
+                                                                                            {
+                                                                                                presentation.name
+                                                                                            }
+                                                                                        </span>
+                                                                                        <span>
+                                                                                            -
+                                                                                        </span>
+                                                                                        <span>
+                                                                                            {formatDateTimeUtil(
+                                                                                                presentation.date,
+                                                                                            )}
+                                                                                        </span>
+                                                                                        {presentation.type && (
+                                                                                            <>
+                                                                                                <span>
+                                                                                                    -
+                                                                                                </span>
+                                                                                                <span className="text-primary">
+                                                                                                    {
+                                                                                                        presentation.type
+                                                                                                    }
+                                                                                                </span>
+                                                                                            </>
+                                                                                        )}
+                                                                                        {presentation.duration_minutes ? (
+                                                                                            <>
+                                                                                                <span>
+                                                                                                    -
+                                                                                                </span>
+                                                                                                <span>
+                                                                                                    {formatDurationMinutes(
+                                                                                                        presentation.duration_minutes,
+                                                                                                    )}
+                                                                                                </span>
+                                                                                            </>
+                                                                                        ) : null}
+                                                                                    </li>
+                                                                                ),
+                                                                            )}
+                                                                        </ul>
+                                                                    </div>
                                                                 </TableCell>
                                                             </TableRow>
-                                                            <CollapsibleContent
-                                                                asChild
-                                                            >
-                                                                <TableRow className="bg-muted/30">
-                                                                    <TableCell
-                                                                        colSpan={
-                                                                            6
-                                                                        }
-                                                                        className="p-0"
-                                                                    >
-                                                                        <div className="px-8 py-4">
-                                                                            <p className="text-sm font-medium mb-2">
-                                                                                Apresentações
-                                                                                assistidas:
-                                                                            </p>
-                                                                            <ul className="space-y-1">
-                                                                                {user.presentations.map(
-                                                                                    (
-                                                                                        presentation,
-                                                                                        pIndex,
-                                                                                    ) => (
-                                                                                        <li
-                                                                                            key={
-                                                                                                pIndex
-                                                                                            }
-                                                                                            className="text-sm text-muted-foreground flex gap-2"
-                                                                                        >
-                                                                                            <span className="text-foreground">
-                                                                                                {
-                                                                                                    presentation.name
-                                                                                                }
-                                                                                            </span>
-                                                                                            <span>
-                                                                                                -
-                                                                                            </span>
-                                                                                            <span>
-                                                                                                {formatDateTimeUtil(
-                                                                                                    presentation.date,
-                                                                                                )}
-                                                                                            </span>
-                                                                                            {presentation.type && (
-                                                                                                <>
-                                                                                                    <span>
-                                                                                                        -
-                                                                                                    </span>
-                                                                                                    <span className="text-primary">
-                                                                                                        {
-                                                                                                            presentation.type
-                                                                                                        }
-                                                                                                    </span>
-                                                                                                </>
-                                                                                            )}
-                                                                                        </li>
-                                                                                    ),
-                                                                                )}
-                                                                            </ul>
-                                                                        </div>
-                                                                    </TableCell>
-                                                                </TableRow>
-                                                            </CollapsibleContent>
-                                                        </>
-                                                    </Collapsible>
+                                                        )}
+                                                    </React.Fragment>
                                                 ),
                                             )}
                                         </TableBody>
