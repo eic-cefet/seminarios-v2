@@ -5,6 +5,8 @@ import { Layout } from "../components/Layout";
 import { SeminarCard } from "../components/SeminarCard";
 import { PageTitle } from "@shared/components/PageTitle";
 import { subjectsApi, seminarsApi } from "@shared/api/client";
+import { buildBreadcrumbs, buildCollectionPage, buildItemList } from "@shared/lib/structuredData";
+import { buildAbsoluteUrl } from "@shared/lib/utils";
 
 export default function SubjectSeminars() {
     const { slug } = useParams<{ slug: string }>();
@@ -29,7 +31,7 @@ export default function SubjectSeminars() {
     if (isLoading) {
         return (
             <>
-                <PageTitle title="Carregando..." />
+                <PageTitle title="Carregando..." robots="noindex, nofollow" />
                 <Layout>
                     <div className="bg-white border-b border-gray-200">
                         <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
@@ -55,7 +57,7 @@ export default function SubjectSeminars() {
     if (!subject) {
         return (
             <>
-                <PageTitle title="Tópico não encontrado" />
+                <PageTitle title="Tópico não encontrado" robots="noindex, nofollow" />
                 <Layout>
                     <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 text-center">
                         <BookOpen className="mx-auto h-12 w-12 text-gray-400" />
@@ -79,9 +81,23 @@ export default function SubjectSeminars() {
         );
     }
 
+    const pageDescription = `Seminários sobre ${subject.name} na EIC do CEFET-RJ.`;
+
+    const structuredData = [
+        buildBreadcrumbs([
+            { name: "Início", path: "/" },
+            { name: "Tópicos", path: "/topicos" },
+            { name: subject.name, path: `/topico/${slug}` },
+        ]),
+        buildCollectionPage({ name: subject.name, description: pageDescription, path: `/topico/${slug}` }),
+        buildItemList(
+            (seminars ?? []).map((s) => ({ name: s.name, url: buildAbsoluteUrl(`/seminario/${s.slug}`) })),
+        ),
+    ].filter((x): x is Record<string, unknown> => x !== null);
+
     return (
         <>
-            <PageTitle title={subject.name} />
+            <PageTitle title={subject.name} description={pageDescription} canonicalPath={`/topico/${slug}`} structuredData={structuredData} />
             <Layout>
                 <div className="bg-white border-b border-gray-200">
                     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">

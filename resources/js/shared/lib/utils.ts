@@ -16,6 +16,18 @@ export function containsHTML(text: string): boolean {
     return /<[a-z][\s\S]*>/i.test(text);
 }
 
+export function stripHtml(text: string): string {
+    return text.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+}
+
+export function truncateText(text: string, maxLength: number): string {
+    if (text.length <= maxLength) {
+        return text;
+    }
+
+    return `${text.slice(0, maxLength - 1).trimEnd()}…`;
+}
+
 /**
  * Validates that a redirect path is a safe relative path (not an open redirect).
  * Rejects protocol-relative URLs (//evil.com), backslash-relative URLs (/\evil.com),
@@ -44,4 +56,22 @@ export function buildUrl(path: string): string {
         return `${base}${path}`;
     }
     return path;
+}
+
+export function buildAbsoluteUrl(path: string): string {
+    if (/^https?:\/\//i.test(path)) {
+        return path;
+    }
+
+    const configuredBase = app.BASE_PATH?.trim();
+    const base =
+        configuredBase && configuredBase.length > 0
+            ? configuredBase.replace(/\/$/, "")
+            : window.location.origin;
+
+    if (!path.startsWith("/")) {
+        return `${base}/${path}`;
+    }
+
+    return `${base}${path}`;
 }

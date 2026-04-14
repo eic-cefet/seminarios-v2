@@ -106,4 +106,23 @@ describe('Home', () => {
             expect(screen.getByText(/nenhum seminário agendado no momento/i)).toBeInTheDocument();
         });
     });
+
+    it('sets homepage SEO metadata', async () => {
+        render(<Home />);
+
+        await waitFor(() => {
+            expect(document.title).toBe('Seminários EIC do CEFET-RJ');
+        });
+
+        await waitFor(() => {
+            const canonical = document.head.querySelector('link[rel="canonical"]');
+            expect(canonical).not.toBeNull();
+            expect(canonical!.getAttribute('href')).toContain('/');
+        });
+
+        const scripts = document.head.querySelectorAll('script[type="application/ld+json"]');
+        const jsonTexts = Array.from(scripts).map((s) => s.textContent);
+        const hasWebSite = jsonTexts.some((t) => t && t.includes('"WebSite"'));
+        expect(hasWebSite).toBe(true);
+    });
 });

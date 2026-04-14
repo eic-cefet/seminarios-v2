@@ -1,4 +1,16 @@
-import { cn, formatDate, formatDateTime, formatDateTimeLong, isExpired, containsHTML, buildUrl, isSafeRedirect } from './utils';
+import {
+    buildAbsoluteUrl,
+    buildUrl,
+    cn,
+    containsHTML,
+    formatDate,
+    formatDateTime,
+    formatDateTimeLong,
+    isExpired,
+    isSafeRedirect,
+    stripHtml,
+    truncateText,
+} from './utils';
 
 describe('cn', () => {
     it('merges class names', () => {
@@ -91,6 +103,24 @@ describe('containsHTML', () => {
     });
 });
 
+describe('stripHtml', () => {
+    it('removes html tags and normalizes whitespace', () => {
+        expect(stripHtml('<p>Hello <strong>world</strong></p>')).toBe(
+            'Hello world',
+        );
+    });
+});
+
+describe('truncateText', () => {
+    it('truncates long text with an ellipsis', () => {
+        expect(truncateText('1234567890', 6)).toBe('12345…');
+    });
+
+    it('returns the full text when within the limit', () => {
+        expect(truncateText('short', 10)).toBe('short');
+    });
+});
+
 describe('isSafeRedirect', () => {
     it('accepts valid relative paths', () => {
         expect(isSafeRedirect('/')).toBe(true);
@@ -149,5 +179,34 @@ describe('buildUrl', () => {
 
     afterEach(() => {
         app.ROUTER_BASE = '';
+    });
+});
+
+describe('buildAbsoluteUrl', () => {
+    it('uses APP BASE_PATH when configured', () => {
+        app.BASE_PATH = 'https://seminarios.example.com/base';
+        expect(buildAbsoluteUrl('/topicos')).toBe(
+            'https://seminarios.example.com/base/topicos',
+        );
+    });
+
+    it('falls back to the window origin when BASE_PATH is empty', () => {
+        app.BASE_PATH = '';
+        expect(buildAbsoluteUrl('/workshops')).toBe(
+            `${window.location.origin}/workshops`,
+        );
+    });
+
+    it('returns absolute urls unchanged', () => {
+        expect(buildAbsoluteUrl('https://example.com/page')).toBe(
+            'https://example.com/page',
+        );
+    });
+
+    it('handles a relative path without leading slash', () => {
+        app.BASE_PATH = 'https://seminarios.example.com';
+        expect(buildAbsoluteUrl('images/logo.png')).toBe(
+            'https://seminarios.example.com/images/logo.png',
+        );
     });
 });

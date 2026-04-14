@@ -15,8 +15,12 @@ import { SeminarCard } from "../components/SeminarCard";
 import { PresentationsCalendar } from "../components/PresentationsCalendar";
 import { PageTitle } from "@shared/components/PageTitle";
 import { seminarsApi, seminarTypesApi } from "@shared/api/client";
+import { buildCollectionPage, buildItemList } from "@shared/lib/structuredData";
 import { toSaoPaulo } from "@shared/lib/date";
-import { cn } from "@shared/lib/utils";
+import { buildAbsoluteUrl, cn } from "@shared/lib/utils";
+
+const PAGE_DESCRIPTION =
+    "Confira a agenda de apresentações e seminários da EIC — passados e futuros.";
 
 type TimeFilter = "all" | "upcoming" | "expired";
 type ViewMode = "list" | "calendar";
@@ -100,9 +104,16 @@ export default function Presentations() {
     const calendarSeminars = calendarSeminarsData?.data ?? [];
     const calendarTotal = calendarSeminarsData?.meta?.total;
 
+    const structuredData = [
+        buildCollectionPage({ name: "Apresentações", description: PAGE_DESCRIPTION, path: "/apresentacoes" }),
+        buildItemList(
+            (seminars ?? []).map((s) => ({ name: s.name, url: buildAbsoluteUrl(`/seminario/${s.slug}`) })),
+        ),
+    ].filter((x): x is Record<string, unknown> => x !== null);
+
     return (
         <>
-            <PageTitle title="Apresentações" />
+            <PageTitle title="Apresentações" description={PAGE_DESCRIPTION} canonicalPath="/apresentacoes" structuredData={structuredData} />
             <Layout>
                 <div className="bg-white border-b border-gray-200">
                     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">

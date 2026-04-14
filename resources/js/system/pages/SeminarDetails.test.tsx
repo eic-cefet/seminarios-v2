@@ -623,6 +623,37 @@ describe('SeminarDetails', () => {
         });
     });
 
+    it('sets event SEO metadata for the seminar page', async () => {
+        const seminar = createSeminar({
+            name: 'SEO Seminar',
+            slug: 'seo-seminar',
+            description: 'A description for SEO testing',
+            scheduledAt: '2026-06-15T14:00:00Z',
+        });
+        vi.mocked(seminarsApi.get).mockResolvedValue({ data: seminar });
+
+        render(<SeminarDetails />);
+
+        await waitFor(() => {
+            expect(screen.getByRole('heading', { name: 'SEO Seminar' })).toBeInTheDocument();
+        });
+
+        await waitFor(() => {
+            const canonical = document.head.querySelector('link[rel="canonical"]');
+            expect(canonical).not.toBeNull();
+            expect(canonical!.getAttribute('href')).toContain('/seminario/seo-seminar');
+        });
+
+        const metaDescription = document.head.querySelector('meta[name="description"]');
+        expect(metaDescription).not.toBeNull();
+        expect(metaDescription!.getAttribute('content')).toContain('A description for SEO testing');
+
+        const scripts = document.head.querySelectorAll('script[type="application/ld+json"]');
+        const jsonTexts = Array.from(scripts).map((s) => s.textContent);
+        const hasEvent = jsonTexts.some((t) => t && t.includes('"Event"'));
+        expect(hasEvent).toBe(true);
+    });
+
     it('calls unregisterMutation onError when unregister fails', async () => {
         const seminar = createSeminar({ name: 'Test', isExpired: false });
         vi.mocked(seminarsApi.get).mockResolvedValue({ data: seminar });

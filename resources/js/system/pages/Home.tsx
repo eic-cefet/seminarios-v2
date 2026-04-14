@@ -5,6 +5,25 @@ import { Layout } from "../components/Layout";
 import { SeminarCard } from "../components/SeminarCard";
 import { PageTitle } from "@shared/components/PageTitle";
 import { seminarsApi, subjectsApi, statsApi } from "@shared/api/client";
+import { buildAbsoluteUrl } from "@shared/lib/utils";
+
+const PAGE_DESCRIPTION =
+    "Acompanhe seminários, apresentações e workshops da Escola de Informática e Computação do CEFET-RJ.";
+
+const structuredData = [
+    {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        name: "Seminários EIC do CEFET-RJ",
+        url: buildAbsoluteUrl("/"),
+    },
+    {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        name: "CEFET-RJ — Escola de Informática e Computação",
+        url: buildAbsoluteUrl("/"),
+    },
+];
 
 function StatCard({ icon: Icon, value, label }: { icon: LucideIcon; value: number; label: string }) {
     return (
@@ -42,7 +61,7 @@ export default function Home() {
 
     return (
         <>
-            <PageTitle title="Início" />
+            <PageTitle title="Seminários EIC do CEFET-RJ" absoluteTitle description={PAGE_DESCRIPTION} canonicalPath="/" structuredData={structuredData} />
             <Layout>
                 <section className="bg-primary-600">
                     <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 lg:py-24">

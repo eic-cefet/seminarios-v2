@@ -23,7 +23,7 @@ export default function Certificates() {
 
     return (
         <ProtectedRoute>
-            <PageTitle title="Certificados" />
+            <PageTitle title="Certificados" robots="noindex, nofollow" />
             <Layout>
                 <div className="bg-white border-b border-gray-200">
                     <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">

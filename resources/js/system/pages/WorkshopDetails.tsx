@@ -5,6 +5,8 @@ import { Layout } from "../components/Layout";
 import { SeminarCard } from "../components/SeminarCard";
 import { PageTitle } from "@shared/components/PageTitle";
 import { workshopsApi } from "@shared/api/client";
+import { buildBreadcrumbs, buildCollectionPage, buildItemList } from "@shared/lib/structuredData";
+import { buildAbsoluteUrl, truncateText } from "@shared/lib/utils";
 
 export default function WorkshopDetails() {
     const { slug } = useParams<{ slug: string }>();
@@ -29,7 +31,7 @@ export default function WorkshopDetails() {
     if (isLoading) {
         return (
             <>
-                <PageTitle title="Carregando..." />
+                <PageTitle title="Carregando..." robots="noindex, nofollow" />
                 <Layout>
                     <div className="bg-primary-600">
                         <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
@@ -55,7 +57,7 @@ export default function WorkshopDetails() {
     if (!workshop) {
         return (
             <>
-                <PageTitle title="Workshop não encontrado" />
+                <PageTitle title="Workshop não encontrado" robots="noindex, nofollow" />
                 <Layout>
                     <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 text-center">
                         <Wrench className="mx-auto h-12 w-12 text-gray-400" />
@@ -79,9 +81,25 @@ export default function WorkshopDetails() {
         );
     }
 
+    const pageDescription = workshop.description
+        ? truncateText(workshop.description, 160)
+        : `Workshop: ${workshop.name} na EIC do CEFET-RJ.`;
+
+    const structuredData = [
+        buildBreadcrumbs([
+            { name: "Início", path: "/" },
+            { name: "Workshops", path: "/workshops" },
+            { name: workshop.name, path: `/workshop/${slug}` },
+        ]),
+        buildCollectionPage({ name: workshop.name, description: pageDescription, path: `/workshop/${slug}` }),
+        buildItemList(
+            (seminars ?? []).map((s) => ({ name: s.name, url: buildAbsoluteUrl(`/seminario/${s.slug}`) })),
+        ),
+    ].filter((x): x is Record<string, unknown> => x !== null);
+
     return (
         <>
-            <PageTitle title={workshop.name} />
+            <PageTitle title={workshop.name} description={pageDescription} canonicalPath={`/workshop/${slug}`} structuredData={structuredData} />
             <Layout>
                 <div className="bg-primary-600">
                     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">

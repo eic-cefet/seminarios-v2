@@ -6,7 +6,7 @@ import { PageTitle } from "@shared/components/PageTitle";
 export default function NotFound() {
     return (
         <>
-            <PageTitle title="Página não encontrada" />
+            <PageTitle title="Página não encontrada" robots="noindex, nofollow" />
             <Layout>
                 <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
                     <div className="text-center">

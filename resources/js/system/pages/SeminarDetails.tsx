@@ -20,7 +20,8 @@ import { CalendarMenu } from "../components/CalendarMenu";
 import { LoginModal } from "../components/LoginModal";
 import { PageTitle } from "@shared/components/PageTitle";
 import { seminarsApi, registrationApi } from "@shared/api/client";
-import { cn, containsHTML } from "@shared/lib/utils";
+import { buildBreadcrumbs } from "@shared/lib/structuredData";
+import { buildAbsoluteUrl, cn, containsHTML, stripHtml, truncateText } from "@shared/lib/utils";
 import {
     formatDateTime,
     formatDurationMinutes,
@@ -151,7 +152,7 @@ export default function SeminarDetails() {
     if (isLoading) {
         return (
             <>
-                <PageTitle title="Carregando..." />
+                <PageTitle title="Carregando..." robots="noindex, nofollow" />
                 <Layout>
                     <div className="bg-white border-b border-gray-200">
                         <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
@@ -171,7 +172,7 @@ export default function SeminarDetails() {
     if (error || !seminar) {
         return (
             <>
-                <PageTitle title="Seminário não encontrado" />
+                <PageTitle title="Seminário não encontrado" robots="noindex, nofollow" />
                 <Layout>
                     <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 text-center">
                         <Calendar className="mx-auto h-12 w-12 text-gray-400" />
@@ -198,9 +199,76 @@ export default function SeminarDetails() {
     const isExpired = seminar.isExpired;
     const isToday = !isExpired && isTodayDate(seminar.scheduledAt);
 
+    const seminarDescription = seminar.description
+        ? truncateText(stripHtml(seminar.description), 160)
+        : `Seminário: ${seminar.name} na EIC do CEFET-RJ.`;
+
+    const eventSchema: Record<string, unknown> = {
+        "@context": "https://schema.org",
+        "@type": "Event",
+        name: seminar.name,
+        description: seminarDescription,
+        startDate: seminar.scheduledAt,
+        ...(seminar.endsAt ? { endDate: seminar.endsAt } : {}),
+        url: buildAbsoluteUrl(`/seminario/${seminar.slug}`),
+        image: buildAbsoluteUrl("/images/email-logo.png"),
+        organizer: {
+            "@type": "Organization",
+            name: "CEFET-RJ — Escola de Informática e Computação",
+        },
+        eventStatus: seminar.isExpired
+            ? "https://schema.org/EventCompleted"
+            : "https://schema.org/EventScheduled",
+    };
+
+    if (seminar.location) {
+        eventSchema.location = {
+            "@type": "Place",
+            name: seminar.location.name,
+        };
+        if (seminar.roomLink) {
+            eventSchema.location = {
+                "@type": "VirtualLocation",
+                url: seminar.roomLink,
+            };
+            eventSchema.eventAttendanceMode = "https://schema.org/MixedEventAttendanceMode";
+        }
+    } else if (seminar.roomLink) {
+        eventSchema.location = {
+            "@type": "VirtualLocation",
+            url: seminar.roomLink,
+        };
+        eventSchema.eventAttendanceMode = "https://schema.org/OnlineEventAttendanceMode";
+    }
+
+    if (seminar.workshop) {
+        eventSchema.superEvent = {
+            "@type": "Event",
+            name: seminar.workshop.name,
+            url: buildAbsoluteUrl(`/workshop/${seminar.workshop.slug}`),
+        };
+    }
+
+    if (seminar.subjects && seminar.subjects.length > 0) {
+        eventSchema.keywords = seminar.subjects.map((s) => s.name);
+    }
+
+    if (seminar.speakers && seminar.speakers.length > 0) {
+        eventSchema.performer = seminar.speakers.map((s) => ({
+            "@type": "Person",
+            name: s.name,
+        }));
+    }
+
+    const breadcrumbs = buildBreadcrumbs([
+        { name: "Início", path: "/" },
+        { name: "Apresentações", path: "/apresentacoes" },
+        { name: seminar.name, path: `/seminario/${seminar.slug}` },
+    ]);
+
     return (
         <>
-            <PageTitle title={seminar.name} />
+            <PageTitle title={seminar.name} description={seminarDescription} canonicalPath={`/seminario/${seminar.slug}`} structuredData={[eventSchema, breadcrumbs]} />
             <Layout>
                 <div
                     className={cn(
