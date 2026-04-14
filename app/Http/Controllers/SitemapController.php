@@ -41,6 +41,7 @@ class SitemapController extends Controller
                 'lastmod' => $latestPublicContentUpdatedAt,
             ],
             ...Seminar::query()
+                ->select('slug', 'updated_at')
                 ->active()
                 ->orderBy('scheduled_at', 'desc')
                 ->cursor()
@@ -50,6 +51,7 @@ class SitemapController extends Controller
                 ])
                 ->all(),
             ...Subject::query()
+                ->select('id', 'slug', 'updated_at')
                 ->whereHas('seminars', fn ($query) => $query->where('active', true))
                 ->orderBy('name')
                 ->cursor()
@@ -59,6 +61,7 @@ class SitemapController extends Controller
                 ])
                 ->all(),
             ...Workshop::query()
+                ->select('id', 'slug', 'updated_at')
                 ->whereHas('seminars', fn ($query) => $query->where('active', true))
                 ->orderBy('name')
                 ->cursor()
