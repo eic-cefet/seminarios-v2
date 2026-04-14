@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import { Layout } from "../components/Layout";
+import { PageTitle } from "@shared/components/PageTitle";
 import { useAuth } from "@shared/contexts/AuthContext";
 import { getErrorMessage } from "@shared/lib/errors";
 import { isSafeRedirect } from "@shared/lib/utils";
@@ -55,36 +56,45 @@ export default function AuthCallback() {
 
     if (error) {
         return (
-            <Layout>
-                <div className="flex min-h-[calc(100vh-4rem-4rem)] items-center justify-center py-12 px-4">
-                    <div className="text-center">
-                        <div className="mx-auto h-12 w-12 rounded-full bg-red-100 flex items-center justify-center">
-                            <span className="text-2xl">!</span>
+            <>
+                <PageTitle
+                    title="Erro na autenticação"
+                    robots="noindex, nofollow"
+                />
+                <Layout>
+                    <div className="flex min-h-[calc(100vh-4rem-4rem)] items-center justify-center py-12 px-4">
+                        <div className="text-center">
+                            <div className="mx-auto h-12 w-12 rounded-full bg-red-100 flex items-center justify-center">
+                                <span className="text-2xl">!</span>
+                            </div>
+                            <h1 className="mt-4 text-xl font-semibold text-gray-900">
+                                Erro na autenticação
+                            </h1>
+                            <p className="mt-2 text-gray-500">{error}</p>
+                            <button
+                                onClick={() => navigate("/login")}
+                                className="mt-6 inline-flex items-center rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700 cursor-pointer"
+                            >
+                                Voltar para login
+                            </button>
                         </div>
-                        <h1 className="mt-4 text-xl font-semibold text-gray-900">
-                            Erro na autenticação
-                        </h1>
-                        <p className="mt-2 text-gray-500">{error}</p>
-                        <button
-                            onClick={() => navigate("/login")}
-                            className="mt-6 inline-flex items-center rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700 cursor-pointer"
-                        >
-                            Voltar para login
-                        </button>
                     </div>
-                </div>
-            </Layout>
+                </Layout>
+            </>
         );
     }
 
     return (
-        <Layout>
-            <div className="flex min-h-[calc(100vh-4rem-4rem)] items-center justify-center py-12 px-4">
-                <div className="text-center">
-                    <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary-600" />
-                    <p className="mt-4 text-gray-500">Autenticando...</p>
+        <>
+            <PageTitle title="Autenticando..." robots="noindex, nofollow" />
+            <Layout>
+                <div className="flex min-h-[calc(100vh-4rem-4rem)] items-center justify-center py-12 px-4">
+                    <div className="text-center">
+                        <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary-600" />
+                        <p className="mt-4 text-gray-500">Autenticando...</p>
+                    </div>
                 </div>
-            </div>
-        </Layout>
+            </Layout>
+        </>
     );
 }

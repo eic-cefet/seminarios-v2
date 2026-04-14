@@ -5,6 +5,7 @@ import { Layout } from "../components/Layout";
 import { SeminarCard } from "../components/SeminarCard";
 import { PageTitle } from "@shared/components/PageTitle";
 import { subjectsApi, seminarsApi } from "@shared/api/client";
+import { buildAbsoluteUrl } from "@shared/lib/utils";
 
 export default function SubjectSeminars() {
     const { id } = useParams<{ id: string }>();
@@ -30,7 +31,7 @@ export default function SubjectSeminars() {
     if (isLoading) {
         return (
             <>
-                <PageTitle title="Carregando..." />
+                <PageTitle title="Carregando..." robots="noindex, nofollow" />
                 <Layout>
                     <div className="bg-white border-b border-gray-200">
                         <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
@@ -56,7 +57,10 @@ export default function SubjectSeminars() {
     if (!subject) {
         return (
             <>
-                <PageTitle title="Tópico não encontrado" />
+                <PageTitle
+                    title="Tópico não encontrado"
+                    robots="noindex, nofollow"
+                />
                 <Layout>
                     <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 text-center">
                         <BookOpen className="mx-auto h-12 w-12 text-gray-400" />
@@ -80,9 +84,65 @@ export default function SubjectSeminars() {
         );
     }
 
+    const pageDescription = `${
+        subject.seminarsCount ?? seminars.length
+    } seminários relacionados ao tópico ${subject.name} na Escola de Informática e Computação do CEFET-RJ.`;
+    const structuredData = [
+        {
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            itemListElement: [
+                {
+                    "@type": "ListItem",
+                    position: 1,
+                    name: "Início",
+                    item: buildAbsoluteUrl("/"),
+                },
+                {
+                    "@type": "ListItem",
+                    position: 2,
+                    name: "Tópicos",
+                    item: buildAbsoluteUrl("/topicos"),
+                },
+                {
+                    "@type": "ListItem",
+                    position: 3,
+                    name: subject.name,
+                    item: buildAbsoluteUrl(`/topico/${subject.id}`),
+                },
+            ],
+        },
+        {
+            "@context": "https://schema.org",
+            "@type": "CollectionPage",
+            name: subject.name,
+            description: pageDescription,
+            url: buildAbsoluteUrl(`/topico/${subject.id}`),
+        },
+        ...(seminars.length > 0
+            ? [
+                  {
+                      "@context": "https://schema.org",
+                      "@type": "ItemList",
+                      itemListElement: seminars.map((seminar, index) => ({
+                          "@type": "ListItem",
+                          position: index + 1,
+                          name: seminar.name,
+                          url: buildAbsoluteUrl(`/seminario/${seminar.slug}`),
+                      })),
+                  },
+              ]
+            : []),
+    ];
+
     return (
         <>
-            <PageTitle title={subject.name} />
+            <PageTitle
+                title={subject.name}
+                description={pageDescription}
+                canonicalPath={`/topico/${subject.id}`}
+                structuredData={structuredData}
+            />
             <Layout>
                 <div className="bg-white border-b border-gray-200">
                     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">

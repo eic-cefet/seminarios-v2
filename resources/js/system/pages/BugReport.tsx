@@ -124,7 +124,7 @@ export default function BugReport() {
     if (success) {
         return (
             <>
-                <PageTitle title="Bug Reportado" />
+                <PageTitle title="Bug Reportado" robots="noindex, nofollow" />
                 <Layout>
                     <div className="flex min-h-[calc(100vh-4rem-4rem)] items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
                         <div className="w-full max-w-md text-center space-y-6">
@@ -161,7 +161,7 @@ export default function BugReport() {
 
     return (
         <>
-            <PageTitle title="Reportar Bug" />
+            <PageTitle title="Reportar Bug" robots="noindex, nofollow" />
             <Layout>
                 <div className="flex min-h-[calc(100vh-4rem-4rem)] items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
                     <div className="w-full max-w-lg space-y-8">

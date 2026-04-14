@@ -54,6 +54,48 @@ describe('SeminarDetails', () => {
         });
     });
 
+    it('sets event SEO metadata for the seminar page', async () => {
+        const seminar = createSeminar({
+            name: 'Advanced React',
+            slug: 'advanced-react',
+            description: '<p>Detalhes do seminário de React</p>',
+            location: createLocation({ name: 'Auditório 1' }),
+        });
+        vi.mocked(seminarsApi.get).mockResolvedValue({ data: seminar });
+
+        render(<SeminarDetails />);
+
+        await waitFor(() => {
+            expect(
+                screen.getByRole('heading', { name: 'Advanced React' }),
+            ).toBeInTheDocument();
+        });
+
+        expect(
+            document.head.querySelector('link[rel="canonical"]'),
+        ).toHaveAttribute(
+            'href',
+            `${window.location.origin}/seminario/advanced-react`,
+        );
+        expect(
+            document.head.querySelector('meta[name="description"]'),
+        ).toHaveAttribute(
+            'content',
+            expect.stringContaining('Detalhes do seminário de React'),
+        );
+        expect(
+            Array.from(
+                document.head.querySelectorAll(
+                    'script[type="application/ld+json"]',
+                ),
+            ).some(
+                (script) =>
+                    script.textContent?.includes('"@type":"Event"') &&
+                    script.textContent?.includes('"name":"Advanced React"'),
+            ),
+        ).toBe(true);
+    });
+
     it('renders seminar details (date, location, speakers)', async () => {
         const speaker = createSpeaker({ name: 'Jane Doe' });
         const location = createLocation({ name: 'Room 202' });

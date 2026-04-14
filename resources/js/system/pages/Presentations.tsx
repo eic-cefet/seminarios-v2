@@ -16,7 +16,7 @@ import { PresentationsCalendar } from "../components/PresentationsCalendar";
 import { PageTitle } from "@shared/components/PageTitle";
 import { seminarsApi, seminarTypesApi } from "@shared/api/client";
 import { toSaoPaulo } from "@shared/lib/date";
-import { cn } from "@shared/lib/utils";
+import { buildAbsoluteUrl, cn } from "@shared/lib/utils";
 
 type TimeFilter = "all" | "upcoming" | "expired";
 type ViewMode = "list" | "calendar";
@@ -99,10 +99,46 @@ export default function Presentations() {
     const pagination = seminarsData?.meta;
     const calendarSeminars = calendarSeminarsData?.data ?? [];
     const calendarTotal = calendarSeminarsData?.meta?.total;
+    const pageDescription =
+        "Veja a agenda de apresentações e seminários da Escola de Informática e Computação do CEFET-RJ.";
+    const structuredData = [
+        {
+            "@context": "https://schema.org",
+            "@type": "CollectionPage",
+            name: "Apresentações e Seminários",
+            description: pageDescription,
+            url: buildAbsoluteUrl("/apresentacoes"),
+        },
+        ...(seminars.length > 0
+            ? [
+                  {
+                      "@context": "https://schema.org",
+                      "@type": "ItemList",
+                      itemListOrder: "https://schema.org/ItemListOrderAscending",
+                      numberOfItems: pagination?.total ?? seminars.length,
+                      itemListElement: seminars.map((seminar, index) => ({
+                          "@type": "ListItem",
+                          position:
+                              ((pagination?.current_page ?? 1) - 1) *
+                                  (pagination?.per_page ?? seminars.length) +
+                              index +
+                              1,
+                          name: seminar.name,
+                          url: buildAbsoluteUrl(`/seminario/${seminar.slug}`),
+                      })),
+                  },
+              ]
+            : []),
+    ];
 
     return (
         <>
-            <PageTitle title="Apresentações" />
+            <PageTitle
+                title="Apresentações"
+                description={pageDescription}
+                canonicalPath="/apresentacoes"
+                structuredData={structuredData}
+            />
             <Layout>
                 <div className="bg-white border-b border-gray-200">
                     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">

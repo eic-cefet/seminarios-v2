@@ -36,6 +36,25 @@ describe('Home', () => {
         expect(screen.getByRole('heading', { name: /seminários eic/i })).toBeInTheDocument();
     });
 
+    it('sets homepage SEO metadata', async () => {
+        render(<Home />);
+
+        await waitFor(() => {
+            expect(document.title).toBe('Seminários EIC do CEFET-RJ');
+        });
+
+        expect(
+            document.head.querySelector('link[rel="canonical"]'),
+        ).toHaveAttribute('href', `${window.location.origin}/`);
+        expect(
+            Array.from(
+                document.head.querySelectorAll(
+                    'script[type="application/ld+json"]',
+                ),
+            ).some((script) => script.textContent?.includes('"@type":"WebSite"')),
+        ).toBe(true);
+    });
+
     it('shows stats after loading', async () => {
         render(<Home />);
 

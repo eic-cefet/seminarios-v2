@@ -4,6 +4,7 @@ import { BookOpen } from "lucide-react";
 import { Layout } from "../components/Layout";
 import { PageTitle } from "@shared/components/PageTitle";
 import { subjectsApi } from "@shared/api/client";
+import { buildAbsoluteUrl } from "@shared/lib/utils";
 
 export default function Subjects() {
     const { data: subjectsData, isLoading } = useQuery({
@@ -12,10 +13,40 @@ export default function Subjects() {
     });
 
     const subjects = subjectsData?.data ?? [];
+    const pageDescription =
+        "Explore os tópicos dos seminários e apresentações da Escola de Informática e Computação do CEFET-RJ.";
+    const structuredData = [
+        {
+            "@context": "https://schema.org",
+            "@type": "CollectionPage",
+            name: "Tópicos de Seminários",
+            description: pageDescription,
+            url: buildAbsoluteUrl("/topicos"),
+        },
+        ...(subjects.length > 0
+            ? [
+                  {
+                      "@context": "https://schema.org",
+                      "@type": "ItemList",
+                      itemListElement: subjects.map((subject, index) => ({
+                          "@type": "ListItem",
+                          position: index + 1,
+                          name: subject.name,
+                          url: buildAbsoluteUrl(`/topico/${subject.id}`),
+                      })),
+                  },
+              ]
+            : []),
+    ];
 
     return (
         <>
-            <PageTitle title="Tópicos" />
+            <PageTitle
+                title="Tópicos"
+                description={pageDescription}
+                canonicalPath="/topicos"
+                structuredData={structuredData}
+            />
             <Layout>
                 <div className="bg-white border-b border-gray-200">
                     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">

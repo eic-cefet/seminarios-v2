@@ -83,7 +83,7 @@ export default function ResetPassword() {
     if (!hasRequiredParams) {
         return (
             <>
-                <PageTitle title="Link Inválido" />
+                <PageTitle title="Link Inválido" robots="noindex, nofollow" />
                 <Layout>
                     <div className="flex min-h-[calc(100vh-4rem-4rem)] items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
                         <div className="w-full max-w-md text-center space-y-6">
@@ -115,7 +115,10 @@ export default function ResetPassword() {
     if (success) {
         return (
             <>
-                <PageTitle title="Senha Redefinida" />
+                <PageTitle
+                    title="Senha Redefinida"
+                    robots="noindex, nofollow"
+                />
                 <Layout>
                     <div className="flex min-h-[calc(100vh-4rem-4rem)] items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
                         <div className="w-full max-w-md text-center space-y-6">
@@ -147,7 +150,7 @@ export default function ResetPassword() {
 
     return (
         <>
-            <PageTitle title="Redefinir Senha" />
+            <PageTitle title="Redefinir Senha" robots="noindex, nofollow" />
             <Layout>
                 <div className="flex min-h-[calc(100vh-4rem-4rem)] items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
                     <div className="w-full max-w-md space-y-8">
