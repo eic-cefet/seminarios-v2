@@ -23,6 +23,8 @@ class AdminApiTokenController extends Controller
         'locations:write',
         'users:read',
         'users:write',
+        'workshops:read',
+        'workshops:write',
         'speaker-data:read',
         'speaker-data:write',
     ];

@@ -86,6 +86,7 @@ const RESOURCE_GROUPS = [
     { resource: "seminars", label: "Seminários" },
     { resource: "seminar-types", label: "Tipos de Seminário" },
     { resource: "locations", label: "Locais" },
+    { resource: "workshops", label: "Workshops" },
     { resource: "users", label: "Usuários" },
     { resource: "speaker-data", label: "Dados de Palestrante" },
 ] as const;

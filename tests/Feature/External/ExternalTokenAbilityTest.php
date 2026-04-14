@@ -130,9 +130,11 @@ describe('Token abilities enforcement', function () {
         $response->assertSuccessful();
         expect($response->json('data'))->toContain('seminars:read');
         expect($response->json('data'))->toContain('seminars:write');
+        expect($response->json('data'))->toContain('workshops:read');
+        expect($response->json('data'))->toContain('workshops:write');
         expect($response->json('data'))->toContain('users:read');
         expect($response->json('data'))->toContain('speaker-data:write');
-        expect($response->json('data'))->toHaveCount(10);
+        expect($response->json('data'))->toHaveCount(12);
     });
 
     it('creates token with specific abilities', function () {

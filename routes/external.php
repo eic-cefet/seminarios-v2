@@ -5,6 +5,7 @@ use App\Http\Controllers\External\ExternalSeminarController;
 use App\Http\Controllers\External\ExternalSeminarTypeController;
 use App\Http\Controllers\External\ExternalSpeakerDataController;
 use App\Http\Controllers\External\ExternalUserController;
+use App\Http\Controllers\External\ExternalWorkshopController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth:sanctum', 'admin'])
@@ -49,6 +50,16 @@ Route::middleware(['auth:sanctum', 'admin'])
         Route::middleware('ability:users:write')->group(function () {
             Route::post('users', [ExternalUserController::class, 'store'])->name('users.store');
             Route::match(['put', 'patch'], 'users/{user}', [ExternalUserController::class, 'update'])->name('users.update');
+        });
+
+        // Workshops
+        Route::middleware('ability:workshops:read')->group(function () {
+            Route::get('workshops', [ExternalWorkshopController::class, 'index'])->name('workshops.index');
+            Route::get('workshops/{workshop}', [ExternalWorkshopController::class, 'show'])->name('workshops.show');
+        });
+        Route::middleware('ability:workshops:write')->group(function () {
+            Route::post('workshops', [ExternalWorkshopController::class, 'store'])->name('workshops.store');
+            Route::match(['put', 'patch'], 'workshops/{workshop}', [ExternalWorkshopController::class, 'update'])->name('workshops.update');
         });
 
         // Speaker Data
