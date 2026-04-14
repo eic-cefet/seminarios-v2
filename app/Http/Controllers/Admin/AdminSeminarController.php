@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Enums\Role;
 use App\Http\Controllers\Admin\Concerns\EscapesLikeWildcards;
+use App\Http\Controllers\Concerns\ResolvesSubjects;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\SeminarStoreRequest;
 use App\Http\Requests\Admin\SeminarUpdateRequest;
@@ -12,7 +13,6 @@ use App\Jobs\ProcessSeminarRescheduleJob;
 use App\Models\Seminar;
 use App\Models\SeminarLocation;
 use App\Models\SeminarType;
-use App\Models\Subject;
 use App\Models\Workshop;
 use App\Services\SlugService;
 use Illuminate\Http\JsonResponse;
@@ -24,7 +24,7 @@ use Illuminate\Support\Facades\Gate;
 
 class AdminSeminarController extends Controller
 {
-    use EscapesLikeWildcards;
+    use EscapesLikeWildcards, ResolvesSubjects;
 
     public function __construct(
         private readonly SlugService $slugService
@@ -209,17 +209,5 @@ class AdminSeminarController extends Controller
         return response()->json([
             'data' => $locations,
         ]);
-    }
-
-    /**
-     * @param  array<string>  $names
-     * @return array<int>
-     */
-    private function resolveSubjectNames(array $names): array
-    {
-        return array_map(
-            fn (string $name) => Subject::firstOrCreate(['name' => trim($name)])->id,
-            $names
-        );
     }
 }

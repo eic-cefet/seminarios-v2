@@ -109,9 +109,9 @@ export default function WorkshopList() {
 
     // Fetch full workshop data when editing (to get seminars)
     const { data: workshopDetail } = useQuery({
-        queryKey: ["admin-workshop", editingWorkshop?.id],
-        queryFn: () => workshopsApi.get(editingWorkshop!.id),
-        enabled: !!editingWorkshop?.id,
+        queryKey: ["admin-workshop", editingWorkshop?.slug],
+        queryFn: () => workshopsApi.get(editingWorkshop!.slug),
+        enabled: !!editingWorkshop?.slug,
     });
 
     // Update form when workshop detail loads
@@ -139,8 +139,8 @@ export default function WorkshopList() {
     });
 
     const updateMutation = useMutation({
-        mutationFn: ({ id, data }: { id: number; data: WorkshopFormData }) =>
-            workshopsApi.update(id, data),
+        mutationFn: ({ slug, data }: { slug: string; data: WorkshopFormData }) =>
+            workshopsApi.update(slug, data),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["admin-workshops"] });
             queryClient.invalidateQueries({ queryKey: ["admin-workshop"] });
@@ -153,7 +153,7 @@ export default function WorkshopList() {
     });
 
     const deleteMutation = useMutation({
-        mutationFn: (id: number) => workshopsApi.delete(id),
+        mutationFn: (slug: string) => workshopsApi.delete(slug),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["admin-workshops"] });
             toast.success("Workshop excluido com sucesso");
@@ -177,7 +177,7 @@ export default function WorkshopList() {
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (editingWorkshop) {
-            updateMutation.mutate({ id: editingWorkshop.id, data: formData });
+            updateMutation.mutate({ slug: editingWorkshop.slug, data: formData });
         } else {
             createMutation.mutate(formData);
         }
@@ -457,7 +457,7 @@ export default function WorkshopList() {
                         <AlertDialogAction
                             onClick={() =>
                                 deletingWorkshop &&
-                                deleteMutation.mutate(deletingWorkshop.id)
+                                deleteMutation.mutate(deletingWorkshop.slug)
                             }
                             className="bg-red-500 hover:bg-red-600 text-white"
                         >

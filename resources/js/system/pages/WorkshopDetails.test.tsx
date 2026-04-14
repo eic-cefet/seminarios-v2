@@ -25,7 +25,7 @@ vi.mock('@shared/api/client', () => ({
 
 vi.mock('react-router-dom', async () => {
     const actual = await vi.importActual('react-router-dom');
-    return { ...actual, useParams: vi.fn(() => ({ id: '1' })), useNavigate: vi.fn(() => vi.fn()) };
+    return { ...actual, useParams: vi.fn(() => ({ slug: 'advanced-docker' })), useNavigate: vi.fn(() => vi.fn()) };
 });
 
 import { workshopsApi } from '@shared/api/client';

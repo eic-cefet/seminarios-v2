@@ -21,6 +21,7 @@ export interface Course {
 export interface Subject {
     id: number;
     name: string;
+    slug: string;
     seminarsCount?: number;
 }
 
@@ -49,6 +50,7 @@ export interface SeminarLocation {
 export interface Workshop {
     id: number;
     name: string;
+    slug: string;
     description?: string;
     seminarsCount?: number;
     seminars?: Seminar[];

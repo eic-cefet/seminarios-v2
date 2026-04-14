@@ -43,7 +43,7 @@ export default function Workshops() {
                             {workshops.map((workshop) => (
                                 <Link
                                     key={workshop.id}
-                                    to={`/workshop/${workshop.id}`}
+                                    to={`/workshop/${workshop.slug}`}
                                     className="group rounded-lg border border-gray-200 bg-white overflow-hidden shadow-sm transition-all hover:border-primary-300 hover:shadow-md"
                                 >
                                     <div className="bg-primary-600 px-6 py-4">

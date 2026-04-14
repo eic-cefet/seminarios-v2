@@ -87,6 +87,7 @@ describe('WorkshopList', () => {
                 {
                     id: 1,
                     name: 'Workshop ML',
+                    slug: 'workshop-ml',
                     description: 'Machine Learning Workshop',
                     seminars_count: 3,
                     created_at: '2026-01-01T00:00:00Z',
@@ -95,6 +96,7 @@ describe('WorkshopList', () => {
                 {
                     id: 2,
                     name: 'Workshop Web',
+                    slug: 'workshop-web',
                     description: null,
                     seminars_count: 0,
                     created_at: '2026-01-01T00:00:00Z',
@@ -118,6 +120,7 @@ describe('WorkshopList', () => {
                 {
                     id: 1,
                     name: 'Test',
+                    slug: 'test',
                     description: null,
                     seminars_count: 0,
                     created_at: '2026-01-01T00:00:00Z',
@@ -169,6 +172,7 @@ describe('WorkshopList', () => {
                 {
                     id: 1,
                     name: 'Edit Workshop',
+                    slug: 'edit-workshop',
                     description: 'Some description',
                     seminars_count: 0,
                     created_at: '2026-01-01T00:00:00Z',
@@ -201,6 +205,7 @@ describe('WorkshopList', () => {
                 {
                     id: 1,
                     name: 'Delete Workshop',
+                    slug: 'delete-workshop',
                     description: null,
                     seminars_count: 0,
                     created_at: '2026-01-01T00:00:00Z',
@@ -232,6 +237,7 @@ describe('WorkshopList', () => {
                 {
                     id: 1,
                     name: 'Has Seminars',
+                    slug: 'has-seminars',
                     description: null,
                     seminars_count: 5,
                     created_at: '2026-01-01T00:00:00Z',
@@ -267,6 +273,7 @@ describe('WorkshopList', () => {
                 {
                     id: 1,
                     name: 'No Desc',
+                    slug: 'no-desc',
                     description: null,
                     seminars_count: 0,
                     created_at: '2026-01-01T00:00:00Z',
@@ -289,6 +296,7 @@ describe('WorkshopList', () => {
                 {
                     id: 1,
                     name: 'Test',
+                    slug: 'test',
                     description: null,
                     seminars_count: 0,
                     created_at: '2026-01-01T00:00:00Z',
@@ -331,12 +339,12 @@ describe('WorkshopList', () => {
     it('submits edit form and calls workshopsApi.update', async () => {
         vi.mocked(workshopsApi.list).mockResolvedValue({
             data: [
-                { id: 5, name: 'Edit WS', description: 'Desc', seminars_count: 0, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
+                { id: 5, name: 'Edit WS', slug: 'edit-ws', description: 'Desc', seminars_count: 0, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
             ],
             meta: { last_page: 1, current_page: 1, total: 1, from: 1, to: 1 },
         } as any);
         vi.mocked(workshopsApi.get).mockResolvedValue({
-            data: { id: 5, name: 'Edit WS', description: 'Desc', seminars: [] },
+            data: { id: 5, name: 'Edit WS', slug: 'edit-ws', description: 'Desc', seminars: [] },
         } as any);
         vi.mocked(workshopsApi.update).mockResolvedValue({ data: { id: 5, name: 'Updated WS' } } as any);
 
@@ -362,14 +370,14 @@ describe('WorkshopList', () => {
         await user.click(screen.getByRole('button', { name: 'Salvar' }));
 
         await waitFor(() => {
-            expect(workshopsApi.update).toHaveBeenCalledWith(5, expect.objectContaining({ name: 'Updated WS' }));
+            expect(workshopsApi.update).toHaveBeenCalledWith('edit-ws', expect.objectContaining({ name: 'Updated WS' }));
         });
     });
 
     it('confirms delete and calls workshopsApi.delete', async () => {
         vi.mocked(workshopsApi.list).mockResolvedValue({
             data: [
-                { id: 3, name: 'Del WS', description: null, seminars_count: 0, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
+                { id: 3, name: 'Del WS', slug: 'del-ws', description: null, seminars_count: 0, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
             ],
             meta: { last_page: 1, current_page: 1, total: 1, from: 1, to: 1 },
         } as any);
@@ -394,14 +402,14 @@ describe('WorkshopList', () => {
         await user.click(confirmBtn);
 
         await waitFor(() => {
-            expect(workshopsApi.delete).toHaveBeenCalledWith(3);
+            expect(workshopsApi.delete).toHaveBeenCalledWith('del-ws');
         });
     });
 
     it('shows pagination controls when there are multiple pages', async () => {
         vi.mocked(workshopsApi.list).mockResolvedValue({
             data: [
-                { id: 1, name: 'WS', description: null, seminars_count: 0, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
+                { id: 1, name: 'WS', slug: 'ws', description: null, seminars_count: 0, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
             ],
             meta: { last_page: 3, current_page: 1, total: 30, from: 1, to: 10 },
         } as any);
@@ -419,7 +427,7 @@ describe('WorkshopList', () => {
     it('disables Anterior button on first page', async () => {
         vi.mocked(workshopsApi.list).mockResolvedValue({
             data: [
-                { id: 1, name: 'WS', description: null, seminars_count: 0, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
+                { id: 1, name: 'WS', slug: 'ws', description: null, seminars_count: 0, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
             ],
             meta: { last_page: 2, current_page: 1, total: 20, from: 1, to: 10 },
         } as any);
@@ -434,7 +442,7 @@ describe('WorkshopList', () => {
     it('clicking Proxima advances the page', async () => {
         vi.mocked(workshopsApi.list).mockResolvedValue({
             data: [
-                { id: 1, name: 'WS', description: null, seminars_count: 0, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
+                { id: 1, name: 'WS', slug: 'ws', description: null, seminars_count: 0, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
             ],
             meta: { last_page: 3, current_page: 1, total: 30, from: 1, to: 10 },
         } as any);
@@ -455,7 +463,7 @@ describe('WorkshopList', () => {
     it('does not show pagination for single page', async () => {
         vi.mocked(workshopsApi.list).mockResolvedValue({
             data: [
-                { id: 1, name: 'WS', description: null, seminars_count: 0, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
+                { id: 1, name: 'WS', slug: 'ws', description: null, seminars_count: 0, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
             ],
             meta: { last_page: 1, current_page: 1, total: 1, from: 1, to: 1 },
         } as any);
@@ -518,7 +526,7 @@ describe('WorkshopList', () => {
     it('shows delete confirmation with workshop name', async () => {
         vi.mocked(workshopsApi.list).mockResolvedValue({
             data: [
-                { id: 1, name: 'WS to Delete', description: null, seminars_count: 0, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
+                { id: 1, name: 'WS to Delete', slug: 'ws-to-delete', description: null, seminars_count: 0, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
             ],
             meta: { last_page: 1, current_page: 1, total: 1, from: 1, to: 1 },
         } as any);
@@ -543,7 +551,7 @@ describe('WorkshopList', () => {
     it('shows seminars count badge with value', async () => {
         vi.mocked(workshopsApi.list).mockResolvedValue({
             data: [
-                { id: 1, name: 'Counted WS', description: 'desc', seminars_count: 7, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
+                { id: 1, name: 'Counted WS', slug: 'counted-ws', description: 'desc', seminars_count: 7, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
             ],
             meta: { last_page: 1, current_page: 1, total: 1, from: 1, to: 1 },
         } as any);
@@ -558,7 +566,7 @@ describe('WorkshopList', () => {
     it('shows 0 when seminars_count is null', async () => {
         vi.mocked(workshopsApi.list).mockResolvedValue({
             data: [
-                { id: 1, name: 'Null WS', description: null, seminars_count: null, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
+                { id: 1, name: 'Null WS', slug: 'null-ws', description: null, seminars_count: null, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
             ],
             meta: { last_page: 1, current_page: 1, total: 1, from: 1, to: 1 },
         } as any);
@@ -574,7 +582,7 @@ describe('WorkshopList', () => {
     it('shows description text for workshops that have one', async () => {
         vi.mocked(workshopsApi.list).mockResolvedValue({
             data: [
-                { id: 1, name: 'Desc WS', description: 'A great workshop', seminars_count: 0, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
+                { id: 1, name: 'Desc WS', slug: 'desc-ws', description: 'A great workshop', seminars_count: 0, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
             ],
             meta: { last_page: 1, current_page: 1, total: 1, from: 1, to: 1 },
         } as any);
@@ -589,7 +597,7 @@ describe('WorkshopList', () => {
     it('clicking Anterior goes to previous page', async () => {
         vi.mocked(workshopsApi.list).mockResolvedValue({
             data: [
-                { id: 1, name: 'WS', description: null, seminars_count: 0, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
+                { id: 1, name: 'WS', slug: 'ws', description: null, seminars_count: 0, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
             ],
             meta: { last_page: 3, current_page: 2, total: 30, from: 11, to: 20 },
         } as any);
@@ -617,7 +625,7 @@ describe('WorkshopList', () => {
     it('populates edit form with workshop detail data including seminars', async () => {
         vi.mocked(workshopsApi.list).mockResolvedValue({
             data: [
-                { id: 8, name: 'Detail WS', description: 'Desc', seminars_count: 2, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
+                { id: 8, name: 'Detail WS', slug: 'detail-ws', description: 'Desc', seminars_count: 2, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
             ],
             meta: { last_page: 1, current_page: 1, total: 1, from: 1, to: 1 },
         } as any);
@@ -625,6 +633,7 @@ describe('WorkshopList', () => {
             data: {
                 id: 8,
                 name: 'Detail WS',
+                slug: 'detail-ws',
                 description: 'Desc',
                 seminars: [{ id: 10, name: 'Seminar X' }],
             },
@@ -751,7 +760,7 @@ describe('WorkshopList', () => {
     it('covers SeminarMultiSelect onChange callback in form (lines 403-411)', async () => {
         vi.mocked(workshopsApi.list).mockResolvedValue({
             data: [
-                { id: 8, name: 'WS With Seminars', description: 'Desc', seminars_count: 2, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
+                { id: 8, name: 'WS With Seminars', slug: 'ws-with-seminars', description: 'Desc', seminars_count: 2, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
             ],
             meta: { last_page: 1, current_page: 1, total: 1, from: 1, to: 1 },
         } as any);
@@ -759,6 +768,7 @@ describe('WorkshopList', () => {
             data: {
                 id: 8,
                 name: 'WS With Seminars',
+                slug: 'ws-with-seminars',
                 description: 'Desc',
                 seminars: [{ id: 10, name: 'Seminar A' }, { id: 20, name: 'Seminar B' }],
             },
@@ -856,7 +866,7 @@ describe('WorkshopList', () => {
     it('populates edit form with null description (fallback to empty string)', async () => {
         vi.mocked(workshopsApi.list).mockResolvedValue({
             data: [
-                { id: 9, name: 'Null Desc WS', description: null, seminars_count: 0, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
+                { id: 9, name: 'Null Desc WS', slug: 'null-desc-ws', description: null, seminars_count: 0, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
             ],
             meta: { last_page: 1, current_page: 1, total: 1, from: 1, to: 1 },
         } as any);
@@ -864,6 +874,7 @@ describe('WorkshopList', () => {
             data: {
                 id: 9,
                 name: 'Null Desc WS',
+                slug: 'null-desc-ws',
                 description: null,
                 seminars: undefined,
             },

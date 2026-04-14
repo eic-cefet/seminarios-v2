@@ -7,19 +7,18 @@ import { PageTitle } from "@shared/components/PageTitle";
 import { workshopsApi } from "@shared/api/client";
 
 export default function WorkshopDetails() {
-    const { id } = useParams<{ id: string }>();
-    const workshopId = Number(id);
+    const { slug } = useParams<{ slug: string }>();
 
     const { data: workshopData, isLoading: loadingWorkshop } = useQuery({
-        queryKey: ["workshop", workshopId],
-        queryFn: () => workshopsApi.get(workshopId),
-        enabled: !isNaN(workshopId),
+        queryKey: ["workshop", slug],
+        queryFn: () => workshopsApi.get(slug!),
+        enabled: !!slug,
     });
 
     const { data: seminarsData, isLoading: loadingSeminars } = useQuery({
-        queryKey: ["workshopSeminars", workshopId],
-        queryFn: () => workshopsApi.seminars(workshopId),
-        enabled: !isNaN(workshopId),
+        queryKey: ["workshopSeminars", slug],
+        queryFn: () => workshopsApi.seminars(slug!),
+        enabled: !!slug,
     });
 
     const workshop = workshopData?.data;

@@ -61,11 +61,11 @@ describe('GET /api/subjects', function () {
     });
 });
 
-describe('GET /api/subjects/{id}', function () {
-    it('returns subject by id', function () {
+describe('GET /api/subjects/{slug}', function () {
+    it('returns subject by slug', function () {
         $subject = Subject::factory()->create(['name' => 'Test Subject']);
 
-        $response = $this->getJson("/api/subjects/{$subject->id}");
+        $response = $this->getJson("/api/subjects/{$subject->slug}");
 
         $response->assertSuccessful()
             ->assertJsonPath('data.id', $subject->id)
@@ -77,14 +77,14 @@ describe('GET /api/subjects/{id}', function () {
         $seminar = Seminar::factory()->create();
         $seminar->subjects()->attach($subject);
 
-        $response = $this->getJson("/api/subjects/{$subject->id}");
+        $response = $this->getJson("/api/subjects/{$subject->slug}");
 
         $response->assertSuccessful()
             ->assertJsonPath('data.seminarsCount', 1);
     });
 
     it('returns 404 for non-existent subject', function () {
-        $response = $this->getJson('/api/subjects/99999');
+        $response = $this->getJson('/api/subjects/non-existent-slug');
 
         $response->assertNotFound();
     });

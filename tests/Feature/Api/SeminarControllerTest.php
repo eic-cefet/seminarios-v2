@@ -213,7 +213,7 @@ describe('GET /api/subjects/{subject}/seminars', function () {
 
         $otherSeminar = Seminar::factory()->create(['active' => true]);
 
-        $response = $this->getJson("/api/subjects/{$subject->id}/seminars");
+        $response = $this->getJson("/api/subjects/{$subject->slug}/seminars");
 
         $response->assertSuccessful()
             ->assertJsonCount(1, 'data')
@@ -229,7 +229,7 @@ describe('GET /api/subjects/{subject}/seminars', function () {
         $pastSeminar = Seminar::factory()->past()->create(['active' => true]);
         $pastSeminar->subjects()->attach($subject);
 
-        $response = $this->getJson("/api/subjects/{$subject->id}/seminars?upcoming=1");
+        $response = $this->getJson("/api/subjects/{$subject->slug}/seminars?upcoming=1");
 
         $response->assertSuccessful()
             ->assertJsonCount(1, 'data')

@@ -43,7 +43,7 @@ export default function Subjects() {
                             {subjects.map((subject) => (
                                 <Link
                                     key={subject.id}
-                                    to={`/topico/${subject.id}`}
+                                    to={`/topico/${subject.slug}`}
                                     className="group rounded-lg border border-gray-200 bg-white p-6 shadow-sm transition-all hover:border-primary-300 hover:shadow-md"
                                 >
                                     <div className="flex items-start gap-4">

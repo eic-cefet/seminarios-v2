@@ -487,7 +487,7 @@ export default function SeminarDetails() {
                                         Parte do workshop
                                     </p>
                                     <Link
-                                        to={`/workshop/${seminar.workshop.id}`}
+                                        to={`/workshop/${seminar.workshop.slug}`}
                                         className="font-semibold text-primary-600 hover:text-primary-700 cursor-pointer"
                                     >
                                         {seminar.workshop.name}

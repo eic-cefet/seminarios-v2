@@ -351,11 +351,11 @@ describe('Admin API endpoints', () => {
 
     describe('subjectsApi extended', () => {
         it('get fetches a single subject', async () => {
-            mockSuccess({ data: { id: 1, name: 'AI' } });
-            const result = await subjectsApi.get(1);
+            mockSuccess({ data: { id: 1, name: 'AI', slug: 'ai' } });
+            const result = await subjectsApi.get('ai');
             expect(result.data.id).toBe(1);
             expect(fetchSpy).toHaveBeenCalledWith(
-                expect.stringContaining('/subjects/1'),
+                expect.stringContaining('/subjects/ai'),
                 expect.any(Object),
             );
         });
@@ -371,18 +371,18 @@ describe('Admin API endpoints', () => {
 
         it('update sends PUT', async () => {
             mockSuccess({ message: 'Updated', data: { id: 1 } });
-            await subjectsApi.update(1, { name: 'Updated Subject' });
+            await subjectsApi.update('updated-subject', { name: 'Updated Subject' });
             expect(fetchSpy).toHaveBeenCalledWith(
-                expect.stringContaining('/subjects/1'),
+                expect.stringContaining('/subjects/updated-subject'),
                 expect.objectContaining({ method: 'PUT' }),
             );
         });
 
         it('delete sends DELETE', async () => {
             mockSuccess({ message: 'Deleted' });
-            await subjectsApi.delete(1);
+            await subjectsApi.delete('subject-1');
             expect(fetchSpy).toHaveBeenCalledWith(
-                expect.stringContaining('/subjects/1'),
+                expect.stringContaining('/subjects/subject-1'),
                 expect.objectContaining({ method: 'DELETE' }),
             );
         });
@@ -390,11 +390,11 @@ describe('Admin API endpoints', () => {
 
     describe('workshopsApi extended', () => {
         it('get fetches a single workshop', async () => {
-            mockSuccess({ data: { id: 1, name: 'ML Workshop' } });
-            const result = await workshopsApi.get(1);
+            mockSuccess({ data: { id: 1, name: 'ML Workshop', slug: 'ml-workshop' } });
+            const result = await workshopsApi.get('ml-workshop');
             expect(result.data.id).toBe(1);
             expect(fetchSpy).toHaveBeenCalledWith(
-                expect.stringContaining('/workshops/1'),
+                expect.stringContaining('/workshops/ml-workshop'),
                 expect.any(Object),
             );
         });
@@ -410,18 +410,18 @@ describe('Admin API endpoints', () => {
 
         it('update sends PUT', async () => {
             mockSuccess({ message: 'Updated', data: { id: 1 } });
-            await workshopsApi.update(1, { name: 'Updated Workshop' });
+            await workshopsApi.update('updated-workshop', { name: 'Updated Workshop' });
             expect(fetchSpy).toHaveBeenCalledWith(
-                expect.stringContaining('/workshops/1'),
+                expect.stringContaining('/workshops/updated-workshop'),
                 expect.objectContaining({ method: 'PUT' }),
             );
         });
 
         it('delete sends DELETE', async () => {
             mockSuccess({ message: 'Deleted' });
-            await workshopsApi.delete(1);
+            await workshopsApi.delete('workshop-1');
             expect(fetchSpy).toHaveBeenCalledWith(
-                expect.stringContaining('/workshops/1'),
+                expect.stringContaining('/workshops/workshop-1'),
                 expect.objectContaining({ method: 'DELETE' }),
             );
         });

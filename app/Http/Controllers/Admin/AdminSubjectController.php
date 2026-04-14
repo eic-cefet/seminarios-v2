@@ -9,6 +9,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\Admin\AdminSubjectResource;
 use App\Models\AuditLog;
 use App\Models\Subject;
+use App\Services\SlugService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -19,6 +20,10 @@ use Illuminate\Support\Facades\Log;
 class AdminSubjectController extends Controller
 {
     use EscapesLikeWildcards;
+
+    public function __construct(
+        private readonly SlugService $slugService
+    ) {}
 
     public function index(Request $request): AnonymousResourceCollection
     {
@@ -53,7 +58,9 @@ class AdminSubjectController extends Controller
             'name' => ['required', 'string', 'max:255', 'unique:subjects,name'],
         ]);
 
-        $subject = Subject::create($validated);
+        $slug = $this->slugService->generateUnique($validated['name'], Subject::class);
+
+        $subject = Subject::create([...$validated, 'slug' => $slug]);
         $subject->loadCount('seminars');
 
         return response()->json([
@@ -70,7 +77,11 @@ class AdminSubjectController extends Controller
             'name' => ['required', 'string', 'max:255', 'unique:subjects,name,'.$subject->id],
         ]);
 
-        $subject->update($validated);
+        $slug = $this->slugService->generateUnique(
+            $validated['name'], Subject::class, 'slug', $subject->id
+        );
+
+        $subject->update([...$validated, 'slug' => $slug]);
         $subject->loadCount('seminars');
 
         return response()->json([
@@ -114,6 +125,9 @@ class AdminSubjectController extends Controller
 
                 if (! empty($validated['new_name'])) {
                     $target->name = $validated['new_name'];
+                    $target->slug = $this->slugService->generateUnique(
+                        $validated['new_name'], Subject::class, 'slug', $target->id
+                    );
                     $target->save();
                 }
 
