@@ -88,6 +88,7 @@ const RESOURCE_GROUPS = [
     { resource: "locations", label: "Locais" },
     { resource: "users", label: "Usuários" },
     { resource: "speaker-data", label: "Dados de Palestrante" },
+    { resource: "workshops", label: "Workshops" },
 ] as const;
 
 type AccessLevel = "none" | "read" | "read-write";

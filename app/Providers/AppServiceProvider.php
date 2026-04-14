@@ -71,13 +71,14 @@ class AppServiceProvider extends ServiceProvider
                 SecurityScheme::http('bearer')
             );
 
-            // Clean up names — remove "External" prefix from controller-derived tags and schemas
+            // Clean up names — remove "External" prefix from controller-derived tags
             $tagRenames = [
                 'ExternalSeminar' => 'Seminars',
                 'ExternalLocation' => 'Seminar Locations',
                 'ExternalSeminarType' => 'Seminar Types',
                 'ExternalUser' => 'Users',
                 'ExternalSpeakerData' => 'Speaker Data',
+                'ExternalWorkshop' => 'Workshops',
             ];
 
             foreach ($openApi->paths as $path) {
@@ -93,19 +94,6 @@ class AppServiceProvider extends ServiceProvider
                 }
             }
 
-            // Rename request schemas: swap FQCN key with a short key so class_basename() returns the clean name
-            $schemaRenames = [
-                \App\Http\Requests\External\ExternalSeminarStoreRequest::class => 'SeminarStoreRequest',
-                \App\Http\Requests\External\ExternalSeminarUpdateRequest::class => 'SeminarUpdateRequest',
-            ];
-
-            foreach ($schemaRenames as $fqcn => $newName) {
-                if (isset($openApi->components->schemas[$fqcn])) {
-                    $openApi->components->schemas[$newName] = $openApi->components->schemas[$fqcn];
-                    unset($openApi->components->schemas[$fqcn]);
-                    unset($openApi->components->tempNames[class_basename($fqcn)]);
-                }
-            }
         });
     }
 }

@@ -4,12 +4,10 @@ namespace App\Http\Resources\External;
 
 use App\Http\Resources\Concerns\FormatsDates;
 use App\Models\Seminar;
-use Dedoc\Scramble\Attributes\SchemaName;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 /** @mixin Seminar */
-#[SchemaName('Seminar')]
 class ExternalSeminarResource extends JsonResource
 {
     use FormatsDates;

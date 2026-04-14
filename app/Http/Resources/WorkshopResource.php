@@ -12,6 +12,7 @@ class WorkshopResource extends JsonResource
         return [
             'id' => $this->id,
             'name' => $this->name,
+            'slug' => $this->slug,
             'description' => $this->description,
             'seminarsCount' => $this->whenCounted('seminars'),
             'seminars' => SeminarResource::collection($this->whenLoaded('seminars')),

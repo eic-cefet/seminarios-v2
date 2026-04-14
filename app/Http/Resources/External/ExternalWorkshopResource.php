@@ -1,12 +1,14 @@
 <?php
 
-namespace App\Http\Resources\Admin;
+namespace App\Http\Resources\External;
 
 use App\Http\Resources\Concerns\FormatsDates;
+use App\Models\Workshop;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class AdminWorkshopResource extends JsonResource
+/** @mixin Workshop */
+class ExternalWorkshopResource extends JsonResource
 {
     use FormatsDates;
 
@@ -18,14 +20,6 @@ class AdminWorkshopResource extends JsonResource
             'slug' => $this->slug,
             'description' => $this->description,
             'seminars_count' => $this->whenCounted('seminars'),
-            'seminars' => $this->whenLoaded('seminars', function () {
-                return $this->seminars->map(fn ($s) => [
-                    'id' => $s->id,
-                    'name' => $s->name,
-                    'slug' => $s->slug,
-                    'scheduled_at' => $this->formatDate($s->scheduled_at),
-                ]);
-            }),
             'created_at' => $this->formatDate($this->created_at),
             'updated_at' => $this->formatDate($this->updated_at),
         ];

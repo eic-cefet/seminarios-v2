@@ -25,6 +25,8 @@ class AdminApiTokenController extends Controller
         'users:write',
         'speaker-data:read',
         'speaker-data:write',
+        'workshops:read',
+        'workshops:write',
     ];
 
     public function index(Request $request): JsonResponse
