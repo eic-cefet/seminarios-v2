@@ -38,7 +38,7 @@ it('shows workshop with its seminars', function () {
         'active' => true,
     ]);
 
-    $response = $this->getJson("/api/workshops/{$workshop->id}");
+    $response = $this->getJson("/api/workshops/{$workshop->slug}");
 
     $response->assertSuccessful()
         ->assertJsonStructure([
@@ -65,7 +65,7 @@ it('returns paginated seminars for a workshop', function () {
         'active' => true,
     ]);
 
-    $response = $this->getJson("/api/workshops/{$workshop->id}/seminars?per_page=3");
+    $response = $this->getJson("/api/workshops/{$workshop->slug}/seminars?per_page=3");
 
     $response->assertSuccessful()
         ->assertJsonCount(3, 'data')
@@ -82,7 +82,7 @@ it('filters upcoming seminars only when requested', function () {
     Seminar::factory()->past()->create(['workshop_id' => $workshop->id, 'active' => true]);
     Seminar::factory()->upcoming()->create(['workshop_id' => $workshop->id, 'active' => true]);
 
-    $response = $this->getJson("/api/workshops/{$workshop->id}/seminars?upcoming=1");
+    $response = $this->getJson("/api/workshops/{$workshop->slug}/seminars?upcoming=1");
 
     $response->assertSuccessful()
         ->assertJsonCount(1, 'data');
@@ -93,7 +93,7 @@ it('excludes inactive seminars from workshop seminars list', function () {
     Seminar::factory()->create(['workshop_id' => $workshop->id, 'active' => true]);
     Seminar::factory()->create(['workshop_id' => $workshop->id, 'active' => false]);
 
-    $response = $this->getJson("/api/workshops/{$workshop->id}/seminars");
+    $response = $this->getJson("/api/workshops/{$workshop->slug}/seminars");
 
     $response->assertSuccessful()
         ->assertJsonCount(1, 'data');

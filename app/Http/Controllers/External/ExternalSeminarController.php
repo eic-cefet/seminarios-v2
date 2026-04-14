@@ -174,7 +174,11 @@ class ExternalSeminarController extends Controller
     {
         $ids = [];
         foreach ($subjectNames as $name) {
-            $subject = Subject::firstOrCreate(['name' => trim($name)]);
+            $trimmed = trim($name);
+            $subject = Subject::firstOrCreate(
+                ['name' => $trimmed],
+                ['slug' => $this->slugService->generateUnique($trimmed, Subject::class)],
+            );
             $ids[] = $subject->id;
         }
 

@@ -20,6 +20,7 @@ import { CalendarMenu } from "../components/CalendarMenu";
 import { LoginModal } from "../components/LoginModal";
 import { PageTitle } from "@shared/components/PageTitle";
 import { seminarsApi, registrationApi } from "@shared/api/client";
+import { buildBreadcrumbs } from "@shared/lib/structuredData";
 import {
     buildAbsoluteUrl,
     cn,
@@ -266,7 +267,7 @@ export default function SeminarDetails() {
                       "@type": "EventSeries",
                       name: seminar.workshop.name,
                       url: buildAbsoluteUrl(
-                          `/workshop/${seminar.workshop.id}`,
+                          `/workshop/${seminar.workshop.slug}`,
                       ),
                   },
               }
@@ -290,30 +291,11 @@ export default function SeminarDetails() {
               }
             : {}),
     };
-    const breadcrumbSchema = {
-        "@context": "https://schema.org",
-        "@type": "BreadcrumbList",
-        itemListElement: [
-            {
-                "@type": "ListItem",
-                position: 1,
-                name: "Início",
-                item: buildAbsoluteUrl("/"),
-            },
-            {
-                "@type": "ListItem",
-                position: 2,
-                name: "Apresentações",
-                item: buildAbsoluteUrl("/apresentacoes"),
-            },
-            {
-                "@type": "ListItem",
-                position: 3,
-                name: seminar.name,
-                item: buildAbsoluteUrl(`/seminario/${seminar.slug}`),
-            },
-        ],
-    };
+    const breadcrumbSchema = buildBreadcrumbs([
+        { name: "Início", path: "/" },
+        { name: "Apresentações", path: "/apresentacoes" },
+        { name: seminar.name, path: `/seminario/${seminar.slug}` },
+    ]);
 
     return (
         <>
@@ -609,7 +591,7 @@ export default function SeminarDetails() {
                                         Parte do workshop
                                     </p>
                                     <Link
-                                        to={`/workshop/${seminar.workshop.id}`}
+                                        to={`/workshop/${seminar.workshop.slug}`}
                                         className="font-semibold text-primary-600 hover:text-primary-700 cursor-pointer"
                                     >
                                         {seminar.workshop.name}

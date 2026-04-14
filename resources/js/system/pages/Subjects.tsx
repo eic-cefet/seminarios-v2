@@ -4,6 +4,10 @@ import { BookOpen } from "lucide-react";
 import { Layout } from "../components/Layout";
 import { PageTitle } from "@shared/components/PageTitle";
 import { subjectsApi } from "@shared/api/client";
+import {
+    buildCollectionPage,
+    buildItemList,
+} from "@shared/lib/structuredData";
 import { buildAbsoluteUrl } from "@shared/lib/utils";
 
 export default function Subjects() {
@@ -15,28 +19,19 @@ export default function Subjects() {
     const subjects = subjectsData?.data ?? [];
     const pageDescription =
         "Explore os tópicos dos seminários e apresentações da Escola de Informática e Computação do CEFET-RJ.";
+    const itemList = buildItemList(
+        subjects.map((s) => ({
+            name: s.name,
+            url: buildAbsoluteUrl(`/topico/${s.slug}`),
+        })),
+    );
     const structuredData = [
-        {
-            "@context": "https://schema.org",
-            "@type": "CollectionPage",
+        buildCollectionPage({
             name: "Tópicos de Seminários",
             description: pageDescription,
-            url: buildAbsoluteUrl("/topicos"),
-        },
-        ...(subjects.length > 0
-            ? [
-                  {
-                      "@context": "https://schema.org",
-                      "@type": "ItemList",
-                      itemListElement: subjects.map((subject, index) => ({
-                          "@type": "ListItem",
-                          position: index + 1,
-                          name: subject.name,
-                          url: buildAbsoluteUrl(`/topico/${subject.id}`),
-                      })),
-                  },
-              ]
-            : []),
+            path: "/topicos",
+        }),
+        ...(itemList ? [itemList] : []),
     ];
 
     return (
@@ -74,7 +69,7 @@ export default function Subjects() {
                             {subjects.map((subject) => (
                                 <Link
                                     key={subject.id}
-                                    to={`/topico/${subject.id}`}
+                                    to={`/topico/${subject.slug}`}
                                     className="group rounded-lg border border-gray-200 bg-white p-6 shadow-sm transition-all hover:border-primary-300 hover:shadow-md"
                                 >
                                     <div className="flex items-start gap-4">

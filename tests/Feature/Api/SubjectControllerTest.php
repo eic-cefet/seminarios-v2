@@ -65,7 +65,7 @@ describe('GET /api/subjects/{id}', function () {
     it('returns subject by id', function () {
         $subject = Subject::factory()->create(['name' => 'Test Subject']);
 
-        $response = $this->getJson("/api/subjects/{$subject->id}");
+        $response = $this->getJson("/api/subjects/{$subject->slug}");
 
         $response->assertSuccessful()
             ->assertJsonPath('data.id', $subject->id)
@@ -77,7 +77,7 @@ describe('GET /api/subjects/{id}', function () {
         $seminar = Seminar::factory()->create();
         $seminar->subjects()->attach($subject);
 
-        $response = $this->getJson("/api/subjects/{$subject->id}");
+        $response = $this->getJson("/api/subjects/{$subject->slug}");
 
         $response->assertSuccessful()
             ->assertJsonPath('data.seminarsCount', 1);

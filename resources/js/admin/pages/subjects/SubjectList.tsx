@@ -123,12 +123,12 @@ export default function SubjectList() {
     });
 
     const updateMutation = useMutation({
-        mutationFn: ({ id, data }: { id: number; data: { name: string } }) =>
-            subjectsApi.update(id, data),
-        onSuccess: (_, variables) => {
+        mutationFn: ({ slug, data }: { slug: string; data: { name: string } }) =>
+            subjectsApi.update(slug, data),
+        onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["admin-subjects"] });
             toast.success("Tópico atualizado com sucesso");
-            analytics.event("admin_subject_update", { subject_id: variables.id });
+            analytics.event("admin_subject_update", { subject_id: editingSubject?.id });
             closeDialog();
         },
         onError: () => {
@@ -137,11 +137,11 @@ export default function SubjectList() {
     });
 
     const deleteMutation = useMutation({
-        mutationFn: (id: number) => subjectsApi.delete(id),
-        onSuccess: (_, id) => {
+        mutationFn: (slug: string) => subjectsApi.delete(slug),
+        onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["admin-subjects"] });
             toast.success("Tópico excluído com sucesso");
-            analytics.event("admin_subject_delete", { subject_id: id });
+            analytics.event("admin_subject_delete", { subject_id: deletingSubject?.id });
             closeDeleteDialog();
         },
         onError: (error: Error) => {
@@ -209,7 +209,7 @@ export default function SubjectList() {
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (editingSubject) {
-            updateMutation.mutate({ id: editingSubject.id, data: formData });
+            updateMutation.mutate({ slug: editingSubject.slug, data: formData });
         } else {
             createMutation.mutate(formData);
         }
@@ -628,7 +628,7 @@ export default function SubjectList() {
                         <AlertDialogAction
                             onClick={() =>
                                 deletingSubject &&
-                                deleteMutation.mutate(deletingSubject.id)
+                                deleteMutation.mutate(deletingSubject.slug)
                             }
                             className="bg-red-500 hover:bg-red-600 text-white"
                         >

@@ -65,7 +65,7 @@ class DevelopmentSeeder extends Seeder
             'Ética em IA', 'Processamento de Imagens', 'Computação Gráfica',
             'Sistemas Distribuídos',
         ];
-        $subjects = collect($subjectNames)->map(fn (string $name) => Subject::create(['name' => $name]));
+        $subjects = collect($subjectNames)->map(fn (string $name) => Subject::create(['name' => $name, 'slug' => Str::slug($name)]));
 
         // --- Workshops ---
         $workshopData = [
@@ -73,7 +73,7 @@ class DevelopmentSeeder extends Seeder
             ['name' => 'Semana de Segurança Cibernética', 'description' => 'Palestras e demonstrações sobre as últimas tendências em segurança da informação e proteção de dados.'],
             ['name' => 'Jornada de Engenharia de Software', 'description' => 'Seminários sobre boas práticas, arquitetura e tendências em desenvolvimento de software.'],
         ];
-        $workshops = collect($workshopData)->map(fn (array $data) => Workshop::create($data));
+        $workshops = collect($workshopData)->map(fn (array $data) => Workshop::create([...$data, 'slug' => Str::slug($data['name'])]));
 
         $this->command->line('  Created lookup tables');
 

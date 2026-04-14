@@ -5,22 +5,26 @@ import { Layout } from "../components/Layout";
 import { SeminarCard } from "../components/SeminarCard";
 import { PageTitle } from "@shared/components/PageTitle";
 import { workshopsApi } from "@shared/api/client";
+import {
+    buildBreadcrumbs,
+    buildCollectionPage,
+    buildItemList,
+} from "@shared/lib/structuredData";
 import { buildAbsoluteUrl, truncateText } from "@shared/lib/utils";
 
 export default function WorkshopDetails() {
-    const { id } = useParams<{ id: string }>();
-    const workshopId = Number(id);
+    const { slug } = useParams<{ slug: string }>();
 
     const { data: workshopData, isLoading: loadingWorkshop } = useQuery({
-        queryKey: ["workshop", workshopId],
-        queryFn: () => workshopsApi.get(workshopId),
-        enabled: !isNaN(workshopId),
+        queryKey: ["workshop", slug],
+        queryFn: () => workshopsApi.get(slug!),
+        enabled: !!slug,
     });
 
     const { data: seminarsData, isLoading: loadingSeminars } = useQuery({
-        queryKey: ["workshopSeminars", workshopId],
-        queryFn: () => workshopsApi.seminars(workshopId),
-        enabled: !isNaN(workshopId),
+        queryKey: ["workshopSeminars", slug],
+        queryFn: () => workshopsApi.seminars(slug!),
+        enabled: !!slug,
     });
 
     const workshop = workshopData?.data;
@@ -87,52 +91,25 @@ export default function WorkshopDetails() {
     const pageDescription = workshop.description
         ? truncateText(workshop.description, 160)
         : `${seminars.length} sessões do workshop ${workshop.name} na Escola de Informática e Computação do CEFET-RJ.`;
+    const workshopPath = `/workshop/${workshop.slug}`;
+    const itemList = buildItemList(
+        seminars.map((s) => ({
+            name: s.name,
+            url: buildAbsoluteUrl(`/seminario/${s.slug}`),
+        })),
+    );
     const structuredData = [
-        {
-            "@context": "https://schema.org",
-            "@type": "BreadcrumbList",
-            itemListElement: [
-                {
-                    "@type": "ListItem",
-                    position: 1,
-                    name: "Início",
-                    item: buildAbsoluteUrl("/"),
-                },
-                {
-                    "@type": "ListItem",
-                    position: 2,
-                    name: "Workshops",
-                    item: buildAbsoluteUrl("/workshops"),
-                },
-                {
-                    "@type": "ListItem",
-                    position: 3,
-                    name: workshop.name,
-                    item: buildAbsoluteUrl(`/workshop/${workshop.id}`),
-                },
-            ],
-        },
-        {
-            "@context": "https://schema.org",
-            "@type": "CollectionPage",
+        buildBreadcrumbs([
+            { name: "Início", path: "/" },
+            { name: "Workshops", path: "/workshops" },
+            { name: workshop.name, path: workshopPath },
+        ]),
+        buildCollectionPage({
             name: workshop.name,
             description: pageDescription,
-            url: buildAbsoluteUrl(`/workshop/${workshop.id}`),
-        },
-        ...(seminars.length > 0
-            ? [
-                  {
-                      "@context": "https://schema.org",
-                      "@type": "ItemList",
-                      itemListElement: seminars.map((seminar, index) => ({
-                          "@type": "ListItem",
-                          position: index + 1,
-                          name: seminar.name,
-                          url: buildAbsoluteUrl(`/seminario/${seminar.slug}`),
-                      })),
-                  },
-              ]
-            : []),
+            path: workshopPath,
+        }),
+        ...(itemList ? [itemList] : []),
     ];
 
     return (
@@ -140,7 +117,7 @@ export default function WorkshopDetails() {
             <PageTitle
                 title={workshop.name}
                 description={pageDescription}
-                canonicalPath={`/workshop/${workshop.id}`}
+                canonicalPath={`/workshop/${workshop.slug}`}
                 structuredData={structuredData}
             />
             <Layout>

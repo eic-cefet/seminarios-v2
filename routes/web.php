@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\PresenceController;
 use App\Http\Controllers\CertificateController;
+use App\Http\Controllers\RobotsController;
 use App\Http\Controllers\SeminarCalendarController;
 use App\Http\Controllers\SitemapController;
 use App\Http\Controllers\SocialAuthController;
@@ -22,6 +23,8 @@ Route::get('/auth/{provider}/callback', [SocialAuthController::class, 'callback'
 Route::get('/p/{uuid}.png', [PresenceController::class, 'qrCodePng']);
 Route::get('/seminario/{slug}/calendar.ics', SeminarCalendarController::class)
     ->name('seminar.calendar');
+Route::get('/robots.txt', RobotsController::class)
+    ->name('robots');
 Route::get('/sitemap.xml', SitemapController::class)
     ->name('sitemap');
 

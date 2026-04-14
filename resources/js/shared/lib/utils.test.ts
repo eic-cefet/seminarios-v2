@@ -202,4 +202,11 @@ describe('buildAbsoluteUrl', () => {
             'https://example.com/page',
         );
     });
+
+    it('handles a relative path without leading slash', () => {
+        app.BASE_PATH = 'https://seminarios.example.com';
+        expect(buildAbsoluteUrl('images/logo.png')).toBe(
+            'https://seminarios.example.com/images/logo.png',
+        );
+    });
 });

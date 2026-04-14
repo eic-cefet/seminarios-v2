@@ -5,22 +5,26 @@ import { Layout } from "../components/Layout";
 import { SeminarCard } from "../components/SeminarCard";
 import { PageTitle } from "@shared/components/PageTitle";
 import { subjectsApi, seminarsApi } from "@shared/api/client";
+import {
+    buildBreadcrumbs,
+    buildCollectionPage,
+    buildItemList,
+} from "@shared/lib/structuredData";
 import { buildAbsoluteUrl } from "@shared/lib/utils";
 
 export default function SubjectSeminars() {
-    const { id } = useParams<{ id: string }>();
-    const subjectId = Number(id);
+    const { slug } = useParams<{ slug: string }>();
 
     const { data: subjectData, isLoading: loadingSubject } = useQuery({
-        queryKey: ["subject", subjectId],
-        queryFn: () => subjectsApi.get(subjectId),
-        enabled: !isNaN(subjectId),
+        queryKey: ["subject", slug],
+        queryFn: () => subjectsApi.get(slug!),
+        enabled: !!slug,
     });
 
     const { data: seminarsData, isLoading: loadingSeminars } = useQuery({
-        queryKey: ["subjectSeminars", subjectId],
-        queryFn: () => seminarsApi.bySubject(subjectId, { direction: "desc" }),
-        enabled: !isNaN(subjectId),
+        queryKey: ["subjectSeminars", slug],
+        queryFn: () => seminarsApi.bySubject(slug!, { direction: "desc" }),
+        enabled: !!slug,
     });
 
     const subject = subjectData?.data;
@@ -87,52 +91,25 @@ export default function SubjectSeminars() {
     const pageDescription = `${
         subject.seminarsCount ?? seminars.length
     } seminários relacionados ao tópico ${subject.name} na Escola de Informática e Computação do CEFET-RJ.`;
+    const subjectPath = `/topico/${subject.slug}`;
+    const itemList = buildItemList(
+        seminars.map((s) => ({
+            name: s.name,
+            url: buildAbsoluteUrl(`/seminario/${s.slug}`),
+        })),
+    );
     const structuredData = [
-        {
-            "@context": "https://schema.org",
-            "@type": "BreadcrumbList",
-            itemListElement: [
-                {
-                    "@type": "ListItem",
-                    position: 1,
-                    name: "Início",
-                    item: buildAbsoluteUrl("/"),
-                },
-                {
-                    "@type": "ListItem",
-                    position: 2,
-                    name: "Tópicos",
-                    item: buildAbsoluteUrl("/topicos"),
-                },
-                {
-                    "@type": "ListItem",
-                    position: 3,
-                    name: subject.name,
-                    item: buildAbsoluteUrl(`/topico/${subject.id}`),
-                },
-            ],
-        },
-        {
-            "@context": "https://schema.org",
-            "@type": "CollectionPage",
+        buildBreadcrumbs([
+            { name: "Início", path: "/" },
+            { name: "Tópicos", path: "/topicos" },
+            { name: subject.name, path: subjectPath },
+        ]),
+        buildCollectionPage({
             name: subject.name,
             description: pageDescription,
-            url: buildAbsoluteUrl(`/topico/${subject.id}`),
-        },
-        ...(seminars.length > 0
-            ? [
-                  {
-                      "@context": "https://schema.org",
-                      "@type": "ItemList",
-                      itemListElement: seminars.map((seminar, index) => ({
-                          "@type": "ListItem",
-                          position: index + 1,
-                          name: seminar.name,
-                          url: buildAbsoluteUrl(`/seminario/${seminar.slug}`),
-                      })),
-                  },
-              ]
-            : []),
+            path: subjectPath,
+        }),
+        ...(itemList ? [itemList] : []),
     ];
 
     return (
@@ -140,7 +117,7 @@ export default function SubjectSeminars() {
             <PageTitle
                 title={subject.name}
                 description={pageDescription}
-                canonicalPath={`/topico/${subject.id}`}
+                canonicalPath={`/topico/${subject.slug}`}
                 structuredData={structuredData}
             />
             <Layout>

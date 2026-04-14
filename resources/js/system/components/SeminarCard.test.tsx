@@ -56,8 +56,8 @@ describe('SeminarCard', () => {
     it('shows subjects when showSubject=true (default)', () => {
         const seminar = createSeminar({
             subjects: [
-                { id: 1, name: 'Subject 1', seminarsCount: 5 },
-                { id: 2, name: 'Subject 2', seminarsCount: 3 }
+                { id: 1, name: 'Subject 1', slug: 'subject-1', seminarsCount: 5 },
+                { id: 2, name: 'Subject 2', slug: 'subject-2', seminarsCount: 3 }
             ]
         });
         render(<SeminarCard seminar={seminar} />);
@@ -68,7 +68,7 @@ describe('SeminarCard', () => {
     it('hides subjects when showSubject=false', () => {
         const seminar = createSeminar({
             subjects: [
-                { id: 1, name: 'Subject 1', seminarsCount: 5 }
+                { id: 1, name: 'Subject 1', slug: 'subject-1', seminarsCount: 5 }
             ]
         });
         render(<SeminarCard seminar={seminar} showSubject={false} />);

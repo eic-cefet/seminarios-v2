@@ -2,6 +2,7 @@
 
 use App\Models\Seminar;
 use App\Models\Subject;
+use Illuminate\Support\Facades\DB;
 
 describe('GET /api/admin/subjects', function () {
     it('returns paginated list of subjects for admin', function () {
@@ -80,7 +81,7 @@ describe('GET /api/admin/subjects/{id}', function () {
 
         $subject = Subject::factory()->create(['name' => 'Test Subject']);
 
-        $response = $this->getJson("/api/admin/subjects/{$subject->id}");
+        $response = $this->getJson("/api/admin/subjects/{$subject->slug}");
 
         $response->assertSuccessful()
             ->assertJsonPath('data.id', $subject->id)
@@ -102,7 +103,7 @@ describe('GET /api/admin/subjects/{id}', function () {
         $seminar = Seminar::factory()->create();
         $seminar->subjects()->attach($subject);
 
-        $response = $this->getJson("/api/admin/subjects/{$subject->id}");
+        $response = $this->getJson("/api/admin/subjects/{$subject->slug}");
 
         $response->assertSuccessful()
             ->assertJsonPath('data.seminars_count', 1);
@@ -153,7 +154,7 @@ describe('PUT /api/admin/subjects/{id}', function () {
 
         $subject = Subject::factory()->create();
 
-        $response = $this->putJson("/api/admin/subjects/{$subject->id}", [
+        $response = $this->putJson("/api/admin/subjects/{$subject->slug}", [
             'name' => 'Tópico Atualizado',
         ]);
 
@@ -168,7 +169,7 @@ describe('PUT /api/admin/subjects/{id}', function () {
         Subject::factory()->create(['name' => 'Other Subject']);
         $subject = Subject::factory()->create(['name' => 'My Subject']);
 
-        $response = $this->putJson("/api/admin/subjects/{$subject->id}", [
+        $response = $this->putJson("/api/admin/subjects/{$subject->slug}", [
             'name' => 'Other Subject',
         ]);
 
@@ -181,7 +182,7 @@ describe('PUT /api/admin/subjects/{id}', function () {
 
         $subject = Subject::factory()->create(['name' => 'My Subject']);
 
-        $response = $this->putJson("/api/admin/subjects/{$subject->id}", [
+        $response = $this->putJson("/api/admin/subjects/{$subject->slug}", [
             'name' => 'My Subject',
         ]);
 
@@ -195,7 +196,7 @@ describe('DELETE /api/admin/subjects/{id}', function () {
 
         $subject = Subject::factory()->create();
 
-        $response = $this->deleteJson("/api/admin/subjects/{$subject->id}");
+        $response = $this->deleteJson("/api/admin/subjects/{$subject->slug}");
 
         $response->assertSuccessful()
             ->assertJsonPath('message', 'Tópico excluído com sucesso');
@@ -210,7 +211,7 @@ describe('DELETE /api/admin/subjects/{id}', function () {
         $seminar = Seminar::factory()->create();
         $seminar->subjects()->attach($subject);
 
-        $response = $this->deleteJson("/api/admin/subjects/{$subject->id}");
+        $response = $this->deleteJson("/api/admin/subjects/{$subject->slug}");
 
         $response->assertStatus(409)
             ->assertJsonPath('message', 'Este assunto está associado a seminários e não pode ser excluído');
@@ -335,13 +336,13 @@ describe('POST /api/admin/subjects/merge', function () {
         // Use a DB listener to detect when the merge starts accessing seminar_subject
         // and throw an exception before completion
         $queryCount = 0;
-        \Illuminate\Support\Facades\DB::listen(function ($query) use (&$queryCount) {
+        DB::listen(function ($query) use (&$queryCount) {
             // Count queries that touch seminar_subject after the transaction begins
             if (str_contains($query->sql, 'seminar_subject')) {
                 $queryCount++;
                 // After the first select (pluck), throw on the check or insert
                 if ($queryCount >= 2) {
-                    throw new \Exception('Simulated database failure');
+                    throw new Exception('Simulated database failure');
                 }
             }
         });

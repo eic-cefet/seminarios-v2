@@ -4,6 +4,10 @@ import { Wrench, Calendar } from "lucide-react";
 import { Layout } from "../components/Layout";
 import { PageTitle } from "@shared/components/PageTitle";
 import { workshopsApi } from "@shared/api/client";
+import {
+    buildCollectionPage,
+    buildItemList,
+} from "@shared/lib/structuredData";
 import { buildAbsoluteUrl } from "@shared/lib/utils";
 
 export default function Workshops() {
@@ -15,28 +19,19 @@ export default function Workshops() {
     const workshops = workshopsData?.data ?? [];
     const pageDescription =
         "Veja os workshops da Escola de Informática e Computação do CEFET-RJ e acompanhe suas sessões.";
+    const itemList = buildItemList(
+        workshops.map((w) => ({
+            name: w.name,
+            url: buildAbsoluteUrl(`/workshop/${w.slug}`),
+        })),
+    );
     const structuredData = [
-        {
-            "@context": "https://schema.org",
-            "@type": "CollectionPage",
+        buildCollectionPage({
             name: "Workshops",
             description: pageDescription,
-            url: buildAbsoluteUrl("/workshops"),
-        },
-        ...(workshops.length > 0
-            ? [
-                  {
-                      "@context": "https://schema.org",
-                      "@type": "ItemList",
-                      itemListElement: workshops.map((workshop, index) => ({
-                          "@type": "ListItem",
-                          position: index + 1,
-                          name: workshop.name,
-                          url: buildAbsoluteUrl(`/workshop/${workshop.id}`),
-                      })),
-                  },
-              ]
-            : []),
+            path: "/workshops",
+        }),
+        ...(itemList ? [itemList] : []),
     ];
 
     return (
@@ -74,7 +69,7 @@ export default function Workshops() {
                             {workshops.map((workshop) => (
                                 <Link
                                     key={workshop.id}
-                                    to={`/workshop/${workshop.id}`}
+                                    to={`/workshop/${workshop.slug}`}
                                     className="group rounded-lg border border-gray-200 bg-white overflow-hidden shadow-sm transition-all hover:border-primary-300 hover:shadow-md"
                                 >
                                     <div className="bg-primary-600 px-6 py-4">

@@ -11,7 +11,12 @@ class Workshop extends Model
 {
     use Auditable, HasFactory;
 
-    protected $fillable = ['name', 'description'];
+    protected $fillable = ['name', 'slug', 'description'];
+
+    public function getRouteKeyName(): string
+    {
+        return 'slug';
+    }
 
     public function seminars(): HasMany
     {

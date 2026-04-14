@@ -118,6 +118,7 @@ export interface AdminLocation {
 export interface AdminSubject {
     id: number;
     name: string;
+    slug: string;
     seminars_count?: number;
     created_at: string;
     updated_at: string;
@@ -151,6 +152,7 @@ export interface WorkshopDropdownItem {
 export interface AdminWorkshop {
     id: number;
     name: string;
+    slug: string;
     description?: string;
     seminars_count?: number;
     seminars?: {
@@ -373,8 +375,8 @@ export const subjectsApi = {
         );
     },
 
-    get: (id: number) =>
-        fetchAdminApi<{ data: AdminSubject }>(`/subjects/${id}`),
+    get: (slug: string) =>
+        fetchAdminApi<{ data: AdminSubject }>(`/subjects/${slug}`),
 
     create: async (data: { name: string }) => {
         await getCsrfCookie();
@@ -387,10 +389,10 @@ export const subjectsApi = {
         );
     },
 
-    update: async (id: number, data: { name: string }) => {
+    update: async (slug: string, data: { name: string }) => {
         await getCsrfCookie();
         return fetchAdminApi<{ message: string; data: AdminSubject }>(
-            `/subjects/${id}`,
+            `/subjects/${slug}`,
             {
                 method: "PUT",
                 body: JSON.stringify(data),
@@ -398,9 +400,9 @@ export const subjectsApi = {
         );
     },
 
-    delete: async (id: number) => {
+    delete: async (slug: string) => {
         await getCsrfCookie();
-        return fetchAdminApi<{ message: string }>(`/subjects/${id}`, {
+        return fetchAdminApi<{ message: string }>(`/subjects/${slug}`, {
             method: "DELETE",
         });
     },
@@ -430,8 +432,8 @@ export const workshopsApi = {
         );
     },
 
-    get: (id: number) =>
-        fetchAdminApi<{ data: AdminWorkshop }>(`/workshops/${id}`),
+    get: (slug: string) =>
+        fetchAdminApi<{ data: AdminWorkshop }>(`/workshops/${slug}`),
 
     create: async (data: {
         name: string;
@@ -449,7 +451,7 @@ export const workshopsApi = {
     },
 
     update: async (
-        id: number,
+        slug: string,
         data: {
             name?: string;
             description?: string;
@@ -458,7 +460,7 @@ export const workshopsApi = {
     ) => {
         await getCsrfCookie();
         return fetchAdminApi<{ message: string; data: AdminWorkshop }>(
-            `/workshops/${id}`,
+            `/workshops/${slug}`,
             {
                 method: "PUT",
                 body: JSON.stringify(data),
@@ -466,9 +468,9 @@ export const workshopsApi = {
         );
     },
 
-    delete: async (id: number) => {
+    delete: async (slug: string) => {
         await getCsrfCookie();
-        return fetchAdminApi<{ message: string }>(`/workshops/${id}`, {
+        return fetchAdminApi<{ message: string }>(`/workshops/${slug}`, {
             method: "DELETE",
         });
     },

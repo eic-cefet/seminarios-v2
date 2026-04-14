@@ -152,8 +152,8 @@ describe('SubjectMultiSelect', () => {
         const { subjectsApi } = await import('../api/adminClient');
         vi.mocked(subjectsApi.list).mockResolvedValue({
             data: [
-                { id: 1, name: 'React', created_at: '', updated_at: '' },
-                { id: 2, name: 'Vue', created_at: '', updated_at: '' },
+                { id: 1, name: 'React', slug: 'react', created_at: '', updated_at: '' },
+                { id: 2, name: 'Vue', slug: 'vue', created_at: '', updated_at: '' },
             ],
             meta: { last_page: 1, current_page: 1, total: 2 } as any,
             links: { first: '', last: '', prev: null, next: null },
@@ -180,7 +180,7 @@ describe('SubjectMultiSelect', () => {
         const { subjectsApi } = await import('../api/adminClient');
         vi.mocked(subjectsApi.list).mockResolvedValue({
             data: [
-                { id: 1, name: 'React', created_at: '', updated_at: '' },
+                { id: 1, name: 'React', slug: 'react', created_at: '', updated_at: '' },
             ],
             meta: { last_page: 1, current_page: 1, total: 1 } as any,
             links: { first: '', last: '', prev: null, next: null },
@@ -205,8 +205,8 @@ describe('SubjectMultiSelect', () => {
         const { subjectsApi } = await import('../api/adminClient');
         vi.mocked(subjectsApi.list).mockResolvedValue({
             data: [
-                { id: 1, name: 'React', created_at: '', updated_at: '' },
-                { id: 2, name: 'Redux', created_at: '', updated_at: '' },
+                { id: 1, name: 'React', slug: 'react', created_at: '', updated_at: '' },
+                { id: 2, name: 'Redux', slug: 'redux', created_at: '', updated_at: '' },
             ],
             meta: { last_page: 1, current_page: 1, total: 2 } as any,
             links: { first: '', last: '', prev: null, next: null },
@@ -274,8 +274,8 @@ describe('SubjectMultiSelect', () => {
         const { subjectsApi } = await import('../api/adminClient');
         vi.mocked(subjectsApi.list).mockResolvedValue({
             data: [
-                { id: 1, name: 'React', created_at: '', updated_at: '' },
-                { id: 2, name: 'Redux', created_at: '', updated_at: '' },
+                { id: 1, name: 'React', slug: 'react', created_at: '', updated_at: '' },
+                { id: 2, name: 'Redux', slug: 'redux', created_at: '', updated_at: '' },
             ],
             meta: { last_page: 1, current_page: 1, total: 2 } as any,
             links: { first: '', last: '', prev: null, next: null },
@@ -311,8 +311,8 @@ describe('SubjectMultiSelect', () => {
         const { subjectsApi } = await import('../api/adminClient');
         vi.mocked(subjectsApi.list).mockResolvedValue({
             data: [
-                { id: 1, name: 'React', created_at: '', updated_at: '' },
-                { id: 2, name: 'Redux', created_at: '', updated_at: '' },
+                { id: 1, name: 'React', slug: 'react', created_at: '', updated_at: '' },
+                { id: 2, name: 'Redux', slug: 'redux', created_at: '', updated_at: '' },
             ],
             meta: { last_page: 1, current_page: 1, total: 2 } as any,
             links: { first: '', last: '', prev: null, next: null },
@@ -342,7 +342,7 @@ describe('SubjectMultiSelect', () => {
         const listMock = vi.mocked(subjectsApi.list);
         listMock.mockResolvedValue({
             data: [
-                { id: 1, name: 'React', created_at: '', updated_at: '' },
+                { id: 1, name: 'React', slug: 'react', created_at: '', updated_at: '' },
             ],
             meta: { last_page: 1, current_page: 1, total: 1 } as any,
             links: { first: '', last: '', prev: null, next: null },
@@ -533,7 +533,7 @@ describe('SubjectMultiSelect', () => {
         const { subjectsApi } = await import('../api/adminClient');
         vi.mocked(subjectsApi.list).mockResolvedValue({
             data: [
-                { id: 1, name: 'React', created_at: '', updated_at: '' },
+                { id: 1, name: 'React', slug: 'react', created_at: '', updated_at: '' },
             ],
             meta: { last_page: 1, current_page: 1, total: 1 } as any,
             links: { first: '', last: '', prev: null, next: null },

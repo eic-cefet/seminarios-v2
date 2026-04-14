@@ -12,7 +12,12 @@ class Subject extends Model
 {
     use Auditable, HasFactory, SoftDeletes;
 
-    protected $fillable = ['name'];
+    protected $fillable = ['name', 'slug'];
+
+    public function getRouteKeyName(): string
+    {
+        return 'slug';
+    }
 
     public function seminars(): BelongsToMany
     {

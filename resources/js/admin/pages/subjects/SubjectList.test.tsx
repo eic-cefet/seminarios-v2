@@ -318,11 +318,11 @@ describe('SubjectList', () => {
     it('submits edit form and calls subjectsApi.update', async () => {
         vi.mocked(subjectsApi.list).mockResolvedValue({
             data: [
-                { id: 5, name: 'Old Name', seminars_count: 0, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
+                { id: 5, name: 'Old Name', slug: 'old-name', seminars_count: 0, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
             ],
             meta: { last_page: 1, current_page: 1, total: 1, from: 1, to: 1 },
         } as any);
-        vi.mocked(subjectsApi.update).mockResolvedValue({ data: { id: 5, name: 'New Name' } } as any);
+        vi.mocked(subjectsApi.update).mockResolvedValue({ data: { id: 5, name: 'New Name', slug: 'new-name' } } as any);
 
         render(<SubjectList />);
         const user = userEvent.setup();
@@ -348,14 +348,14 @@ describe('SubjectList', () => {
         await user.click(saveButton);
 
         await waitFor(() => {
-            expect(subjectsApi.update).toHaveBeenCalledWith(5, { name: 'New Name' });
+            expect(subjectsApi.update).toHaveBeenCalledWith('old-name', { name: 'New Name' });
         });
     });
 
     it('confirms delete and calls subjectsApi.delete', async () => {
         vi.mocked(subjectsApi.list).mockResolvedValue({
             data: [
-                { id: 3, name: 'To Delete', seminars_count: 0, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
+                { id: 3, name: 'To Delete', slug: 'to-delete', seminars_count: 0, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
             ],
             meta: { last_page: 1, current_page: 1, total: 1, from: 1, to: 1 },
         } as any);
@@ -381,7 +381,7 @@ describe('SubjectList', () => {
         await user.click(confirmBtn);
 
         await waitFor(() => {
-            expect(subjectsApi.delete).toHaveBeenCalledWith(3);
+            expect(subjectsApi.delete).toHaveBeenCalledWith('to-delete');
         });
     });
 

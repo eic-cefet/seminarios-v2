@@ -91,10 +91,10 @@ describe('fetchApi (via API namespaces)', () => {
         it('bySubject fetches seminars for a subject', async () => {
             mockFetchSuccess(createPaginatedResponse([createSeminar()]));
 
-            const result = await seminarsApi.bySubject(1, { upcoming: true });
+            const result = await seminarsApi.bySubject('machine-learning', { upcoming: true });
             expect(result.data).toHaveLength(1);
             expect(fetchSpy).toHaveBeenCalledWith(
-                expect.stringContaining('/subjects/1/seminars'),
+                expect.stringContaining('/subjects/machine-learning/seminars'),
                 expect.any(Object),
             );
         });
@@ -108,10 +108,10 @@ describe('fetchApi (via API namespaces)', () => {
         });
 
         it('get fetches a single subject', async () => {
-            const subject = createSubject({ id: 5 });
+            const subject = createSubject({ slug: 'machine-learning' });
             mockFetchSuccess({ data: subject });
-            const result = await subjectsApi.get(5);
-            expect(result.data.id).toBe(5);
+            const result = await subjectsApi.get('machine-learning');
+            expect(result.data.slug).toBe('machine-learning');
         });
     });
 
@@ -123,14 +123,14 @@ describe('fetchApi (via API namespaces)', () => {
         });
 
         it('get fetches a single workshop', async () => {
-            mockFetchSuccess({ data: createWorkshop({ id: 3 }) });
-            const result = await workshopsApi.get(3);
-            expect(result.data.id).toBe(3);
+            mockFetchSuccess({ data: createWorkshop({ slug: 'react-workshop' }) });
+            const result = await workshopsApi.get('react-workshop');
+            expect(result.data.slug).toBe('react-workshop');
         });
 
         it('seminars fetches workshop seminars', async () => {
             mockFetchSuccess(createPaginatedResponse([createSeminar()]));
-            const result = await workshopsApi.seminars(1);
+            const result = await workshopsApi.seminars('react-workshop');
             expect(result.data).toHaveLength(1);
         });
     });
@@ -386,16 +386,16 @@ describe('fetchApi (via API namespaces)', () => {
 
         it('bySubject passes pagination params', async () => {
             mockFetchSuccess(createPaginatedResponse([]));
-            await seminarsApi.bySubject(2, { page: 3, direction: 'asc' });
+            await seminarsApi.bySubject('ai-topics', { page: 3, direction: 'asc' });
             expect(fetchSpy).toHaveBeenCalledWith(
-                expect.stringContaining('/subjects/2/seminars'),
+                expect.stringContaining('/subjects/ai-topics/seminars'),
                 expect.any(Object),
             );
         });
 
         it('bySubject passes per_page param', async () => {
             mockFetchSuccess(createPaginatedResponse([]));
-            await seminarsApi.bySubject(2, { per_page: 25 });
+            await seminarsApi.bySubject('ai-topics', { per_page: 25 });
             expect(fetchSpy).toHaveBeenCalledWith(
                 expect.stringContaining('per_page=25'),
                 expect.any(Object),
@@ -404,9 +404,9 @@ describe('fetchApi (via API namespaces)', () => {
 
         it('bySubject with no params produces no query string', async () => {
             mockFetchSuccess(createPaginatedResponse([]));
-            await seminarsApi.bySubject(5);
+            await seminarsApi.bySubject('deep-learning');
             expect(fetchSpy).toHaveBeenCalledWith(
-                expect.stringMatching(/\/subjects\/5\/seminars$/),
+                expect.stringMatching(/\/subjects\/deep-learning\/seminars$/),
                 expect.any(Object),
             );
         });
@@ -426,16 +426,16 @@ describe('fetchApi (via API namespaces)', () => {
     describe('workshopsApi extended', () => {
         it('seminars passes pagination params', async () => {
             mockFetchSuccess(createPaginatedResponse([]));
-            await workshopsApi.seminars(1, { upcoming: true, page: 2, per_page: 5 });
+            await workshopsApi.seminars('react-workshop', { upcoming: true, page: 2, per_page: 5 });
             expect(fetchSpy).toHaveBeenCalledWith(
-                expect.stringContaining('/workshops/1/seminars'),
+                expect.stringContaining('/workshops/react-workshop/seminars'),
                 expect.any(Object),
             );
         });
 
         it('seminars passes direction param', async () => {
             mockFetchSuccess(createPaginatedResponse([]));
-            await workshopsApi.seminars(3, { direction: 'desc' });
+            await workshopsApi.seminars('react-workshop', { direction: 'desc' });
             expect(fetchSpy).toHaveBeenCalledWith(
                 expect.stringContaining('direction=desc'),
                 expect.any(Object),

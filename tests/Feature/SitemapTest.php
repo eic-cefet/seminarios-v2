@@ -33,11 +33,30 @@ it('returns a sitemap with public content routes', function () {
         ->toContain('<loc>https://seminarios.example.com/base/topicos</loc>')
         ->toContain('<loc>https://seminarios.example.com/base/workshops</loc>')
         ->toContain('<loc>https://seminarios.example.com/base/seminario/advanced-react</loc>')
-        ->toContain("<loc>https://seminarios.example.com/base/topico/{$subject->id}</loc>")
-        ->toContain("<loc>https://seminarios.example.com/base/workshop/{$workshop->id}</loc>")
+        ->toContain("<loc>https://seminarios.example.com/base/topico/{$subject->slug}</loc>")
+        ->toContain("<loc>https://seminarios.example.com/base/workshop/{$workshop->slug}</loc>")
         ->not->toContain('inactive-seminar')
         ->not->toContain('/login')
         ->not->toContain('/admin');
+});
+
+it('returns robots.txt with an absolute sitemap url', function () {
+    config(['app.url' => 'https://seminarios.example.com/base']);
+
+    $response = $this->get('/robots.txt');
+
+    $response->assertSuccessful();
+
+    expect($response->headers->get('Content-Type'))
+        ->toContain('text/plain');
+
+    $content = $response->getContent();
+
+    expect($content)
+        ->toContain('User-agent: *')
+        ->toContain('Disallow: /admin')
+        ->toContain('Sitemap: https://seminarios.example.com/base/sitemap.xml')
+        ->not->toContain('Sitemap: sitemap.xml');
 });
 
 it('excludes empty subjects and workshops from the sitemap', function () {
@@ -59,8 +78,8 @@ it('excludes empty subjects and workshops from the sitemap', function () {
     $content = $response->getContent();
 
     expect($content)
-        ->not->toContain("/topico/{$emptySubject->id}")
-        ->not->toContain("/topico/{$subjectWithInactiveSeminar->id}")
-        ->not->toContain("/workshop/{$emptyWorkshop->id}")
-        ->not->toContain("/workshop/{$workshopWithInactiveSeminar->id}");
+        ->not->toContain("/topico/{$emptySubject->slug}")
+        ->not->toContain("/topico/{$subjectWithInactiveSeminar->slug}")
+        ->not->toContain("/workshop/{$emptyWorkshop->slug}")
+        ->not->toContain("/workshop/{$workshopWithInactiveSeminar->slug}");
 });

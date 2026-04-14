@@ -80,7 +80,7 @@ describe('GET /api/admin/workshops/{id}', function () {
 
         $workshop = Workshop::factory()->create(['name' => 'Test Workshop']);
 
-        $response = $this->getJson("/api/admin/workshops/{$workshop->id}");
+        $response = $this->getJson("/api/admin/workshops/{$workshop->slug}");
 
         $response->assertSuccessful()
             ->assertJsonPath('data.id', $workshop->id)
@@ -101,7 +101,7 @@ describe('GET /api/admin/workshops/{id}', function () {
         $workshop = Workshop::factory()->create();
         $seminar = Seminar::factory()->create(['workshop_id' => $workshop->id]);
 
-        $response = $this->getJson("/api/admin/workshops/{$workshop->id}");
+        $response = $this->getJson("/api/admin/workshops/{$workshop->slug}");
 
         $response->assertSuccessful()
             ->assertJsonPath('data.seminars_count', 1)
@@ -180,7 +180,7 @@ describe('PUT /api/admin/workshops/{id}', function () {
 
         $workshop = Workshop::factory()->create();
 
-        $response = $this->putJson("/api/admin/workshops/{$workshop->id}", [
+        $response = $this->putJson("/api/admin/workshops/{$workshop->slug}", [
             'name' => 'Workshop Atualizado',
             'description' => 'Nova descrição',
         ]);
@@ -198,7 +198,7 @@ describe('PUT /api/admin/workshops/{id}', function () {
         $oldSeminar = Seminar::factory()->create(['workshop_id' => $workshop->id]);
         $newSeminar = Seminar::factory()->create(['workshop_id' => null]);
 
-        $response = $this->putJson("/api/admin/workshops/{$workshop->id}", [
+        $response = $this->putJson("/api/admin/workshops/{$workshop->slug}", [
             'name' => $workshop->name,
             'seminar_ids' => [$newSeminar->id],
         ]);
@@ -218,7 +218,7 @@ describe('PUT /api/admin/workshops/{id}', function () {
         $workshop = Workshop::factory()->create();
         $seminar = Seminar::factory()->create(['workshop_id' => $workshop->id]);
 
-        $response = $this->putJson("/api/admin/workshops/{$workshop->id}", [
+        $response = $this->putJson("/api/admin/workshops/{$workshop->slug}", [
             'name' => $workshop->name,
             'seminar_ids' => [],
         ]);
@@ -235,7 +235,7 @@ describe('PUT /api/admin/workshops/{id}', function () {
         Workshop::factory()->create(['name' => 'Other Workshop']);
         $workshop = Workshop::factory()->create(['name' => 'My Workshop']);
 
-        $response = $this->putJson("/api/admin/workshops/{$workshop->id}", [
+        $response = $this->putJson("/api/admin/workshops/{$workshop->slug}", [
             'name' => 'Other Workshop',
         ]);
 
@@ -248,7 +248,7 @@ describe('PUT /api/admin/workshops/{id}', function () {
 
         $workshop = Workshop::factory()->create(['name' => 'My Workshop']);
 
-        $response = $this->putJson("/api/admin/workshops/{$workshop->id}", [
+        $response = $this->putJson("/api/admin/workshops/{$workshop->slug}", [
             'name' => 'My Workshop',
         ]);
 
@@ -262,7 +262,7 @@ describe('DELETE /api/admin/workshops/{id}', function () {
 
         $workshop = Workshop::factory()->create();
 
-        $response = $this->deleteJson("/api/admin/workshops/{$workshop->id}");
+        $response = $this->deleteJson("/api/admin/workshops/{$workshop->slug}");
 
         $response->assertSuccessful()
             ->assertJsonPath('message', 'Workshop excluído com sucesso');
@@ -276,7 +276,7 @@ describe('DELETE /api/admin/workshops/{id}', function () {
         $workshop = Workshop::factory()->create();
         Seminar::factory()->create(['workshop_id' => $workshop->id]);
 
-        $response = $this->deleteJson("/api/admin/workshops/{$workshop->id}");
+        $response = $this->deleteJson("/api/admin/workshops/{$workshop->slug}");
 
         $response->assertStatus(409)
             ->assertJsonPath('message', 'Este workshop possui seminários associados e não pode ser excluído');

@@ -52,18 +52,18 @@ class SitemapController extends Controller
             ...Subject::query()
                 ->whereHas('seminars', fn ($query) => $query->where('active', true))
                 ->orderBy('name')
-                ->get(['id', 'updated_at'])
+                ->get(['id', 'slug', 'updated_at'])
                 ->map(fn (Subject $subject) => [
-                    'loc' => $this->absoluteUrl("/topico/{$subject->id}"),
+                    'loc' => $this->absoluteUrl("/topico/{$subject->slug}"),
                     'lastmod' => $this->formatTimestamp($subject->updated_at),
                 ])
                 ->all(),
             ...Workshop::query()
                 ->whereHas('seminars', fn ($query) => $query->where('active', true))
                 ->orderBy('name')
-                ->get(['id', 'updated_at'])
+                ->get(['id', 'slug', 'updated_at'])
                 ->map(fn (Workshop $workshop) => [
-                    'loc' => $this->absoluteUrl("/workshop/{$workshop->id}"),
+                    'loc' => $this->absoluteUrl("/workshop/{$workshop->slug}"),
                     'lastmod' => $this->formatTimestamp($workshop->updated_at),
                 ])
                 ->all(),
@@ -71,7 +71,8 @@ class SitemapController extends Controller
 
         return response()
             ->view('sitemap', ['urls' => $urls])
-            ->header('Content-Type', 'application/xml; charset=UTF-8');
+            ->header('Content-Type', 'application/xml; charset=UTF-8')
+            ->header('Cache-Control', 'public, max-age=3600');
     }
 
     private function absoluteUrl(string $path): string

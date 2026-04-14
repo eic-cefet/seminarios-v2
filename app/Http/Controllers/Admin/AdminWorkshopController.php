@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\Admin\AdminWorkshopResource;
 use App\Models\Seminar;
 use App\Models\Workshop;
+use App\Services\SlugService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -16,6 +17,8 @@ use Illuminate\Support\Facades\Gate;
 class AdminWorkshopController extends Controller
 {
     use EscapesLikeWildcards;
+
+    public function __construct(private SlugService $slugService) {}
 
     public function index(Request $request): AnonymousResourceCollection
     {
@@ -56,6 +59,7 @@ class AdminWorkshopController extends Controller
 
         $workshop = Workshop::create([
             'name' => $validated['name'],
+            'slug' => $this->slugService->generateUnique($validated['name'], Workshop::class),
             'description' => $validated['description'] ?? null,
         ]);
 
@@ -85,6 +89,7 @@ class AdminWorkshopController extends Controller
 
         $workshop->update([
             'name' => $validated['name'],
+            'slug' => $this->slugService->generateUnique($validated['name'], Workshop::class, 'slug', $workshop->id),
             'description' => $validated['description'] ?? null,
         ]);
 

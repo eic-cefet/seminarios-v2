@@ -16,6 +16,10 @@ import { PresentationsCalendar } from "../components/PresentationsCalendar";
 import { PageTitle } from "@shared/components/PageTitle";
 import { seminarsApi, seminarTypesApi } from "@shared/api/client";
 import { toSaoPaulo } from "@shared/lib/date";
+import {
+    buildCollectionPage,
+    buildItemList,
+} from "@shared/lib/structuredData";
 import { buildAbsoluteUrl, cn } from "@shared/lib/utils";
 
 type TimeFilter = "all" | "upcoming" | "expired";
@@ -101,34 +105,27 @@ export default function Presentations() {
     const calendarTotal = calendarSeminarsData?.meta?.total;
     const pageDescription =
         "Veja a agenda de apresentações e seminários da Escola de Informática e Computação do CEFET-RJ.";
-    const structuredData = [
+    const pageOffset =
+        ((pagination?.current_page ?? 1) - 1) *
+        (pagination?.per_page ?? seminars.length);
+    const itemList = buildItemList(
+        seminars.map((s, i) => ({
+            name: s.name,
+            url: buildAbsoluteUrl(`/seminario/${s.slug}`),
+            position: pageOffset + i + 1,
+        })),
         {
-            "@context": "https://schema.org",
-            "@type": "CollectionPage",
+            itemListOrder: "https://schema.org/ItemListOrderAscending",
+            numberOfItems: pagination?.total ?? seminars.length,
+        },
+    );
+    const structuredData = [
+        buildCollectionPage({
             name: "Apresentações e Seminários",
             description: pageDescription,
-            url: buildAbsoluteUrl("/apresentacoes"),
-        },
-        ...(seminars.length > 0
-            ? [
-                  {
-                      "@context": "https://schema.org",
-                      "@type": "ItemList",
-                      itemListOrder: "https://schema.org/ItemListOrderAscending",
-                      numberOfItems: pagination?.total ?? seminars.length,
-                      itemListElement: seminars.map((seminar, index) => ({
-                          "@type": "ListItem",
-                          position:
-                              ((pagination?.current_page ?? 1) - 1) *
-                                  (pagination?.per_page ?? seminars.length) +
-                              index +
-                              1,
-                          name: seminar.name,
-                          url: buildAbsoluteUrl(`/seminario/${seminar.slug}`),
-                      })),
-                  },
-              ]
-            : []),
+            path: "/apresentacoes",
+        }),
+        ...(itemList ? [itemList] : []),
     ];
 
     return (

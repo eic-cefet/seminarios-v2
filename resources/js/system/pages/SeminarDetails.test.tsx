@@ -41,6 +41,7 @@ import { analytics } from '@shared/lib/analytics';
 describe('SeminarDetails', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        document.head.innerHTML = '';
     });
 
     it('renders seminar name after loading', async () => {
@@ -71,12 +72,15 @@ describe('SeminarDetails', () => {
             ).toBeInTheDocument();
         });
 
-        expect(
-            document.head.querySelector('link[rel="canonical"]'),
-        ).toHaveAttribute(
-            'href',
-            `${window.location.origin}/seminario/advanced-react`,
-        );
+        await waitFor(() => {
+            expect(
+                document.head.querySelector('link[rel="canonical"]'),
+            ).toHaveAttribute(
+                'href',
+                `${window.location.origin}/seminario/advanced-react`,
+            );
+        });
+
         expect(
             document.head.querySelector('meta[name="description"]'),
         ).toHaveAttribute(
@@ -499,7 +503,7 @@ describe('SeminarDetails', () => {
     });
 
     it('shows workshop info when available', async () => {
-        const workshop = createWorkshop({ id: 5, name: 'Full Workshop' });
+        const workshop = createWorkshop({ id: 5, name: 'Full Workshop', slug: 'full-workshop' });
         const seminar = createSeminar({ workshop });
         vi.mocked(seminarsApi.get).mockResolvedValue({ data: seminar });
 
@@ -508,7 +512,7 @@ describe('SeminarDetails', () => {
         await waitFor(() => {
             expect(screen.getByText(/parte do workshop/i)).toBeInTheDocument();
             const link = screen.getByRole('link', { name: 'Full Workshop' });
-            expect(link).toHaveAttribute('href', '/workshop/5');
+            expect(link).toHaveAttribute('href', '/workshop/full-workshop');
         });
     });
 

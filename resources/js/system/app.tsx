@@ -49,11 +49,11 @@ function AppRoutes() {
             <Route path="/perfil" element={<Profile />} />
             <Route path="/certificados" element={<Certificates />} />
             <Route path="/topicos" element={<Subjects />} />
-            <Route path="/topico/:id" element={<SubjectSeminars />} />
+            <Route path="/topico/:slug" element={<SubjectSeminars />} />
             <Route path="/apresentacoes" element={<Presentations />} />
             <Route path="/seminario/:slug" element={<SeminarDetails />} />
             <Route path="/workshops" element={<Workshops />} />
-            <Route path="/workshop/:id" element={<WorkshopDetails />} />
+            <Route path="/workshop/:slug" element={<WorkshopDetails />} />
             <Route path="/p/:uuid" element={<Presence />} />
             <Route path="/avaliar" element={<Evaluations />} />
             <Route path="/reportar-bug" element={<BugReport />} />

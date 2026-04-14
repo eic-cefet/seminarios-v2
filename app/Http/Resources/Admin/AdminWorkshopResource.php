@@ -15,6 +15,7 @@ class AdminWorkshopResource extends JsonResource
         return [
             'id' => $this->id,
             'name' => $this->name,
+            'slug' => $this->slug,
             'description' => $this->description,
             'seminars_count' => $this->whenCounted('seminars'),
             'seminars' => $this->whenLoaded('seminars', function () {

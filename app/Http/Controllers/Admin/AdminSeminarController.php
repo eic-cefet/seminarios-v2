@@ -218,7 +218,15 @@ class AdminSeminarController extends Controller
     private function resolveSubjectNames(array $names): array
     {
         return array_map(
-            fn (string $name) => Subject::firstOrCreate(['name' => trim($name)])->id,
+            function (string $name): int {
+                $trimmed = trim($name);
+                $subject = Subject::firstOrCreate(
+                    ['name' => $trimmed],
+                    ['slug' => $this->slugService->generateUnique($trimmed, Subject::class)],
+                );
+
+                return $subject->id;
+            },
             $names
         );
     }

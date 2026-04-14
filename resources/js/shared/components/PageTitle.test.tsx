@@ -71,4 +71,5 @@ describe('PageTitle', () => {
                 ?.textContent,
         ).toContain('"@type":"CollectionPage"');
     });
+
 });

@@ -90,10 +90,10 @@ describe('Home', () => {
 
         // Check subject links
         const aiLink = screen.getByText('Inteligência Artificial').closest('a');
-        expect(aiLink).toHaveAttribute('href', '/topico/1');
+        expect(aiLink).toHaveAttribute('href', '/topico/subject-1');
 
         const secLink = screen.getByText('Segurança da Informação').closest('a');
-        expect(secLink).toHaveAttribute('href', '/topico/2');
+        expect(secLink).toHaveAttribute('href', '/topico/subject-2');
 
         // Check seminars count is displayed
         expect(screen.getByText('12 seminários')).toBeInTheDocument();
