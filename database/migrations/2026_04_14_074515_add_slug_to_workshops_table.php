@@ -4,26 +4,29 @@ use App\Models\Workshop;
 use App\Services\SlugService;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('workshops', function (Blueprint $table) {
-            $table->string('slug')->nullable()->unique()->after('name');
-        });
+        DB::transaction(function () {
+            Schema::table('workshops', function (Blueprint $table) {
+                $table->string('slug')->nullable()->unique()->after('name');
+            });
 
-        $slugService = app(SlugService::class);
-        Workshop::query()->chunkById(200, function ($workshops) use ($slugService) {
-            foreach ($workshops as $workshop) {
-                $workshop->slug = $slugService->generateUnique($workshop->name, Workshop::class);
-                $workshop->saveQuietly();
-            }
-        });
+            $slugService = app(SlugService::class);
+            Workshop::query()->chunkById(200, function ($workshops) use ($slugService) {
+                foreach ($workshops as $workshop) {
+                    $workshop->slug = $slugService->generateUnique($workshop->name, Workshop::class);
+                    $workshop->saveQuietly();
+                }
+            });
 
-        Schema::table('workshops', function (Blueprint $table) {
-            $table->string('slug')->nullable(false)->change();
+            Schema::table('workshops', function (Blueprint $table) {
+                $table->string('slug')->nullable(false)->change();
+            });
         });
     }
 
