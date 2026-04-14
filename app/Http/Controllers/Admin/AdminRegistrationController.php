@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Enums\Role;
-use App\Http\Controllers\Admin\Concerns\EscapesLikeWildcards;
+use App\Http\Controllers\Concerns\EscapesLikeWildcards;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Admin\AdminRegistrationResource;
 use App\Models\Registration;

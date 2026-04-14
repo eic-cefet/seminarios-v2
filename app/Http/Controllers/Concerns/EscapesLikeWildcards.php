@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Admin\Concerns;
+namespace App\Http\Controllers\Concerns;
 
 trait EscapesLikeWildcards
 {
