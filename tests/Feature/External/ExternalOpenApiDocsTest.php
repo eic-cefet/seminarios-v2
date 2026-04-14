@@ -37,30 +37,27 @@ describe('GET /api/external/docs.json', function () {
         expect($tags)->toContain('Seminar Locations');
         expect($tags)->toContain('Users');
         expect($tags)->toContain('Speaker Data');
+        expect($tags)->toContain('Workshops');
         expect($tags)->not->toContain('ExternalSeminar');
         expect($tags)->not->toContain('ExternalLocation');
         expect($tags)->not->toContain('ExternalSeminarType');
         expect($tags)->not->toContain('ExternalUser');
         expect($tags)->not->toContain('ExternalSpeakerData');
+        expect($tags)->not->toContain('ExternalWorkshop');
     });
 
-    it('uses clean schema names without External prefix', function () {
+    it('uses default schema names from Scramble', function () {
         $response = $this->getJson('/api/external/docs.json');
 
         $schemas = array_keys($response->json('components.schemas'));
 
-        expect($schemas)->toContain('Seminar');
-        expect($schemas)->toContain('SeminarSpeaker');
-        expect($schemas)->toContain('User');
-        expect($schemas)->toContain('SpeakerData');
-        expect($schemas)->toContain('SeminarStoreRequest');
-        expect($schemas)->toContain('SeminarUpdateRequest');
-        expect($schemas)->not->toContain('ExternalSeminarResource');
-        expect($schemas)->not->toContain('ExternalSpeakerResource');
-        expect($schemas)->not->toContain('ExternalUserResource');
-        expect($schemas)->not->toContain('ExternalSpeakerDataResource');
-        expect($schemas)->not->toContain('ExternalSeminarStoreRequest');
-        expect($schemas)->not->toContain('ExternalSeminarUpdateRequest');
+        expect($schemas)->toContain('ExternalSeminarResource');
+        expect($schemas)->toContain('ExternalSpeakerResource');
+        expect($schemas)->toContain('ExternalUserResource');
+        expect($schemas)->toContain('ExternalSpeakerDataResource');
+        expect($schemas)->toContain('ExternalWorkshopResource');
+        expect($schemas)->toContain('ExternalSeminarStoreRequest');
+        expect($schemas)->toContain('ExternalSeminarUpdateRequest');
     });
 
     it('strips external prefix from operation IDs', function () {

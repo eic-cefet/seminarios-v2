@@ -3,11 +3,9 @@
 namespace App\Http\Requests\External;
 
 use App\Models\Seminar;
-use Dedoc\Scramble\Attributes\SchemaName;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Gate;
 
-#[SchemaName('SeminarStoreRequest', input: 'SeminarStoreRequest')]
 class ExternalSeminarStoreRequest extends FormRequest
 {
     public function authorize(): bool
