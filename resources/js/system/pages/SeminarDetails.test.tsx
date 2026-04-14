@@ -466,7 +466,7 @@ describe('SeminarDetails', () => {
         await waitFor(() => {
             expect(screen.getByText(/parte do workshop/i)).toBeInTheDocument();
             const link = screen.getByRole('link', { name: 'Full Workshop' });
-            expect(link).toHaveAttribute('href', '/workshop/5');
+            expect(link).toHaveAttribute('href', `/workshop/${workshop.slug}`);
         });
     });
 

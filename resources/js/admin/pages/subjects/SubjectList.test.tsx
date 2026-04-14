@@ -91,6 +91,7 @@ describe('SubjectList', () => {
                 {
                     id: 1,
                     name: 'Inteligência Artificial',
+                    slug: 'inteligencia-artificial',
                     seminars_count: 5,
                     created_at: '2026-01-01T00:00:00Z',
                     updated_at: '2026-01-01T00:00:00Z',
@@ -98,6 +99,7 @@ describe('SubjectList', () => {
                 {
                     id: 2,
                     name: 'Machine Learning',
+                    slug: 'machine-learning',
                     seminars_count: 3,
                     created_at: '2026-01-01T00:00:00Z',
                     updated_at: '2026-01-01T00:00:00Z',
@@ -120,6 +122,7 @@ describe('SubjectList', () => {
                 {
                     id: 1,
                     name: 'Test',
+                    slug: 'test',
                     seminars_count: 0,
                     created_at: '2026-01-01T00:00:00Z',
                     updated_at: '2026-01-01T00:00:00Z',
@@ -157,6 +160,7 @@ describe('SubjectList', () => {
                 {
                     id: 1,
                     name: 'React',
+                    slug: 'react',
                     seminars_count: 0,
                     created_at: '2026-01-01T00:00:00Z',
                     updated_at: '2026-01-01T00:00:00Z',
@@ -190,6 +194,7 @@ describe('SubjectList', () => {
                 {
                     id: 1,
                     name: 'Delete Me',
+                    slug: 'delete-me',
                     seminars_count: 0,
                     created_at: '2026-01-01T00:00:00Z',
                     updated_at: '2026-01-01T00:00:00Z',
@@ -222,6 +227,7 @@ describe('SubjectList', () => {
                 {
                     id: 1,
                     name: 'Has Seminars',
+                    slug: 'has-seminars',
                     seminars_count: 3,
                     created_at: '2026-01-01T00:00:00Z',
                     updated_at: '2026-01-01T00:00:00Z',
@@ -248,6 +254,7 @@ describe('SubjectList', () => {
                 {
                     id: 1,
                     name: 'Topic With Count',
+                    slug: 'topic-with-count',
                     seminars_count: 7,
                     created_at: '2026-01-01T00:00:00Z',
                     updated_at: '2026-01-01T00:00:00Z',
@@ -277,6 +284,7 @@ describe('SubjectList', () => {
                 {
                     id: 1,
                     name: 'Test',
+                    slug: 'test-2',
                     seminars_count: 0,
                     created_at: '2026-01-01T00:00:00Z',
                     updated_at: '2026-01-01T00:00:00Z',
@@ -318,7 +326,7 @@ describe('SubjectList', () => {
     it('submits edit form and calls subjectsApi.update', async () => {
         vi.mocked(subjectsApi.list).mockResolvedValue({
             data: [
-                { id: 5, name: 'Old Name', seminars_count: 0, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
+                { id: 5, name: 'Old Name', slug: 'old-name', seminars_count: 0, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
             ],
             meta: { last_page: 1, current_page: 1, total: 1, from: 1, to: 1 },
         } as any);
@@ -348,14 +356,14 @@ describe('SubjectList', () => {
         await user.click(saveButton);
 
         await waitFor(() => {
-            expect(subjectsApi.update).toHaveBeenCalledWith(5, { name: 'New Name' });
+            expect(subjectsApi.update).toHaveBeenCalledWith('old-name', { name: 'New Name' });
         });
     });
 
     it('confirms delete and calls subjectsApi.delete', async () => {
         vi.mocked(subjectsApi.list).mockResolvedValue({
             data: [
-                { id: 3, name: 'To Delete', seminars_count: 0, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
+                { id: 3, name: 'To Delete', slug: 'to-delete', seminars_count: 0, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
             ],
             meta: { last_page: 1, current_page: 1, total: 1, from: 1, to: 1 },
         } as any);
@@ -381,14 +389,14 @@ describe('SubjectList', () => {
         await user.click(confirmBtn);
 
         await waitFor(() => {
-            expect(subjectsApi.delete).toHaveBeenCalledWith(3);
+            expect(subjectsApi.delete).toHaveBeenCalledWith('to-delete');
         });
     });
 
     it('shows pagination when there are multiple pages', async () => {
         vi.mocked(subjectsApi.list).mockResolvedValue({
             data: [
-                { id: 1, name: 'Page Topic', seminars_count: 0, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
+                { id: 1, name: 'Page Topic', slug: 'page-topic', seminars_count: 0, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
             ],
             meta: { last_page: 3, current_page: 1, total: 30, from: 1, to: 10 },
         } as any);
@@ -406,7 +414,7 @@ describe('SubjectList', () => {
     it('disables Anterior button on the first page', async () => {
         vi.mocked(subjectsApi.list).mockResolvedValue({
             data: [
-                { id: 1, name: 'Topic', seminars_count: 0, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
+                { id: 1, name: 'Topic', slug: 'topic', seminars_count: 0, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
             ],
             meta: { last_page: 2, current_page: 1, total: 20, from: 1, to: 10 },
         } as any);
@@ -421,7 +429,7 @@ describe('SubjectList', () => {
     it('clicking Proxima advances the page', async () => {
         vi.mocked(subjectsApi.list).mockResolvedValue({
             data: [
-                { id: 1, name: 'Topic', seminars_count: 0, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
+                { id: 1, name: 'Topic', slug: 'topic', seminars_count: 0, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
             ],
             meta: { last_page: 3, current_page: 1, total: 30, from: 1, to: 10 },
         } as any);
@@ -442,7 +450,7 @@ describe('SubjectList', () => {
     it('does not show pagination for single page', async () => {
         vi.mocked(subjectsApi.list).mockResolvedValue({
             data: [
-                { id: 1, name: 'Topic', seminars_count: 0, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
+                { id: 1, name: 'Topic', slug: 'topic', seminars_count: 0, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
             ],
             meta: { last_page: 1, current_page: 1, total: 1, from: 1, to: 1 },
         } as any);
@@ -458,8 +466,8 @@ describe('SubjectList', () => {
     it('toggles individual subject checkbox selection', async () => {
         vi.mocked(subjectsApi.list).mockResolvedValue({
             data: [
-                { id: 1, name: 'Topic A', seminars_count: 2, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
-                { id: 2, name: 'Topic B', seminars_count: 1, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
+                { id: 1, name: 'Topic A', slug: 'topic-a', seminars_count: 2, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
+                { id: 2, name: 'Topic B', slug: 'topic-b', seminars_count: 1, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
             ],
             meta: { last_page: 1, current_page: 1, total: 2, from: 1, to: 2 },
         } as any);
@@ -489,8 +497,8 @@ describe('SubjectList', () => {
     it('toggles all checkboxes with the header checkbox', async () => {
         vi.mocked(subjectsApi.list).mockResolvedValue({
             data: [
-                { id: 1, name: 'Topic A', seminars_count: 0, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
-                { id: 2, name: 'Topic B', seminars_count: 0, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
+                { id: 1, name: 'Topic A', slug: 'topic-a', seminars_count: 0, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
+                { id: 2, name: 'Topic B', slug: 'topic-b', seminars_count: 0, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
             ],
             meta: { last_page: 1, current_page: 1, total: 2, from: 1, to: 2 },
         } as any);
@@ -523,8 +531,8 @@ describe('SubjectList', () => {
     it('opens merge dialog when merge button is clicked', async () => {
         vi.mocked(subjectsApi.list).mockResolvedValue({
             data: [
-                { id: 1, name: 'Topic A', seminars_count: 2, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
-                { id: 2, name: 'Topic B', seminars_count: 3, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
+                { id: 1, name: 'Topic A', slug: 'topic-a', seminars_count: 2, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
+                { id: 2, name: 'Topic B', slug: 'topic-b', seminars_count: 3, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
             ],
             meta: { last_page: 1, current_page: 1, total: 2, from: 1, to: 2 },
         } as any);
@@ -588,7 +596,7 @@ describe('SubjectList', () => {
     it('shows 0 seminars count for subjects with null seminars_count', async () => {
         vi.mocked(subjectsApi.list).mockResolvedValue({
             data: [
-                { id: 1, name: 'No Count', seminars_count: null, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
+                { id: 1, name: 'No Count', slug: 'no-count', seminars_count: null, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
             ],
             meta: { last_page: 1, current_page: 1, total: 1, from: 1, to: 1 },
         } as any);
@@ -620,8 +628,8 @@ describe('SubjectList', () => {
     it('confirms merge and calls subjectsApi.merge', async () => {
         vi.mocked(subjectsApi.list).mockResolvedValue({
             data: [
-                { id: 1, name: 'Topic A', seminars_count: 2, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
-                { id: 2, name: 'Topic B', seminars_count: 3, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
+                { id: 1, name: 'Topic A', slug: 'topic-a', seminars_count: 2, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
+                { id: 2, name: 'Topic B', slug: 'topic-b', seminars_count: 3, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
             ],
             meta: { last_page: 1, current_page: 1, total: 2, from: 1, to: 2 },
         } as any);
@@ -668,8 +676,8 @@ describe('SubjectList', () => {
     it('closes merge dialog when cancel is clicked', async () => {
         vi.mocked(subjectsApi.list).mockResolvedValue({
             data: [
-                { id: 1, name: 'Merge A', seminars_count: 0, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
-                { id: 2, name: 'Merge B', seminars_count: 0, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
+                { id: 1, name: 'Merge A', slug: 'merge-a', seminars_count: 0, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
+                { id: 2, name: 'Merge B', slug: 'merge-b', seminars_count: 0, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
             ],
             meta: { last_page: 1, current_page: 1, total: 2, from: 1, to: 2 },
         } as any);
@@ -708,8 +716,8 @@ describe('SubjectList', () => {
     it('suggests merge name via AI when Sugerir button is clicked', async () => {
         vi.mocked(subjectsApi.list).mockResolvedValue({
             data: [
-                { id: 1, name: 'Topic A', seminars_count: 0, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
-                { id: 2, name: 'Topic B', seminars_count: 0, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
+                { id: 1, name: 'Topic A', slug: 'topic-a', seminars_count: 0, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
+                { id: 2, name: 'Topic B', slug: 'topic-b', seminars_count: 0, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
             ],
             meta: { last_page: 1, current_page: 1, total: 2, from: 1, to: 2 },
         } as any);
@@ -750,8 +758,8 @@ describe('SubjectList', () => {
     it('shows error toast when AI merge name suggestion fails', async () => {
         vi.mocked(subjectsApi.list).mockResolvedValue({
             data: [
-                { id: 1, name: 'Topic A', seminars_count: 0, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
-                { id: 2, name: 'Topic B', seminars_count: 0, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
+                { id: 1, name: 'Topic A', slug: 'topic-a', seminars_count: 0, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
+                { id: 2, name: 'Topic B', slug: 'topic-b', seminars_count: 0, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
             ],
             meta: { last_page: 1, current_page: 1, total: 2, from: 1, to: 2 },
         } as any);
@@ -788,7 +796,7 @@ describe('SubjectList', () => {
     it('clicking Anterior goes to previous page', async () => {
         vi.mocked(subjectsApi.list).mockResolvedValue({
             data: [
-                { id: 1, name: 'Page Topic', seminars_count: 0, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
+                { id: 1, name: 'Page Topic', slug: 'page-topic', seminars_count: 0, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
             ],
             meta: { last_page: 3, current_page: 2, total: 30, from: 11, to: 20 },
         } as any);
@@ -816,7 +824,7 @@ describe('SubjectList', () => {
     it('shows delete confirmation dialog text with subject name', async () => {
         vi.mocked(subjectsApi.list).mockResolvedValue({
             data: [
-                { id: 9, name: 'Named Delete', seminars_count: 0, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
+                { id: 9, name: 'Named Delete', slug: 'named-delete', seminars_count: 0, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
             ],
             meta: { last_page: 1, current_page: 1, total: 1, from: 1, to: 1 },
         } as any);
@@ -900,9 +908,9 @@ describe('SubjectList', () => {
     it('covers merge dialog rendering: selected subjects badges with seminar counts (lines 476-514)', async () => {
         vi.mocked(subjectsApi.list).mockResolvedValue({
             data: [
-                { id: 1, name: 'Alpha', seminars_count: 4, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
-                { id: 2, name: 'Beta', seminars_count: 6, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
-                { id: 3, name: 'Gamma', seminars_count: 0, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
+                { id: 1, name: 'Alpha', slug: 'alpha', seminars_count: 4, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
+                { id: 2, name: 'Beta', slug: 'beta', seminars_count: 6, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
+                { id: 3, name: 'Gamma', slug: 'gamma', seminars_count: 0, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
             ],
             meta: { last_page: 1, current_page: 1, total: 3, from: 1, to: 3 },
         } as any);
@@ -962,8 +970,8 @@ describe('SubjectList', () => {
     it('covers toggleSelection deselecting an already-selected subject (line 213)', async () => {
         vi.mocked(subjectsApi.list).mockResolvedValue({
             data: [
-                { id: 1, name: 'Toggle Topic', seminars_count: 0, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
-                { id: 2, name: 'Other Topic', seminars_count: 0, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
+                { id: 1, name: 'Toggle Topic', slug: 'toggle-topic', seminars_count: 0, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
+                { id: 2, name: 'Other Topic', slug: 'other-topic', seminars_count: 0, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
             ],
             meta: { last_page: 1, current_page: 1, total: 2, from: 1, to: 2 },
         } as any);
@@ -990,8 +998,8 @@ describe('SubjectList', () => {
     it('types in the merge name field', async () => {
         vi.mocked(subjectsApi.list).mockResolvedValue({
             data: [
-                { id: 1, name: 'Merge X', seminars_count: 0, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
-                { id: 2, name: 'Merge Y', seminars_count: 0, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
+                { id: 1, name: 'Merge X', slug: 'merge-x', seminars_count: 0, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
+                { id: 2, name: 'Merge Y', slug: 'merge-y', seminars_count: 0, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
             ],
             meta: { last_page: 1, current_page: 1, total: 2, from: 1, to: 2 },
         } as any);
@@ -1033,8 +1041,8 @@ describe('SubjectList', () => {
             if (callCount <= 1) {
                 return {
                     data: [
-                        { id: 1, name: 'Sub A', seminars_count: 0, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
-                        { id: 2, name: 'Sub B', seminars_count: 0, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
+                        { id: 1, name: 'Sub A', slug: 'sub-a', seminars_count: 0, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
+                        { id: 2, name: 'Sub B', slug: 'sub-b', seminars_count: 0, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
                     ],
                     meta: { last_page: 1, current_page: 1, total: 2, from: 1, to: 2 },
                 } as any;
@@ -1042,8 +1050,8 @@ describe('SubjectList', () => {
             // Subsequent calls return different IDs so selectedIds become stale
             return {
                 data: [
-                    { id: 99, name: 'Other A', seminars_count: 0, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
-                    { id: 100, name: 'Other B', seminars_count: 0, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
+                    { id: 99, name: 'Other A', slug: 'other-a', seminars_count: 0, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
+                    { id: 100, name: 'Other B', slug: 'other-b', seminars_count: 0, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
                 ],
                 meta: { last_page: 1, current_page: 1, total: 2, from: 1, to: 2 },
             } as any;
@@ -1107,8 +1115,8 @@ describe('SubjectList', () => {
             if (callCount <= 1) {
                 return {
                     data: [
-                        { id: 1, name: 'Present A', seminars_count: 1, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
-                        { id: 2, name: 'Present B', seminars_count: 2, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
+                        { id: 1, name: 'Present A', slug: 'present-a', seminars_count: 1, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
+                        { id: 2, name: 'Present B', slug: 'present-b', seminars_count: 2, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
                     ],
                     meta: { last_page: 1, current_page: 1, total: 2, from: 1, to: 2 },
                 } as any;
@@ -1116,7 +1124,7 @@ describe('SubjectList', () => {
             // Subsequent calls return different IDs
             return {
                 data: [
-                    { id: 99, name: 'New Sub', seminars_count: 0, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
+                    { id: 99, name: 'New Sub', slug: 'new-sub', seminars_count: 0, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
                 ],
                 meta: { last_page: 1, current_page: 1, total: 1, from: 1, to: 1 },
             } as any;
@@ -1163,8 +1171,8 @@ describe('SubjectList', () => {
     it('merges with empty newMergeName so new_name is undefined (line 208)', async () => {
         vi.mocked(subjectsApi.list).mockResolvedValue({
             data: [
-                { id: 1, name: 'Src A', seminars_count: 0, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
-                { id: 2, name: 'Src B', seminars_count: 0, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
+                { id: 1, name: 'Src A', slug: 'src-a', seminars_count: 0, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
+                { id: 2, name: 'Src B', slug: 'src-b', seminars_count: 0, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
             ],
             meta: { last_page: 1, current_page: 1, total: 2, from: 1, to: 2 },
         } as any);
@@ -1214,8 +1222,8 @@ describe('SubjectList', () => {
     it('covers totalSeminarsAffected with null seminars_count (line 228)', async () => {
         vi.mocked(subjectsApi.list).mockResolvedValue({
             data: [
-                { id: 1, name: 'Null Count A', seminars_count: null, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
-                { id: 2, name: 'Null Count B', seminars_count: null, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
+                { id: 1, name: 'Null Count A', slug: 'null-count-a', seminars_count: null, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
+                { id: 2, name: 'Null Count B', slug: 'null-count-b', seminars_count: null, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
             ],
             meta: { last_page: 1, current_page: 1, total: 2, from: 1, to: 2 },
         } as any);
@@ -1280,8 +1288,8 @@ describe('SubjectList', () => {
     it('shows "Mesclando..." when merge mutation is pending (line 570)', async () => {
         vi.mocked(subjectsApi.list).mockResolvedValue({
             data: [
-                { id: 1, name: 'Pend A', seminars_count: 0, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
-                { id: 2, name: 'Pend B', seminars_count: 0, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
+                { id: 1, name: 'Pend A', slug: 'pend-a', seminars_count: 0, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
+                { id: 2, name: 'Pend B', slug: 'pend-b', seminars_count: 0, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
             ],
             meta: { last_page: 1, current_page: 1, total: 2, from: 1, to: 2 },
         } as any);

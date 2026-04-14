@@ -95,7 +95,7 @@ export const seminarsApi = {
     },
 
     bySubject: (
-        subjectId: number,
+        subjectSlug: string,
         params?: {
             upcoming?: boolean;
             direction?: "asc" | "desc";
@@ -105,7 +105,7 @@ export const seminarsApi = {
     ) => {
         const qs = buildQueryString(params ?? {});
         return fetchApi<PaginatedResponse<Seminar>>(
-            `/subjects/${subjectId}/seminars${qs}`,
+            `/subjects/${subjectSlug}/seminars${qs}`,
         );
     },
 };
@@ -117,8 +117,8 @@ export const subjectsApi = {
         return fetchApi<{ data: Subject[] }>(`/subjects${qs}`);
     },
 
-    get: (id: number) => {
-        return fetchApi<{ data: Subject }>(`/subjects/${id}`);
+    get: (slug: string) => {
+        return fetchApi<{ data: Subject }>(`/subjects/${slug}`);
     },
 };
 
@@ -128,12 +128,12 @@ export const workshopsApi = {
         return fetchApi<{ data: Workshop[] }>("/workshops");
     },
 
-    get: (id: number) => {
-        return fetchApi<{ data: Workshop }>(`/workshops/${id}`);
+    get: (slug: string) => {
+        return fetchApi<{ data: Workshop }>(`/workshops/${slug}`);
     },
 
     seminars: (
-        workshopId: number,
+        workshopSlug: string,
         params?: {
             upcoming?: boolean;
             direction?: "asc" | "desc";
@@ -143,7 +143,7 @@ export const workshopsApi = {
     ) => {
         const qs = buildQueryString(params ?? {});
         return fetchApi<PaginatedResponse<Seminar>>(
-            `/workshops/${workshopId}/seminars${qs}`,
+            `/workshops/${workshopSlug}/seminars${qs}`,
         );
     },
 };

@@ -80,7 +80,7 @@ describe('GET /api/admin/subjects/{id}', function () {
 
         $subject = Subject::factory()->create(['name' => 'Test Subject']);
 
-        $response = $this->getJson("/api/admin/subjects/{$subject->id}");
+        $response = $this->getJson("/api/admin/subjects/{$subject->slug}");
 
         $response->assertSuccessful()
             ->assertJsonPath('data.id', $subject->id)
@@ -90,7 +90,7 @@ describe('GET /api/admin/subjects/{id}', function () {
     it('returns 404 for non-existent subject', function () {
         actingAsAdmin();
 
-        $response = $this->getJson('/api/admin/subjects/99999');
+        $response = $this->getJson('/api/admin/subjects/non-existent-slug');
 
         $response->assertNotFound();
     });
@@ -102,7 +102,7 @@ describe('GET /api/admin/subjects/{id}', function () {
         $seminar = Seminar::factory()->create();
         $seminar->subjects()->attach($subject);
 
-        $response = $this->getJson("/api/admin/subjects/{$subject->id}");
+        $response = $this->getJson("/api/admin/subjects/{$subject->slug}");
 
         $response->assertSuccessful()
             ->assertJsonPath('data.seminars_count', 1);
@@ -153,7 +153,7 @@ describe('PUT /api/admin/subjects/{id}', function () {
 
         $subject = Subject::factory()->create();
 
-        $response = $this->putJson("/api/admin/subjects/{$subject->id}", [
+        $response = $this->putJson("/api/admin/subjects/{$subject->slug}", [
             'name' => 'Tópico Atualizado',
         ]);
 
@@ -168,7 +168,7 @@ describe('PUT /api/admin/subjects/{id}', function () {
         Subject::factory()->create(['name' => 'Other Subject']);
         $subject = Subject::factory()->create(['name' => 'My Subject']);
 
-        $response = $this->putJson("/api/admin/subjects/{$subject->id}", [
+        $response = $this->putJson("/api/admin/subjects/{$subject->slug}", [
             'name' => 'Other Subject',
         ]);
 
@@ -181,7 +181,7 @@ describe('PUT /api/admin/subjects/{id}', function () {
 
         $subject = Subject::factory()->create(['name' => 'My Subject']);
 
-        $response = $this->putJson("/api/admin/subjects/{$subject->id}", [
+        $response = $this->putJson("/api/admin/subjects/{$subject->slug}", [
             'name' => 'My Subject',
         ]);
 
@@ -195,7 +195,7 @@ describe('DELETE /api/admin/subjects/{id}', function () {
 
         $subject = Subject::factory()->create();
 
-        $response = $this->deleteJson("/api/admin/subjects/{$subject->id}");
+        $response = $this->deleteJson("/api/admin/subjects/{$subject->slug}");
 
         $response->assertSuccessful()
             ->assertJsonPath('message', 'Tópico excluído com sucesso');
@@ -210,7 +210,7 @@ describe('DELETE /api/admin/subjects/{id}', function () {
         $seminar = Seminar::factory()->create();
         $seminar->subjects()->attach($subject);
 
-        $response = $this->deleteJson("/api/admin/subjects/{$subject->id}");
+        $response = $this->deleteJson("/api/admin/subjects/{$subject->slug}");
 
         $response->assertStatus(409)
             ->assertJsonPath('message', 'Este assunto está associado a seminários e não pode ser excluído');

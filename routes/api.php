@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\SeminarTypeController;
 use App\Http\Controllers\Api\StatsController;
 use App\Http\Controllers\Api\SubjectController;
 use App\Http\Controllers\Api\WorkshopController;
+use App\Http\Controllers\SocialAuthController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -39,13 +40,13 @@ Route::get('/seminars/{slug}/registration', [RegistrationController::class, 'sta
 
 // Subjects
 Route::get('/subjects', [SubjectController::class, 'index']);
-Route::get('/subjects/{subject}', [SubjectController::class, 'show']);
-Route::get('/subjects/{subject}/seminars', [SeminarController::class, 'bySubject']);
+Route::get('/subjects/{subject:slug}', [SubjectController::class, 'show']);
+Route::get('/subjects/{subject:slug}/seminars', [SeminarController::class, 'bySubject']);
 
 // Workshops
 Route::get('/workshops', [WorkshopController::class, 'index']);
-Route::get('/workshops/{workshop}', [WorkshopController::class, 'show']);
-Route::get('/workshops/{workshop}/seminars', [WorkshopController::class, 'seminars']);
+Route::get('/workshops/{workshop:slug}', [WorkshopController::class, 'show']);
+Route::get('/workshops/{workshop:slug}/seminars', [WorkshopController::class, 'seminars']);
 
 // Seminar Types
 Route::get('/seminar-types', [SeminarTypeController::class, 'index']);
@@ -64,7 +65,7 @@ Route::get('/presence/{uuid}', [PresenceController::class, 'show']);
 Route::post('/presence/{uuid}/register', [PresenceController::class, 'register']);
 
 // Auth
-Route::post('/auth/exchange', [\App\Http\Controllers\SocialAuthController::class, 'exchange'])->middleware('throttle:5,1');
+Route::post('/auth/exchange', [SocialAuthController::class, 'exchange'])->middleware('throttle:5,1');
 
 // Authenticated routes
 Route::middleware('auth:sanctum')->group(function () {

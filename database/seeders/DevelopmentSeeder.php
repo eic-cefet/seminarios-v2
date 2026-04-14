@@ -65,7 +65,7 @@ class DevelopmentSeeder extends Seeder
             'Ética em IA', 'Processamento de Imagens', 'Computação Gráfica',
             'Sistemas Distribuídos',
         ];
-        $subjects = collect($subjectNames)->map(fn (string $name) => Subject::create(['name' => $name]));
+        $subjects = collect($subjectNames)->map(fn (string $name) => Subject::create(['name' => $name, 'slug' => Str::slug($name)]));
 
         // --- Workshops ---
         $workshopData = [

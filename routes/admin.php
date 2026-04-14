@@ -29,7 +29,8 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function ()
     // Defined before apiResource for consistency with the workshop pattern below.
     // POST won't conflict with apiResource's GET /{subject}, but ordering makes intent clear.
     Route::post('/subjects/merge', [AdminSubjectController::class, 'merge']);
-    Route::apiResource('subjects', AdminSubjectController::class);
+    Route::apiResource('subjects', AdminSubjectController::class)
+        ->parameters(['subjects' => 'subject:slug']);
 
     // Registrations (not a full resource — only index + custom action)
     Route::get('/registrations', [AdminRegistrationController::class, 'index']);
@@ -39,7 +40,8 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function ()
 
     // Workshop search must be defined before the resource route
     Route::get('/workshops/search-seminars', [AdminWorkshopController::class, 'searchSeminars']);
-    Route::apiResource('workshops', AdminWorkshopController::class);
+    Route::apiResource('workshops', AdminWorkshopController::class)
+        ->parameters(['workshops' => 'workshop:slug']);
 
     // Helper endpoints for dropdowns
     Route::get('/seminar-types', [AdminSeminarController::class, 'listTypes']);

@@ -7,19 +7,18 @@ import { PageTitle } from "@shared/components/PageTitle";
 import { subjectsApi, seminarsApi } from "@shared/api/client";
 
 export default function SubjectSeminars() {
-    const { id } = useParams<{ id: string }>();
-    const subjectId = Number(id);
+    const { slug } = useParams<{ slug: string }>();
 
     const { data: subjectData, isLoading: loadingSubject } = useQuery({
-        queryKey: ["subject", subjectId],
-        queryFn: () => subjectsApi.get(subjectId),
-        enabled: !isNaN(subjectId),
+        queryKey: ["subject", slug],
+        queryFn: () => subjectsApi.get(slug!),
+        enabled: !!slug,
     });
 
     const { data: seminarsData, isLoading: loadingSeminars } = useQuery({
-        queryKey: ["subjectSeminars", subjectId],
-        queryFn: () => seminarsApi.bySubject(subjectId, { direction: "desc" }),
-        enabled: !isNaN(subjectId),
+        queryKey: ["subjectSeminars", slug],
+        queryFn: () => seminarsApi.bySubject(slug!, { direction: "desc" }),
+        enabled: !!slug,
     });
 
     const subject = subjectData?.data;

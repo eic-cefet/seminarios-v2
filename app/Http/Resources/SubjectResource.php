@@ -12,6 +12,7 @@ class SubjectResource extends JsonResource
         return [
             'id' => $this->id,
             'name' => $this->name,
+            'slug' => $this->slug,
             'seminarsCount' => $this->whenCounted('seminars'),
         ];
     }

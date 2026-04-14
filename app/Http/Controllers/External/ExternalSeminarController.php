@@ -3,13 +3,13 @@
 namespace App\Http\Controllers\External;
 
 use App\Enums\Role;
+use App\Http\Controllers\Concerns\ResolvesSubjects;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\External\ExternalSeminarStoreRequest;
 use App\Http\Requests\External\ExternalSeminarUpdateRequest;
 use App\Http\Resources\External\ExternalSeminarResource;
 use App\Jobs\ProcessSeminarRescheduleJob;
 use App\Models\Seminar;
-use App\Models\Subject;
 use App\Services\SlugService;
 use Dedoc\Scramble\Attributes\BodyParameter;
 use Dedoc\Scramble\Attributes\QueryParameter;
@@ -22,6 +22,8 @@ use Illuminate\Support\Facades\Gate;
 
 class ExternalSeminarController extends Controller
 {
+    use ResolvesSubjects;
+
     public function __construct(
         private readonly SlugService $slugService
     ) {}
@@ -94,9 +96,7 @@ class ExternalSeminarController extends Controller
                 'created_by' => $request->user()->id,
             ]);
 
-            $subjectIds = $this->resolveSubjects($validated['subjects']);
-            $seminar->subjects()->sync($subjectIds);
-
+            $seminar->subjects()->sync($this->resolveSubjectNames($validated['subjects']));
             $seminar->speakers()->sync($validated['speaker_ids']);
 
             return $seminar;
@@ -139,8 +139,7 @@ class ExternalSeminarController extends Controller
             }
 
             if (isset($validated['subjects'])) {
-                $subjectIds = $this->resolveSubjects($validated['subjects']);
-                $seminar->subjects()->sync($subjectIds);
+                $seminar->subjects()->sync($this->resolveSubjectNames($validated['subjects']));
             }
 
             if (isset($validated['speaker_ids'])) {
@@ -164,20 +163,5 @@ class ExternalSeminarController extends Controller
             'message' => 'Seminar updated successfully.',
             'data' => new ExternalSeminarResource($seminar),
         ]);
-    }
-
-    /**
-     * @param  array<string>  $subjectNames
-     * @return array<int>
-     */
-    private function resolveSubjects(array $subjectNames): array
-    {
-        $ids = [];
-        foreach ($subjectNames as $name) {
-            $subject = Subject::firstOrCreate(['name' => trim($name)]);
-            $ids[] = $subject->id;
-        }
-
-        return $ids;
     }
 }

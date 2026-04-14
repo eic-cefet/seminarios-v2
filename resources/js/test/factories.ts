@@ -55,6 +55,7 @@ export function createSubject(overrides: Partial<Subject> = {}): Subject {
     return {
         id,
         name: `Subject ${id}`,
+        slug: `subject-${id}`,
         seminarsCount: 5,
         ...overrides,
     };
@@ -97,6 +98,7 @@ export function createWorkshop(overrides: Partial<Workshop> = {}): Workshop {
     return {
         id,
         name: `Workshop ${id}`,
+        slug: `workshop-${id}`,
         description: 'A test workshop',
         seminarsCount: 3,
         ...overrides,

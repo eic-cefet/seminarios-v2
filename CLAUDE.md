@@ -77,6 +77,8 @@ vendor/bin/pint --dirty
 - Backend: 95% coverage threshold (all metrics)
 - Frontend: 90% coverage threshold (statements, branches, functions, lines)
 
+**Target: 100% code coverage.** Always run the full test suite in coverage mode (`php artisan test --compact --coverage` / `pnpm exec vitest run --coverage`) at the end of each feature that touches functional code. For unreachable defensive statements, use `// @codeCoverageIgnore` (PHP) or `/* v8 ignore next */` (JS/TS) comments so Codecov stays clean.
+
 ## Architecture
 
 ### Dual SPA Architecture

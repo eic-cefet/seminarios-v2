@@ -23,7 +23,7 @@ vi.mock('@shared/api/client', () => ({
 
 vi.mock('react-router-dom', async () => {
     const actual = await vi.importActual('react-router-dom');
-    return { ...actual, useParams: vi.fn(() => ({ id: '1' })) };
+    return { ...actual, useParams: vi.fn(() => ({ slug: 'machine-learning' })) };
 });
 
 import { subjectsApi, seminarsApi } from '@shared/api/client';

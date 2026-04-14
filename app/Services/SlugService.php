@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 
 class SlugService
@@ -37,6 +38,10 @@ class SlugService
         ?int $excludeId = null
     ): bool {
         $query = $modelClass::where($column, $slug);
+
+        if (in_array(SoftDeletes::class, class_uses_recursive($modelClass))) {
+            $query->withTrashed();
+        }
 
         if ($excludeId !== null) {
             $query->where('id', '!=', $excludeId);
