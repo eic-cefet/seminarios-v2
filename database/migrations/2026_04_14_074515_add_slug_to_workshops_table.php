@@ -15,9 +15,11 @@ return new class extends Migration
         });
 
         $slugService = app(SlugService::class);
-        Workshop::all()->each(function (Workshop $workshop) use ($slugService) {
-            $workshop->slug = $slugService->generateUnique($workshop->name, Workshop::class);
-            $workshop->saveQuietly();
+        Workshop::query()->chunkById(200, function ($workshops) use ($slugService) {
+            foreach ($workshops as $workshop) {
+                $workshop->slug = $slugService->generateUnique($workshop->name, Workshop::class);
+                $workshop->saveQuietly();
+            }
         });
 
         Schema::table('workshops', function (Blueprint $table) {

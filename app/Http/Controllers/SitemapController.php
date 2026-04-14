@@ -43,7 +43,7 @@ class SitemapController extends Controller
             ...Seminar::query()
                 ->active()
                 ->orderBy('scheduled_at', 'desc')
-                ->get(['slug', 'updated_at'])
+                ->cursor()
                 ->map(fn (Seminar $seminar) => [
                     'loc' => $this->absoluteUrl("/seminario/{$seminar->slug}"),
                     'lastmod' => $this->formatTimestamp($seminar->updated_at),
@@ -52,7 +52,7 @@ class SitemapController extends Controller
             ...Subject::query()
                 ->whereHas('seminars', fn ($query) => $query->where('active', true))
                 ->orderBy('name')
-                ->get(['id', 'slug', 'updated_at'])
+                ->cursor()
                 ->map(fn (Subject $subject) => [
                     'loc' => $this->absoluteUrl("/topico/{$subject->slug}"),
                     'lastmod' => $this->formatTimestamp($subject->updated_at),
@@ -61,7 +61,7 @@ class SitemapController extends Controller
             ...Workshop::query()
                 ->whereHas('seminars', fn ($query) => $query->where('active', true))
                 ->orderBy('name')
-                ->get(['id', 'slug', 'updated_at'])
+                ->cursor()
                 ->map(fn (Workshop $workshop) => [
                     'loc' => $this->absoluteUrl("/workshop/{$workshop->slug}"),
                     'lastmod' => $this->formatTimestamp($workshop->updated_at),

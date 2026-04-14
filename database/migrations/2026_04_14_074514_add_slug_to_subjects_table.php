@@ -15,9 +15,11 @@ return new class extends Migration
         });
 
         $slugService = app(SlugService::class);
-        Subject::withTrashed()->each(function (Subject $subject) use ($slugService) {
-            $subject->slug = $slugService->generateUnique($subject->name, Subject::class);
-            $subject->saveQuietly();
+        Subject::withTrashed()->chunkById(200, function ($subjects) use ($slugService) {
+            foreach ($subjects as $subject) {
+                $subject->slug = $slugService->generateUnique($subject->name, Subject::class);
+                $subject->saveQuietly();
+            }
         });
 
         Schema::table('subjects', function (Blueprint $table) {
