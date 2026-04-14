@@ -4,29 +4,26 @@ use App\Models\Subject;
 use App\Services\SlugService;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::transaction(function () {
-            Schema::table('subjects', function (Blueprint $table) {
-                $table->string('slug')->nullable()->unique()->after('name');
-            });
+        Schema::table('subjects', function (Blueprint $table) {
+            $table->string('slug')->nullable()->unique()->after('name');
+        });
 
-            $slugService = app(SlugService::class);
-            Subject::withTrashed()->chunkById(200, function ($subjects) use ($slugService) {
-                foreach ($subjects as $subject) {
-                    $subject->slug = $slugService->generateUnique($subject->name, Subject::class);
-                    $subject->saveQuietly();
-                }
-            });
+        $slugService = app(SlugService::class);
+        Subject::withTrashed()->chunkById(200, function ($subjects) use ($slugService) {
+            foreach ($subjects as $subject) {
+                $subject->slug = $slugService->generateUnique($subject->name, Subject::class);
+                $subject->saveQuietly();
+            }
+        });
 
-            Schema::table('subjects', function (Blueprint $table) {
-                $table->string('slug')->nullable(false)->change();
-            });
+        Schema::table('subjects', function (Blueprint $table) {
+            $table->string('slug')->nullable(false)->change();
         });
     }
 
