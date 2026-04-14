@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\External;
 
+use App\Http\Controllers\Concerns\EscapesLikeWildcards;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\External\ExternalWorkshopResource;
 use App\Models\Workshop;
@@ -14,6 +15,8 @@ use Illuminate\Support\Facades\Gate;
 
 class ExternalWorkshopController extends Controller
 {
+    use EscapesLikeWildcards;
+
     public function __construct(
         private readonly SlugService $slugService
     ) {}
@@ -26,7 +29,8 @@ class ExternalWorkshopController extends Controller
         $query = Workshop::withCount('seminars');
 
         if ($search = $request->string('search')->trim()->toString()) {
-            $query->where('name', 'like', '%'.addcslashes($search, '%_').'%');
+            $escaped = $this->escapeLike($search);
+            $query->where('name', 'like', "%{$escaped}%");
         }
 
         $workshops = $query->orderBy('name')->paginate(15);

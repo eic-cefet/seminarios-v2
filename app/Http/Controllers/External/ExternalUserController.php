@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\External;
 
+use App\Http\Controllers\Concerns\EscapesLikeWildcards;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\External\ExternalUserResource;
 use App\Models\User;
@@ -12,6 +13,8 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class ExternalUserController extends Controller
 {
+    use EscapesLikeWildcards;
+
     #[QueryParameter('search', description: 'Search by name or email', type: 'string', example: 'joao')]
     #[QueryParameter('email', description: 'Filter by exact email address', type: 'string', example: 'joao@cefet-rj.br')]
     public function index(Request $request): AnonymousResourceCollection
@@ -19,7 +22,7 @@ class ExternalUserController extends Controller
         $query = User::with('speakerData');
 
         if ($search = $request->string('search')->trim()->toString()) {
-            $escaped = addcslashes($search, '%_');
+            $escaped = $this->escapeLike($search);
             $query->where(function ($q) use ($escaped) {
                 $q->where('name', 'like', "%{$escaped}%")
                     ->orWhere('email', 'like', "%{$escaped}%");

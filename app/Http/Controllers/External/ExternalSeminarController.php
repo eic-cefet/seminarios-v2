@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\External;
 
 use App\Enums\Role;
+use App\Http\Controllers\Concerns\EscapesLikeWildcards;
 use App\Http\Controllers\Concerns\ResolvesSubjects;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\External\ExternalSeminarStoreRequest;
@@ -22,7 +23,7 @@ use Illuminate\Support\Facades\Gate;
 
 class ExternalSeminarController extends Controller
 {
-    use ResolvesSubjects;
+    use EscapesLikeWildcards, ResolvesSubjects;
 
     public function __construct(
         private readonly SlugService $slugService
@@ -48,7 +49,8 @@ class ExternalSeminarController extends Controller
         }
 
         if ($search = $request->string('search')->trim()->toString()) {
-            $query->where('name', 'like', '%'.addcslashes($search, '%_').'%');
+            $escaped = $this->escapeLike($search);
+            $query->where('name', 'like', "%{$escaped}%");
         }
 
         if ($request->has('active')) {

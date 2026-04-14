@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Enums\AuditEvent;
 use App\Exports\AuditLogExport;
-use App\Http\Controllers\Admin\Concerns\EscapesLikeWildcards;
+use App\Http\Controllers\Concerns\EscapesLikeWildcards;
 use App\Http\Controllers\Controller;
 use App\Jobs\DeleteS3FileJob;
 use App\Models\AuditLog;
@@ -32,7 +32,7 @@ class AdminAuditLogController extends Controller
         $from = Carbon::now()->subDays($days)->startOfDay();
 
         $summary = AuditLog::where('created_at', '>=', $from)
-            ->selectRaw("count(*) as total")
+            ->selectRaw('count(*) as total')
             ->selectRaw("sum(case when event_type = 'manual' then 1 else 0 end) as manual_count")
             ->selectRaw("sum(case when event_type = 'system' then 1 else 0 end) as system_count")
             ->first();
