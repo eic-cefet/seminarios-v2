@@ -17,6 +17,7 @@ enum AuditEvent: string
 
     // Admin actions
     case SubjectsMerged = 'subjects.merged';
+    case ReportQueued = 'report.queued';
     case ReportGenerated = 'report.generated';
 
     // AI

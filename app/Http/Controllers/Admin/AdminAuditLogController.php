@@ -3,23 +3,16 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Enums\AuditEvent;
-use App\Exports\AuditLogExport;
-use App\Http\Controllers\Concerns\EscapesLikeWildcards;
 use App\Http\Controllers\Controller;
-use App\Jobs\DeleteS3FileJob;
+use App\Jobs\GenerateAuditLogReportJob;
 use App\Models\AuditLog;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Facades\Storage;
-use Maatwebsite\Excel\Facades\Excel;
 
 class AdminAuditLogController extends Controller
 {
-    use EscapesLikeWildcards;
-
     public function summary(Request $request): JsonResponse
     {
         Gate::authorize('viewAny', AuditLog::class);
@@ -61,37 +54,23 @@ class AdminAuditLogController extends Controller
         $request->validate($this->filterRules());
 
         $days = $request->integer('days', 30);
-        $from = Carbon::now()->subDays($days)->startOfDay();
 
-        $query = AuditLog::where('created_at', '>=', $from)
-            ->latest('created_at');
-
-        $this->applyFilters($query, $request);
-
-        $timestamp = now()->format('YmdHis');
-        $filename = "reports/{$timestamp}-audit-logs-{$days}d.xlsx";
-
-        // FromQuery lets Maatwebsite Excel chunk the query automatically
-        Excel::store(
-            new AuditLogExport(clone $query, $days),
-            $filename,
-            's3',
-            \Maatwebsite\Excel\Excel::XLSX
+        GenerateAuditLogReportJob::dispatch(
+            $request->user(),
+            $days,
+            $request->filled('event_type') ? $request->input('event_type') : null,
+            $request->filled('event_name') ? $request->input('event_name') : null,
+            $request->filled('search') ? $request->input('search') : null,
         );
 
-        $url = Storage::disk('s3')->temporaryUrl($filename, now()->addHour());
-
-        DeleteS3FileJob::dispatch($filename)->delay(now()->addHours(2));
-
-        AuditLog::record(AuditEvent::ReportGenerated, eventData: [
+        AuditLog::record(AuditEvent::ReportQueued, eventData: [
             'type' => 'audit_logs',
             'days' => $days,
             'format' => 'excel',
         ]);
 
         return response()->json([
-            'message' => 'Relatório gerado com sucesso',
-            'url' => $url,
+            'message' => 'Relatório sendo gerado. Você receberá um e-mail em breve.',
         ]);
     }
 
@@ -115,28 +94,5 @@ class AdminAuditLogController extends Controller
             'event_name' => 'sometimes|string|max:100',
             'search' => 'sometimes|string|max:255',
         ];
-    }
-
-    private function applyFilters(Builder $query, Request $request): void
-    {
-        if ($request->filled('event_type')) {
-            $query->where('event_type', $request->input('event_type'));
-        }
-
-        if ($request->filled('event_name')) {
-            $query->where('event_name', $request->input('event_name'));
-        }
-
-        if ($request->filled('search')) {
-            $search = $this->escapeLike($request->input('search'));
-            $query->where(function ($q) use ($search) {
-                $q->where('event_name', 'like', "%{$search}%")
-                    ->orWhere('origin', 'like', "%{$search}%")
-                    ->orWhere('ip_address', 'like', "%{$search}%")
-                    ->orWhereHas('user', function ($q) use ($search) {
-                        $q->where('name', 'like', "%{$search}%");
-                    });
-            });
-        }
     }
 }

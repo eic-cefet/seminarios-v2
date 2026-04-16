@@ -67,8 +67,7 @@ export default function AuditLogReport() {
                 search: search || undefined,
             }),
         onSuccess: (result) => {
-            toast.success("Relatório gerado com sucesso!");
-            window.open(result.url, "_blank");
+            toast.success(result.message);
         },
         onError: () => {
             toast.error("Erro ao exportar logs de auditoria.");
@@ -274,8 +273,8 @@ export default function AuditLogReport() {
                             <FileDown className="mr-2 h-4 w-4" />
                             {/* v8 ignore start */}
                             {exportMutation.isPending
-                                ? "Exportando..."
-                                : "Exportar Excel"}
+                                ? "Enviando..."
+                                : "Exportar por e-mail"}
                             {/* v8 ignore stop */}
                         </Button>
                     </div>

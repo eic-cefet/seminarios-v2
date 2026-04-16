@@ -79,8 +79,7 @@ vi.mock('../../api/adminClient', () => ({
             },
         }),
         export: vi.fn().mockResolvedValue({
-            message: 'Relatório gerado com sucesso',
-            url: 'https://example.com/report.xlsx',
+            message: 'Relatório sendo gerado. Você receberá um e-mail em breve.',
         }),
         eventNames: vi.fn().mockResolvedValue({
             data: ['user.login', 'user.logout', 'certificate.generated'],
@@ -132,7 +131,7 @@ describe('AuditLogReport', () => {
         render(<AuditLogReport />);
 
         await waitFor(() => {
-            expect(screen.getByRole('button', { name: /exportar excel/i })).toBeInTheDocument();
+            expect(screen.getByRole('button', { name: /exportar por e-mail/i })).toBeInTheDocument();
         });
     });
 
@@ -140,13 +139,11 @@ describe('AuditLogReport', () => {
         render(<AuditLogReport />);
         const user = userEvent.setup();
 
-        const windowOpenSpy = vi.spyOn(window, 'open').mockImplementation(() => null);
-
         await waitFor(() => {
             expect(auditLogsApi.summary).toHaveBeenCalled();
         });
 
-        await user.click(screen.getByRole('button', { name: /exportar excel/i }));
+        await user.click(screen.getByRole('button', { name: /exportar por e-mail/i }));
 
         await waitFor(() => {
             expect(auditLogsApi.export).toHaveBeenCalledWith({
@@ -156,22 +153,11 @@ describe('AuditLogReport', () => {
                 search: undefined,
             });
         });
-
-        await waitFor(() => {
-            expect(windowOpenSpy).toHaveBeenCalledWith(
-                'https://example.com/report.xlsx',
-                '_blank',
-            );
-        });
-
-        windowOpenSpy.mockRestore();
     });
 
     it('passes changed days filter to summary and export', async () => {
         render(<AuditLogReport />);
         const user = userEvent.setup();
-
-        const windowOpenSpy = vi.spyOn(window, 'open').mockImplementation(() => null);
 
         await waitFor(() => {
             expect(auditLogsApi.summary).toHaveBeenCalledWith({ days: 30 });
@@ -186,7 +172,7 @@ describe('AuditLogReport', () => {
             expect(auditLogsApi.summary).toHaveBeenCalledWith({ days: 7 });
         });
 
-        await user.click(screen.getByRole('button', { name: /exportar excel/i }));
+        await user.click(screen.getByRole('button', { name: /exportar por e-mail/i }));
 
         await waitFor(() => {
             expect(auditLogsApi.export).toHaveBeenCalledWith({
@@ -196,15 +182,11 @@ describe('AuditLogReport', () => {
                 search: undefined,
             });
         });
-
-        windowOpenSpy.mockRestore();
     });
 
     it('passes event_type filter to export', async () => {
         render(<AuditLogReport />);
         const user = userEvent.setup();
-
-        const windowOpenSpy = vi.spyOn(window, 'open').mockImplementation(() => null);
 
         await waitFor(() => {
             expect(auditLogsApi.summary).toHaveBeenCalled();
@@ -215,7 +197,7 @@ describe('AuditLogReport', () => {
         // Change event type filter (second select)
         fireEvent.change(selects[1], { target: { value: 'manual' } });
 
-        await user.click(screen.getByRole('button', { name: /exportar excel/i }));
+        await user.click(screen.getByRole('button', { name: /exportar por e-mail/i }));
 
         await waitFor(() => {
             expect(auditLogsApi.export).toHaveBeenCalledWith({
@@ -225,15 +207,11 @@ describe('AuditLogReport', () => {
                 search: undefined,
             });
         });
-
-        windowOpenSpy.mockRestore();
     });
 
     it('passes event_name filter to export', async () => {
         render(<AuditLogReport />);
         const user = userEvent.setup();
-
-        const windowOpenSpy = vi.spyOn(window, 'open').mockImplementation(() => null);
 
         // Wait for both summary and event names to load
         await waitFor(() => {
@@ -251,7 +229,7 @@ describe('AuditLogReport', () => {
         // Change event name filter (third select)
         fireEvent.change(selects[2], { target: { value: 'user.login' } });
 
-        await user.click(screen.getByRole('button', { name: /exportar excel/i }));
+        await user.click(screen.getByRole('button', { name: /exportar por e-mail/i }));
 
         await waitFor(() => {
             expect(auditLogsApi.export).toHaveBeenCalledWith({
@@ -261,8 +239,6 @@ describe('AuditLogReport', () => {
                 search: undefined,
             });
         });
-
-        windowOpenSpy.mockRestore();
     });
 
     it('shows error toast when export fails', async () => {
@@ -275,7 +251,7 @@ describe('AuditLogReport', () => {
             expect(auditLogsApi.summary).toHaveBeenCalled();
         });
 
-        await user.click(screen.getByRole('button', { name: /exportar excel/i }));
+        await user.click(screen.getByRole('button', { name: /exportar por e-mail/i }));
 
         await waitFor(() => {
             expect(auditLogsApi.export).toHaveBeenCalled();
@@ -286,8 +262,6 @@ describe('AuditLogReport', () => {
         render(<AuditLogReport />);
         const user = userEvent.setup();
 
-        const windowOpenSpy = vi.spyOn(window, 'open').mockImplementation(() => null);
-
         await waitFor(() => {
             expect(auditLogsApi.summary).toHaveBeenCalled();
         });
@@ -297,7 +271,7 @@ describe('AuditLogReport', () => {
             'jorge',
         );
 
-        await user.click(screen.getByRole('button', { name: /exportar excel/i }));
+        await user.click(screen.getByRole('button', { name: /exportar por e-mail/i }));
 
         await waitFor(() => {
             expect(auditLogsApi.export).toHaveBeenCalledWith({
@@ -307,7 +281,5 @@ describe('AuditLogReport', () => {
                 search: 'jorge',
             });
         });
-
-        windowOpenSpy.mockRestore();
     });
 });

@@ -155,9 +155,7 @@ export default function SemestralReport() {
         },
         onSuccess: (data) => {
             if (format === "excel") {
-                // For Excel, the backend will return a signed URL
-                toast.success("Relatório gerado com sucesso!");
-                window.open(data.url, "_blank");
+                toast.success(data.message);
             } else {
                 toast.success("Relatório gerado!");
                 setReportData(data);
@@ -267,7 +265,7 @@ export default function SemestralReport() {
                                                 Visualizar no navegador
                                             </SelectItem>
                                             <SelectItem value="excel">
-                                                Baixar Excel
+                                                Receber por e-mail (Excel)
                                             </SelectItem>
                                         </SelectContent>
                                     </Select>
@@ -349,11 +347,11 @@ export default function SemestralReport() {
                             size="lg"
                         >
                             {generateMutation.isPending ? (
-                                "Gerando..."
+                                format === "excel" ? "Enviando..." : "Gerando..."
                             ) : format === "excel" ? (
                                 <>
                                     <FileDown className="h-4 w-4 mr-2" />
-                                    Baixar Excel
+                                    Enviar por e-mail
                                 </>
                             ) : (
                                 <>
