@@ -828,9 +828,9 @@ describe('Admin API endpoints', () => {
         });
 
         it('export fetches without params', async () => {
-            mockSuccess({ message: 'Export ready', url: 'https://example.com/export.xlsx' });
+            mockSuccess({ message: 'Export ready' });
             const result = await auditLogsApi.export();
-            expect(result.url).toBe('https://example.com/export.xlsx');
+            expect(result.message).toBe('Export ready');
             expect(fetchSpy).toHaveBeenCalledWith(
                 expect.stringContaining('/audit-logs/export'),
                 expect.any(Object),
@@ -838,7 +838,7 @@ describe('Admin API endpoints', () => {
         });
 
         it('export passes filter params', async () => {
-            mockSuccess({ message: 'Export ready', url: 'https://example.com/export.xlsx' });
+            mockSuccess({ message: 'Export ready' });
             await auditLogsApi.export({ days: 7, event_type: 'manual', event_name: 'login', search: 'admin' });
             expect(fetchSpy).toHaveBeenCalledWith(
                 expect.stringContaining('days=7'),

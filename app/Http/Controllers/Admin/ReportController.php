@@ -3,16 +3,13 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Enums\AuditEvent;
-use App\Exports\SemestralReportExport;
 use App\Http\Controllers\Controller;
-use App\Jobs\DeleteS3FileJob;
+use App\Jobs\GenerateSemestralReportJob;
 use App\Models\AuditLog;
 use App\Models\Course;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
-use Maatwebsite\Excel\Facades\Excel;
 
 class ReportController extends Controller
 {
@@ -40,6 +37,31 @@ class ReportController extends Controller
             'situations.*' => 'string',
             'format' => 'required|in:browser,excel',
         ]);
+
+        if ($validated['format'] === 'excel') {
+            GenerateSemestralReportJob::dispatch(
+                $request->user(),
+                $validated['semester'],
+                $validated['courses'] ?? [],
+                $validated['types'] ?? [],
+                $validated['situations'] ?? [],
+            );
+
+            AuditLog::record(AuditEvent::ReportQueued, eventData: [
+                'type' => 'semestral',
+                'semester' => $validated['semester'],
+                'format' => 'excel',
+                'filters' => array_filter([
+                    'courses' => $validated['courses'] ?? null,
+                    'types' => $validated['types'] ?? null,
+                    'situations' => $validated['situations'] ?? null,
+                ]),
+            ]);
+
+            return response()->json([
+                'message' => 'Relatório sendo gerado. Você receberá um e-mail em breve.',
+            ]);
+        }
 
         [$year, $semester] = explode('.', $validated['semester']);
 
@@ -92,9 +114,7 @@ class ReportController extends Controller
             });
         }
 
-        $users = $query->get();
-
-        $reportData = $users->map(function ($user) {
+        $reportData = $query->get()->map(function ($user) {
             $registrations = $user->registrations;
             $totalMinutes = $registrations->sum(
                 fn ($registration) => (int) ($registration->seminar->duration_minutes ?? 60)
@@ -115,9 +135,7 @@ class ReportController extends Controller
                 'total_hours' => round($totalMinutes / 60, 2),
                 'presentations' => $presentations,
             ];
-        });
-
-        $reportData = $reportData->sortBy('name')->values();
+        })->sortBy('name')->values();
 
         AuditLog::record(AuditEvent::ReportGenerated, eventData: [
             'semester' => $validated['semester'],
@@ -128,27 +146,6 @@ class ReportController extends Controller
                 'situations' => $validated['situations'] ?? null,
             ]),
         ]);
-
-        if ($validated['format'] === 'excel') {
-            $timestamp = now()->format('YmdHis');
-            $filename = "reports/{$timestamp}-relatorio-semestral-{$year}-{$semester}.xlsx";
-
-            Excel::store(
-                new SemestralReportExport($reportData, $year, $semester),
-                $filename,
-                's3',
-                \Maatwebsite\Excel\Excel::XLSX
-            );
-
-            $url = Storage::disk('s3')->temporaryUrl($filename, now()->addHour());
-
-            DeleteS3FileJob::dispatch($filename)->delay(now()->addHours(2));
-
-            return response()->json([
-                'message' => 'Relatório gerado com sucesso',
-                'url' => $url,
-            ]);
-        }
 
         return response()->json([
             'data' => $reportData,

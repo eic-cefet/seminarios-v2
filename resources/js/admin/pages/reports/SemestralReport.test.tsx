@@ -826,23 +826,19 @@ describe('SemestralReport', () => {
         // Click to open the format Select
         await user.click(formatTrigger);
 
-        // Wait for dropdown to open and click "Baixar Excel"
+        // Wait for dropdown to open and click the excel option
         await waitFor(() => {
-            expect(screen.getByRole('option', { name: 'Baixar Excel' })).toBeInTheDocument();
+            expect(screen.getByRole('option', { name: 'Receber por e-mail (Excel)' })).toBeInTheDocument();
         });
-        await user.click(screen.getByRole('option', { name: 'Baixar Excel' }));
+        await user.click(screen.getByRole('option', { name: 'Receber por e-mail (Excel)' }));
 
-        // After selecting excel format, the button text should change to "Baixar Excel"
+        // After selecting excel format, the button text should change
         await waitFor(() => {
-            expect(screen.getByRole('button', { name: /Baixar Excel/i })).toBeInTheDocument();
+            expect(screen.getByRole('button', { name: /Enviar por e-mail/i })).toBeInTheDocument();
         });
     });
 
-    it('covers excel format onSuccess branch - calls toast.success and window.open', async () => {
-        const mockWindowOpen = vi.fn();
-        const originalOpen = window.open;
-        window.open = mockWindowOpen;
-
+    it('covers excel format onSuccess branch - shows toast and does not render report table', async () => {
         mockFetch.mockResolvedValue({
             ok: true,
             json: vi.fn().mockResolvedValue({ data: [] }),
@@ -857,25 +853,22 @@ describe('SemestralReport', () => {
         await user.click(formatTrigger);
 
         await waitFor(() => {
-            expect(screen.getByRole('option', { name: 'Baixar Excel' })).toBeInTheDocument();
+            expect(screen.getByRole('option', { name: 'Receber por e-mail (Excel)' })).toBeInTheDocument();
         });
-        await user.click(screen.getByRole('option', { name: 'Baixar Excel' }));
+        await user.click(screen.getByRole('option', { name: 'Receber por e-mail (Excel)' }));
 
         // Wait for format state to update
         await waitFor(() => {
-            expect(screen.getByRole('button', { name: /Baixar Excel/i })).toBeInTheDocument();
+            expect(screen.getByRole('button', { name: /Enviar por e-mail/i })).toBeInTheDocument();
         });
 
-        // Now call onSuccess with a url - should trigger window.open since format is "excel"
+        // Call onSuccess with the queued message response
         await act(() => {
-            capturedMutationOptions.onSuccess({ url: 'https://example.com/report.xlsx' });
+            capturedMutationOptions.onSuccess({ message: 'Relatório sendo gerado. Você receberá um e-mail em breve.' });
         });
 
-        expect(mockWindowOpen).toHaveBeenCalledWith('https://example.com/report.xlsx', '_blank');
         // Report data should NOT be set (no table rendered) because it's excel format
         expect(screen.queryByText('Total de Usuários')).not.toBeInTheDocument();
-
-        window.open = originalOpen;
     });
 
     it('covers handleSubmit with semester selected - calls generateMutation.mutate()', async () => {
@@ -970,6 +963,53 @@ describe('SemestralReport', () => {
             resolveMutationFetch?.({
                 ok: true,
                 json: () => Promise.resolve({ data: [], summary: { total_users: 0, total_hours: 0, semester: '2026.1' } }),
+            });
+        });
+    });
+
+    it('shows "Enviando..." text while mutation is pending with excel format', async () => {
+        document.cookie = 'XSRF-TOKEN=test-token-excel-pending';
+
+        let resolveMutationFetch: ((value: any) => void) | undefined;
+
+        mockFetch
+            .mockResolvedValueOnce({ ok: true, json: vi.fn().mockResolvedValue({ data: [] }) }) // seminar types
+            .mockResolvedValueOnce({ ok: true, json: vi.fn().mockResolvedValue({ data: [] }) }) // courses
+            .mockResolvedValueOnce({ ok: true }) // csrf cookie
+            .mockImplementationOnce(() => new Promise((resolve) => { resolveMutationFetch = resolve; })); // report - hangs
+
+        render(<SemestralReport />);
+        const user = userEvent.setup();
+
+        // Change format to excel
+        const comboboxes = screen.getAllByRole('combobox');
+        await user.click(comboboxes[1]);
+        await waitFor(() => {
+            expect(screen.getByRole('option', { name: 'Receber por e-mail (Excel)' })).toBeInTheDocument();
+        });
+        await user.click(screen.getByRole('option', { name: 'Receber por e-mail (Excel)' }));
+        await waitFor(() => {
+            expect(screen.getByRole('button', { name: /Enviar por e-mail/i })).toBeInTheDocument();
+        });
+
+        // Select semester
+        await user.click(comboboxes[0]);
+        await waitFor(() => {
+            expect(screen.getByRole('option', { name: '2026.1' })).toBeInTheDocument();
+        });
+        await user.click(screen.getByRole('option', { name: '2026.1' }));
+
+        // Click submit - mutation starts but won't resolve yet
+        await user.click(screen.getByRole('button', { name: /Enviar por e-mail/i }));
+
+        await waitFor(() => {
+            expect(screen.getByText('Enviando...')).toBeInTheDocument();
+        });
+
+        await act(async () => {
+            resolveMutationFetch?.({
+                ok: true,
+                json: () => Promise.resolve({ message: 'Relatório sendo gerado. Você receberá um e-mail em breve.' }),
             });
         });
     });

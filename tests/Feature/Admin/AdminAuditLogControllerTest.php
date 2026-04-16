@@ -1,8 +1,8 @@
 <?php
 
+use App\Jobs\GenerateAuditLogReportJob;
 use App\Models\AuditLog;
-use App\Models\User;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Queue;
 
 describe('GET /api/admin/audit-logs/summary', function () {
     it('returns summary stats for the period', function () {
@@ -89,56 +89,38 @@ describe('GET /api/admin/audit-logs/summary', function () {
 });
 
 describe('GET /api/admin/audit-logs/export', function () {
-    it('generates an excel export and returns a signed URL', function () {
+    it('dispatches job and returns queued message', function () {
         $admin = actingAsAdmin();
 
-        Storage::fake('s3');
-
-        AuditLog::factory()->count(3)->create(['user_id' => $admin->id]);
+        Queue::fake();
 
         $response = $this->getJson('/api/admin/audit-logs/export?days=30');
 
         $response->assertSuccessful()
-            ->assertJsonStructure(['message', 'url']);
+            ->assertJsonPath('message', 'Relatório sendo gerado. Você receberá um e-mail em breve.')
+            ->assertJsonMissingPath('url');
+
+        Queue::assertPushed(GenerateAuditLogReportJob::class, function ($job) use ($admin) {
+            return $job->user->id === $admin->id && $job->days === 30;
+        });
     });
 
-    it('applies filters to the export', function () {
+    it('passes filters to the job', function () {
         $admin = actingAsAdmin();
 
-        Storage::fake('s3');
+        Queue::fake();
 
-        AuditLog::factory()->create(['user_id' => $admin->id, 'event_name' => 'user.login', 'created_at' => now()->subDays(5)]);
-        AuditLog::factory()->create(['user_id' => $admin->id, 'event_name' => 'user.logout', 'created_at' => now()->subDays(5)]);
-
-        $response = $this->getJson('/api/admin/audit-logs/export?days=7&event_name=user.login');
+        $response = $this->getJson('/api/admin/audit-logs/export?days=7&event_name=user.login&event_type=manual&search=Jorge');
 
         $response->assertSuccessful();
-    });
 
-    it('applies event_type filter', function () {
-        $admin = actingAsAdmin();
-
-        Storage::fake('s3');
-
-        AuditLog::factory()->manual()->create(['user_id' => $admin->id]);
-        AuditLog::factory()->create(['user_id' => $admin->id]);
-
-        $response = $this->getJson('/api/admin/audit-logs/export?event_type=manual');
-
-        $response->assertSuccessful();
-    });
-
-    it('applies search filter', function () {
-        actingAsAdmin();
-
-        Storage::fake('s3');
-
-        $user = User::factory()->create(['name' => 'Jorge Junior']);
-        AuditLog::factory()->create(['user_id' => $user->id]);
-
-        $response = $this->getJson('/api/admin/audit-logs/export?search=Jorge');
-
-        $response->assertSuccessful();
+        Queue::assertPushed(GenerateAuditLogReportJob::class, function ($job) use ($admin) {
+            return $job->user->id === $admin->id
+                && $job->days === 7
+                && $job->eventName === 'user.login'
+                && $job->eventType === 'manual'
+                && $job->search === 'Jorge';
+        });
     });
 
     it('validates days parameter', function () {

@@ -1,13 +1,13 @@
 <?php
 
+use App\Jobs\GenerateSemestralReportJob;
 use App\Models\Course;
 use App\Models\Registration;
 use App\Models\Seminar;
 use App\Models\SeminarType;
 use App\Models\User;
 use App\Models\UserStudentData;
-use Illuminate\Support\Facades\Storage;
-use Maatwebsite\Excel\Facades\Excel;
+use Illuminate\Support\Facades\Queue;
 
 describe('GET /api/admin/reports/courses', function () {
     it('returns list of courses for admin', function () {
@@ -220,29 +220,22 @@ describe('GET /api/admin/reports/semestral', function () {
         expect($data)->toHaveCount(1);
     });
 
-    it('generates excel report', function () {
-        actingAsAdmin();
+    it('dispatches job and returns queued message for excel format', function () {
+        $admin = actingAsAdmin();
 
-        Storage::fake('s3');
-        Excel::fake();
-
-        $user = User::factory()->create();
-        $seminar = Seminar::factory()->create([
-            'active' => true,
-            'scheduled_at' => now()->startOfYear()->addMonth(),
-        ]);
-        Registration::factory()->create(['user_id' => $user->id, 'seminar_id' => $seminar->id]);
+        Queue::fake();
 
         $currentYear = now()->year;
         $response = $this->getJson("/api/admin/reports/semestral?semester={$currentYear}.1&format=excel");
 
         $response->assertSuccessful()
-            ->assertJsonPath('message', 'Relatório gerado com sucesso')
-            ->assertJsonStructure(['url']);
+            ->assertJsonPath('message', 'Relatório sendo gerado. Você receberá um e-mail em breve.')
+            ->assertJsonMissingPath('url');
 
-        // Verify excel was stored - the assertStored method requires exact path
-        // We verify the file was stored via the response containing a URL
-        expect($response->json('url'))->toContain('relatorio-semestral');
+        Queue::assertPushed(GenerateSemestralReportJob::class, function ($job) use ($admin, $currentYear) {
+            return $job->user->id === $admin->id
+                && $job->semester === "{$currentYear}.1";
+        });
     });
 
     it('returns validation error for missing semester', function () {

@@ -755,7 +755,7 @@ export const auditLogsApi = {
         search?: string;
     }) => {
         const qs = buildQueryString(params ?? {});
-        return fetchAdminApi<{ message: string; url: string }>(
+        return fetchAdminApi<{ message: string }>(
             `/audit-logs/export${qs}`,
         );
     },
