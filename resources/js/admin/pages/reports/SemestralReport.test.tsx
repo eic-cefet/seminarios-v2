@@ -544,7 +544,15 @@ describe('SemestralReport', () => {
             .mockResolvedValueOnce({ ok: true, json: vi.fn().mockResolvedValue({ data: [] }) }) // seminar types
             .mockResolvedValueOnce({ ok: true, json: vi.fn().mockResolvedValue({ data: [] }) }) // courses
             .mockResolvedValueOnce({ ok: true }) // csrf cookie
-            .mockResolvedValueOnce({ ok: false }); // report generation fails
+            .mockResolvedValueOnce({
+                ok: false,
+                status: 500,
+                statusText: 'Server Error',
+                json: vi.fn().mockResolvedValue({
+                    error: 'server_error',
+                    message: 'Failed to generate report',
+                }),
+            });
 
         render(<SemestralReport />);
 
@@ -1038,8 +1046,7 @@ describe('SemestralReport', () => {
         globalThis.Date = originalDate;
     });
 
-    it('getCsrfToken returns empty string when XSRF-TOKEN cookie is not present', async () => {
-        // Clear any XSRF-TOKEN from cookies
+    it('omits X-XSRF-TOKEN header when XSRF-TOKEN cookie is not present', async () => {
         document.cookie = 'XSRF-TOKEN=; expires=Thu, 01 Jan 1970 00:00:00 UTC;';
 
         mockFetch.mockResolvedValue({
@@ -1049,16 +1056,13 @@ describe('SemestralReport', () => {
 
         render(<SemestralReport />);
 
-        // Call mutationFn - it calls getCsrfToken() which should return ""
-        // when no XSRF-TOKEN cookie exists
         await capturedMutationOptions.mutationFn();
 
-        // Verify the fetch was called with empty X-XSRF-TOKEN header
         const reportCalls = mockFetch.mock.calls.filter(
             (call: any[]) => typeof call[0] === 'string' && call[0].includes('/reports/semestral')
         );
         expect(reportCalls.length).toBeGreaterThan(0);
         const headers = reportCalls[reportCalls.length - 1][1]?.headers;
-        expect(headers['X-XSRF-TOKEN']).toBe('');
+        expect(headers['X-XSRF-TOKEN']).toBeUndefined();
     });
 });

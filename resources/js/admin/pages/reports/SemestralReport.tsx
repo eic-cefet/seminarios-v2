@@ -5,7 +5,6 @@ import {
     formatDateTime as formatDateTimeUtil,
     formatDurationMinutes,
 } from "@shared/lib/date";
-import { getCsrfCookie, getCookie } from "@shared/api/httpUtils";
 import { PageTitle } from "@shared/components/PageTitle";
 import { Button } from "../../components/ui/button";
 import {
@@ -34,33 +33,12 @@ import {
 } from "../../components/ui/table";
 import { toast } from "sonner";
 import { FileDown, Eye, ChevronDown, Users, Clock } from "lucide-react";
-import { dropdownApi, type SeminarTypeDropdownItem } from "../../api/adminClient";
-
-interface Presentation {
-    name: string;
-    date: string;
-    type: string | null;
-    duration_minutes?: number;
-}
-
-interface ReportUser {
-    name: string;
-    email: string;
-    course: string;
-    total_hours: number;
-    presentations: Presentation[];
-}
-
-interface ReportSummary {
-    total_users: number;
-    total_hours: number;
-    semester: string;
-}
-
-interface ReportData {
-    data: ReportUser[];
-    summary: ReportSummary;
-}
+import {
+    dropdownApi,
+    reportsApi,
+    type SeminarTypeDropdownItem,
+    type SemestralReportBrowserResponse,
+} from "../../api/adminClient";
 
 // Generate semesters for the last 5 years
 function generateSemesters() {
@@ -95,7 +73,9 @@ export default function SemestralReport() {
     const [selectedTypes, setSelectedTypes] = useState<(string | number)[]>([]);
     const [selectedSituations, setSelectedSituations] = useState<string[]>([]);
     const [format, setFormat] = useState<"browser" | "excel">("browser");
-    const [reportData, setReportData] = useState<ReportData | null>(null);
+    const [reportData, setReportData] = useState<SemestralReportBrowserResponse | null>(
+        null,
+    );
     const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
 
     const { data: typesData } = useQuery({
@@ -119,46 +99,20 @@ export default function SemestralReport() {
     const semesters = generateSemesters();
 
     const generateMutation = useMutation({
-        mutationFn: async () => {
-            await getCsrfCookie();
-
-            const params = new URLSearchParams();
-            params.set("semester", semester);
-            selectedCourses.forEach((c) =>
-                params.append("courses[]", String(c)),
-            );
-            selectedTypes.forEach((t) =>
-                params.append("types[]", String(t)),
-            );
-            selectedSituations.forEach((s) =>
-                params.append("situations[]", s),
-            );
-            params.set("format", format);
-
-            const apiBase = app.API_URL + "/admin";
-            const response = await fetch(
-                `${apiBase}/reports/semestral?${params.toString()}`,
-                {
-                    headers: {
-                        Accept: "application/json",
-                        "X-XSRF-TOKEN": getCookie("XSRF-TOKEN") ?? "",
-                    },
-                    credentials: "same-origin",
-                },
-            );
-
-            if (!response.ok) {
-                throw new Error("Failed to generate report");
-            }
-
-            return response.json();
-        },
+        mutationFn: () =>
+            reportsApi.semestral({
+                semester,
+                courses: selectedCourses,
+                types: selectedTypes,
+                situations: selectedSituations,
+                format,
+            }),
         onSuccess: (data) => {
             if (format === "excel") {
-                toast.success(data.message);
+                toast.success((data as { message: string }).message);
             } else {
                 toast.success("Relatório gerado!");
-                setReportData(data);
+                setReportData(data as SemestralReportBrowserResponse);
                 setExpandedRows(new Set());
             }
         },

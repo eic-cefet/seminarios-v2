@@ -408,6 +408,39 @@ export interface PendingEvaluation {
     };
 }
 
+// Presence (public QR-code check-in)
+export interface PresenceLinkData {
+    seminar: {
+        id: number;
+        name: string;
+        scheduled_at: string;
+    };
+    is_valid: boolean;
+    expires_at: string;
+}
+
+export interface PresenceLinkResponse {
+    data?: PresenceLinkData;
+    message?: string;
+    is_valid?: boolean;
+    is_expired?: boolean;
+    is_active?: boolean;
+}
+
+export const presenceApi = {
+    get: async (uuid: string) => {
+        await getCsrfCookie();
+        return fetchApi<PresenceLinkResponse>(`/presence/${uuid}`);
+    },
+
+    register: async (uuid: string) => {
+        await getCsrfCookie();
+        return fetchApi<{ message: string }>(`/presence/${uuid}/register`, {
+            method: "POST",
+        });
+    },
+};
+
 // Bug Report
 export const bugReportApi = {
     submit: async (data: {
