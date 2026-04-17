@@ -1,4 +1,5 @@
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
+import { ROUTES } from "@shared/config/routes";
 import { useAuth } from "@shared/contexts/AuthContext";
 import { hasAdminAccess } from "@shared/lib/roles";
 import { buildUrl, cn } from "@shared/lib/utils";
@@ -18,10 +19,10 @@ import { Link } from "react-router-dom";
 import { LoginModal } from "./LoginModal";
 
 const navigation = [
-    { name: "Início", href: "/" },
-    { name: "Tópicos", href: "/topicos" },
-    { name: "Apresentações", href: "/apresentacoes" },
-    { name: "Workshops", href: "/workshops" },
+    { name: "Início", href: ROUTES.SYSTEM.HOME },
+    { name: "Tópicos", href: ROUTES.SYSTEM.SUBJECTS },
+    { name: "Apresentações", href: ROUTES.SYSTEM.PRESENTATIONS },
+    { name: "Workshops", href: ROUTES.SYSTEM.WORKSHOPS },
 ];
 
 export function Navbar() {
@@ -37,7 +38,7 @@ export function Navbar() {
                 <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                     <div className="flex h-16 justify-between">
                         <div className="flex">
-                            <Link to="/" className="flex items-center">
+                            <Link to={ROUTES.SYSTEM.HOME} className="flex items-center">
                                 <span className="text-xl font-bold text-primary-600">
                                     Seminários EIC
                                 </span>
@@ -145,7 +146,7 @@ export function Navbar() {
                                     Entrar
                                 </button>
                                 <Link
-                                    to="/cadastro"
+                                    to={ROUTES.SYSTEM.REGISTER}
                                     className="block py-2 text-base font-medium text-primary-600 hover:text-primary-700 cursor-pointer"
                                     onClick={() => setMobileMenuOpen(false)}
                                 >
@@ -179,7 +180,7 @@ function AuthDropdown({ onLoginClick }: AuthDropdownProps) {
                 Entrar
             </button>
             <Link
-                to="/cadastro"
+                to={ROUTES.SYSTEM.REGISTER}
                 className="inline-flex items-center justify-center rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-primary-700 transition-colors cursor-pointer"
             >
                 Criar conta
@@ -218,7 +219,7 @@ function UserDropdown({ user, onLogout }: UserDropdownProps) {
                     </div>
                     <DropdownMenu.Item asChild>
                         <Link
-                            to="/perfil"
+                            to={ROUTES.SYSTEM.PROFILE}
                             className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded cursor-pointer outline-none"
                         >
                             <User className="h-4 w-4" />
@@ -227,7 +228,7 @@ function UserDropdown({ user, onLogout }: UserDropdownProps) {
                     </DropdownMenu.Item>
                     <DropdownMenu.Item asChild>
                         <Link
-                            to="/avaliar"
+                            to={ROUTES.SYSTEM.EVALUATIONS}
                             className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded cursor-pointer outline-none"
                         >
                             <Star className="h-4 w-4" />
@@ -236,7 +237,7 @@ function UserDropdown({ user, onLogout }: UserDropdownProps) {
                     </DropdownMenu.Item>
                     <DropdownMenu.Item asChild>
                         <Link
-                            to="/certificados"
+                            to={ROUTES.SYSTEM.CERTIFICATES}
                             className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded cursor-pointer outline-none"
                         >
                             <FileText className="h-4 w-4" />
@@ -287,20 +288,20 @@ function MobileUserMenu({ user, onLogout }: MobileUserMenuProps) {
             </div>
             <div className="mt-3 space-y-1 px-4">
                 <Link
-                    to="/perfil"
+                    to={ROUTES.SYSTEM.PROFILE}
                     className="block py-2 text-base font-medium text-gray-500 hover:text-gray-700 cursor-pointer"
                 >
                     Meu perfil
                 </Link>
                 <Link
-                    to="/avaliar"
+                    to={ROUTES.SYSTEM.EVALUATIONS}
                     className="flex items-center gap-2 py-2 text-base font-medium text-gray-500 hover:text-gray-700 cursor-pointer"
                 >
                     <Star className="h-4 w-4" />
                     Avaliar seminarios
                 </Link>
                 <Link
-                    to="/certificados"
+                    to={ROUTES.SYSTEM.CERTIFICATES}
                     className="flex items-center gap-2 py-2 text-base font-medium text-gray-500 hover:text-gray-700 cursor-pointer"
                 >
                     <FileText className="h-4 w-4" />

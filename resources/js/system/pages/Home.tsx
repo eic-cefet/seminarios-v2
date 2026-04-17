@@ -4,6 +4,7 @@ import { ArrowRight, BookOpen, Presentation, Wrench, type LucideIcon } from "luc
 import { Layout } from "../components/Layout";
 import { SeminarCard } from "../components/SeminarCard";
 import { PageTitle } from "@shared/components/PageTitle";
+import { ROUTES } from "@shared/config/routes";
 import { seminarsApi, subjectsApi, statsApi } from "@shared/api/client";
 
 function StatCard({ icon: Icon, value, label }: { icon: LucideIcon; value: number; label: string }) {
@@ -59,14 +60,14 @@ export default function Home() {
                             </p>
                             <div className="mt-8 flex justify-center gap-4">
                                 <Link
-                                    to="/apresentacoes"
+                                    to={ROUTES.SYSTEM.PRESENTATIONS}
                                     className="inline-flex items-center rounded-md bg-white px-6 py-3 text-sm font-semibold text-primary-600 shadow-sm hover:bg-primary-50 transition-colors"
                                 >
                                     Ver apresentações
                                     <ArrowRight className="ml-2 h-4 w-4" />
                                 </Link>
                                 <Link
-                                    to="/workshops"
+                                    to={ROUTES.SYSTEM.WORKSHOPS}
                                     className="inline-flex items-center rounded-md border border-white/30 bg-white/10 px-6 py-3 text-sm font-semibold text-white hover:bg-white/20 transition-colors"
                                 >
                                     Ver workshops
@@ -99,7 +100,7 @@ export default function Home() {
                                 </p>
                             </div>
                             <Link
-                                to="/apresentacoes"
+                                to={ROUTES.SYSTEM.PRESENTATIONS}
                                 className="hidden sm:inline-flex items-center text-sm font-medium text-primary-600 hover:text-primary-700"
                             >
                                 Ver todos
@@ -135,7 +136,7 @@ export default function Home() {
 
                         <div className="mt-6 sm:hidden">
                             <Link
-                                to="/apresentacoes"
+                                to={ROUTES.SYSTEM.PRESENTATIONS}
                                 className="inline-flex w-full items-center justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
                             >
                                 Ver todos os seminários
@@ -157,7 +158,7 @@ export default function Home() {
                                 </p>
                             </div>
                             <Link
-                                to="/topicos"
+                                to={ROUTES.SYSTEM.SUBJECTS}
                                 className="hidden sm:inline-flex items-center text-sm font-medium text-primary-600 hover:text-primary-700"
                             >
                                 Ver todos
@@ -179,7 +180,7 @@ export default function Home() {
                                 {subjects.map((subject) => (
                                     <Link
                                         key={subject.id}
-                                        to={`/topico/${subject.slug}`}
+                                        to={ROUTES.SYSTEM.SUBJECT_DETAILS(subject.slug)}
                                         className="group rounded-lg border border-gray-200 bg-white p-4 shadow-sm transition-all hover:border-primary-300 hover:shadow-md"
                                     >
                                         <div className="flex items-center justify-between">
@@ -198,7 +199,7 @@ export default function Home() {
 
                         <div className="mt-6 sm:hidden">
                             <Link
-                                to="/topicos"
+                                to={ROUTES.SYSTEM.SUBJECTS}
                                 className="inline-flex w-full items-center justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
                             >
                                 Ver todos os tópicos

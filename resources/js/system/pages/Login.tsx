@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate, useSearchParams } from "react-router-do
 import * as Label from "@radix-ui/react-label";
 import { Layout } from "../components/Layout";
 import { PageTitle } from "@shared/components/PageTitle";
+import { ROUTES } from "@shared/config/routes";
 import { SocialLoginButtons } from "@shared/components/SocialLoginButtons";
 import { buildUrl, cn, isSafeRedirect } from "@shared/lib/utils";
 import { analytics } from "@shared/lib/analytics";
@@ -116,7 +117,7 @@ export default function Login() {
                                         Senha
                                     </Label.Root>
                                     <Link
-                                        to="/recuperar-senha"
+                                        to={ROUTES.SYSTEM.FORGOT_PASSWORD}
                                         className="text-sm font-medium text-primary-600 hover:text-primary-700"
                                     >
                                         Esqueceu a senha?
@@ -149,7 +150,7 @@ export default function Login() {
                         <p className="text-center text-sm text-gray-500">
                             Nao tem uma conta?{" "}
                             <Link
-                                to="/cadastro"
+                                to={ROUTES.SYSTEM.REGISTER}
                                 state={{ from: redirectTo !== "/" ? redirectTo : undefined }}
                                 className="font-medium text-primary-600 hover:text-primary-700"
                             >

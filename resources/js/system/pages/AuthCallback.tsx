@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import { Layout } from "../components/Layout";
+import { ROUTES } from "@shared/config/routes";
 import { useAuth } from "@shared/contexts/AuthContext";
 import { getErrorMessage } from "@shared/lib/errors";
 import { isSafeRedirect } from "@shared/lib/utils";
@@ -66,7 +67,7 @@ export default function AuthCallback() {
                         </h1>
                         <p className="mt-2 text-gray-500">{error}</p>
                         <button
-                            onClick={() => navigate("/login")}
+                            onClick={() => navigate(ROUTES.SYSTEM.LOGIN)}
                             className="mt-6 inline-flex items-center rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700 cursor-pointer"
                         >
                             Voltar para login

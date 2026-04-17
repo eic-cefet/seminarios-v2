@@ -4,6 +4,7 @@ import { ArrowLeft, BookOpen } from "lucide-react";
 import { Layout } from "../components/Layout";
 import { SeminarCard } from "../components/SeminarCard";
 import { PageTitle } from "@shared/components/PageTitle";
+import { ROUTES } from "@shared/config/routes";
 import { subjectsApi, seminarsApi } from "@shared/api/client";
 
 export default function SubjectSeminars() {
@@ -67,7 +68,7 @@ export default function SubjectSeminars() {
                             foi removido.
                         </p>
                         <Link
-                            to="/topicos"
+                            to={ROUTES.SYSTEM.SUBJECTS}
                             className="mt-6 inline-flex items-center text-primary-600 hover:text-primary-700"
                         >
                             <ArrowLeft className="mr-2 h-4 w-4" />
@@ -86,7 +87,7 @@ export default function SubjectSeminars() {
                 <div className="bg-white border-b border-gray-200">
                     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
                         <Link
-                            to="/topicos"
+                            to={ROUTES.SYSTEM.SUBJECTS}
                             className="inline-flex items-center text-sm text-gray-500 hover:text-gray-700 mb-4"
                         >
                             <ArrowLeft className="mr-1 h-4 w-4" />

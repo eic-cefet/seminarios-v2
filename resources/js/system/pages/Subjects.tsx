@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { BookOpen } from "lucide-react";
 import { Layout } from "../components/Layout";
 import { PageTitle } from "@shared/components/PageTitle";
+import { ROUTES } from "@shared/config/routes";
 import { subjectsApi } from "@shared/api/client";
 
 export default function Subjects() {
@@ -43,7 +44,7 @@ export default function Subjects() {
                             {subjects.map((subject) => (
                                 <Link
                                     key={subject.id}
-                                    to={`/topico/${subject.slug}`}
+                                    to={ROUTES.SYSTEM.SUBJECT_DETAILS(subject.slug)}
                                     className="group rounded-lg border border-gray-200 bg-white p-6 shadow-sm transition-all hover:border-primary-300 hover:shadow-md"
                                 >
                                     <div className="flex items-start gap-4">

@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Wrench, Calendar } from "lucide-react";
 import { Layout } from "../components/Layout";
 import { PageTitle } from "@shared/components/PageTitle";
+import { ROUTES } from "@shared/config/routes";
 import { workshopsApi } from "@shared/api/client";
 
 export default function Workshops() {
@@ -43,7 +44,7 @@ export default function Workshops() {
                             {workshops.map((workshop) => (
                                 <Link
                                     key={workshop.id}
-                                    to={`/workshop/${workshop.slug}`}
+                                    to={ROUTES.SYSTEM.WORKSHOP_DETAILS(workshop.slug)}
                                     className="group rounded-lg border border-gray-200 bg-white overflow-hidden shadow-sm transition-all hover:border-primary-300 hover:shadow-md"
                                 >
                                     <div className="bg-primary-600 px-6 py-4">

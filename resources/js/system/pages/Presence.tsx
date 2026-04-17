@@ -11,6 +11,7 @@ import {
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { presenceApi } from "@shared/api/client";
+import { ROUTES } from "@shared/config/routes";
 import { useAuth } from "@shared/contexts/AuthContext";
 import { formatDateTimeLong } from "@shared/lib/utils";
 import { Layout } from "../components/Layout";
@@ -92,7 +93,7 @@ export default function Presence() {
                                 </p>
                             </div>
                             <Link
-                                to="/"
+                                to={ROUTES.SYSTEM.HOME}
                                 className="inline-flex items-center gap-2 text-primary-600 hover:text-primary-700 font-medium"
                             >
                                 <Home className="h-4 w-4" />
@@ -149,7 +150,7 @@ export default function Presence() {
                                     <ArrowRight className="h-4 w-4" />
                                 </button>
                                 <Link
-                                    to="/cadastro"
+                                    to={ROUTES.SYSTEM.REGISTER}
                                     className="text-sm text-gray-500 hover:text-gray-700"
                                 >
                                     Não tem conta?{" "}
@@ -210,7 +211,7 @@ export default function Presence() {
                                     Tentar novamente
                                 </button>
                                 <Link
-                                    to="/"
+                                    to={ROUTES.SYSTEM.HOME}
                                     className="inline-flex items-center justify-center gap-2 text-gray-500 hover:text-gray-700 text-sm"
                                 >
                                     <Home className="h-4 w-4" />
@@ -264,14 +265,14 @@ export default function Presence() {
 
                             <div className="flex flex-col gap-3 pt-2">
                                 <Link
-                                    to="/perfil"
+                                    to={ROUTES.SYSTEM.PROFILE}
                                     className="w-full inline-flex items-center justify-center gap-2 rounded-md bg-primary-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-primary-700 transition-colors"
                                 >
                                     Ver minhas inscrições
                                     <ArrowRight className="h-4 w-4" />
                                 </Link>
                                 <Link
-                                    to="/"
+                                    to={ROUTES.SYSTEM.HOME}
                                     className="inline-flex items-center justify-center gap-2 text-gray-500 hover:text-gray-700 text-sm"
                                 >
                                     <Home className="h-4 w-4" />

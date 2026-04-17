@@ -14,6 +14,7 @@ import {
 import { ptBR } from "date-fns/locale";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { Seminar } from "@shared/types";
+import { ROUTES } from "@shared/config/routes";
 import { cn } from "@shared/lib/utils";
 import { toSaoPaulo } from "@shared/lib/date";
 
@@ -174,7 +175,7 @@ export function PresentationsCalendar({
                                         {daySeminars.slice(0, 3).map((seminar) => (
                                             <Link
                                                 key={seminar.id}
-                                                to={`/seminario/${seminar.slug}`}
+                                                to={ROUTES.SYSTEM.SEMINAR_DETAILS(seminar.slug)}
                                                 className={cn(
                                                     "block rounded-xl border px-3 py-2 text-sm transition",
                                                     seminar.isExpired

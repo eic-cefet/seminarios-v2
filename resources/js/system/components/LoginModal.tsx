@@ -4,6 +4,7 @@ import * as Dialog from "@radix-ui/react-dialog";
 import * as Label from "@radix-ui/react-label";
 import { X } from "lucide-react";
 import { SocialLoginButtons } from "@shared/components/SocialLoginButtons";
+import { ROUTES } from "@shared/config/routes";
 import { buildUrl, cn } from "@shared/lib/utils";
 import { useAuth } from "@shared/contexts/AuthContext";
 import { authApi } from "@shared/api/client";
@@ -180,7 +181,7 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
                             <p className="mt-4 text-center text-sm text-gray-500">
                                 Não tem uma conta?{" "}
                                 <Link
-                                    to="/cadastro"
+                                    to={ROUTES.SYSTEM.REGISTER}
                                     onClick={() => onOpenChange(false)}
                                     className="font-medium text-primary-600 hover:text-primary-700 cursor-pointer"
                                 >

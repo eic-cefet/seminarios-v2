@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { Calendar, Users, BookOpen } from "lucide-react";
+import { ROUTES } from "@shared/config/routes";
 import { cn, formatDateTime, isExpired, containsHTML } from "@shared/lib/utils";
 import type { Seminar } from "@shared/types";
 import { Badge } from "./Badge";
@@ -19,7 +20,7 @@ export function SeminarCard({
 
     return (
         <Link
-            to={`/seminario/${seminar.slug}`}
+            to={ROUTES.SYSTEM.SEMINAR_DETAILS(seminar.slug)}
             className={cn(
                 "block rounded-lg border bg-white p-5 shadow-sm transition-all hover:shadow-md",
                 expired
