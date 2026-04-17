@@ -233,6 +233,18 @@ describe('POST /api/admin/users', function () {
         $response->assertStatus(422)
             ->assertJsonValidationErrors(['role']);
     });
+
+    it('returns custom Portuguese validation messages', function () {
+        actingAsAdmin();
+
+        $response = $this->postJson('/api/admin/users', []);
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors([
+                'name' => 'O nome é obrigatório.',
+                'email' => 'O e-mail é obrigatório.',
+            ]);
+    });
 });
 
 describe('PUT /api/admin/users/{id}', function () {

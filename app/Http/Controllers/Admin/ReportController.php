@@ -4,12 +4,12 @@ namespace App\Http\Controllers\Admin;
 
 use App\Enums\AuditEvent;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\SemestralReportRequest;
 use App\Jobs\GenerateSemestralReportJob;
 use App\Models\AuditLog;
 use App\Models\Course;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 
 class ReportController extends Controller
 {
@@ -25,18 +25,9 @@ class ReportController extends Controller
         ]);
     }
 
-    public function semestral(Request $request): JsonResponse
+    public function semestral(SemestralReportRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'semester' => ['required', 'string', 'regex:/^\d{4}\.[12]$/'],
-            'courses' => 'nullable|array',
-            'courses.*' => 'integer',
-            'types' => 'nullable|array',
-            'types.*' => 'integer',
-            'situations' => 'nullable|array',
-            'situations.*' => 'string',
-            'format' => 'required|in:browser,excel',
-        ]);
+        $validated = $request->validated();
 
         if ($validated['format'] === 'excel') {
             GenerateSemestralReportJob::dispatch(
