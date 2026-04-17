@@ -9,8 +9,10 @@ use App\Http\Controllers\SocialAuthController;
 use Illuminate\Support\Facades\Route;
 
 // Certificate routes (before SPA catch-all)
-Route::get('/certificado/{code}', [CertificateController::class, 'show'])->name('certificate.show');
-Route::get('/certificado/{code}/jpg', [CertificateController::class, 'showJpg'])->name('certificate.show.jpg');
+Route::middleware('throttle:certificate')->group(function () {
+    Route::get('/certificado/{code}', [CertificateController::class, 'show'])->name('certificate.show');
+    Route::get('/certificado/{code}/jpg', [CertificateController::class, 'showJpg'])->name('certificate.show.jpg');
+});
 
 // OAuth routes
 Route::get('/auth/{provider}', [SocialAuthController::class, 'redirect'])

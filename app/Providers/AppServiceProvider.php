@@ -60,6 +60,10 @@ class AppServiceProvider extends ServiceProvider
             return Limit::perMinute(120)->by($request->user()?->id ?: $request->ip());
         });
 
+        RateLimiter::for('certificate', function (Request $request) {
+            return Limit::perMinute(30)->by($request->user()?->id ?: $request->ip());
+        });
+
         Gate::policy(Seminar::class, SeminarPolicy::class);
         Gate::policy(User::class, UserPolicy::class);
         Gate::policy(Subject::class, SubjectPolicy::class);
