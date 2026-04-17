@@ -92,6 +92,34 @@ it('public rate limiter falls back to IP when user is unauthenticated', function
     expect($limit->key)->toBe('192.168.1.50');
 });
 
+it('registers certificate rate limiter allowing 30 requests per minute keyed by user', function () {
+    $user = User::factory()->create();
+    $request = Request::create('/certificado/abc', 'GET');
+    $request->setUserResolver(fn () => $user);
+
+    $callback = RateLimiter::limiter('certificate');
+    $result = $callback($request);
+
+    $limit = is_array($result) ? $result[0] : $result;
+
+    expect($limit->maxAttempts)->toBe(30);
+    expect($limit->decaySeconds)->toBe(60);
+    expect($limit->key)->toBe($user->id);
+});
+
+it('certificate rate limiter falls back to IP when user is unauthenticated', function () {
+    $request = Request::create('/certificado/abc', 'GET');
+    $request->server->set('REMOTE_ADDR', '203.0.113.42');
+
+    $callback = RateLimiter::limiter('certificate');
+    $result = $callback($request);
+
+    $limit = is_array($result) ? $result[0] : $result;
+
+    expect($limit->maxAttempts)->toBe(30);
+    expect($limit->key)->toBe('203.0.113.42');
+});
+
 it('registers gate policies on boot', function () {
     $provider = new AppServiceProvider($this->app);
     $provider->boot();
