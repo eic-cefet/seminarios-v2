@@ -428,10 +428,8 @@ export interface PresenceLinkResponse {
 }
 
 export const presenceApi = {
-    get: async (uuid: string) => {
-        await getCsrfCookie();
-        return fetchApi<PresenceLinkResponse>(`/presence/${uuid}`);
-    },
+    get: (uuid: string) =>
+        fetchApi<PresenceLinkResponse>(`/presence/${uuid}`),
 
     register: async (uuid: string) => {
         await getCsrfCookie();
