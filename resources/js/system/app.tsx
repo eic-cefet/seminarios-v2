@@ -4,6 +4,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { HelmetProvider } from "react-helmet-async";
 import { ErrorBoundary } from "@shared/components/ErrorBoundary";
+import { ROUTES } from "@shared/config/routes";
 import { AuthProvider } from "@shared/contexts/AuthContext";
 import { usePageTracking } from "@shared/hooks/usePageTracking";
 
@@ -40,23 +41,23 @@ function AppRoutes() {
 
     return (
         <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/cadastro" element={<Register />} />
-            <Route path="/recuperar-senha" element={<ForgotPassword />} />
-            <Route path="/redefinir-senha" element={<ResetPassword />} />
-            <Route path="/auth/callback" element={<AuthCallback />} />
-            <Route path="/perfil" element={<Profile />} />
-            <Route path="/certificados" element={<Certificates />} />
-            <Route path="/topicos" element={<Subjects />} />
-            <Route path="/topico/:slug" element={<SubjectSeminars />} />
-            <Route path="/apresentacoes" element={<Presentations />} />
-            <Route path="/seminario/:slug" element={<SeminarDetails />} />
-            <Route path="/workshops" element={<Workshops />} />
-            <Route path="/workshop/:slug" element={<WorkshopDetails />} />
-            <Route path="/p/:uuid" element={<Presence />} />
-            <Route path="/avaliar" element={<Evaluations />} />
-            <Route path="/reportar-bug" element={<BugReport />} />
+            <Route path={ROUTES.SYSTEM.HOME} element={<Home />} />
+            <Route path={ROUTES.SYSTEM.LOGIN} element={<Login />} />
+            <Route path={ROUTES.SYSTEM.REGISTER} element={<Register />} />
+            <Route path={ROUTES.SYSTEM.FORGOT_PASSWORD} element={<ForgotPassword />} />
+            <Route path={ROUTES.SYSTEM.RESET_PASSWORD} element={<ResetPassword />} />
+            <Route path={ROUTES.SYSTEM.AUTH_CALLBACK} element={<AuthCallback />} />
+            <Route path={ROUTES.SYSTEM.PROFILE} element={<Profile />} />
+            <Route path={ROUTES.SYSTEM.CERTIFICATES} element={<Certificates />} />
+            <Route path={ROUTES.SYSTEM.SUBJECTS} element={<Subjects />} />
+            <Route path={ROUTES.SYSTEM.SUBJECT_DETAILS_PATTERN} element={<SubjectSeminars />} />
+            <Route path={ROUTES.SYSTEM.PRESENTATIONS} element={<Presentations />} />
+            <Route path={ROUTES.SYSTEM.SEMINAR_DETAILS_PATTERN} element={<SeminarDetails />} />
+            <Route path={ROUTES.SYSTEM.WORKSHOPS} element={<Workshops />} />
+            <Route path={ROUTES.SYSTEM.WORKSHOP_DETAILS_PATTERN} element={<WorkshopDetails />} />
+            <Route path={ROUTES.SYSTEM.PRESENCE_PATTERN} element={<Presence />} />
+            <Route path={ROUTES.SYSTEM.EVALUATIONS} element={<Evaluations />} />
+            <Route path={ROUTES.SYSTEM.BUG_REPORT} element={<BugReport />} />
             <Route path="*" element={<NotFound />} />
         </Routes>
     );

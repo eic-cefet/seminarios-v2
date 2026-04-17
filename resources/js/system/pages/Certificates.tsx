@@ -8,6 +8,7 @@ import { Badge } from "../components/Badge";
 import { PageTitle } from "@shared/components/PageTitle";
 import { Pagination } from "@shared/components/Pagination";
 import { profileApi } from "@shared/api/client";
+import { ROUTES } from "@shared/config/routes";
 import { buildUrl, formatDateTime } from "@shared/lib/utils";
 
 export default function Certificates() {
@@ -28,7 +29,7 @@ export default function Certificates() {
                 <div className="bg-white border-b border-gray-200">
                     <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
                         <Link
-                            to="/perfil"
+                            to={ROUTES.SYSTEM.PROFILE}
                             className="inline-flex items-center text-sm text-gray-500 hover:text-gray-700 mb-4 cursor-pointer"
                         >
                             <ArrowLeft className="mr-1 h-4 w-4" />
@@ -69,7 +70,7 @@ export default function Certificates() {
                                     de presença em um seminário.
                                 </p>
                                 <Link
-                                    to="/apresentacoes"
+                                    to={ROUTES.SYSTEM.PRESENTATIONS}
                                     className="mt-6 inline-flex items-center rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-primary-700 transition-colors cursor-pointer"
                                 >
                                     Ver apresentações
@@ -85,7 +86,7 @@ export default function Certificates() {
                                         >
                                             <div className="flex-1 min-w-0">
                                                 <Link
-                                                    to={`/seminario/${certificate.seminar.slug}`}
+                                                    to={ROUTES.SYSTEM.SEMINAR_DETAILS(certificate.seminar.slug)}
                                                     className="font-medium text-gray-900 hover:text-primary-600 cursor-pointer"
                                                 >
                                                     {certificate.seminar.name}

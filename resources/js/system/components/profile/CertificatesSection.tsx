@@ -1,5 +1,6 @@
 import { profileApi } from "@shared/api/client";
 import { Pagination } from "@shared/components/Pagination";
+import { ROUTES } from "@shared/config/routes";
 import { buildUrl, formatDateTime } from "@shared/lib/utils";
 import { analytics } from "@shared/lib/analytics";
 import { useQuery } from "@tanstack/react-query";
@@ -63,7 +64,7 @@ export function CertificatesSection() {
                             >
                                 <div className="flex-1 min-w-0">
                                     <Link
-                                        to={`/seminario/${certificate.seminar.slug}`}
+                                        to={ROUTES.SYSTEM.SEMINAR_DETAILS(certificate.seminar.slug)}
                                         className="font-medium text-gray-900 hover:text-primary-600 cursor-pointer"
                                     >
                                         {certificate.seminar.name}

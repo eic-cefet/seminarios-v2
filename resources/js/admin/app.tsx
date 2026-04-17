@@ -4,6 +4,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { HelmetProvider } from "react-helmet-async";
 import { ErrorBoundary } from "@shared/components/ErrorBoundary";
+import { ROUTES } from "@shared/config/routes";
 import { AuthProvider } from "@shared/contexts/AuthContext";
 import { usePageTracking } from "@shared/hooks/usePageTracking";
 import { AdminLayout } from "./components/layout/AdminLayout";
@@ -35,19 +36,19 @@ export function AppRoutes() {
     return (
         <Routes>
             <Route element={<AdminLayout />}>
-                <Route path="/" element={<Dashboard />} />
-                <Route path="/users" element={<UserList />} />
-                <Route path="/locations" element={<LocationList />} />
-                <Route path="/subjects" element={<SubjectList />} />
-                <Route path="/seminars" element={<SeminarList />} />
-                <Route path="/seminars/new" element={<SeminarForm />} />
-                <Route path="/seminars/:id/edit" element={<SeminarForm />} />
-                <Route path="/workshops" element={<WorkshopList />} />
-                <Route path="/registrations" element={<RegistrationList />} />
-                <Route path="/api-tokens" element={<ApiTokenList />} />
-                <Route path="/reports/semestral" element={<SemestralReport />} />
-                <Route path="/reports/feedback" element={<FeedbackInsights />} />
-                <Route path="/reports/audit-logs" element={<AuditLogReport />} />
+                <Route path={ROUTES.ADMIN.DASHBOARD} element={<Dashboard />} />
+                <Route path={ROUTES.ADMIN.USERS} element={<UserList />} />
+                <Route path={ROUTES.ADMIN.LOCATIONS} element={<LocationList />} />
+                <Route path={ROUTES.ADMIN.SUBJECTS} element={<SubjectList />} />
+                <Route path={ROUTES.ADMIN.SEMINARS} element={<SeminarList />} />
+                <Route path={ROUTES.ADMIN.SEMINAR_NEW} element={<SeminarForm />} />
+                <Route path={ROUTES.ADMIN.SEMINAR_EDIT_PATTERN} element={<SeminarForm />} />
+                <Route path={ROUTES.ADMIN.WORKSHOPS} element={<WorkshopList />} />
+                <Route path={ROUTES.ADMIN.REGISTRATIONS} element={<RegistrationList />} />
+                <Route path={ROUTES.ADMIN.API_TOKENS} element={<ApiTokenList />} />
+                <Route path={ROUTES.ADMIN.REPORTS_SEMESTRAL} element={<SemestralReport />} />
+                <Route path={ROUTES.ADMIN.REPORTS_FEEDBACK} element={<FeedbackInsights />} />
+                <Route path={ROUTES.ADMIN.REPORTS_AUDIT_LOGS} element={<AuditLogReport />} />
                 <Route path="*" element={<NotFound />} />
             </Route>
         </Routes>

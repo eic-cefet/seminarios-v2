@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { Home } from "lucide-react";
 import { PageTitle } from "@shared/components/PageTitle";
+import { ROUTES } from "@shared/config/routes";
 import { Button } from "../components/ui/button";
 
 export default function NotFound() {
@@ -16,7 +17,7 @@ export default function NotFound() {
             </p>
             <div className="mt-8">
                 <Button asChild>
-                    <Link to="/">
+                    <Link to={ROUTES.ADMIN.DASHBOARD}>
                         <Home className="mr-2 h-4 w-4" />
                         Voltar para o Dashboard
                     </Link>

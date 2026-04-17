@@ -4,6 +4,7 @@ import { ArrowLeft, Wrench, Calendar } from "lucide-react";
 import { Layout } from "../components/Layout";
 import { SeminarCard } from "../components/SeminarCard";
 import { PageTitle } from "@shared/components/PageTitle";
+import { ROUTES } from "@shared/config/routes";
 import { workshopsApi } from "@shared/api/client";
 
 export default function WorkshopDetails() {
@@ -67,7 +68,7 @@ export default function WorkshopDetails() {
                             foi removido.
                         </p>
                         <Link
-                            to="/workshops"
+                            to={ROUTES.SYSTEM.WORKSHOPS}
                             className="mt-6 inline-flex items-center text-primary-600 hover:text-primary-700"
                         >
                             <ArrowLeft className="mr-2 h-4 w-4" />
@@ -86,7 +87,7 @@ export default function WorkshopDetails() {
                 <div className="bg-primary-600">
                     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
                         <Link
-                            to="/workshops"
+                            to={ROUTES.SYSTEM.WORKSHOPS}
                             className="inline-flex items-center text-sm text-primary-100 hover:text-white mb-4"
                         >
                             <ArrowLeft className="mr-1 h-4 w-4" />

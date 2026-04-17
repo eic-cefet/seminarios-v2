@@ -7,6 +7,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { PageTitle } from "@shared/components/PageTitle";
+import { ROUTES } from "@shared/config/routes";
 import { seminarsApi, type AdminSeminar } from "../../api/adminClient";
 import { PresenceLinkModal } from "../../components/PresenceLinkModal";
 import {
@@ -144,7 +145,7 @@ export default function SeminarList() {
                             Gerenciar seminários do sistema
                         </p>
                     </div>
-                    <Button onClick={() => navigate("/seminars/new")}>
+                    <Button onClick={() => navigate(ROUTES.ADMIN.SEMINAR_NEW)}>
                         <Plus className="h-4 w-4 mr-2" />
                         Novo Seminário
                     </Button>
@@ -303,7 +304,9 @@ export default function SeminarList() {
                                                             size="icon"
                                                             onClick={() =>
                                                                 navigate(
-                                                                    `/seminars/${seminar.id}/edit`,
+                                                                    ROUTES.ADMIN.SEMINAR_EDIT(
+                                                                        seminar.id,
+                                                                    ),
                                                                 )
                                                             }
                                                         >

@@ -1,5 +1,6 @@
 import { PendingEvaluation, profileApi } from "@shared/api/client";
 import { PageTitle } from "@shared/components/PageTitle";
+import { ROUTES } from "@shared/config/routes";
 import { getErrorMessage } from "@shared/lib/errors";
 import { cn, formatDateTime } from "@shared/lib/utils";
 import { analytics } from "@shared/lib/analytics";
@@ -75,7 +76,7 @@ function PendingEvaluationsList() {
                     recentemente.
                 </p>
                 <Link
-                    to="/perfil"
+                    to={ROUTES.SYSTEM.PROFILE}
                     className="mt-6 inline-flex items-center rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-primary-700 transition-colors cursor-pointer"
                 >
                     Ir para o perfil
@@ -190,7 +191,7 @@ function EvaluationItem({ evaluation, onRated }: EvaluationItemProps) {
             <div className="flex items-start justify-between gap-4">
                 <div className="flex-1 min-w-0">
                     <Link
-                        to={`/seminario/${evaluation.seminar.slug}`}
+                        to={ROUTES.SYSTEM.SEMINAR_DETAILS(evaluation.seminar.slug)}
                         className="font-medium text-gray-900 hover:text-primary-600 cursor-pointer"
                     >
                         {evaluation.seminar.name}

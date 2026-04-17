@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { Home } from "lucide-react";
 import { Layout } from "../components/Layout";
 import { PageTitle } from "@shared/components/PageTitle";
+import { ROUTES } from "@shared/config/routes";
 
 export default function NotFound() {
     return (
@@ -22,7 +23,7 @@ export default function NotFound() {
                         </p>
                         <div className="mt-8">
                             <Link
-                                to="/"
+                                to={ROUTES.SYSTEM.HOME}
                                 className="inline-flex items-center rounded-md bg-primary-600 px-6 py-3 text-sm font-semibold text-white shadow-sm hover:bg-primary-500 transition-colors"
                             >
                                 <Home className="mr-2 h-4 w-4" />

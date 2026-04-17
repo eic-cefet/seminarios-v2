@@ -26,6 +26,7 @@ import {
     formatDurationMinutes,
     isToday as isTodayDate,
 } from "@shared/lib/date";
+import { ROUTES } from "@shared/config/routes";
 import { getErrorMessage } from "@shared/lib/errors";
 import { useAuth } from "@shared/contexts/AuthContext";
 import { analytics } from "@shared/lib/analytics";
@@ -183,7 +184,7 @@ export default function SeminarDetails() {
                             foi removido.
                         </p>
                         <Link
-                            to="/apresentacoes"
+                            to={ROUTES.SYSTEM.PRESENTATIONS}
                             className="mt-6 inline-flex items-center text-primary-600 hover:text-primary-700 cursor-pointer"
                         >
                             <ArrowLeft className="mr-2 h-4 w-4" />
@@ -210,7 +211,7 @@ export default function SeminarDetails() {
                 >
                     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
                         <Link
-                            to="/apresentacoes"
+                            to={ROUTES.SYSTEM.PRESENTATIONS}
                             className="inline-flex items-center text-sm text-gray-500 hover:text-gray-700 mb-4 cursor-pointer"
                         >
                             <ArrowLeft className="mr-1 h-4 w-4" />
@@ -461,8 +462,8 @@ export default function SeminarDetails() {
                                             description: seminar.description,
                                             location: seminar.location?.name,
                                             roomLink: seminar.roomLink,
-                                            eventPath: `/seminario/${seminar.slug}`,
-                                            downloadPath: `/seminario/${seminar.slug}/calendar.ics`,
+                                            eventPath: ROUTES.SYSTEM.SEMINAR_DETAILS(seminar.slug),
+                                            downloadPath: ROUTES.SYSTEM.SEMINAR_CALENDAR_ICS(seminar.slug),
                                         }}
                                         className="w-full border border-primary-200 bg-primary-50 text-primary-700 hover:bg-primary-100"
                                     />
@@ -487,7 +488,7 @@ export default function SeminarDetails() {
                                         Parte do workshop
                                     </p>
                                     <Link
-                                        to={`/workshop/${seminar.workshop.slug}`}
+                                        to={ROUTES.SYSTEM.WORKSHOP_DETAILS(seminar.workshop.slug)}
                                         className="font-semibold text-primary-600 hover:text-primary-700 cursor-pointer"
                                     >
                                         {seminar.workshop.name}

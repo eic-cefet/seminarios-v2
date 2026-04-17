@@ -1,3 +1,4 @@
+import { ROUTES } from "@shared/config/routes";
 import { useAuth } from "@shared/contexts/AuthContext";
 import { Loader2 } from "lucide-react";
 import { type ReactNode } from "react";
@@ -19,12 +20,12 @@ export function ProtectedRoute({ children }: { children: ReactNode }) {
     }
 
     if (!user) {
-        if (location.pathname === "/login") {
+        if (location.pathname === ROUTES.SYSTEM.LOGIN) {
             return null;
         }
         return (
             <Navigate
-                to="/login"
+                to={ROUTES.SYSTEM.LOGIN}
                 state={{ from: location.pathname + location.search }}
                 replace
             />

@@ -6,6 +6,7 @@ import { Bug, Upload, X, FileText, Image } from "lucide-react";
 import { Layout } from "../components/Layout";
 import { PageTitle } from "@shared/components/PageTitle";
 import { ReCaptcha, isRecaptchaEnabled } from "@shared/components/ReCaptcha";
+import { ROUTES } from "@shared/config/routes";
 import { cn } from "@shared/lib/utils";
 import { useAuth } from "@shared/contexts/AuthContext";
 import { getErrorMessage } from "@shared/lib/errors";
@@ -146,7 +147,7 @@ export default function BugReport() {
                                     Reportar outro bug
                                 </button>
                                 <Link
-                                    to="/"
+                                    to={ROUTES.SYSTEM.HOME}
                                     className="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-md hover:bg-primary-700"
                                 >
                                     Voltar ao início
@@ -349,7 +350,7 @@ export default function BugReport() {
 
                         <p className="text-center text-sm text-gray-500">
                             <Link
-                                to="/"
+                                to={ROUTES.SYSTEM.HOME}
                                 className="font-medium text-primary-600 hover:text-primary-700"
                             >
                                 Voltar ao início

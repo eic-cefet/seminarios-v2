@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import { PageTitle } from "@shared/components/PageTitle";
+import { ROUTES } from "@shared/config/routes";
 import { analytics } from "@shared/lib/analytics";
 import type {
     AdminUser,
@@ -177,7 +178,7 @@ export default function SeminarForm() {
             analytics.event("admin_seminar_create", {
                 seminar_id: response?.data?.id,
             });
-            navigate("/seminars");
+            navigate(ROUTES.ADMIN.SEMINARS);
         },
         onError: () => {
             toast.error("Erro ao criar seminário");
@@ -192,7 +193,7 @@ export default function SeminarForm() {
             queryClient.invalidateQueries({ queryKey: ["admin-seminar", id] });
             toast.success("Seminário atualizado com sucesso");
             analytics.event("admin_seminar_update", { seminar_id: Number(id) });
-            navigate("/seminars");
+            navigate(ROUTES.ADMIN.SEMINARS);
         },
         onError: () => {
             toast.error("Erro ao atualizar seminário");
@@ -553,7 +554,7 @@ export default function SeminarForm() {
                         <Button
                             type="button"
                             variant="outline"
-                            onClick={() => navigate("/admin/seminars")}
+                            onClick={() => navigate(ROUTES.ADMIN.SEMINARS)}
                         >
                             Cancelar
                         </Button>

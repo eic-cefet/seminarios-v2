@@ -309,7 +309,7 @@ describe('SeminarForm', () => {
         render(<SeminarForm />);
         const user = userEvent.setup();
         await user.click(screen.getByText('Cancelar'));
-        expect(mockNavigate).toHaveBeenCalledWith('/admin/seminars');
+        expect(mockNavigate).toHaveBeenCalledWith('/seminars');
     });
 
     it('shows form validation errors when submitting empty form', async () => {

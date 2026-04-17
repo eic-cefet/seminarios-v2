@@ -1,5 +1,6 @@
 import { profileApi } from "@shared/api/client";
 import { Pagination } from "@shared/components/Pagination";
+import { ROUTES } from "@shared/config/routes";
 import { formatDateTime } from "@shared/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -56,7 +57,7 @@ export function RegistrationsSection() {
                             Você ainda não se inscreveu em nenhum seminário.
                         </p>
                         <Link
-                            to="/apresentacoes"
+                            to={ROUTES.SYSTEM.PRESENTATIONS}
                             className="mt-4 inline-flex items-center text-sm font-medium text-primary-600 hover:text-primary-700 cursor-pointer"
                         >
                             Ver apresentações
@@ -72,7 +73,7 @@ export function RegistrationsSection() {
                             >
                                 <div className="flex-1 min-w-0">
                                     <Link
-                                        to={`/seminario/${registration.seminar.slug}`}
+                                        to={ROUTES.SYSTEM.SEMINAR_DETAILS(registration.seminar.slug)}
                                         className="font-medium text-gray-900 hover:text-primary-600 cursor-pointer"
                                     >
                                         {registration.seminar.name}
@@ -134,8 +135,8 @@ export function RegistrationsSection() {
                                                 location:
                                                     registration.seminar
                                                         .location?.name,
-                                                eventPath: `/seminario/${registration.seminar.slug}`,
-                                                downloadPath: `/seminario/${registration.seminar.slug}/calendar.ics`,
+                                                eventPath: ROUTES.SYSTEM.SEMINAR_DETAILS(registration.seminar.slug),
+                                                downloadPath: ROUTES.SYSTEM.SEMINAR_CALENDAR_ICS(registration.seminar.slug),
                                             }}
                                             className="px-0 py-0 text-primary-600 hover:text-primary-700"
                                         />

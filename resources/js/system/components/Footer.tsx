@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { ROUTES } from "@shared/config/routes";
 import { getYear } from "@shared/lib/date";
 
 export function Footer() {
@@ -10,25 +11,25 @@ export function Footer() {
                 <div className="md:flex md:items-center md:justify-between">
                     <div className="flex justify-center space-x-6 md:order-2">
                         <Link
-                            to="/topicos"
+                            to={ROUTES.SYSTEM.SUBJECTS}
                             className="text-sm text-gray-500 hover:text-gray-700"
                         >
                             Tópicos
                         </Link>
                         <Link
-                            to="/apresentacoes"
+                            to={ROUTES.SYSTEM.PRESENTATIONS}
                             className="text-sm text-gray-500 hover:text-gray-700"
                         >
                             Apresentações
                         </Link>
                         <Link
-                            to="/workshops"
+                            to={ROUTES.SYSTEM.WORKSHOPS}
                             className="text-sm text-gray-500 hover:text-gray-700"
                         >
                             Workshops
                         </Link>
                         <Link
-                            to="/reportar-bug"
+                            to={ROUTES.SYSTEM.BUG_REPORT}
                             className="text-sm text-gray-500 hover:text-gray-700"
                         >
                             Reportar Bug

@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import ReCAPTCHA from "react-google-recaptcha";
 import { Layout } from "../components/Layout";
 import { PageTitle } from "@shared/components/PageTitle";
+import { ROUTES } from "@shared/config/routes";
 import { ReCaptcha, isRecaptchaEnabled } from "@shared/components/ReCaptcha";
 import { SocialLoginButtons } from "@shared/components/SocialLoginButtons";
 import { buildUrl, cn, isSafeRedirect } from "@shared/lib/utils";
@@ -327,7 +328,7 @@ export default function Register() {
                         <p className="text-center text-sm text-gray-500">
                             Já tem uma conta?{" "}
                             <Link
-                                to="/login"
+                                to={ROUTES.SYSTEM.LOGIN}
                                 state={{ from: redirectTo !== "/" ? redirectTo : undefined }}
                                 className="font-medium text-primary-600 hover:text-primary-700"
                             >

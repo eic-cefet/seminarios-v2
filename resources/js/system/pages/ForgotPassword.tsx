@@ -4,6 +4,7 @@ import * as Label from "@radix-ui/react-label";
 import { Mail, ArrowLeft, CheckCircle } from "lucide-react";
 import { Layout } from "../components/Layout";
 import { PageTitle } from "@shared/components/PageTitle";
+import { ROUTES } from "@shared/config/routes";
 import { cn } from "@shared/lib/utils";
 import { authApi } from "@shared/api/client";
 import { getErrorMessage } from "@shared/lib/errors";
@@ -54,7 +55,7 @@ export default function ForgotPassword() {
                             </p>
                             <div className="pt-4">
                                 <Link
-                                    to="/login"
+                                    to={ROUTES.SYSTEM.LOGIN}
                                     className="inline-flex items-center gap-2 text-sm font-medium text-primary-600 hover:text-primary-700"
                                 >
                                     <ArrowLeft className="h-4 w-4" />
@@ -127,7 +128,7 @@ export default function ForgotPassword() {
 
                         <p className="text-center text-sm text-gray-500">
                             <Link
-                                to="/login"
+                                to={ROUTES.SYSTEM.LOGIN}
                                 className="inline-flex items-center gap-2 font-medium text-primary-600 hover:text-primary-700"
                             >
                                 <ArrowLeft className="h-4 w-4" />
