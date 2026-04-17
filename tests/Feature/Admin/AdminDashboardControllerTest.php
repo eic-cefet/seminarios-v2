@@ -6,6 +6,9 @@ use App\Models\Seminar;
 use App\Models\SeminarLocation;
 use App\Models\Subject;
 use App\Models\User;
+use Illuminate\Support\Facades\Cache;
+
+beforeEach(fn () => Cache::forget('admin:dashboard:stats'));
 
 describe('GET /admin/dashboard/stats', function () {
     it('returns dashboard stats for admin user', function () {
@@ -80,5 +83,31 @@ describe('GET /admin/dashboard/stats', function () {
 
         $nearCapacity = $response->json('data.nearCapacity');
         expect($nearCapacity)->toHaveCount(1);
+        expect($nearCapacity[0]['registrations_count'] ?? null)->toBe(8);
+    });
+
+    it('caches stats payload for 60 seconds', function () {
+        actingAsAdmin();
+
+        expect(Cache::has('admin:dashboard:stats'))->toBeFalse();
+
+        $this->getJson('/api/admin/dashboard/stats')->assertSuccessful();
+
+        expect(Cache::has('admin:dashboard:stats'))->toBeTrue();
+    });
+
+    it('serves cached data when seminars are created after cache population', function () {
+        actingAsAdmin();
+
+        $initial = $this->getJson('/api/admin/dashboard/stats');
+        $initial->assertSuccessful();
+        $initialCount = $initial->json('data.counts.seminars');
+
+        Seminar::factory()->upcoming()->create(['active' => true]);
+
+        $cached = $this->getJson('/api/admin/dashboard/stats');
+        $cached->assertSuccessful();
+
+        expect($cached->json('data.counts.seminars'))->toBe($initialCount);
     });
 });
