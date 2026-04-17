@@ -2,13 +2,14 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Enums\Role;
 use Illuminate\Foundation\Http\FormRequest;
 
 class SemestralReportRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        return $this->user()?->hasAnyRole([Role::Admin, Role::Teacher]) === true;
     }
 
     /**
