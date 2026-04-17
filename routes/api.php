@@ -22,50 +22,53 @@ use Illuminate\Support\Facades\Route;
 |--------------------------------------------------------------------------
 */
 
-// Auth
+// Auth (tighter, purpose-specific throttles)
 Route::post('/auth/login', [AuthController::class, 'login'])->middleware('throttle:login');
 Route::post('/auth/register', [AuthController::class, 'register'])->middleware('throttle:5,1');
 Route::post('/auth/forgot-password', [AuthController::class, 'forgotPassword'])->middleware('throttle:5,1');
 Route::post('/auth/reset-password', [AuthController::class, 'resetPassword'])->middleware('throttle:5,1');
-Route::get('/auth/me', [AuthController::class, 'me']);
-Route::post('/auth/logout', [AuthController::class, 'logout']);
+Route::post('/auth/exchange', [SocialAuthController::class, 'exchange'])->middleware('throttle:5,1');
 
-// Seminars
-Route::get('/seminars', [SeminarController::class, 'index']);
-Route::get('/seminars/upcoming', [SeminarController::class, 'upcoming']);
-Route::get('/seminars/{slug}', [SeminarController::class, 'show']);
-
-// Seminar Registration (status is public, register/unregister require auth)
-Route::get('/seminars/{slug}/registration', [RegistrationController::class, 'status']);
-
-// Subjects
-Route::get('/subjects', [SubjectController::class, 'index']);
-Route::get('/subjects/{subject:slug}', [SubjectController::class, 'show']);
-Route::get('/subjects/{subject:slug}/seminars', [SeminarController::class, 'bySubject']);
-
-// Workshops
-Route::get('/workshops', [WorkshopController::class, 'index']);
-Route::get('/workshops/{workshop:slug}', [WorkshopController::class, 'show']);
-Route::get('/workshops/{workshop:slug}/seminars', [WorkshopController::class, 'seminars']);
-
-// Seminar Types
-Route::get('/seminar-types', [SeminarTypeController::class, 'index']);
-
-// Courses
-Route::get('/courses', [CourseController::class, 'index']);
-
-// Stats
-Route::get('/stats', [StatsController::class, 'index']);
-
-// Bug Report
+// Bug Report (tightest throttle)
 Route::post('/bug-report', [BugReportController::class, 'store'])->middleware('throttle:3,1');
 
-// Presence Links (QR Code)
-Route::get('/presence/{uuid}', [PresenceController::class, 'show']);
-Route::post('/presence/{uuid}/register', [PresenceController::class, 'register']);
+// General public endpoints (120/min per user or IP)
+Route::middleware('throttle:public')->group(function () {
+    // Auth session
+    Route::get('/auth/me', [AuthController::class, 'me']);
+    Route::post('/auth/logout', [AuthController::class, 'logout']);
 
-// Auth
-Route::post('/auth/exchange', [SocialAuthController::class, 'exchange'])->middleware('throttle:5,1');
+    // Seminars
+    Route::get('/seminars', [SeminarController::class, 'index']);
+    Route::get('/seminars/upcoming', [SeminarController::class, 'upcoming']);
+    Route::get('/seminars/{slug}', [SeminarController::class, 'show']);
+
+    // Seminar Registration (status is public, register/unregister require auth)
+    Route::get('/seminars/{slug}/registration', [RegistrationController::class, 'status']);
+
+    // Subjects
+    Route::get('/subjects', [SubjectController::class, 'index']);
+    Route::get('/subjects/{subject:slug}', [SubjectController::class, 'show']);
+    Route::get('/subjects/{subject:slug}/seminars', [SeminarController::class, 'bySubject']);
+
+    // Workshops
+    Route::get('/workshops', [WorkshopController::class, 'index']);
+    Route::get('/workshops/{workshop:slug}', [WorkshopController::class, 'show']);
+    Route::get('/workshops/{workshop:slug}/seminars', [WorkshopController::class, 'seminars']);
+
+    // Seminar Types
+    Route::get('/seminar-types', [SeminarTypeController::class, 'index']);
+
+    // Courses
+    Route::get('/courses', [CourseController::class, 'index']);
+
+    // Stats
+    Route::get('/stats', [StatsController::class, 'index']);
+
+    // Presence Links (QR Code)
+    Route::get('/presence/{uuid}', [PresenceController::class, 'show']);
+    Route::post('/presence/{uuid}/register', [PresenceController::class, 'register']);
+});
 
 // Authenticated routes
 Route::middleware('auth:sanctum')->group(function () {
