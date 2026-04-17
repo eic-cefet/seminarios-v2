@@ -2,6 +2,7 @@
 
 use App\Models\Seminar;
 use App\Models\Subject;
+use Illuminate\Support\Facades\DB;
 
 describe('GET /api/admin/subjects', function () {
     it('returns paginated list of subjects for admin', function () {
@@ -144,6 +145,15 @@ describe('POST /api/admin/subjects', function () {
 
         $response->assertStatus(422)
             ->assertJsonValidationErrors(['name']);
+    });
+
+    it('returns custom Portuguese validation message for missing name', function () {
+        actingAsAdmin();
+
+        $response = $this->postJson('/api/admin/subjects', []);
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors(['name' => 'O nome do tópico é obrigatório.']);
     });
 });
 
@@ -309,6 +319,18 @@ describe('POST /api/admin/subjects/merge', function () {
             ->assertJsonValidationErrors(['target_id']);
     });
 
+    it('returns custom Portuguese validation messages for merge', function () {
+        actingAsAdmin();
+
+        $response = $this->postJson('/api/admin/subjects/merge', []);
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors([
+                'target_id' => 'O tópico de destino é obrigatório.',
+                'source_ids' => 'Ao menos um tópico de origem é obrigatório.',
+            ]);
+    });
+
     it('returns validation error for missing source_ids', function () {
         actingAsAdmin();
 
@@ -335,13 +357,13 @@ describe('POST /api/admin/subjects/merge', function () {
         // Use a DB listener to detect when the merge starts accessing seminar_subject
         // and throw an exception before completion
         $queryCount = 0;
-        \Illuminate\Support\Facades\DB::listen(function ($query) use (&$queryCount) {
+        DB::listen(function ($query) use (&$queryCount) {
             // Count queries that touch seminar_subject after the transaction begins
             if (str_contains($query->sql, 'seminar_subject')) {
                 $queryCount++;
                 // After the first select (pluck), throw on the check or insert
                 if ($queryCount >= 2) {
-                    throw new \Exception('Simulated database failure');
+                    throw new Exception('Simulated database failure');
                 }
             }
         });

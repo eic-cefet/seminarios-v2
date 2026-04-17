@@ -465,6 +465,23 @@ describe('POST /api/profile/ratings/{seminar}', function () {
             ->assertJsonValidationErrors(['score']);
     });
 
+    it('returns custom Portuguese validation message for missing score', function () {
+        $user = actingAsUser();
+        $seminar = Seminar::factory()->create([
+            'scheduled_at' => now()->subDays(5),
+        ]);
+        Registration::factory()->create([
+            'user_id' => $user->id,
+            'seminar_id' => $seminar->id,
+            'present' => true,
+        ]);
+
+        $response = $this->postJson("/api/profile/ratings/{$seminar->id}", []);
+
+        $response->assertUnprocessable()
+            ->assertJsonValidationErrors(['score' => 'A nota é obrigatória.']);
+    });
+
     it('returns 401 for unauthenticated user', function () {
         $seminar = Seminar::factory()->create();
 

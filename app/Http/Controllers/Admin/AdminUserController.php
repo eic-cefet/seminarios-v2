@@ -2,9 +2,10 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Enums\CourseSituation;
 use App\Http\Controllers\Concerns\EscapesLikeWildcards;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\AdminUserStoreRequest;
+use App\Http\Requests\Admin\AdminUserUpdateRequest;
 use App\Http\Resources\Admin\AdminUserResource;
 use App\Models\User;
 use App\Models\UserSpeakerData;
@@ -16,7 +17,6 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
-use Illuminate\Validation\Rule;
 
 class AdminUserController extends Controller
 {
@@ -61,23 +61,9 @@ class AdminUserController extends Controller
         return new AdminUserResource($user);
     }
 
-    public function store(Request $request): JsonResponse
+    public function store(AdminUserStoreRequest $request): JsonResponse
     {
-        Gate::authorize('create', User::class);
-
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'max:255', 'unique:users,email'],
-            'password' => ['nullable', 'string', 'min:8'],
-            'role' => ['nullable', 'string', Rule::in(['admin', 'teacher'])],
-            'student_data' => ['nullable', 'array'],
-            'student_data.course_name' => ['nullable', 'string', 'max:255'],
-            'student_data.course_situation' => ['nullable', 'string', Rule::enum(CourseSituation::class)],
-            'student_data.course_role' => ['nullable', 'string'],
-            'speaker_data' => ['nullable', 'array'],
-            'speaker_data.institution' => ['nullable', 'string', 'max:255'],
-            'speaker_data.description' => ['nullable', 'string'],
-        ]);
+        $validated = $request->validated();
 
         $password = $validated['password'] ?? Str::random(24);
 
@@ -113,24 +99,9 @@ class AdminUserController extends Controller
         ], 201);
     }
 
-    public function update(Request $request, User $user): JsonResponse
+    public function update(AdminUserUpdateRequest $request, User $user): JsonResponse
     {
-        Gate::authorize('update', $user);
-
-        $validated = $request->validate([
-            'name' => ['sometimes', 'string', 'max:255'],
-            'email' => ['sometimes', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
-            'password' => ['nullable', 'string', 'min:8'],
-            'role' => ['sometimes', 'string', Rule::in(['admin', 'teacher', 'user'])],
-            'student_data' => ['nullable', 'array'],
-            'student_data.course_name' => ['nullable', 'string', 'max:255'],
-            'student_data.course_situation' => ['nullable', 'string', Rule::enum(CourseSituation::class)],
-            'student_data.course_role' => ['nullable', 'string'],
-            'speaker_data' => ['nullable', 'array'],
-            'speaker_data.slug' => ['nullable', 'string', 'max:255'],
-            'speaker_data.institution' => ['nullable', 'string', 'max:255'],
-            'speaker_data.description' => ['nullable', 'string'],
-        ]);
+        $validated = $request->validated();
 
         DB::transaction(function () use ($user, $validated) {
             if (isset($validated['name'])) {

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Exceptions\ApiException;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\SubmitRatingRequest;
 use App\Http\Resources\PendingEvaluationResource;
 use App\Jobs\AnalyzeRatingSentiment;
 use App\Models\Rating;
@@ -42,14 +43,11 @@ class ProfileRatingController extends Controller
         ]);
     }
 
-    public function submitRating(Request $request, int $seminarId): JsonResponse
+    public function submitRating(SubmitRatingRequest $request, int $seminarId): JsonResponse
     {
         $user = $request->user();
 
-        $validated = $request->validate([
-            'score' => ['required', 'integer', 'min:1', 'max:5'],
-            'comment' => ['nullable', 'string', 'max:1000'],
-        ]);
+        $validated = $request->validated();
 
         $registration = $user->registrations()
             ->where('seminar_id', $seminarId)

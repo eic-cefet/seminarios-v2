@@ -6,6 +6,9 @@ use App\Enums\AuditEvent;
 use App\Exceptions\ApiException;
 use App\Http\Controllers\Concerns\EscapesLikeWildcards;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\AdminSubjectMergeRequest;
+use App\Http\Requests\Admin\AdminSubjectStoreRequest;
+use App\Http\Requests\Admin\AdminSubjectUpdateRequest;
 use App\Http\Resources\Admin\AdminSubjectResource;
 use App\Models\AuditLog;
 use App\Models\Subject;
@@ -50,13 +53,9 @@ class AdminSubjectController extends Controller
         return new AdminSubjectResource($subject);
     }
 
-    public function store(Request $request): JsonResponse
+    public function store(AdminSubjectStoreRequest $request): JsonResponse
     {
-        Gate::authorize('create', Subject::class);
-
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255', 'unique:subjects,name'],
-        ]);
+        $validated = $request->validated();
 
         $slug = $this->slugService->generateUnique($validated['name'], Subject::class);
 
@@ -69,13 +68,9 @@ class AdminSubjectController extends Controller
         ], 201);
     }
 
-    public function update(Request $request, Subject $subject): JsonResponse
+    public function update(AdminSubjectUpdateRequest $request, Subject $subject): JsonResponse
     {
-        Gate::authorize('update', $subject);
-
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255', 'unique:subjects,name,'.$subject->id],
-        ]);
+        $validated = $request->validated();
 
         $slug = $this->slugService->generateUnique(
             $validated['name'], Subject::class, 'slug', $subject->id
@@ -105,16 +100,9 @@ class AdminSubjectController extends Controller
         ]);
     }
 
-    public function merge(Request $request): JsonResponse
+    public function merge(AdminSubjectMergeRequest $request): JsonResponse
     {
-        Gate::authorize('merge', Subject::class);
-
-        $validated = $request->validate([
-            'target_id' => ['required', 'integer', 'exists:subjects,id'],
-            'source_ids' => ['required', 'array', 'min:1'],
-            'source_ids.*' => ['required', 'integer', 'exists:subjects,id', 'different:target_id'],
-            'new_name' => ['nullable', 'string', 'max:255'],
-        ]);
+        $validated = $request->validated();
 
         $targetId = $validated['target_id'];
         $sourceIds = $validated['source_ids'];

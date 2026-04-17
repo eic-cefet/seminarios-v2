@@ -267,6 +267,18 @@ describe('GET /api/admin/reports/semestral', function () {
             ->assertJsonValidationErrors(['format']);
     });
 
+    it('returns custom Portuguese validation messages', function () {
+        actingAsAdmin();
+
+        $response = $this->getJson('/api/admin/reports/semestral?semester=bad&format=invalid');
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors([
+                'semester' => 'O semestre deve estar no formato AAAA.S (ex: 2026.1).',
+                'format' => 'O formato deve ser browser ou excel.',
+            ]);
+    });
+
     it('returns 401 for unauthenticated user', function () {
         $response = $this->getJson('/api/admin/reports/semestral?semester=2024.1&format=browser');
 
