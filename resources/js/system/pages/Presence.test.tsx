@@ -14,10 +14,13 @@ vi.mock('@shared/lib/analytics', () => ({
     analytics: { event: vi.fn(), pageview: vi.fn() },
 }));
 
-vi.mock('@shared/api/client', () => ({
-    authApi: { forgotPassword: vi.fn() },
-    ApiRequestError: class extends Error {},
-}));
+vi.mock('@shared/api/client', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@shared/api/client')>();
+    return {
+        ...actual,
+        authApi: { forgotPassword: vi.fn() },
+    };
+});
 
 vi.mock('@shared/api/httpUtils', () => ({
     getCookie: vi.fn(() => null),

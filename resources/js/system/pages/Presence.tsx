@@ -10,59 +10,11 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { getCookie, getCsrfCookie } from "@shared/api/httpUtils";
+import { presenceApi } from "@shared/api/client";
 import { useAuth } from "@shared/contexts/AuthContext";
 import { formatDateTimeLong } from "@shared/lib/utils";
 import { Layout } from "../components/Layout";
 import { LoginModal } from "../components/LoginModal";
-
-const API_BASE = app.API_URL;
-
-interface PresenceResponse {
-    data?: {
-        seminar: {
-            id: number;
-            name: string;
-            scheduled_at: string;
-        };
-        is_valid: boolean;
-        expires_at: string;
-    };
-    message?: string;
-    is_valid?: boolean;
-    is_expired?: boolean;
-    is_active?: boolean;
-}
-
-async function presenceFetch(
-    path: string,
-    { fallbackError, ...options }: RequestInit & { fallbackError?: string } = {},
-): Promise<Response> {
-    await getCsrfCookie();
-
-    const headers: Record<string, string> = {
-        Accept: "application/json",
-        ...(options.method === "POST" && { "Content-Type": "application/json" }),
-    };
-
-    const xsrfToken = getCookie("XSRF-TOKEN");
-    if (xsrfToken) {
-        headers["X-XSRF-TOKEN"] = xsrfToken;
-    }
-
-    const response = await fetch(`${API_BASE}${path}`, {
-        ...options,
-        headers,
-        credentials: "same-origin",
-    });
-
-    if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || fallbackError);
-    }
-
-    return response;
-}
 
 export default function Presence() {
     const { uuid } = useParams<{ uuid: string }>();
@@ -76,23 +28,12 @@ export default function Presence() {
         error: linkError,
     } = useQuery({
         queryKey: ["presence-link", uuid],
-        queryFn: async () => {
-            const response = await presenceFetch(`/presence/${uuid}`, {
-                fallbackError: "Link inválido",
-            });
-            return response.json() as Promise<PresenceResponse>;
-        },
+        queryFn: () => presenceApi.get(uuid!),
         enabled: !!uuid,
     });
 
     const registerMutation = useMutation({
-        mutationFn: async () => {
-            const response = await presenceFetch(
-                `/presence/${uuid}/register`,
-                { method: "POST", fallbackError: "Erro ao registrar presença" },
-            );
-            return response.json();
-        },
+        mutationFn: () => presenceApi.register(uuid!),
     });
 
     // Auto-register when user is authenticated and link is valid
@@ -146,7 +87,7 @@ export default function Presence() {
                                 </h1>
                                 <p className="text-gray-500">
                                     {linkError instanceof Error
-                                        ? linkError.message
+                                        ? linkError.message || "Link inválido"
                                         : "Este link de presença não é válido ou expirou."}
                                 </p>
                             </div>
@@ -256,7 +197,8 @@ export default function Presence() {
                                 </h1>
                                 <p className="text-gray-500">
                                     {registerMutation.error instanceof Error
-                                        ? registerMutation.error.message
+                                        ? registerMutation.error.message ||
+                                          "Erro ao registrar presença"
                                         : "Não foi possível registrar sua presença."}
                                 </p>
                             </div>
