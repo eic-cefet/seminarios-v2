@@ -733,40 +733,30 @@ export const dropdownApi = {
 };
 
 // Reports
-export interface SemestralReportPresentation {
-    name: string;
-    date: string;
-    type: string | null;
-    duration_minutes?: number;
-}
-
-export interface SemestralReportUser {
-    name: string;
-    email: string;
-    course: string;
-    total_minutes?: number;
-    total_hours: number;
-    presentations: SemestralReportPresentation[];
-}
-
-export interface SemestralReportSummary {
-    total_users: number;
-    total_hours: number;
-    semester: string;
-}
-
 export interface SemestralReportBrowserResponse {
-    data: SemestralReportUser[];
-    summary: SemestralReportSummary;
-}
-
-export interface SemestralReportAsyncResponse {
-    message: string;
+    data: {
+        name: string;
+        email: string;
+        course: string;
+        total_minutes?: number;
+        total_hours: number;
+        presentations: {
+            name: string;
+            date: string;
+            type: string | null;
+            duration_minutes?: number;
+        }[];
+    }[];
+    summary: {
+        total_users: number;
+        total_hours: number;
+        semester: string;
+    };
 }
 
 export type SemestralReportResponse =
     | SemestralReportBrowserResponse
-    | SemestralReportAsyncResponse;
+    | { message: string };
 
 export const reportsApi = {
     semestral: async (params: {

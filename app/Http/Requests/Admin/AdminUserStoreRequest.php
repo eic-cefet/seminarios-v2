@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Admin;
 
 use App\Enums\CourseSituation;
+use App\Http\Requests\Admin\Concerns\UserValidationMessages;
 use App\Models\User;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Gate;
@@ -10,6 +11,8 @@ use Illuminate\Validation\Rule;
 
 class AdminUserStoreRequest extends FormRequest
 {
+    use UserValidationMessages;
+
     public function authorize(): bool
     {
         return Gate::allows('create', User::class);
@@ -41,15 +44,10 @@ class AdminUserStoreRequest extends FormRequest
     public function messages(): array
     {
         return [
+            ...$this->sharedUserMessages(),
             'name.required' => 'O nome é obrigatório.',
-            'name.max' => 'O nome não pode ter mais de 255 caracteres.',
             'email.required' => 'O e-mail é obrigatório.',
-            'email.email' => 'O e-mail deve ser válido.',
-            'email.unique' => 'Este e-mail já está cadastrado.',
-            'password.min' => 'A senha deve ter pelo menos 8 caracteres.',
             'role.in' => 'O papel deve ser admin ou teacher.',
-            'student_data.course_situation.enum' => 'A situação do curso é inválida.',
-            'speaker_data.institution.max' => 'A instituição não pode ter mais de 255 caracteres.',
         ];
     }
 }
