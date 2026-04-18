@@ -63,6 +63,12 @@ Schedule::command('audit:prune --days=365')
     ->timezone('America/Sao_Paulo')
     ->onOneServer();
 
+// Prune expired rows from the database cache store, daily at 4:30 AM
+Schedule::command('cache:prune-expired')
+    ->dailyAt('04:30')
+    ->timezone('America/Sao_Paulo')
+    ->onOneServer();
+
 // Clear scheduler mutex cache files weekly on Sunday at 4:00 AM
 Schedule::command('schedule:clear-cache')
     ->weeklyOn(0, '04:00')
