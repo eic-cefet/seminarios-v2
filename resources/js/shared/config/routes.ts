@@ -33,6 +33,7 @@ export const ROUTES = {
         WORKSHOP_DETAILS_PATTERN: "/workshop/:slug",
         WORKSHOP_DETAILS: (slug: string) => `/workshop/${slug}`,
         PRESENCE_PATTERN: "/p/:uuid",
+        PRESENCE: (uuid: string) => `/p/${uuid}`,
     },
     ADMIN: {
         DASHBOARD: "/",

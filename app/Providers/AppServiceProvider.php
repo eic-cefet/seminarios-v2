@@ -45,24 +45,16 @@ class AppServiceProvider extends ServiceProvider
         }
 
         RateLimiter::for('login', function (Request $request) {
-            $maxAttempts = (int) env('LOGIN_RATE_LIMIT', 5);
-
-            return Limit::perMinute($maxAttempts)->by(
-                $request->input('email').'|'.$request->ip()
-            );
+            return Limit::perMinute((int) env('LOGIN_RATE_LIMIT', 5))
+                ->by($request->input('email').'|'.$request->ip());
         });
 
-        RateLimiter::for('ai', function (Request $request) {
-            return Limit::perMinute(12)->by($request->user()?->id ?: $request->ip());
-        });
+        $perUserOrIp = fn (int $max) => fn (Request $request) => Limit::perMinute($max)
+            ->by($request->user()?->id ?: $request->ip());
 
-        RateLimiter::for('public', function (Request $request) {
-            return Limit::perMinute(120)->by($request->user()?->id ?: $request->ip());
-        });
-
-        RateLimiter::for('certificate', function (Request $request) {
-            return Limit::perMinute(30)->by($request->user()?->id ?: $request->ip());
-        });
+        RateLimiter::for('ai', $perUserOrIp(12));
+        RateLimiter::for('public', $perUserOrIp(120));
+        RateLimiter::for('certificate', $perUserOrIp(30));
 
         Gate::policy(Seminar::class, SeminarPolicy::class);
         Gate::policy(User::class, UserPolicy::class);

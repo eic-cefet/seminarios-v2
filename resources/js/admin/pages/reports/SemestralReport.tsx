@@ -108,11 +108,11 @@ export default function SemestralReport() {
                 format,
             }),
         onSuccess: (data) => {
-            if (format === "excel") {
-                toast.success((data as { message: string }).message);
+            if ("message" in data) {
+                toast.success(data.message);
             } else {
                 toast.success("Relatório gerado!");
-                setReportData(data as SemestralReportBrowserResponse);
+                setReportData(data);
                 setExpandedRows(new Set());
             }
         },

@@ -27,6 +27,7 @@ describe("ROUTES.SYSTEM", () => {
         );
         expect(ROUTES.SYSTEM.SUBJECT_DETAILS("ai")).toBe("/topico/ai");
         expect(ROUTES.SYSTEM.WORKSHOP_DETAILS("intro")).toBe("/workshop/intro");
+        expect(ROUTES.SYSTEM.PRESENCE("abc-123")).toBe("/p/abc-123");
     });
 
     it("exposes route patterns used in Route definitions", () => {

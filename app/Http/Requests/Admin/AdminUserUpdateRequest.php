@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Admin;
 
 use App\Enums\CourseSituation;
+use App\Http\Requests\Admin\Concerns\UserValidationMessages;
 use App\Models\User;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Gate;
@@ -10,6 +11,8 @@ use Illuminate\Validation\Rule;
 
 class AdminUserUpdateRequest extends FormRequest
 {
+    use UserValidationMessages;
+
     public function authorize(): bool
     {
         $user = $this->route('user');
@@ -46,14 +49,9 @@ class AdminUserUpdateRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'name.max' => 'O nome não pode ter mais de 255 caracteres.',
-            'email.email' => 'O e-mail deve ser válido.',
-            'email.unique' => 'Este e-mail já está cadastrado.',
-            'password.min' => 'A senha deve ter pelo menos 8 caracteres.',
+            ...$this->sharedUserMessages(),
             'role.in' => 'O papel deve ser admin, teacher ou user.',
-            'student_data.course_situation.enum' => 'A situação do curso é inválida.',
             'speaker_data.slug.max' => 'O slug não pode ter mais de 255 caracteres.',
-            'speaker_data.institution.max' => 'A instituição não pode ter mais de 255 caracteres.',
         ];
     }
 }

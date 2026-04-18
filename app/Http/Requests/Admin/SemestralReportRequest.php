@@ -9,23 +9,23 @@ class SemestralReportRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->hasAnyRole([Role::Admin, Role::Teacher]) === true;
+        return (bool) $this->user()?->hasAnyRole([Role::Admin, Role::Teacher]);
     }
 
     /**
-     * @return array<string, array<int, string>|string>
+     * @return array<string, array<int, string>>
      */
     public function rules(): array
     {
         return [
             'semester' => ['required', 'string', 'regex:/^\d{4}\.[12]$/'],
-            'courses' => 'nullable|array',
-            'courses.*' => 'integer',
-            'types' => 'nullable|array',
-            'types.*' => 'integer',
-            'situations' => 'nullable|array',
-            'situations.*' => 'string',
-            'format' => 'required|in:browser,excel',
+            'courses' => ['nullable', 'array'],
+            'courses.*' => ['integer'],
+            'types' => ['nullable', 'array'],
+            'types.*' => ['integer'],
+            'situations' => ['nullable', 'array'],
+            'situations.*' => ['string'],
+            'format' => ['required', 'in:browser,excel'],
         ];
     }
 
