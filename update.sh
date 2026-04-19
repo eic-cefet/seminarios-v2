@@ -263,6 +263,15 @@ php artisan queue:restart
 print_status "Queue restart signal sent" "ok"
 
 #######################################
+# STEP 9.1: Store Version in Cache
+#######################################
+print_section "Recording application version"
+
+APP_VERSION=$(git describe --tags --always)
+php artisan version:set "$APP_VERSION"
+print_status "Version recorded: $APP_VERSION" "ok"
+
+#######################################
 # STEP 10: Disable Maintenance Mode
 #######################################
 print_section "Disabling maintenance mode"
