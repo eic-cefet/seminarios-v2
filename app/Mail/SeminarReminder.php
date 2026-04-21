@@ -23,6 +23,8 @@ class SeminarReminder extends Mailable implements ShouldQueue
 {
     use Queueable, SerializesModels;
 
+    protected ?string $cachedRefId = null;
+
     /**
      * @param  Collection<int, Seminar>  $seminars
      */
@@ -105,8 +107,12 @@ class SeminarReminder extends Mailable implements ShouldQueue
 
     protected function refId(): string
     {
+        if ($this->cachedRefId !== null) {
+            return $this->cachedRefId;
+        }
+
         $seminarIds = $this->seminars->pluck('id')->sort()->values()->implode('-');
 
-        return 'seminar-reminder:'.$this->user->id.':'.$seminarIds.':'.now()->format('Ymd');
+        return $this->cachedRefId = 'seminar-reminder:'.$this->user->id.':'.$seminarIds.':'.now()->format('Ymd');
     }
 }

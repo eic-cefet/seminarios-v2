@@ -14,7 +14,6 @@ use App\Models\Seminar;
 use App\Models\User;
 use App\Notifications\ResetPassword;
 use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Facades\Notification;
 
 describe('Mail audit logging and threading header', function () {
     beforeEach(function () {
@@ -131,22 +130,36 @@ describe('Mail audit logging and threading header', function () {
         expect($log->event_data['ref_id'])->toBe($mail->refId);
     });
 
-    it('audits ResetPassword notification with a random ref id', function () {
-        Notification::fake();
+    it('does not audit when ResetPassword toMail is called directly without a send', function () {
+        $user = User::factory()->create();
+
+        (new ResetPassword('token-xyz'))->toMail($user);
+
+        expect(AuditLog::forEvent(AuditEvent::EmailSent)->exists())->toBeFalse();
+    });
+
+    it('audits ResetPassword notification after it is actually sent', function () {
+        Mail::fake();
 
         $user = User::factory()->create();
-        $user->notify(new ResetPassword('token-xyz'));
+        $notification = new ResetPassword('token-xyz');
 
-        // Notification::fake doesn't invoke toMail, so exercise it directly to
-        // cover the audit path.
-        $notif = new ResetPassword('token-xyz');
-        $message = $notif->toMail($user);
+        $user->notify($notification);
 
         $log = AuditLog::forEvent(AuditEvent::EmailSent)->latest('id')->first();
         expect($log)->not->toBeNull();
         expect($log->event_data['mail'])->toBe(ResetPassword::class);
         expect($log->event_data['to'])->toBe($user->email);
-        expect($log->event_data['ref_id'])->toStartWith('password-reset:');
-        expect($message->subject)->toContain('Redefinir Senha');
+        expect($log->event_data['ref_id'])->toBe($notification->refId);
+    });
+
+    it('skips ResetPassword audit when the feature flag is disabled', function () {
+        config(['features.email_audit.enabled' => false]);
+        Mail::fake();
+
+        $user = User::factory()->create();
+        $user->notify(new ResetPassword('token-xyz'));
+
+        expect(AuditLog::forEvent(AuditEvent::EmailSent)->exists())->toBeFalse();
     });
 });

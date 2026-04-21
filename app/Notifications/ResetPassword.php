@@ -2,13 +2,8 @@
 
 namespace App\Notifications;
 
-use App\Enums\AuditEvent;
-use App\Enums\AuditEventType;
-use App\Models\AuditLog;
-use App\Services\FeatureFlags;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 use Illuminate\Support\Str;
@@ -18,9 +13,13 @@ class ResetPassword extends Notification implements ShouldQueue
 {
     use Queueable;
 
+    public string $refId;
+
     public function __construct(
         public string $token,
-    ) {}
+    ) {
+        $this->refId = 'password-reset:'.(string) Str::uuid();
+    }
 
     /**
      * @return array<int, string>
@@ -33,20 +32,7 @@ class ResetPassword extends Notification implements ShouldQueue
     public function toMail(object $notifiable): MailMessage
     {
         $url = url('/redefinir-senha?token='.$this->token.'&email='.urlencode($notifiable->getEmailForPasswordReset()));
-        $refId = 'password-reset:'.(string) Str::uuid();
-
-        if (FeatureFlags::enabled('email_audit')) {
-            AuditLog::record(
-                AuditEvent::EmailSent,
-                AuditEventType::System,
-                auditable: $notifiable instanceof Model ? $notifiable : null,
-                eventData: [
-                    'mail' => self::class,
-                    'to' => $notifiable->getEmailForPasswordReset(),
-                    'ref_id' => $refId,
-                ],
-            );
-        }
+        $refId = $this->refId;
 
         return (new MailMessage)
             ->subject('Redefinir Senha - '.config('app.name'))
