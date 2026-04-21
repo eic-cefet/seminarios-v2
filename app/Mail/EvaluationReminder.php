@@ -2,12 +2,18 @@
 
 namespace App\Mail;
 
+use App\Enums\AuditEvent;
+use App\Enums\AuditEventType;
+use App\Models\AuditLog;
+use App\Models\Seminar;
 use App\Models\User;
+use App\Services\FeatureFlags;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
+use Illuminate\Mail\Mailables\Headers;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Collection;
 
@@ -15,8 +21,10 @@ class EvaluationReminder extends Mailable implements ShouldQueue
 {
     use Queueable, SerializesModels;
 
+    protected ?string $cachedRefId = null;
+
     /**
-     * @param  Collection<int, \App\Models\Seminar>  $seminars
+     * @param  Collection<int, Seminar>  $seminars
      */
     public function __construct(
         public User $user,
@@ -35,6 +43,13 @@ class EvaluationReminder extends Mailable implements ShouldQueue
         );
     }
 
+    public function headers(): Headers
+    {
+        return new Headers(
+            text: ['X-Entity-Ref-ID' => $this->refId()],
+        );
+    }
+
     public function content(): Content
     {
         return new Content(
@@ -45,5 +60,37 @@ class EvaluationReminder extends Mailable implements ShouldQueue
                 'evaluationUrl' => url('/avaliar'),
             ],
         );
+    }
+
+    public function send($mailer)
+    {
+        $result = parent::send($mailer);
+
+        if (FeatureFlags::enabled('email_audit')) {
+            AuditLog::record(
+                AuditEvent::EmailSent,
+                AuditEventType::System,
+                auditable: $this->user,
+                eventData: [
+                    'mail' => self::class,
+                    'to' => $this->user->email,
+                    'ref_id' => $this->refId(),
+                    'seminar_ids' => $this->seminars->pluck('id')->all(),
+                ],
+            );
+        }
+
+        return $result;
+    }
+
+    protected function refId(): string
+    {
+        if ($this->cachedRefId !== null) {
+            return $this->cachedRefId;
+        }
+
+        $seminarIds = $this->seminars->pluck('id')->sort()->values()->implode('-');
+
+        return $this->cachedRefId = 'evaluation-reminder:'.$this->user->id.':'.$seminarIds.':'.now()->format('Ymd');
     }
 }

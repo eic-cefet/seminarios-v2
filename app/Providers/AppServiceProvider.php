@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Listeners\AuditResetPasswordNotificationSent;
 use App\Models\AuditLog;
 use App\Models\Registration;
 use App\Models\Seminar;
@@ -20,6 +21,8 @@ use Dedoc\Scramble\Support\Generator\OpenApi;
 use Dedoc\Scramble\Support\Generator\SecurityScheme;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
+use Illuminate\Notifications\Events\NotificationSent;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\URL;
@@ -62,6 +65,8 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(SeminarLocation::class, SeminarLocationPolicy::class);
         Gate::policy(Registration::class, RegistrationPolicy::class);
         Gate::policy(AuditLog::class, AuditLogPolicy::class);
+
+        Event::listen(NotificationSent::class, AuditResetPasswordNotificationSent::class);
 
         Scramble::registerUiRoute('api/external/docs');
         Scramble::registerJsonSpecificationRoute('api/external/docs.json');

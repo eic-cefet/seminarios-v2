@@ -46,4 +46,5 @@ enum AuditEvent: string
     case OrphanSubjectsCleanedUp = 'command.orphan_subjects_cleaned_up';
     case SeminarRescheduled = 'seminar.rescheduled';
     case S3FileDeleted = 's3.file_deleted';
+    case EmailSent = 'email.sent';
 }
