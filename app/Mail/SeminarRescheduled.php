@@ -2,12 +2,8 @@
 
 namespace App\Mail;
 
-use App\Enums\AuditEvent;
-use App\Enums\AuditEventType;
-use App\Models\AuditLog;
 use App\Models\Seminar;
 use App\Models\User;
-use App\Services\FeatureFlags;
 use App\Services\IcsGenerationService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
@@ -37,7 +33,10 @@ class SeminarRescheduled extends Mailable
     public function headers(): Headers
     {
         return new Headers(
-            text: ['X-Entity-Ref-ID' => $this->refId()],
+            text: [
+                'X-Entity-Ref-ID' => $this->refId(),
+                'X-Mail-Class' => self::class,
+            ],
         );
     }
 
@@ -70,28 +69,6 @@ class SeminarRescheduled extends Mailable
             Attachment::fromData(fn () => $icsContent, $filename)
                 ->withMime('text/calendar'),
         ];
-    }
-
-    public function send($mailer)
-    {
-        $result = parent::send($mailer);
-
-        if (FeatureFlags::enabled('email_audit')) {
-            AuditLog::record(
-                AuditEvent::EmailSent,
-                AuditEventType::System,
-                auditable: $this->seminar,
-                eventData: [
-                    'mail' => self::class,
-                    'to' => $this->user->email,
-                    'ref_id' => $this->refId(),
-                    'user_id' => $this->user->id,
-                    'old_scheduled_at' => $this->oldScheduledAt->format(\DateTimeInterface::ATOM),
-                ],
-            );
-        }
-
-        return $result;
     }
 
     protected function refId(): string

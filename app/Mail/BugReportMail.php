@@ -2,10 +2,6 @@
 
 namespace App\Mail;
 
-use App\Enums\AuditEvent;
-use App\Enums\AuditEventType;
-use App\Models\AuditLog;
-use App\Services\FeatureFlags;
 use Illuminate\Bus\Queueable;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Mail\Attachment;
@@ -45,7 +41,10 @@ class BugReportMail extends Mailable
     public function headers(): Headers
     {
         return new Headers(
-            text: ['X-Entity-Ref-ID' => $this->refId],
+            text: [
+                'X-Entity-Ref-ID' => $this->refId,
+                'X-Mail-Class' => self::class,
+            ],
         );
     }
 
@@ -66,26 +65,5 @@ class BugReportMail extends Mailable
                 ->as($file->getClientOriginalName())
                 ->withMime($file->getMimeType()))
             ->all();
-    }
-
-    public function send($mailer)
-    {
-        $result = parent::send($mailer);
-
-        if (FeatureFlags::enabled('email_audit')) {
-            AuditLog::record(
-                AuditEvent::EmailSent,
-                AuditEventType::System,
-                eventData: [
-                    'mail' => self::class,
-                    'to' => config('mail.bug_report_email'),
-                    'ref_id' => $this->refId,
-                    'reporter_email' => $this->reporterEmail,
-                    'subject' => $this->reportSubject,
-                ],
-            );
-        }
-
-        return $result;
     }
 }

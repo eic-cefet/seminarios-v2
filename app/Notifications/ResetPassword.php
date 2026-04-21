@@ -38,6 +38,7 @@ class ResetPassword extends Notification implements ShouldQueue
             ->subject('Redefinir Senha - '.config('app.name'))
             ->withSymfonyMessage(function (Email $message) use ($refId) {
                 $message->getHeaders()->addTextHeader('X-Entity-Ref-ID', $refId);
+                $message->getHeaders()->addTextHeader('X-Mail-Class', self::class);
             })
             ->greeting('Olá!')
             ->line('Você está recebendo este e-mail porque recebemos uma solicitação de redefinição de senha para sua conta.')

@@ -2,10 +2,6 @@
 
 namespace App\Mail;
 
-use App\Enums\AuditEvent;
-use App\Enums\AuditEventType;
-use App\Models\AuditLog;
-use App\Services\FeatureFlags;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Attachment;
@@ -38,7 +34,10 @@ class ReportReady extends Mailable
     public function headers(): Headers
     {
         return new Headers(
-            text: ['X-Entity-Ref-ID' => $this->refId],
+            text: [
+                'X-Entity-Ref-ID' => $this->refId,
+                'X-Mail-Class' => self::class,
+            ],
         );
     }
 
@@ -59,24 +58,5 @@ class ReportReady extends Mailable
     public function attachments(): array
     {
         return [];
-    }
-
-    public function send($mailer)
-    {
-        $result = parent::send($mailer);
-
-        if (FeatureFlags::enabled('email_audit')) {
-            AuditLog::record(
-                AuditEvent::EmailSent,
-                AuditEventType::System,
-                eventData: [
-                    'mail' => self::class,
-                    'ref_id' => $this->refId,
-                    'report_name' => $this->reportName,
-                ],
-            );
-        }
-
-        return $result;
     }
 }
