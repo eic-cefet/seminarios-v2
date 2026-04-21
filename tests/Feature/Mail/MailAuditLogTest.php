@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\AuditEvent;
+use App\Listeners\AuditResetPasswordNotificationSent;
 use App\Mail\BugReportMail;
 use App\Mail\CertificateGenerated;
 use App\Mail\EvaluationReminder;
@@ -13,7 +14,11 @@ use App\Models\Registration;
 use App\Models\Seminar;
 use App\Models\User;
 use App\Notifications\ResetPassword;
+use Illuminate\Notifications\AnonymousNotifiable;
+use Illuminate\Notifications\Events\NotificationSent;
+use Illuminate\Notifications\Notification as BaseNotification;
 use Illuminate\Support\Facades\Mail;
+use Symfony\Component\Mime\Email;
 
 describe('Mail audit logging and threading header', function () {
     beforeEach(function () {
@@ -161,5 +166,93 @@ describe('Mail audit logging and threading header', function () {
         $user->notify(new ResetPassword('token-xyz'));
 
         expect(AuditLog::forEvent(AuditEvent::EmailSent)->exists())->toBeFalse();
+    });
+
+    it('adds the X-Entity-Ref-ID header to the outgoing symfony message', function () {
+        $user = User::factory()->create();
+        $notification = new ResetPassword('token-xyz');
+
+        $message = $notification->toMail($user);
+        $email = new Email;
+        foreach ($message->callbacks as $callback) {
+            $callback($email);
+        }
+
+        expect($email->getHeaders()->get('X-Entity-Ref-ID')->getBodyAsString())
+            ->toBe($notification->refId);
+    });
+
+    it('uses singular subject and ref id when EvaluationReminder has a single seminar', function () {
+        $user = User::factory()->create();
+        $seminar = Seminar::factory()->create();
+
+        $mail = new EvaluationReminder($user, collect([$seminar]));
+
+        expect($mail->envelope()->subject)->toStartWith('Avalie o seminário que você participou');
+        expect($mail->headers()->text['X-Entity-Ref-ID'])->toContain(':'.$seminar->id.':');
+    });
+
+    it('uses singular subject when SeminarReminder has a single seminar', function () {
+        $user = User::factory()->create();
+        $seminar = Seminar::factory()->create(['scheduled_at' => now()->addDay()]);
+
+        $mail = new SeminarReminder($user, collect([$seminar]));
+
+        expect($mail->envelope()->subject)->toStartWith('Lembrete: Seminário amanhã!');
+    });
+
+    it('returns no attachments when SeminarRescheduled has no scheduled_at', function () {
+        $user = User::factory()->create();
+        $seminar = Seminar::factory()->create(['scheduled_at' => now()->addDay()]);
+        $seminar->scheduled_at = null;
+
+        $mail = new SeminarRescheduled($user, $seminar, now()->subWeek()->toDateTime());
+
+        expect($mail->attachments())->toBe([]);
+    });
+});
+
+describe('AuditResetPasswordNotificationSent listener guards', function () {
+    beforeEach(function () {
+        config(['features.email_audit.enabled' => true]);
+    });
+
+    it('ignores notifications that are not ResetPassword', function () {
+        $user = User::factory()->create();
+
+        $other = new class extends BaseNotification
+        {
+            public function via(object $notifiable): array
+            {
+                return ['mail'];
+            }
+        };
+
+        (new AuditResetPasswordNotificationSent)->handle(
+            new NotificationSent($user, $other, 'mail'),
+        );
+
+        expect(AuditLog::forEvent(AuditEvent::EmailSent)->exists())->toBeFalse();
+    });
+
+    it('ignores non-mail channels', function () {
+        $user = User::factory()->create();
+
+        (new AuditResetPasswordNotificationSent)->handle(
+            new NotificationSent($user, new ResetPassword('tok'), 'database'),
+        );
+
+        expect(AuditLog::forEvent(AuditEvent::EmailSent)->exists())->toBeFalse();
+    });
+
+    it('records the audit with a null recipient when the notifiable cannot resolve an email', function () {
+        (new AuditResetPasswordNotificationSent)->handle(
+            new NotificationSent(new AnonymousNotifiable, new ResetPassword('tok'), 'mail'),
+        );
+
+        $log = AuditLog::forEvent(AuditEvent::EmailSent)->latest('id')->first();
+        expect($log)->not->toBeNull();
+        expect($log->event_data['to'])->toBeNull();
+        expect($log->auditable_id)->toBeNull();
     });
 });
