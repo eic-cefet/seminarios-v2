@@ -33,15 +33,26 @@ describe('MessageSent audit listener', function () {
         $logs = AuditLog::forEvent(AuditEvent::EmailSent)->get();
         expect($logs)->toHaveCount(1);
         expect($logs->first()->event_data['mail'])->toBe(CertificateGenerated::class);
-        expect($logs->first()->event_data['ref_id'])->toBe('certificate:'.$registration->id);
+        expect($logs->first()->ref_id)->toBe('certificate:'.$registration->id);
         expect($logs->first()->event_data['to'])->toBe([$user->email]);
     });
 
-    it('does not duplicate audits even when sending repeatedly through queued mailables', function () {
+    it('dedupes audits for the same logical email via the ref_id unique index', function () {
         $user = User::factory()->create();
 
         Mail::to($user)->send(new WelcomeUser($user));
         Mail::to($user)->send(new WelcomeUser($user));
+        Mail::to($user)->send(new WelcomeUser($user));
+
+        expect(AuditLog::forEvent(AuditEvent::EmailSent)->count())->toBe(1);
+    });
+
+    it('records separate audits for distinct logical emails', function () {
+        $a = User::factory()->create();
+        $b = User::factory()->create();
+
+        Mail::to($a)->send(new WelcomeUser($a));
+        Mail::to($b)->send(new WelcomeUser($b));
 
         expect(AuditLog::forEvent(AuditEvent::EmailSent)->count())->toBe(2);
     });
@@ -54,7 +65,7 @@ describe('MessageSent audit listener', function () {
 
         $log = AuditLog::forEvent(AuditEvent::EmailSent)->first();
         $expected = 'evaluation-reminder:'.$user->id.':'.$seminars->pluck('id')->sort()->values()->implode('-').':'.now()->format('Ymd');
-        expect($log->event_data['ref_id'])->toBe($expected);
+        expect($log->ref_id)->toBe($expected);
         expect($log->event_data['mail'])->toBe(EvaluationReminder::class);
     });
 
@@ -66,7 +77,7 @@ describe('MessageSent audit listener', function () {
 
         $log = AuditLog::forEvent(AuditEvent::EmailSent)->first();
         expect($log->event_data['mail'])->toBe(SeminarReminder::class);
-        expect($log->event_data['ref_id'])->toContain('seminar-reminder:'.$user->id.':');
+        expect($log->ref_id)->toContain('seminar-reminder:'.$user->id.':');
     });
 
     it('audits SeminarRescheduled', function () {
@@ -77,7 +88,7 @@ describe('MessageSent audit listener', function () {
         Mail::to($user)->send(new SeminarRescheduled($user, $seminar, $old));
 
         $log = AuditLog::forEvent(AuditEvent::EmailSent)->first();
-        expect($log->event_data['ref_id'])->toBe('seminar-rescheduled:'.$seminar->id.':'.$user->id.':'.$old->getTimestamp());
+        expect($log->ref_id)->toBe('seminar-rescheduled:'.$seminar->id.':'.$user->id.':'.$old->getTimestamp());
     });
 
     it('audits BugReportMail with a uuid-based ref id', function () {
@@ -87,7 +98,7 @@ describe('MessageSent audit listener', function () {
         Mail::to('bugs@example.com')->send($mail);
 
         $log = AuditLog::forEvent(AuditEvent::EmailSent)->first();
-        expect($log->event_data['ref_id'])->toBe($mail->refId);
+        expect($log->ref_id)->toBe($mail->refId);
         expect($log->event_data['mail'])->toBe(BugReportMail::class);
     });
 
@@ -98,7 +109,7 @@ describe('MessageSent audit listener', function () {
         Mail::to($user->email)->send($mail);
 
         $log = AuditLog::forEvent(AuditEvent::EmailSent)->first();
-        expect($log->event_data['ref_id'])->toBe($mail->refId);
+        expect($log->ref_id)->toBe($mail->refId);
     });
 
     it('audits ResetPassword notification once per send', function () {
@@ -110,7 +121,7 @@ describe('MessageSent audit listener', function () {
         $logs = AuditLog::forEvent(AuditEvent::EmailSent)->get();
         expect($logs)->toHaveCount(1);
         expect($logs->first()->event_data['mail'])->toBe(ResetPassword::class);
-        expect($logs->first()->event_data['ref_id'])->toBe($notification->refId);
+        expect($logs->first()->ref_id)->toBe($notification->refId);
     });
 
     it('skips the audit when the email_audit feature flag is disabled', function () {

@@ -25,6 +25,7 @@ class AuditLog extends Model
         'auditable_type',
         'auditable_id',
         'event_data',
+        'ref_id',
         'origin',
         'ip_address',
     ];
@@ -50,6 +51,11 @@ class AuditLog extends Model
 
     /**
      * Record an audit log entry for manual/explicit events.
+     *
+     * When a non-null `$refId` is supplied, the database enforces uniqueness:
+     * attempting to record the same `ref_id` twice raises a
+     * `UniqueConstraintViolationException`, which callers can catch to make
+     * auditing idempotent across queue retries or duplicated dispatches.
      */
     public static function record(
         AuditEvent $event,
@@ -57,8 +63,9 @@ class AuditLog extends Model
         ?Model $auditable = null,
         array $eventData = [],
         ?int $userId = null,
+        ?string $refId = null,
     ): self {
-        return self::log($event->value, $eventType, $auditable, $eventData, $userId);
+        return self::log($event->value, $eventType, $auditable, $eventData, $userId, $refId);
     }
 
     /**
@@ -78,6 +85,7 @@ class AuditLog extends Model
         ?Model $auditable,
         array $eventData,
         ?int $userId = null,
+        ?string $refId = null,
     ): self {
         $origin = Context::get('audit.origin');
 
@@ -101,6 +109,7 @@ class AuditLog extends Model
             'auditable_type' => $auditable?->getMorphClass(),
             'auditable_id' => $auditable?->getKey(),
             'event_data' => $eventData ?: null,
+            'ref_id' => $refId,
             'origin' => $origin,
             'ip_address' => $ipAddress,
         ]);
