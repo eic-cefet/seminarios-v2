@@ -2,11 +2,7 @@
 
 namespace App\Mail;
 
-use App\Enums\AuditEvent;
-use App\Enums\AuditEventType;
-use App\Models\AuditLog;
 use App\Models\Registration;
-use App\Services\FeatureFlags;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Attachment;
@@ -34,7 +30,10 @@ class CertificateGenerated extends Mailable
     public function headers(): Headers
     {
         return new Headers(
-            text: ['X-Entity-Ref-ID' => 'certificate:'.$this->registration->id],
+            text: [
+                'X-Entity-Ref-ID' => 'certificate:'.$this->registration->id,
+                'X-Mail-Class' => self::class,
+            ],
         );
     }
 
@@ -60,25 +59,5 @@ class CertificateGenerated extends Mailable
             Attachment::fromData(fn () => $this->pdfContent, $filename)
                 ->withMime('application/pdf'),
         ];
-    }
-
-    public function send($mailer)
-    {
-        $result = parent::send($mailer);
-
-        if (FeatureFlags::enabled('email_audit')) {
-            AuditLog::record(
-                AuditEvent::EmailSent,
-                AuditEventType::System,
-                auditable: $this->registration,
-                eventData: [
-                    'mail' => self::class,
-                    'to' => $this->registration->user->email,
-                    'ref_id' => 'certificate:'.$this->registration->id,
-                ],
-            );
-        }
-
-        return $result;
     }
 }
