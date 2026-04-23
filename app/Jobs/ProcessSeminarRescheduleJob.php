@@ -5,6 +5,7 @@ namespace App\Jobs;
 use App\Concerns\TracksAuditContext;
 use App\Enums\AuditEvent;
 use App\Enums\AuditEventType;
+use App\Enums\CommunicationCategory;
 use App\Mail\SeminarRescheduled;
 use App\Models\AuditLog;
 use App\Models\Seminar;
@@ -50,6 +51,10 @@ class ProcessSeminarRescheduleJob implements ShouldQueue
         });
 
         foreach ($registrations as $registration) {
+            if (! $registration->user->wantsCommunication(CommunicationCategory::SeminarRescheduled)) {
+                continue;
+            }
+
             Mail::to($registration->user)->queue(
                 new SeminarRescheduled($registration->user, $this->seminar, $this->oldScheduledAt)
             );
