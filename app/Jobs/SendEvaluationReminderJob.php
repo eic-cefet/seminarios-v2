@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Enums\CommunicationCategory;
 use App\Mail\EvaluationReminder;
 use App\Models\Registration;
 use App\Models\User;
@@ -31,6 +32,10 @@ class SendEvaluationReminderJob implements ShouldQueue
 
     public function handle(): void
     {
+        if (! $this->user->wantsCommunication(CommunicationCategory::EvaluationPrompt)) {
+            return;
+        }
+
         $registrations = Registration::whereIn('id', $this->registrationIds)
             ->with(['seminar.seminarLocation'])
             ->get();
