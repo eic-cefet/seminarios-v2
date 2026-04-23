@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Wrench, Calendar } from "lucide-react";
 import { Layout } from "../components/Layout";
 import { PageTitle } from "@shared/components/PageTitle";
+import { LoadingRegion } from "@shared/components/LoadingRegion";
 import { ROUTES } from "@shared/config/routes";
 import { workshopsApi } from "@shared/api/client";
 
@@ -31,14 +32,17 @@ export default function Workshops() {
 
                 <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
                     {isLoading ? (
-                        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                        <LoadingRegion
+                            label="Carregando workshops"
+                            className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
+                        >
                             {[1, 2, 3].map((i) => (
                                 <div
                                     key={i}
                                     className="h-48 animate-pulse rounded-lg bg-gray-200"
                                 />
                             ))}
-                        </div>
+                        </LoadingRegion>
                     ) : workshops.length > 0 ? (
                         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                             {workshops.map((workshop) => (

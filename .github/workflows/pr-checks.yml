@@ -237,6 +237,10 @@ jobs:
         if: steps.filter.outputs.frontend == 'true'
         run: pnpm install --frozen-lockfile
 
+      - name: Run a11y lint (System SPA + Shared)
+        if: steps.filter.outputs.frontend == 'true'
+        run: pnpm run lint:a11y
+
       - name: Run typecheck
         if: steps.filter.outputs.frontend == 'true'
         run: pnpm typecheck

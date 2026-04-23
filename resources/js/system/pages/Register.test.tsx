@@ -57,7 +57,7 @@ describe('Register', () => {
         render(<Register />);
         expect(screen.getByLabelText(/nome completo/i)).toBeInTheDocument();
         expect(screen.getByLabelText(/e-mail/i)).toBeInTheDocument();
-        expect(screen.getByLabelText(/^senha$/i)).toBeInTheDocument();
+        expect(screen.getByLabelText(/^senha/i)).toBeInTheDocument();
         expect(screen.getByLabelText(/confirmar senha/i)).toBeInTheDocument();
     });
 
@@ -89,14 +89,14 @@ describe('Register', () => {
         await user.type(screen.getByLabelText(/e-mail/i), 'test@example.com');
         await user.selectOptions(screen.getByLabelText(/situação/i), 'studying');
         await user.selectOptions(screen.getByLabelText(/vínculo/i), 'Aluno');
-        await user.type(screen.getByLabelText(/^senha$/i), 'password123');
+        await user.type(screen.getByLabelText(/^senha/i), 'password123');
         await user.type(screen.getByLabelText(/confirmar senha/i), 'differentpass');
         // Complete the captcha first
         await user.click(screen.getByText('ReCaptcha'));
         await user.click(screen.getByRole('button', { name: /criar conta/i }));
 
         await waitFor(() => {
-            expect(screen.getByText(/as senhas não coincidem/i)).toBeInTheDocument();
+            expect(screen.getAllByText(/as senhas não coincidem/i).length).toBeGreaterThanOrEqual(1);
         });
     });
 
@@ -109,7 +109,7 @@ describe('Register', () => {
         await user.type(screen.getByLabelText(/e-mail/i), 'test@example.com');
         await user.selectOptions(screen.getByLabelText(/situação/i), 'studying');
         await user.selectOptions(screen.getByLabelText(/vínculo/i), 'Aluno');
-        await user.type(screen.getByLabelText(/^senha$/i), 'short');
+        await user.type(screen.getByLabelText(/^senha/i), 'short');
         await user.type(screen.getByLabelText(/confirmar senha/i), 'short');
         await user.click(screen.getByText('ReCaptcha'));
         await user.click(screen.getByRole('button', { name: /criar conta/i }));
@@ -145,7 +145,7 @@ describe('Register', () => {
 
         await user.type(screen.getByLabelText(/nome completo/i), 'Test User');
         await user.type(screen.getByLabelText(/e-mail/i), 'test@example.com');
-        await user.type(screen.getByLabelText(/^senha$/i), 'password123');
+        await user.type(screen.getByLabelText(/^senha/i), 'password123');
         await user.type(screen.getByLabelText(/confirmar senha/i), 'password123');
         // Leave courseSituation and courseRole empty
         await user.click(screen.getByText('ReCaptcha'));
@@ -169,7 +169,7 @@ describe('Register', () => {
         await user.type(screen.getByLabelText(/e-mail/i), 'test@example.com');
         await user.selectOptions(screen.getByLabelText(/situação/i), 'studying');
         await user.selectOptions(screen.getByLabelText(/vínculo/i), 'Aluno');
-        await user.type(screen.getByLabelText(/^senha$/i), 'password123');
+        await user.type(screen.getByLabelText(/^senha/i), 'password123');
         await user.type(screen.getByLabelText(/confirmar senha/i), 'password123');
         await user.click(screen.getByText('ReCaptcha'));
         await user.click(screen.getByRole('button', { name: /criar conta/i }));
@@ -201,7 +201,7 @@ describe('Register', () => {
         await user.type(screen.getByLabelText(/e-mail/i), 'test@example.com');
         await user.selectOptions(screen.getByLabelText(/situação/i), 'studying');
         await user.selectOptions(screen.getByLabelText(/vínculo/i), 'Aluno');
-        await user.type(screen.getByLabelText(/^senha$/i), 'password123');
+        await user.type(screen.getByLabelText(/^senha/i), 'password123');
         await user.type(screen.getByLabelText(/confirmar senha/i), 'password123');
         await user.click(screen.getByText('ReCaptcha'));
         await user.click(screen.getByRole('button', { name: /criar conta/i }));
@@ -224,7 +224,7 @@ describe('Register', () => {
         await user.type(screen.getByLabelText(/e-mail/i), 'test@example.com');
         await user.selectOptions(screen.getByLabelText(/situação/i), 'studying');
         await user.selectOptions(screen.getByLabelText(/vínculo/i), 'Aluno');
-        await user.type(screen.getByLabelText(/^senha$/i), 'password123');
+        await user.type(screen.getByLabelText(/^senha/i), 'password123');
         await user.type(screen.getByLabelText(/confirmar senha/i), 'password123');
         await user.click(screen.getByText('ReCaptcha'));
         await user.click(screen.getByRole('button', { name: /criar conta/i }));
@@ -315,7 +315,7 @@ describe('Register', () => {
         await user.type(screen.getByLabelText(/e-mail/i), 'test@example.com');
         await user.selectOptions(screen.getByLabelText(/situação/i), 'studying');
         await user.selectOptions(screen.getByLabelText(/vínculo/i), 'Aluno');
-        await user.type(screen.getByLabelText(/^senha$/i), 'password123');
+        await user.type(screen.getByLabelText(/^senha/i), 'password123');
         await user.type(screen.getByLabelText(/confirmar senha/i), 'password123');
         await user.click(screen.getByText('ReCaptcha'));
         await user.click(screen.getByRole('button', { name: /criar conta/i }));
@@ -346,7 +346,7 @@ describe('Register', () => {
         });
         await user.selectOptions(screen.getByLabelText(/curso/i), '1');
 
-        await user.type(screen.getByLabelText(/^senha$/i), 'password123');
+        await user.type(screen.getByLabelText(/^senha/i), 'password123');
         await user.type(screen.getByLabelText(/confirmar senha/i), 'password123');
         await user.click(screen.getByText('ReCaptcha'));
         await user.click(screen.getByRole('button', { name: /criar conta/i }));
@@ -396,7 +396,7 @@ describe('Register', () => {
             await user.type(screen.getByLabelText(/e-mail/i), 'test@example.com');
             await user.selectOptions(screen.getByLabelText(/situação/i), 'studying');
             await user.selectOptions(screen.getByLabelText(/vínculo/i), 'Aluno');
-            await user.type(screen.getByLabelText(/^senha$/i), 'password123');
+            await user.type(screen.getByLabelText(/^senha/i), 'password123');
             await user.type(screen.getByLabelText(/confirmar senha/i), 'password123');
             await user.click(screen.getByText('ReCaptcha'));
             await user.click(screen.getByRole('button', { name: /criar conta/i }));

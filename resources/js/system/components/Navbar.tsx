@@ -34,7 +34,7 @@ export function Navbar() {
 
     return (
         <>
-            <nav className="bg-white border-b border-gray-200">
+            <nav aria-label="Navegação principal" className="bg-white border-b border-gray-200">
                 <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                     <div className="flex h-16 justify-between">
                         <div className="flex">
@@ -81,19 +81,23 @@ export function Navbar() {
                         <div className="flex items-center sm:hidden">
                             <button
                                 type="button"
+                                aria-expanded={mobileMenuOpen}
+                                aria-controls="mobile-nav"
                                 onClick={() => {
                                     if (!mobileMenuOpen) {
                                         analytics.event("navbar_menu_open");
                                     }
                                     setMobileMenuOpen(!mobileMenuOpen);
                                 }}
-                                className="inline-flex items-center justify-center rounded-md p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-500 cursor-pointer"
+                                className="inline-flex items-center justify-center rounded-md p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-700 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
                             >
-                                <span className="sr-only">Abrir menu</span>
+                                <span className="sr-only">
+                                    {mobileMenuOpen ? "Fechar menu" : "Abrir menu"}
+                                </span>
                                 {mobileMenuOpen ? (
-                                    <X className="h-6 w-6" />
+                                    <X className="h-6 w-6" aria-hidden="true" />
                                 ) : (
-                                    <Menu className="h-6 w-6" />
+                                    <Menu className="h-6 w-6" aria-hidden="true" />
                                 )}
                             </button>
                         </div>
@@ -101,6 +105,7 @@ export function Navbar() {
                 </div>
 
                 <div
+                    id="mobile-nav"
                     className={cn(
                         "sm:hidden",
                         mobileMenuOpen ? "block" : "hidden",

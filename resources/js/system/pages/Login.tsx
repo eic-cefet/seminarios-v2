@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
-import * as Label from "@radix-ui/react-label";
 import { Layout } from "../components/Layout";
 import { PageTitle } from "@shared/components/PageTitle";
+import { FormField } from "@shared/components/FormField";
 import { ROUTES } from "@shared/config/routes";
 import { SocialLoginButtons } from "@shared/components/SocialLoginButtons";
 import { buildUrl, cn, isSafeRedirect } from "@shared/lib/utils";
@@ -84,38 +84,28 @@ export default function Login() {
 
                         <form onSubmit={handleSubmit} className="space-y-5">
                             {error && (
-                                <div className="rounded-md bg-red-50 p-3 text-sm text-red-700">
+                                <div role="alert" className="rounded-md bg-red-50 p-3 text-sm text-red-700">
                                     {error}
                                 </div>
                             )}
 
-                            <div>
-                                <Label.Root
-                                    htmlFor="email"
-                                    className="block text-sm font-medium text-gray-700"
-                                >
-                                    E-mail
-                                </Label.Root>
-                                <input
-                                    id="email"
-                                    name="email"
-                                    type="email"
-                                    required
-                                    value={formData.email}
-                                    onChange={handleChange}
-                                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
-                                    placeholder="seu@email.com"
-                                />
-                            </div>
+                            <FormField
+                                id="email"
+                                name="email"
+                                type="email"
+                                label="E-mail"
+                                autoComplete="email"
+                                required
+                                value={formData.email}
+                                onChange={handleChange}
+                                placeholder="seu@email.com"
+                            />
 
                             <div>
-                                <div className="flex items-center justify-between">
-                                    <Label.Root
-                                        htmlFor="password"
-                                        className="block text-sm font-medium text-gray-700"
-                                    >
+                                <div className="flex items-center justify-between mb-1">
+                                    <span className="block text-sm font-medium text-gray-700" aria-hidden="true">
                                         Senha
-                                    </Label.Root>
+                                    </span>
                                     <Link
                                         to={ROUTES.SYSTEM.FORGOT_PASSWORD}
                                         className="text-sm font-medium text-primary-600 hover:text-primary-700"
@@ -123,14 +113,16 @@ export default function Login() {
                                         Esqueceu a senha?
                                     </Link>
                                 </div>
-                                <input
+                                <FormField
                                     id="password"
                                     name="password"
                                     type="password"
+                                    label="Senha"
+                                    labelClassName="sr-only"
+                                    autoComplete="current-password"
                                     required
                                     value={formData.password}
                                     onChange={handleChange}
-                                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
                                     placeholder="Sua senha"
                                 />
                             </div>

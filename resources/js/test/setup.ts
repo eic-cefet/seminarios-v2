@@ -1,4 +1,17 @@
 import '@testing-library/jest-dom/vitest';
+import { expect } from 'vitest';
+import { toHaveNoViolations } from 'jest-axe';
+
+expect.extend(toHaveNoViolations);
+
+declare module 'vitest' {
+    interface Assertion {
+        toHaveNoViolations(): Promise<void>;
+    }
+    interface AsymmetricMatchersContaining {
+        toHaveNoViolations(): Promise<void>;
+    }
+}
 
 // Global app config mock (injected by Blade in production)
 globalThis.app = {

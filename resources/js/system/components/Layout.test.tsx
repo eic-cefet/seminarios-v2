@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@/test/test-utils';
+import { axe } from 'jest-axe';
 import { Layout } from './Layout';
 
 vi.mock('@shared/contexts/AuthContext', () => ({
@@ -66,5 +67,33 @@ describe('Layout', () => {
         );
 
         expect(screen.getByText('Navbar')).toBeInTheDocument();
+    });
+
+    it('exposes a skip link targeting #main-content', () => {
+        render(
+            <Layout>
+                <div>Content</div>
+            </Layout>
+        );
+        const skip = screen.getByRole('link', { name: /pular para o conteúdo/i });
+        expect(skip).toHaveAttribute('href', '#main-content');
+    });
+
+    it('renders a labelled <main> landmark', () => {
+        render(
+            <Layout>
+                <div>Content</div>
+            </Layout>
+        );
+        expect(screen.getByRole('main')).toHaveAttribute('id', 'main-content');
+    });
+
+    it('has no detectable axe violations', async () => {
+        const { container } = render(
+            <Layout>
+                <div>Content</div>
+            </Layout>
+        );
+        expect(await axe(container)).toHaveNoViolations();
     });
 });

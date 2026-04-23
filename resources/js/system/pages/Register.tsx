@@ -13,6 +13,7 @@ import { useAuth } from "@shared/contexts/AuthContext";
 import { getErrorMessage } from "@shared/lib/errors";
 import { coursesApi } from "@shared/api/client";
 import { analytics } from "@shared/lib/analytics";
+import { FormField } from "@shared/components/FormField";
 
 export default function Register() {
     const navigate = useNavigate();
@@ -34,6 +35,12 @@ export default function Register() {
     });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+
+    const mismatchError =
+        formData.passwordConfirmation.length > 0 &&
+        formData.password !== formData.passwordConfirmation
+            ? "As senhas não coincidem"
+            : undefined;
 
     const { data: coursesData } = useQuery({
         queryKey: ["courses"],
@@ -141,48 +148,34 @@ export default function Register() {
 
                         <form onSubmit={handleSubmit} className="space-y-5">
                             {error && (
-                                <div className="rounded-md bg-red-50 p-3 text-sm text-red-700">
+                                <div role="alert" className="rounded-md bg-red-50 p-3 text-sm text-red-700">
                                     {error}
                                 </div>
                             )}
 
-                            <div>
-                                <Label.Root
-                                    htmlFor="name"
-                                    className="block text-sm font-medium text-gray-700"
-                                >
-                                    Nome completo
-                                </Label.Root>
-                                <input
-                                    id="name"
-                                    name="name"
-                                    type="text"
-                                    required
-                                    value={formData.name}
-                                    onChange={handleChange}
-                                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
-                                    placeholder="Seu nome completo"
-                                />
-                            </div>
+                            <FormField
+                                id="name"
+                                label="Nome completo"
+                                name="name"
+                                type="text"
+                                required
+                                value={formData.name}
+                                onChange={handleChange}
+                                autoComplete="name"
+                                placeholder="Seu nome completo"
+                            />
 
-                            <div>
-                                <Label.Root
-                                    htmlFor="email"
-                                    className="block text-sm font-medium text-gray-700"
-                                >
-                                    E-mail
-                                </Label.Root>
-                                <input
-                                    id="email"
-                                    name="email"
-                                    type="email"
-                                    required
-                                    value={formData.email}
-                                    onChange={handleChange}
-                                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
-                                    placeholder="seu@email.com"
-                                />
-                            </div>
+                            <FormField
+                                id="email"
+                                label="E-mail"
+                                name="email"
+                                type="email"
+                                required
+                                value={formData.email}
+                                onChange={handleChange}
+                                autoComplete="email"
+                                placeholder="seu@email.com"
+                            />
 
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
@@ -263,43 +256,31 @@ export default function Register() {
                                 </select>
                             </div>
 
-                            <div>
-                                <Label.Root
-                                    htmlFor="password"
-                                    className="block text-sm font-medium text-gray-700"
-                                >
-                                    Senha
-                                </Label.Root>
-                                <input
-                                    id="password"
-                                    name="password"
-                                    type="password"
-                                    required
-                                    value={formData.password}
-                                    onChange={handleChange}
-                                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
-                                    placeholder="Mínimo de 8 caracteres"
-                                />
-                            </div>
+                            <FormField
+                                id="password"
+                                label="Senha"
+                                name="password"
+                                type="password"
+                                required
+                                value={formData.password}
+                                onChange={handleChange}
+                                autoComplete="new-password"
+                                placeholder="Mínimo de 8 caracteres"
+                                hint="Mínimo de 8 caracteres"
+                            />
 
-                            <div>
-                                <Label.Root
-                                    htmlFor="passwordConfirmation"
-                                    className="block text-sm font-medium text-gray-700"
-                                >
-                                    Confirmar senha
-                                </Label.Root>
-                                <input
-                                    id="passwordConfirmation"
-                                    name="passwordConfirmation"
-                                    type="password"
-                                    required
-                                    value={formData.passwordConfirmation}
-                                    onChange={handleChange}
-                                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
-                                    placeholder="Digite a senha novamente"
-                                />
-                            </div>
+                            <FormField
+                                id="passwordConfirmation"
+                                label="Confirmar senha"
+                                name="passwordConfirmation"
+                                type="password"
+                                required
+                                value={formData.passwordConfirmation}
+                                onChange={handleChange}
+                                autoComplete="new-password"
+                                placeholder="Digite a senha novamente"
+                                error={mismatchError}
+                            />
 
                             <ReCaptcha
                                 ref={recaptchaRef}

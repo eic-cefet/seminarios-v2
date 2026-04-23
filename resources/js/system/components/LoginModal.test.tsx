@@ -56,14 +56,14 @@ describe('LoginModal', () => {
     it('shows email input field', () => {
         render(<LoginModal open={true} onOpenChange={onOpenChange} />);
 
-        expect(screen.getByLabelText('E-mail')).toBeInTheDocument();
+        expect(screen.getByLabelText(/e-mail/i)).toBeInTheDocument();
         expect(screen.getByPlaceholderText('seu@email.com')).toBeInTheDocument();
     });
 
     it('shows password input field', () => {
         render(<LoginModal open={true} onOpenChange={onOpenChange} />);
 
-        expect(screen.getByLabelText('Senha')).toBeInTheDocument();
+        expect(screen.getByLabelText(/^senha/i)).toBeInTheDocument();
     });
 
     it('shows submit button', () => {
@@ -119,7 +119,7 @@ describe('LoginModal', () => {
 
         render(<LoginModal open={true} onOpenChange={onOpenChange} />);
 
-        const emailInput = screen.getByLabelText('E-mail');
+        const emailInput = screen.getByLabelText(/e-mail/i);
         await user.type(emailInput, 'test@example.com');
 
         expect(emailInput).toHaveValue('test@example.com');
@@ -130,7 +130,7 @@ describe('LoginModal', () => {
 
         render(<LoginModal open={true} onOpenChange={onOpenChange} />);
 
-        const passwordInput = screen.getByLabelText('Senha');
+        const passwordInput = screen.getByLabelText(/^senha/i);
         await user.type(passwordInput, 'mypassword');
 
         expect(passwordInput).toHaveValue('mypassword');
@@ -142,8 +142,8 @@ describe('LoginModal', () => {
 
         render(<LoginModal open={true} onOpenChange={onOpenChange} />);
 
-        await user.type(screen.getByLabelText('E-mail'), 'test@example.com');
-        await user.type(screen.getByLabelText('Senha'), 'password123');
+        await user.type(screen.getByLabelText(/e-mail/i), 'test@example.com');
+        await user.type(screen.getByLabelText(/^senha/i), 'password123');
         await user.click(screen.getByRole('button', { name: 'Entrar' }));
 
         await waitFor(() => {
@@ -161,8 +161,8 @@ describe('LoginModal', () => {
 
         render(<LoginModal open={true} onOpenChange={onOpenChange} />);
 
-        await user.type(screen.getByLabelText('E-mail'), 'test@example.com');
-        await user.type(screen.getByLabelText('Senha'), 'wrongpassword');
+        await user.type(screen.getByLabelText(/e-mail/i), 'test@example.com');
+        await user.type(screen.getByLabelText(/^senha/i), 'wrongpassword');
         await user.click(screen.getByRole('button', { name: 'Entrar' }));
 
         await waitFor(() => {
@@ -177,8 +177,8 @@ describe('LoginModal', () => {
 
         render(<LoginModal open={true} onOpenChange={onOpenChange} />);
 
-        await user.type(screen.getByLabelText('E-mail'), 'test@example.com');
-        await user.type(screen.getByLabelText('Senha'), 'password123');
+        await user.type(screen.getByLabelText(/e-mail/i), 'test@example.com');
+        await user.type(screen.getByLabelText(/^senha/i), 'password123');
         await user.click(screen.getByRole('button', { name: 'Entrar' }));
 
         expect(screen.getByRole('button', { name: 'Entrando...' })).toBeInTheDocument();
@@ -199,7 +199,7 @@ describe('LoginModal', () => {
         await user.click(screen.getByText(/esqueci minha senha/i));
 
         expect(screen.getByText('Recuperar senha')).toBeInTheDocument();
-        expect(screen.getByLabelText('E-mail')).toBeInTheDocument();
+        expect(screen.getByLabelText(/e-mail/i)).toBeInTheDocument();
         expect(screen.getByRole('button', { name: 'Enviar' })).toBeInTheDocument();
         expect(screen.getByRole('button', { name: 'Voltar' })).toBeInTheDocument();
     });
@@ -211,7 +211,7 @@ describe('LoginModal', () => {
 
         await user.click(screen.getByText(/esqueci minha senha/i));
 
-        const forgotEmailInput = screen.getByLabelText('E-mail');
+        const forgotEmailInput = screen.getByLabelText(/e-mail/i);
         await user.type(forgotEmailInput, 'forgot@example.com');
 
         expect(forgotEmailInput).toHaveValue('forgot@example.com');
@@ -224,7 +224,7 @@ describe('LoginModal', () => {
         render(<LoginModal open={true} onOpenChange={onOpenChange} />);
 
         await user.click(screen.getByText(/esqueci minha senha/i));
-        await user.type(screen.getByLabelText('E-mail'), 'forgot@example.com');
+        await user.type(screen.getByLabelText(/e-mail/i), 'forgot@example.com');
         await user.click(screen.getByRole('button', { name: 'Enviar' }));
 
         await waitFor(() => {
@@ -243,7 +243,7 @@ describe('LoginModal', () => {
         render(<LoginModal open={true} onOpenChange={onOpenChange} />);
 
         await user.click(screen.getByText(/esqueci minha senha/i));
-        await user.type(screen.getByLabelText('E-mail'), 'forgot@example.com');
+        await user.type(screen.getByLabelText(/e-mail/i), 'forgot@example.com');
         await user.click(screen.getByRole('button', { name: 'Enviar' }));
 
         await waitFor(() => {
@@ -259,7 +259,7 @@ describe('LoginModal', () => {
         render(<LoginModal open={true} onOpenChange={onOpenChange} />);
 
         await user.click(screen.getByText(/esqueci minha senha/i));
-        await user.type(screen.getByLabelText('E-mail'), 'forgot@example.com');
+        await user.type(screen.getByLabelText(/e-mail/i), 'forgot@example.com');
         await user.click(screen.getByRole('button', { name: 'Enviar' }));
 
         expect(screen.getByRole('button', { name: 'Enviando...' })).toBeInTheDocument();
@@ -279,7 +279,7 @@ describe('LoginModal', () => {
         render(<LoginModal open={true} onOpenChange={onOpenChange} />);
 
         await user.click(screen.getByText(/esqueci minha senha/i));
-        await user.type(screen.getByLabelText('E-mail'), 'forgot@example.com');
+        await user.type(screen.getByLabelText(/e-mail/i), 'forgot@example.com');
         await user.click(screen.getByRole('button', { name: 'Enviar' }));
 
         await waitFor(() => {
@@ -311,8 +311,8 @@ describe('LoginModal', () => {
 
         render(<LoginModal open={true} onOpenChange={onOpenChange} />);
 
-        await user.type(screen.getByLabelText('E-mail'), 'test@example.com');
-        await user.type(screen.getByLabelText('Senha'), 'wrong');
+        await user.type(screen.getByLabelText(/e-mail/i), 'test@example.com');
+        await user.type(screen.getByLabelText(/^senha/i), 'wrong');
         await user.click(screen.getByRole('button', { name: 'Entrar' }));
 
         await waitFor(() => {
@@ -382,12 +382,12 @@ describe('LoginModal', () => {
         rerender(<LoginModal open={true} onOpenChange={onOpenChange} />);
 
         // Type some values into the fields
-        await user.type(screen.getByLabelText('E-mail'), 'keep@example.com');
-        await user.type(screen.getByLabelText('Senha'), 'keeppass');
+        await user.type(screen.getByLabelText(/e-mail/i), 'keep@example.com');
+        await user.type(screen.getByLabelText(/^senha/i), 'keeppass');
 
         // Verify the values are preserved (not reset)
-        expect(screen.getByLabelText('E-mail')).toHaveValue('keep@example.com');
-        expect(screen.getByLabelText('Senha')).toHaveValue('keeppass');
+        expect(screen.getByLabelText(/e-mail/i)).toHaveValue('keep@example.com');
+        expect(screen.getByLabelText(/^senha/i)).toHaveValue('keeppass');
     });
 
     it('resets state when dialog is closed via close button', async () => {
@@ -397,8 +397,8 @@ describe('LoginModal', () => {
         render(<LoginModal open={true} onOpenChange={onOpenChange} />);
 
         // Trigger an error first
-        await user.type(screen.getByLabelText('E-mail'), 'test@example.com');
-        await user.type(screen.getByLabelText('Senha'), 'wrong');
+        await user.type(screen.getByLabelText(/e-mail/i), 'test@example.com');
+        await user.type(screen.getByLabelText(/^senha/i), 'wrong');
         await user.click(screen.getByRole('button', { name: 'Entrar' }));
 
         await waitFor(() => {

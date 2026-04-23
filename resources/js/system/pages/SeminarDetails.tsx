@@ -19,6 +19,7 @@ import { Badge } from "../components/Badge";
 import { CalendarMenu } from "../components/CalendarMenu";
 import { LoginModal } from "../components/LoginModal";
 import { PageTitle } from "@shared/components/PageTitle";
+import { LoadingRegion } from "@shared/components/LoadingRegion";
 import { seminarsApi, registrationApi } from "@shared/api/client";
 import { cn, containsHTML } from "@shared/lib/utils";
 import {
@@ -154,16 +155,18 @@ export default function SeminarDetails() {
             <>
                 <PageTitle title="Carregando..." />
                 <Layout>
-                    <div className="bg-white border-b border-gray-200">
-                        <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-                            <div className="h-4 w-32 animate-pulse rounded bg-gray-200 mb-4" />
-                            <div className="h-10 w-96 animate-pulse rounded bg-gray-200" />
-                            <div className="h-4 w-64 animate-pulse rounded bg-gray-200 mt-4" />
+                    <LoadingRegion label="Carregando detalhes do seminário">
+                        <div className="bg-white border-b border-gray-200">
+                            <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+                                <div className="h-4 w-32 animate-pulse rounded bg-gray-200 mb-4" />
+                                <div className="h-10 w-96 animate-pulse rounded bg-gray-200" />
+                                <div className="h-4 w-64 animate-pulse rounded bg-gray-200 mt-4" />
+                            </div>
                         </div>
-                    </div>
-                    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-                        <div className="h-64 animate-pulse rounded-lg bg-gray-200" />
-                    </div>
+                        <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+                            <div className="h-64 animate-pulse rounded-lg bg-gray-200" />
+                        </div>
+                    </LoadingRegion>
                 </Layout>
             </>
         );
@@ -357,9 +360,10 @@ export default function SeminarDetails() {
                                                                     }
                                                                     target="_blank"
                                                                     rel="noopener noreferrer"
-                                                                    className="text-gray-400 hover:text-primary-600 cursor-pointer"
+                                                                    aria-label={`LinkedIn de ${speaker.name}`}
+                                                                    className="text-gray-600 hover:text-primary-600 cursor-pointer"
                                                                 >
-                                                                    <Linkedin className="h-5 w-5" />
+                                                                    <Linkedin className="h-5 w-5" aria-hidden="true" />
                                                                 </a>
                                                             )}
                                                             {speaker.speakerData
@@ -372,9 +376,10 @@ export default function SeminarDetails() {
                                                                     }
                                                                     target="_blank"
                                                                     rel="noopener noreferrer"
-                                                                    className="text-gray-400 hover:text-primary-600 cursor-pointer"
+                                                                    aria-label={`GitHub de ${speaker.name}`}
+                                                                    className="text-gray-600 hover:text-primary-600 cursor-pointer"
                                                                 >
-                                                                    <Github className="h-5 w-5" />
+                                                                    <Github className="h-5 w-5" aria-hidden="true" />
                                                                 </a>
                                                             )}
                                                         </div>
@@ -446,7 +451,7 @@ export default function SeminarDetails() {
                                         <h3 className="font-semibold text-gray-500 mb-2">
                                             Este seminário já foi realizado
                                         </h3>
-                                        <p className="text-sm text-gray-400">
+                                        <p className="text-sm text-gray-600">
                                             Confira outros seminários
                                             disponíveis
                                         </p>

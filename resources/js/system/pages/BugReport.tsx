@@ -291,9 +291,10 @@ export default function BugReport() {
                                                 <button
                                                     type="button"
                                                     onClick={() => removeFile(index)}
-                                                    className="p-1 text-gray-400 hover:text-red-500"
+                                                    aria-label={`Remover arquivo ${file.name}`}
+                                                    className="p-1 text-gray-600 hover:text-red-500"
                                                 >
-                                                    <X className="h-4 w-4" />
+                                                    <X className="h-4 w-4" aria-hidden="true" />
                                                 </button>
                                             </div>
                                         ))}
