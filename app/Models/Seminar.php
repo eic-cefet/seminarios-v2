@@ -86,6 +86,11 @@ class Seminar extends Model
         return $this->hasMany(Rating::class);
     }
 
+    public function alertDispatches(): HasMany
+    {
+        return $this->hasMany(SeminarAlertDispatch::class);
+    }
+
     public function scopeActive(Builder $query): Builder
     {
         return $query->where('active', true);

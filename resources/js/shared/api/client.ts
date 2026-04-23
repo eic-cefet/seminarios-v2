@@ -396,6 +396,37 @@ export const profileApi = {
     },
 };
 
+export interface AlertPreference {
+    optedIn: boolean;
+    seminarTypeIds: number[];
+    subjectIds: number[];
+}
+
+export const alertPreferencesApi = {
+    get: async (): Promise<AlertPreference> => {
+        const response = await fetchApi<{ data: AlertPreference }>(
+            "/profile/alert-preferences",
+        );
+        return response.data;
+    },
+
+    update: async (data: {
+        opted_in: boolean;
+        seminar_type_ids: number[];
+        subject_ids: number[];
+    }): Promise<AlertPreference> => {
+        await getCsrfCookie();
+        const response = await fetchApi<{ message: string; data: AlertPreference }>(
+            "/profile/alert-preferences",
+            {
+                method: "PUT",
+                body: JSON.stringify(data),
+            },
+        );
+        return response.data;
+    },
+};
+
 export interface PendingEvaluation {
     id: number;
     seminar: {

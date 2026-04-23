@@ -14,6 +14,7 @@ import Register from "./pages/Register";
 import AuthCallback from "./pages/AuthCallback";
 import Profile from "./pages/Profile";
 import Certificates from "./pages/Certificates";
+import AlertPreferences from "./pages/AlertPreferences";
 import Subjects from "./pages/Subjects";
 import SubjectSeminars from "./pages/SubjectSeminars";
 import Presentations from "./pages/Presentations";
@@ -49,6 +50,7 @@ function AppRoutes() {
             <Route path={ROUTES.SYSTEM.AUTH_CALLBACK} element={<AuthCallback />} />
             <Route path={ROUTES.SYSTEM.PROFILE} element={<Profile />} />
             <Route path={ROUTES.SYSTEM.CERTIFICATES} element={<Certificates />} />
+            <Route path={ROUTES.SYSTEM.ALERT_PREFERENCES} element={<AlertPreferences />} />
             <Route path={ROUTES.SYSTEM.SUBJECTS} element={<Subjects />} />
             <Route path={ROUTES.SYSTEM.SUBJECT_DETAILS_PATTERN} element={<SubjectSeminars />} />
             <Route path={ROUTES.SYSTEM.PRESENTATIONS} element={<Presentations />} />

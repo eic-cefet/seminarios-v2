@@ -1,0 +1,43 @@
+<?php
+
+namespace App\Models;
+
+use App\Models\Concerns\Auditable;
+use Database\Factories\AlertPreferenceFactory;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+
+class AlertPreference extends Model
+{
+    /** @use HasFactory<AlertPreferenceFactory> */
+    use Auditable, HasFactory;
+
+    protected $fillable = [
+        'user_id',
+        'opted_in',
+    ];
+
+    protected function casts(): array
+    {
+        return [
+            'opted_in' => 'boolean',
+        ];
+    }
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public function seminarTypes(): BelongsToMany
+    {
+        return $this->belongsToMany(SeminarType::class, 'alert_preference_seminar_type');
+    }
+
+    public function subjects(): BelongsToMany
+    {
+        return $this->belongsToMany(Subject::class, 'alert_preference_subject');
+    }
+}
