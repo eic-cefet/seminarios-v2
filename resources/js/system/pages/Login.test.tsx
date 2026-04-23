@@ -35,7 +35,7 @@ describe('Login', () => {
     it('renders email and password inputs', () => {
         render(<Login />);
         expect(screen.getByLabelText(/e-mail/i)).toBeInTheDocument();
-        expect(screen.getByLabelText(/^senha$/i)).toBeInTheDocument();
+        expect(screen.getByLabelText(/^senha/i)).toBeInTheDocument();
     });
 
     it('renders social login buttons', () => {
@@ -70,7 +70,7 @@ describe('Login', () => {
         render(<Login />);
 
         await user.type(screen.getByLabelText(/e-mail/i), 'test@example.com');
-        await user.type(screen.getByLabelText(/^senha$/i), 'mypassword123');
+        await user.type(screen.getByLabelText(/^senha/i), 'mypassword123');
         // Find submit button inside the form (not the Navbar link)
         const buttons = screen.getAllByRole('button', { name: /^entrar$/i });
         await user.click(buttons[buttons.length - 1]);
@@ -91,7 +91,7 @@ describe('Login', () => {
         render(<Login />);
 
         await user.type(screen.getByLabelText(/e-mail/i), 'wrong@example.com');
-        await user.type(screen.getByLabelText(/^senha$/i), 'wrongpassword');
+        await user.type(screen.getByLabelText(/^senha/i), 'wrongpassword');
         const buttons = screen.getAllByRole('button', { name: /^entrar$/i });
         await user.click(buttons[buttons.length - 1]);
 
@@ -111,7 +111,7 @@ describe('Login', () => {
         render(<Login />);
 
         await user.type(screen.getByLabelText(/e-mail/i), 'test@example.com');
-        await user.type(screen.getByLabelText(/^senha$/i), 'mypassword123');
+        await user.type(screen.getByLabelText(/^senha/i), 'mypassword123');
         const buttons = screen.getAllByRole('button', { name: /^entrar$/i });
         await user.click(buttons[buttons.length - 1]);
 
@@ -170,7 +170,7 @@ describe('Login', () => {
             render(<Login />);
 
             await user.type(screen.getByLabelText(/e-mail/i), 'test@example.com');
-            await user.type(screen.getByLabelText(/^senha$/i), 'mypassword123');
+            await user.type(screen.getByLabelText(/^senha/i), 'mypassword123');
             const buttons = screen.getAllByRole('button', { name: /^entrar$/i });
             await user.click(buttons[buttons.length - 1]);
 
@@ -194,7 +194,7 @@ describe('Login', () => {
             });
 
             await user.type(screen.getByLabelText(/e-mail/i), 'test@example.com');
-            await user.type(screen.getByLabelText(/^senha$/i), 'mypassword123');
+            await user.type(screen.getByLabelText(/^senha/i), 'mypassword123');
             const buttons = screen.getAllByRole('button', { name: /^entrar$/i });
             await user.click(buttons[buttons.length - 1]);
 
@@ -218,7 +218,7 @@ describe('Login', () => {
             });
 
             await user.type(screen.getByLabelText(/e-mail/i), 'test@example.com');
-            await user.type(screen.getByLabelText(/^senha$/i), 'mypassword123');
+            await user.type(screen.getByLabelText(/^senha/i), 'mypassword123');
             const buttons = screen.getAllByRole('button', { name: /^entrar$/i });
             await user.click(buttons[buttons.length - 1]);
 
@@ -296,7 +296,7 @@ describe('Login', () => {
             });
 
             await user.type(screen.getByLabelText(/e-mail/i), 'test@example.com');
-            await user.type(screen.getByLabelText(/^senha$/i), 'mypassword123');
+            await user.type(screen.getByLabelText(/^senha/i), 'mypassword123');
             const buttons = screen.getAllByRole('button', { name: /^entrar$/i });
             await user.click(buttons[buttons.length - 1]);
 
@@ -320,7 +320,7 @@ describe('Login', () => {
             });
 
             await user.type(screen.getByLabelText(/e-mail/i), 'test@example.com');
-            await user.type(screen.getByLabelText(/^senha$/i), 'mypassword123');
+            await user.type(screen.getByLabelText(/^senha/i), 'mypassword123');
             const buttons = screen.getAllByRole('button', { name: /^entrar$/i });
             await user.click(buttons[buttons.length - 1]);
 

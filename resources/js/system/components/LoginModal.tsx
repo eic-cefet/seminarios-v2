@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import * as Dialog from "@radix-ui/react-dialog";
-import * as Label from "@radix-ui/react-label";
 import { X } from "lucide-react";
 import { SocialLoginButtons } from "@shared/components/SocialLoginButtons";
+import { FormField } from "@shared/components/FormField";
 import { ROUTES } from "@shared/config/routes";
 import { buildUrl, cn } from "@shared/lib/utils";
 import { useAuth } from "@shared/contexts/AuthContext";
@@ -25,6 +25,7 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [forgotSuccess, setForgotSuccess] = useState(false);
+    const emailRef = useRef<HTMLInputElement>(null);
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -83,7 +84,15 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
         >
             <Dialog.Portal>
                 <Dialog.Overlay className="fixed inset-0 bg-black/50 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
-                <Dialog.Content className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-white rounded-lg shadow-xl p-6 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%]">
+                <Dialog.Content
+                    onOpenAutoFocus={(e) => {
+                        if (view === "login") {
+                            e.preventDefault();
+                            emailRef.current?.focus();
+                        }
+                    }}
+                    className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-white rounded-lg shadow-xl p-6 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%]"
+                >
                     <Dialog.Close asChild>
                         <button
                             className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-white transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-primary-400 focus:ring-offset-2 cursor-pointer"
@@ -111,39 +120,29 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
 
                             <form onSubmit={handleLogin} className="space-y-4">
                                 {error && (
-                                    <div className="rounded-md bg-red-50 p-3 text-sm text-red-700">
+                                    <div role="alert" className="rounded-md bg-red-50 p-3 text-sm text-red-700">
                                         {error}
                                     </div>
                                 )}
 
-                                <div>
-                                    <Label.Root
-                                        htmlFor="email"
-                                        className="block text-sm font-medium text-gray-700"
-                                    >
-                                        E-mail
-                                    </Label.Root>
-                                    <input
-                                        id="email"
-                                        type="email"
-                                        value={email}
-                                        onChange={(e) =>
-                                            setEmail(e.target.value)
-                                        }
-                                        required
-                                        className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
-                                        placeholder="seu@email.com"
-                                    />
-                                </div>
+                                <FormField
+                                    ref={emailRef}
+                                    id="login-modal-email"
+                                    name="email"
+                                    type="email"
+                                    label="E-mail"
+                                    autoComplete="email"
+                                    required
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    placeholder="seu@email.com"
+                                />
 
                                 <div>
-                                    <div className="flex items-center justify-between">
-                                        <Label.Root
-                                            htmlFor="password"
-                                            className="block text-sm font-medium text-gray-700"
-                                        >
+                                    <div className="flex items-center justify-between mb-1">
+                                        <span className="block text-sm font-medium text-gray-700" aria-hidden="true">
                                             Senha
-                                        </Label.Root>
+                                        </span>
                                         <button
                                             type="button"
                                             onClick={() => setView("forgot")}
@@ -152,15 +151,16 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
                                             Esqueci minha senha
                                         </button>
                                     </div>
-                                    <input
-                                        id="password"
+                                    <FormField
+                                        id="login-modal-password"
+                                        name="password"
                                         type="password"
-                                        value={password}
-                                        onChange={(e) =>
-                                            setPassword(e.target.value)
-                                        }
+                                        label="Senha"
+                                        labelClassName="sr-only"
+                                        autoComplete="current-password"
                                         required
-                                        className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                                        value={password}
+                                        onChange={(e) => setPassword(e.target.value)}
                                         placeholder="••••••••"
                                     />
                                 </div>
@@ -223,30 +223,24 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
                                     className="mt-6 space-y-4"
                                 >
                                     {error && (
-                                        <div className="rounded-md bg-red-50 p-3 text-sm text-red-700">
+                                        <div role="alert" className="rounded-md bg-red-50 p-3 text-sm text-red-700">
                                             {error}
                                         </div>
                                     )}
 
-                                    <div>
-                                        <Label.Root
-                                            htmlFor="forgot-email"
-                                            className="block text-sm font-medium text-gray-700"
-                                        >
-                                            E-mail
-                                        </Label.Root>
-                                        <input
-                                            id="forgot-email"
-                                            type="email"
-                                            value={forgotEmail}
-                                            onChange={(e) =>
-                                                setForgotEmail(e.target.value)
-                                            }
-                                            required
-                                            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
-                                            placeholder="seu@email.com"
-                                        />
-                                    </div>
+                                    <FormField
+                                        id="login-modal-forgot-email"
+                                        name="email"
+                                        type="email"
+                                        label="E-mail"
+                                        autoComplete="email"
+                                        required
+                                        value={forgotEmail}
+                                        onChange={(e) =>
+                                            setForgotEmail(e.target.value)
+                                        }
+                                        placeholder="seu@email.com"
+                                    />
 
                                     <div className="flex gap-3">
                                         <button
