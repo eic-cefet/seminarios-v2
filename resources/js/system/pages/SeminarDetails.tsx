@@ -360,9 +360,10 @@ export default function SeminarDetails() {
                                                                     }
                                                                     target="_blank"
                                                                     rel="noopener noreferrer"
-                                                                    className="text-gray-400 hover:text-primary-600 cursor-pointer"
+                                                                    aria-label={`LinkedIn de ${speaker.name}`}
+                                                                    className="text-gray-600 hover:text-primary-600 cursor-pointer"
                                                                 >
-                                                                    <Linkedin className="h-5 w-5" />
+                                                                    <Linkedin className="h-5 w-5" aria-hidden="true" />
                                                                 </a>
                                                             )}
                                                             {speaker.speakerData
@@ -375,9 +376,10 @@ export default function SeminarDetails() {
                                                                     }
                                                                     target="_blank"
                                                                     rel="noopener noreferrer"
-                                                                    className="text-gray-400 hover:text-primary-600 cursor-pointer"
+                                                                    aria-label={`GitHub de ${speaker.name}`}
+                                                                    className="text-gray-600 hover:text-primary-600 cursor-pointer"
                                                                 >
-                                                                    <Github className="h-5 w-5" />
+                                                                    <Github className="h-5 w-5" aria-hidden="true" />
                                                                 </a>
                                                             )}
                                                         </div>
@@ -449,7 +451,7 @@ export default function SeminarDetails() {
                                         <h3 className="font-semibold text-gray-500 mb-2">
                                             Este seminário já foi realizado
                                         </h3>
-                                        <p className="text-sm text-gray-400">
+                                        <p className="text-sm text-gray-600">
                                             Confira outros seminários
                                             disponíveis
                                         </p>

@@ -50,7 +50,7 @@ export function CertificatesSection() {
                         <p className="mt-2 text-sm text-gray-500">
                             Você ainda não possui certificados.
                         </p>
-                        <p className="mt-1 text-xs text-gray-400">
+                        <p className="mt-1 text-xs text-gray-500">
                             Certificados são gerados após a confirmação de
                             presença em um seminário.
                         </p>

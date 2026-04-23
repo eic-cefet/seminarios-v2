@@ -237,10 +237,10 @@ function EvaluationItem({ evaluation, onRated }: EvaluationItemProps) {
                         </div>
                     )}
 
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <fieldset>
+                        <legend className="block text-sm font-medium text-gray-700 mb-2">
                             Como voce avalia este seminario?
-                        </label>
+                        </legend>
                         <div className="flex items-center gap-1">
                             {[1, 2, 3, 4, 5].map((value) => (
                                 <button
@@ -275,7 +275,7 @@ function EvaluationItem({ evaluation, onRated }: EvaluationItemProps) {
                                 </span>
                             )}
                         </div>
-                    </div>
+                    </fieldset>
 
                     <div>
                         <label
@@ -287,7 +287,7 @@ function EvaluationItem({ evaluation, onRated }: EvaluationItemProps) {
                             {score > 0 && score <= 3 ? (
                                 <span className="text-red-600">(obrigatorio)</span>
                             ) : (
-                                <span className="text-gray-400">(opcional)</span>
+                                <span className="text-gray-600">(opcional)</span>
                             )}
                         </label>
                         <textarea
@@ -303,7 +303,7 @@ function EvaluationItem({ evaluation, onRated }: EvaluationItemProps) {
                             className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
                             maxLength={1000}
                         />
-                        <p className="mt-1 text-xs text-gray-400 text-right">
+                        <p className="mt-1 text-xs text-gray-600 text-right">
                             {comment.length}/1000
                         </p>
                     </div>

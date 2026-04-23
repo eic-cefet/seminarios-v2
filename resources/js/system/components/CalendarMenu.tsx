@@ -51,7 +51,7 @@ export function CalendarMenu({
                             className="flex items-center justify-between rounded px-3 py-2 text-sm text-gray-700 outline-none hover:bg-gray-100"
                         >
                             <span>Google Calendar</span>
-                            <ExternalLink className="h-4 w-4 text-gray-400" />
+                            <ExternalLink className="h-4 w-4 text-gray-400" aria-hidden="true" />
                         </a>
                     </DropdownMenu.Item>
                     <DropdownMenu.Item asChild>
@@ -62,7 +62,7 @@ export function CalendarMenu({
                             className="flex items-center justify-between rounded px-3 py-2 text-sm text-gray-700 outline-none hover:bg-gray-100"
                         >
                             <span>Outlook</span>
-                            <ExternalLink className="h-4 w-4 text-gray-400" />
+                            <ExternalLink className="h-4 w-4 text-gray-400" aria-hidden="true" />
                         </a>
                     </DropdownMenu.Item>
                     <DropdownMenu.Separator className="my-1 h-px bg-gray-100" />
@@ -72,7 +72,7 @@ export function CalendarMenu({
                             className="flex items-center justify-between rounded px-3 py-2 text-sm text-gray-700 outline-none hover:bg-gray-100"
                         >
                             <span>Baixar .ics</span>
-                            <Download className="h-4 w-4 text-gray-400" />
+                            <Download className="h-4 w-4 text-gray-400" aria-hidden="true" />
                         </a>
                     </DropdownMenu.Item>
                 </DropdownMenu.Content>

@@ -159,13 +159,13 @@ export function PresentationsCalendar({
                                                     ? "bg-primary-600 text-white"
                                                     : isCurrentMonth
                                                       ? "text-gray-900"
-                                                      : "text-gray-400",
+                                                      : "text-gray-500",
                                             )}
                                         >
                                             {format(day, "d")}
                                         </span>
                                         {daySeminars.length > 0 && (
-                                            <span className="text-xs font-medium text-gray-400">
+                                            <span className="text-xs font-medium text-gray-600">
                                                 {daySeminars.length}
                                             </span>
                                         )}
