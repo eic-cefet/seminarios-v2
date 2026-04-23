@@ -4,6 +4,7 @@ import { ArrowRight, BookOpen, Presentation, Wrench, type LucideIcon } from "luc
 import { Layout } from "../components/Layout";
 import { SeminarCard } from "../components/SeminarCard";
 import { PageTitle } from "@shared/components/PageTitle";
+import { LoadingRegion } from "@shared/components/LoadingRegion";
 import { ROUTES } from "@shared/config/routes";
 import { seminarsApi, subjectsApi, statsApi } from "@shared/api/client";
 
@@ -109,14 +110,17 @@ export default function Home() {
                         </div>
 
                         {loadingSeminars ? (
-                            <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                            <LoadingRegion
+                                label="Carregando conteúdo da página inicial"
+                                className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
+                            >
                                 {[1, 2, 3].map((i) => (
                                     <div
                                         key={i}
                                         className="h-48 animate-pulse rounded-lg bg-gray-200"
                                     />
                                 ))}
-                            </div>
+                            </LoadingRegion>
                         ) : seminars.length > 0 ? (
                             <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                                 {seminars.map((seminar) => (
@@ -167,14 +171,17 @@ export default function Home() {
                         </div>
 
                         {loadingSubjects ? (
-                            <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                            <LoadingRegion
+                                label="Carregando conteúdo da página inicial"
+                                className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
+                            >
                                 {[1, 2, 3, 4].map((i) => (
                                     <div
                                         key={i}
                                         className="h-24 animate-pulse rounded-lg bg-gray-200"
                                     />
                                 ))}
-                            </div>
+                            </LoadingRegion>
                         ) : (
                             <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                                 {subjects.map((subject) => (

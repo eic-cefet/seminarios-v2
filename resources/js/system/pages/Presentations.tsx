@@ -14,6 +14,7 @@ import { Layout } from "../components/Layout";
 import { SeminarCard } from "../components/SeminarCard";
 import { PresentationsCalendar } from "../components/PresentationsCalendar";
 import { PageTitle } from "@shared/components/PageTitle";
+import { LoadingRegion } from "@shared/components/LoadingRegion";
 import { seminarsApi, seminarTypesApi } from "@shared/api/client";
 import { toSaoPaulo } from "@shared/lib/date";
 import { cn } from "@shared/lib/utils";
@@ -244,14 +245,17 @@ export default function Presentations() {
                                 onMonthChange={setCalendarMonth}
                             />
                         ) : isLoading ? (
-                            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                            <LoadingRegion
+                                label="Carregando apresentações"
+                                className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
+                            >
                                 {[1, 2, 3, 4, 5, 6].map((i) => (
                                     <div
                                         key={i}
                                         className="h-48 animate-pulse rounded-lg bg-gray-200"
                                     />
                                 ))}
-                            </div>
+                            </LoadingRegion>
                         ) : seminars.length > 0 ? (
                             <>
                                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
