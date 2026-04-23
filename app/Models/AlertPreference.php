@@ -21,6 +21,8 @@ class AlertPreference extends Model
         'seminar_reminder_24h',
         'evaluation_prompt',
         'announcements',
+        'certificate_ready',
+        'seminar_rescheduled',
     ];
 
     protected function casts(): array
@@ -31,6 +33,8 @@ class AlertPreference extends Model
             'seminar_reminder_24h' => 'boolean',
             'evaluation_prompt' => 'boolean',
             'announcements' => 'boolean',
+            'certificate_ready' => 'boolean',
+            'seminar_rescheduled' => 'boolean',
         ];
     }
 

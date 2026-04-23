@@ -7,6 +7,8 @@ enum CommunicationCategory: string
     case SeminarReminder7d = 'seminar_reminder_7d';
     case SeminarReminder24h = 'seminar_reminder_24h';
     case EvaluationPrompt = 'evaluation_prompt';
+    case CertificateReady = 'certificate_ready';
+    case SeminarRescheduled = 'seminar_rescheduled';
     case Announcements = 'announcements';
     case TopicFollow = 'topic_follow';
 

@@ -25,6 +25,8 @@ class AlertPreferenceFactory extends Factory
             'seminar_reminder_24h' => true,
             'evaluation_prompt' => true,
             'announcements' => true,
+            'certificate_ready' => true,
+            'seminar_rescheduled' => true,
         ];
     }
 
@@ -40,6 +42,8 @@ class AlertPreferenceFactory extends Factory
             'seminar_reminder_24h' => false,
             'evaluation_prompt' => false,
             'announcements' => false,
+            'certificate_ready' => false,
+            'seminar_rescheduled' => false,
         ]);
     }
 
