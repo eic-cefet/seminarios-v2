@@ -1,4 +1,4 @@
-import { ApiRequestError, seminarsApi, subjectsApi, workshopsApi, seminarTypesApi, coursesApi, statsApi, authApi, registrationApi, profileApi, bugReportApi } from './client';
+import { ApiRequestError, seminarsApi, subjectsApi, workshopsApi, seminarTypesApi, coursesApi, statsApi, authApi, registrationApi, profileApi, bugReportApi, alertPreferencesApi } from './client';
 import { createSeminar, createSubject, createWorkshop, createPaginatedResponse } from '@/test/factories';
 import { getCookie } from './httpUtils';
 
@@ -352,6 +352,35 @@ describe('fetchApi (via API namespaces)', () => {
             expect(fetchSpy).toHaveBeenCalledWith(
                 expect.stringMatching(/\/profile\/certificates$/),
                 expect.any(Object),
+            );
+        });
+    });
+
+    describe('alertPreferencesApi', () => {
+        it('get fetches alert preferences', async () => {
+            mockFetchSuccess({ data: { optedIn: true, seminarTypeIds: [1], subjectIds: [2] } });
+            const result = await alertPreferencesApi.get();
+            expect(result).toEqual({ optedIn: true, seminarTypeIds: [1], subjectIds: [2] });
+            expect(fetchSpy).toHaveBeenCalledWith(
+                expect.stringContaining('/profile/alert-preferences'),
+                expect.any(Object),
+            );
+        });
+
+        it('update sends PUT with payload', async () => {
+            mockFetchSuccess({
+                message: 'Updated',
+                data: { optedIn: true, seminarTypeIds: [1], subjectIds: [] },
+            });
+            const result = await alertPreferencesApi.update({
+                opted_in: true,
+                seminar_type_ids: [1],
+                subject_ids: [],
+            });
+            expect(result.optedIn).toBe(true);
+            expect(fetchSpy).toHaveBeenCalledWith(
+                expect.stringContaining('/profile/alert-preferences'),
+                expect.objectContaining({ method: 'PUT' }),
             );
         });
     });

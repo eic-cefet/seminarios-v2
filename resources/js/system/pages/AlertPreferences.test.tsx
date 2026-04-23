@@ -111,9 +111,10 @@ describe('AlertPreferences', () => {
         });
     });
 
-    it('shows success message after saving', async () => {
+    it('shows success message after saving and clears it after timeout', async () => {
+        vi.useFakeTimers({ shouldAdvanceTime: true });
         vi.mocked(useAuth).mockReturnValue(authedUser());
-        const user = userEvent.setup();
+        const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
 
         render(<AlertPreferences />);
 
@@ -121,6 +122,14 @@ describe('AlertPreferences', () => {
         await user.click(screen.getByRole('button', { name: /salvar preferências/i }));
 
         expect(await screen.findByText(/preferências salvas com sucesso/i)).toBeInTheDocument();
+
+        vi.advanceTimersByTime(3500);
+
+        await waitFor(() => {
+            expect(screen.queryByText(/preferências salvas com sucesso/i)).not.toBeInTheDocument();
+        });
+
+        vi.useRealTimers();
     });
 
     it('hydrates form from existing preferences', async () => {

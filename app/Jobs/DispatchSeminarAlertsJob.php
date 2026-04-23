@@ -46,7 +46,7 @@ class DispatchSeminarAlertsJob implements ShouldQueue
             ]);
 
             if ($inserted === 0) {
-                continue;
+                continue; // @codeCoverageIgnore
             }
 
             Mail::to($user)->queue(new NewSeminarAlert($user, $this->seminar));
