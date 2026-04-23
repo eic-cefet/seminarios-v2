@@ -109,22 +109,26 @@ export default function AlertPreferences() {
                                         <ErrorAlert message="Não foi possível salvar suas preferências. Tente novamente." />
                                     )}
 
-                                    <label className="flex items-start gap-3 cursor-pointer">
+                                    <div className="flex items-start gap-3">
                                         <input
+                                            id="alert-preferences-opted-in"
                                             type="checkbox"
                                             checked={optedIn}
                                             onChange={(e) => setOptedIn(e.target.checked)}
-                                            className="mt-1 h-4 w-4 rounded border-gray-300"
+                                            className="mt-1 h-4 w-4 rounded border-gray-300 cursor-pointer"
                                         />
-                                        <span>
+                                        <label
+                                            htmlFor="alert-preferences-opted-in"
+                                            className="cursor-pointer"
+                                        >
                                             <span className="block text-sm font-medium text-gray-900">
                                                 Quero receber alertas por e-mail
                                             </span>
                                             <span className="block text-xs text-gray-500 mt-0.5">
                                                 Você pode desativar a qualquer momento.
                                             </span>
-                                        </span>
-                                    </label>
+                                        </label>
+                                    </div>
 
                                     <fieldset
                                         disabled={!optedIn}
