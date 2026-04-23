@@ -8,6 +8,7 @@ use App\Http\Resources\AlertPreferenceResource;
 use App\Models\AlertPreference;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class ProfileAlertPreferenceController extends Controller
 {
@@ -15,7 +16,7 @@ class ProfileAlertPreferenceController extends Controller
     {
         $user = $request->user();
 
-        $pref = $user->alertPreference;
+        $pref = $user->alertPreference()->with(['seminarTypes:id', 'subjects:id'])->first();
 
         if (! $pref) {
             return response()->json([
@@ -37,14 +38,19 @@ class ProfileAlertPreferenceController extends Controller
         $validated = $request->validated();
         $user = $request->user();
 
-        $pref = AlertPreference::updateOrCreate(
-            ['user_id' => $user->id],
-            [
-                'opted_in' => $validated['opted_in'],
-                'seminar_type_ids' => $validated['seminar_type_ids'] ?? [],
-                'subject_ids' => $validated['subject_ids'] ?? [],
-            ],
-        );
+        $pref = DB::transaction(function () use ($user, $validated) {
+            $pref = AlertPreference::updateOrCreate(
+                ['user_id' => $user->id],
+                ['opted_in' => $validated['opted_in']],
+            );
+
+            $pref->seminarTypes()->sync($validated['seminar_type_ids'] ?? []);
+            $pref->subjects()->sync($validated['subject_ids'] ?? []);
+
+            return $pref;
+        });
+
+        $pref->load(['seminarTypes:id', 'subjects:id']);
 
         return response()->json([
             'message' => 'Preferências atualizadas com sucesso.',

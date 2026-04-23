@@ -18,8 +18,8 @@ class AlertPreferenceResource extends JsonResource
     {
         return [
             'optedIn' => (bool) $this->opted_in,
-            'seminarTypeIds' => array_values($this->seminar_type_ids ?? []),
-            'subjectIds' => array_values($this->subject_ids ?? []),
+            'seminarTypeIds' => $this->seminarTypes->pluck('id')->values()->all(),
+            'subjectIds' => $this->subjects->pluck('id')->values()->all(),
         ];
     }
 }

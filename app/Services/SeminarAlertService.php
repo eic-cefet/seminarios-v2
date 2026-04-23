@@ -20,7 +20,7 @@ class SeminarAlertService
         $seminarTypeId = $seminar->seminar_type_id;
         $subjectIds = $seminar->subjects()->pluck('subjects.id')->all();
 
-        $preferences = AlertPreference::query()
+        return AlertPreference::query()
             ->with('user')
             ->where('opted_in', true)
             ->whereHas('user', fn ($q) => $q->whereNull('deleted_at'))
@@ -30,29 +30,22 @@ class SeminarAlertService
                     ->whereColumn('seminar_alert_dispatches.user_id', 'alert_preferences.user_id')
                     ->where('seminar_alert_dispatches.seminar_id', $seminar->id);
             })
-            ->get();
-
-        return $preferences
-            ->filter(fn (AlertPreference $pref) => $this->matches($pref, $seminarTypeId, $subjectIds))
+            // Type filter: no type filters set, OR seminar's type is in user's list.
+            ->where(function ($q) use ($seminarTypeId) {
+                $q->whereDoesntHave('seminarTypes');
+                if ($seminarTypeId !== null) {
+                    $q->orWhereHas('seminarTypes', fn ($t) => $t->where('seminar_types.id', $seminarTypeId));
+                }
+            })
+            // Subject filter: no subject filters set, OR shares ≥1 subject with the seminar.
+            ->where(function ($q) use ($subjectIds) {
+                $q->whereDoesntHave('subjects');
+                if ($subjectIds !== []) {
+                    $q->orWhereHas('subjects', fn ($s) => $s->whereIn('subjects.id', $subjectIds));
+                }
+            })
+            ->get()
             ->map(fn (AlertPreference $pref) => $pref->user)
             ->values();
-    }
-
-    /**
-     * @param  array<int, int>  $seminarSubjectIds
-     */
-    private function matches(AlertPreference $pref, ?int $seminarTypeId, array $seminarSubjectIds): bool
-    {
-        $typeFilter = $pref->seminar_type_ids ?? [];
-        if (! empty($typeFilter) && ! in_array($seminarTypeId, $typeFilter, true)) {
-            return false;
-        }
-
-        $subjectFilter = $pref->subject_ids ?? [];
-        if (! empty($subjectFilter) && empty(array_intersect($subjectFilter, $seminarSubjectIds))) {
-            return false;
-        }
-
-        return true;
     }
 }

@@ -78,7 +78,7 @@ it('updates existing preference and replaces filters', function () {
         ->assertOk()
         ->assertJsonPath('data.seminarTypeIds', [$keep->id]);
 
-    expect($pref->fresh()->seminar_type_ids)->toBe([$keep->id]);
+    expect($pref->fresh()->seminarTypes()->pluck('seminar_types.id')->all())->toBe([$keep->id]);
 });
 
 it('allows opt-in with empty filters (ALLOW ALL)', function () {

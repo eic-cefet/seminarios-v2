@@ -21,8 +21,6 @@ class AlertPreferenceFactory extends Factory
         return [
             'user_id' => User::factory(),
             'opted_in' => true,
-            'seminar_type_ids' => null,
-            'subject_ids' => null,
         ];
     }
 
@@ -36,7 +34,9 @@ class AlertPreferenceFactory extends Factory
      */
     public function forTypes(array $ids): self
     {
-        return $this->state(fn () => ['seminar_type_ids' => $ids]);
+        return $this->afterCreating(function (AlertPreference $pref) use ($ids) {
+            $pref->seminarTypes()->sync($ids);
+        });
     }
 
     /**
@@ -44,6 +44,8 @@ class AlertPreferenceFactory extends Factory
      */
     public function forSubjects(array $ids): self
     {
-        return $this->state(fn () => ['subject_ids' => $ids]);
+        return $this->afterCreating(function (AlertPreference $pref) use ($ids) {
+            $pref->subjects()->sync($ids);
+        });
     }
 }

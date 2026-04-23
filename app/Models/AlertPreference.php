@@ -7,6 +7,7 @@ use Database\Factories\AlertPreferenceFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class AlertPreference extends Model
 {
@@ -16,21 +17,27 @@ class AlertPreference extends Model
     protected $fillable = [
         'user_id',
         'opted_in',
-        'seminar_type_ids',
-        'subject_ids',
     ];
 
     protected function casts(): array
     {
         return [
             'opted_in' => 'boolean',
-            'seminar_type_ids' => 'array',
-            'subject_ids' => 'array',
         ];
     }
 
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function seminarTypes(): BelongsToMany
+    {
+        return $this->belongsToMany(SeminarType::class, 'alert_preference_seminar_type');
+    }
+
+    public function subjects(): BelongsToMany
+    {
+        return $this->belongsToMany(Subject::class, 'alert_preference_subject');
     }
 }
