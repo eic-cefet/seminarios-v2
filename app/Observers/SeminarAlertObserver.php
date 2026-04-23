@@ -3,15 +3,14 @@
 namespace App\Observers;
 
 use App\Jobs\DispatchSeminarAlertsJob;
+use App\Models\AlertPreference;
 use App\Models\Seminar;
 
 class SeminarAlertObserver
 {
     public function created(Seminar $seminar): void
     {
-        if ($seminar->active) {
-            DispatchSeminarAlertsJob::dispatch($seminar)->afterCommit();
-        }
+        $this->maybeDispatch($seminar);
     }
 
     public function updated(Seminar $seminar): void
@@ -20,8 +19,19 @@ class SeminarAlertObserver
             return;
         }
 
-        if ($seminar->active) {
-            DispatchSeminarAlertsJob::dispatch($seminar)->afterCommit();
+        $this->maybeDispatch($seminar);
+    }
+
+    private function maybeDispatch(Seminar $seminar): void
+    {
+        if (! $seminar->active) {
+            return;
         }
+
+        if (! AlertPreference::query()->where('opted_in', true)->exists()) {
+            return;
+        }
+
+        DispatchSeminarAlertsJob::dispatch($seminar)->afterCommit();
     }
 }

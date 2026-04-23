@@ -138,6 +138,64 @@ describe('AlertPreferences', () => {
         });
     });
 
+    it('toggles a filter off when already selected', async () => {
+        vi.mocked(useAuth).mockReturnValue(authedUser());
+        vi.mocked(alertPreferencesApi.get).mockResolvedValue({
+            optedIn: true,
+            seminarTypeIds: [1],
+            subjectIds: [],
+        });
+        const user = userEvent.setup();
+
+        render(<AlertPreferences />);
+
+        await waitFor(() => {
+            expect(screen.getByLabelText(/quero receber alertas por e-mail/i)).toBeChecked();
+        });
+
+        await user.click(await screen.findByText('Palestra'));
+        await user.click(screen.getByRole('button', { name: /salvar preferências/i }));
+
+        await waitFor(() => {
+            expect(alertPreferencesApi.update).toHaveBeenCalledWith({
+                opted_in: true,
+                seminar_type_ids: [],
+                subject_ids: [],
+            });
+        });
+    });
+
+    it('shows error alert when save fails', async () => {
+        vi.mocked(useAuth).mockReturnValue(authedUser());
+        vi.mocked(alertPreferencesApi.update).mockRejectedValue(new Error('boom'));
+        const user = userEvent.setup();
+
+        render(<AlertPreferences />);
+
+        await user.click(await screen.findByLabelText(/quero receber alertas por e-mail/i));
+        await user.click(screen.getByRole('button', { name: /salvar preferências/i }));
+
+        expect(await screen.findByText(/não foi possível salvar/i)).toBeInTheDocument();
+    });
+
+    it('shows saving state on submit button during pending mutation', async () => {
+        vi.mocked(useAuth).mockReturnValue(authedUser());
+        let resolveUpdate: (v: { optedIn: boolean; seminarTypeIds: number[]; subjectIds: number[] }) => void = () => {};
+        vi.mocked(alertPreferencesApi.update).mockImplementation(
+            () => new Promise((resolve) => { resolveUpdate = resolve; }),
+        );
+        const user = userEvent.setup();
+
+        render(<AlertPreferences />);
+
+        await user.click(await screen.findByLabelText(/quero receber alertas por e-mail/i));
+        await user.click(screen.getByRole('button', { name: /salvar preferências/i }));
+
+        expect(await screen.findByRole('button', { name: /salvando/i })).toBeInTheDocument();
+
+        resolveUpdate({ optedIn: true, seminarTypeIds: [], subjectIds: [] });
+    });
+
     it('redirects when unauthenticated', () => {
         vi.mocked(useAuth).mockReturnValue({
             user: null, isLoading: false, isAuthenticated: false,

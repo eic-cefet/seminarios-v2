@@ -8,10 +8,12 @@ use App\Models\Subject;
 use App\Models\User;
 use App\Services\SeminarAlertService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Bus;
 
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
+    Bus::fake();
     $this->service = app(SeminarAlertService::class);
 });
 
