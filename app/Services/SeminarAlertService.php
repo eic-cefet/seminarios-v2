@@ -46,6 +46,7 @@ class SeminarAlertService
             })
             ->get()
             ->map(fn (AlertPreference $pref) => $pref->user)
+            ->filter()
             ->values();
     }
 }
