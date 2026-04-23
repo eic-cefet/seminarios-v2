@@ -6,6 +6,8 @@
         "build": "tsc && vite build",
         "dev": "vite",
         "typecheck": "tsc --noEmit",
+        "lint": "eslint 'resources/js/**/*.{ts,tsx,js,jsx}'",
+        "lint:a11y": "eslint --config eslint.a11y.config.js 'resources/js/system/**/*.{ts,tsx,js,jsx}' 'resources/js/shared/**/*.{ts,tsx,js,jsx}'",
         "test": "vitest run",
         "test:watch": "vitest",
         "test:coverage": "rm -rf coverage && vitest run --coverage"
