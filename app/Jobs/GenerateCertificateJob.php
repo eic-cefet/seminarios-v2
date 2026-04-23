@@ -5,6 +5,7 @@ namespace App\Jobs;
 use App\Concerns\TracksAuditContext;
 use App\Enums\AuditEvent;
 use App\Enums\AuditEventType;
+use App\Enums\CommunicationCategory;
 use App\Mail\CertificateGenerated;
 use App\Models\AuditLog;
 use App\Models\Registration;
@@ -51,7 +52,10 @@ class GenerateCertificateJob implements ShouldQueue
             $certificateService->generatePdf($this->registration);
         }
 
-        if ($this->sendEmail && ! $this->registration->certificate_sent) {
+        if ($this->sendEmail
+            && ! $this->registration->certificate_sent
+            && $this->registration->user->wantsCommunication(CommunicationCategory::CertificateReady)
+        ) {
             $pdfPath = $certificateService->getPdfPath($this->registration);
             $pdfContent = Storage::disk('s3')->get($pdfPath);
 
