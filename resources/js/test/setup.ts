@@ -1,4 +1,8 @@
 import '@testing-library/jest-dom/vitest';
+import { expect } from 'vitest';
+import { toHaveNoViolations } from 'jest-axe';
+
+expect.extend(toHaveNoViolations);
 
 // Global app config mock (injected by Blade in production)
 globalThis.app = {
