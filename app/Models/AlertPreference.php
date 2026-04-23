@@ -17,12 +17,20 @@ class AlertPreference extends Model
     protected $fillable = [
         'user_id',
         'opted_in',
+        'seminar_reminder_7d',
+        'seminar_reminder_24h',
+        'evaluation_prompt',
+        'announcements',
     ];
 
     protected function casts(): array
     {
         return [
             'opted_in' => 'boolean',
+            'seminar_reminder_7d' => 'boolean',
+            'seminar_reminder_24h' => 'boolean',
+            'evaluation_prompt' => 'boolean',
+            'announcements' => 'boolean',
         ];
     }
 
