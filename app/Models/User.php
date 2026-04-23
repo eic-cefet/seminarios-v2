@@ -71,6 +71,11 @@ class User extends Authenticatable implements CanResetPassword
         return $this->hasMany(SocialIdentity::class);
     }
 
+    public function alertPreference(): HasOne
+    {
+        return $this->hasOne(AlertPreference::class);
+    }
+
     public function isAdmin(): bool
     {
         return $this->hasRole(Role::Admin);
