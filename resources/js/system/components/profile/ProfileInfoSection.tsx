@@ -1,6 +1,7 @@
 import { profileApi } from "@shared/api/client";
 import { cn } from "@shared/lib/utils";
 import { analytics } from "@shared/lib/analytics";
+import { FormField } from "@shared/components/FormField";
 import { useMutation } from "@tanstack/react-query";
 import { Mail, User } from "lucide-react";
 import { useState } from "react";
@@ -68,59 +69,26 @@ export function ProfileInfoSection({ user, onUpdate }: ProfileInfoSectionProps) 
                     <form onSubmit={handleSubmit} className="space-y-4">
                         {error && <ErrorAlert message={error} />}
 
-                        <div>
-                            <label
-                                htmlFor="name"
-                                className="block text-sm font-medium text-gray-700"
-                            >
-                                Nome
-                            </label>
-                            <input
-                                id="name"
-                                type="text"
-                                value={name}
-                                onChange={(e) => setName(e.target.value)}
-                                required
-                                className={cn(
-                                    "mt-1 block w-full rounded-md border px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1",
-                                    fieldErrors.name
-                                        ? "border-red-300 focus:border-red-500 focus:ring-red-500"
-                                        : "border-gray-300 focus:border-primary-500 focus:ring-primary-500",
-                                )}
-                            />
-                            {fieldErrors.name && (
-                                <p className="mt-1 text-sm text-red-600">
-                                    {fieldErrors.name}
-                                </p>
-                            )}
-                        </div>
-
-                        <div>
-                            <label
-                                htmlFor="email"
-                                className="block text-sm font-medium text-gray-700"
-                            >
-                                E-mail
-                            </label>
-                            <input
-                                id="email"
-                                type="email"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                required
-                                className={cn(
-                                    "mt-1 block w-full rounded-md border px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1",
-                                    fieldErrors.email
-                                        ? "border-red-300 focus:border-red-500 focus:ring-red-500"
-                                        : "border-gray-300 focus:border-primary-500 focus:ring-primary-500",
-                                )}
-                            />
-                            {fieldErrors.email && (
-                                <p className="mt-1 text-sm text-red-600">
-                                    {fieldErrors.email}
-                                </p>
-                            )}
-                        </div>
+                        <FormField
+                            id="name"
+                            label="Nome"
+                            type="text"
+                            autoComplete="name"
+                            required
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                            error={fieldErrors.name}
+                        />
+                        <FormField
+                            id="email"
+                            label="E-mail"
+                            type="email"
+                            autoComplete="email"
+                            required
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            error={fieldErrors.email}
+                        />
 
                         <div className="flex gap-3 pt-2">
                             <button

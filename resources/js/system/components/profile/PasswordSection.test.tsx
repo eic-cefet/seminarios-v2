@@ -51,9 +51,9 @@ describe('PasswordSection', () => {
 
         await user.click(screen.getByRole('button', { name: /alterar senha/i }));
 
-        expect(screen.getByLabelText('Senha atual')).toBeInTheDocument();
-        expect(screen.getByLabelText('Nova senha')).toBeInTheDocument();
-        expect(screen.getByLabelText('Confirmar nova senha')).toBeInTheDocument();
+        expect(screen.getByLabelText(/^senha atual/i)).toBeInTheDocument();
+        expect(screen.getByLabelText(/^nova senha/i)).toBeInTheDocument();
+        expect(screen.getByLabelText(/^confirmar nova senha/i)).toBeInTheDocument();
     });
 
     it('shows submit and cancel buttons in editing mode', async () => {
@@ -74,9 +74,9 @@ describe('PasswordSection', () => {
 
         await user.click(screen.getByRole('button', { name: /alterar senha/i }));
 
-        expect(screen.getByLabelText('Senha atual')).toHaveValue('');
-        expect(screen.getByLabelText('Nova senha')).toHaveValue('');
-        expect(screen.getByLabelText('Confirmar nova senha')).toHaveValue('');
+        expect(screen.getByLabelText(/^senha atual/i)).toHaveValue('');
+        expect(screen.getByLabelText(/^nova senha/i)).toHaveValue('');
+        expect(screen.getByLabelText(/^confirmar nova senha/i)).toHaveValue('');
     });
 
     it('allows typing in all password fields', async () => {
@@ -86,13 +86,13 @@ describe('PasswordSection', () => {
 
         await user.click(screen.getByRole('button', { name: /alterar senha/i }));
 
-        await user.type(screen.getByLabelText('Senha atual'), 'oldpass');
-        await user.type(screen.getByLabelText('Nova senha'), 'newpass');
-        await user.type(screen.getByLabelText('Confirmar nova senha'), 'newpass');
+        await user.type(screen.getByLabelText(/^senha atual/i), 'oldpass');
+        await user.type(screen.getByLabelText(/^nova senha/i), 'newpass');
+        await user.type(screen.getByLabelText(/^confirmar nova senha/i), 'newpass');
 
-        expect(screen.getByLabelText('Senha atual')).toHaveValue('oldpass');
-        expect(screen.getByLabelText('Nova senha')).toHaveValue('newpass');
-        expect(screen.getByLabelText('Confirmar nova senha')).toHaveValue('newpass');
+        expect(screen.getByLabelText(/^senha atual/i)).toHaveValue('oldpass');
+        expect(screen.getByLabelText(/^nova senha/i)).toHaveValue('newpass');
+        expect(screen.getByLabelText(/^confirmar nova senha/i)).toHaveValue('newpass');
     });
 
     it('submits password change and shows success message', async () => {
@@ -103,9 +103,9 @@ describe('PasswordSection', () => {
 
         await user.click(screen.getByRole('button', { name: /alterar senha/i }));
 
-        await user.type(screen.getByLabelText('Senha atual'), 'oldpass');
-        await user.type(screen.getByLabelText('Nova senha'), 'newpass123');
-        await user.type(screen.getByLabelText('Confirmar nova senha'), 'newpass123');
+        await user.type(screen.getByLabelText(/^senha atual/i), 'oldpass');
+        await user.type(screen.getByLabelText(/^nova senha/i), 'newpass123');
+        await user.type(screen.getByLabelText(/^confirmar nova senha/i), 'newpass123');
         await user.click(screen.getByRole('button', { name: /alterar senha/i }));
 
         await waitFor(() => {
@@ -131,9 +131,9 @@ describe('PasswordSection', () => {
 
         await user.click(screen.getByRole('button', { name: /alterar senha/i }));
 
-        await user.type(screen.getByLabelText('Senha atual'), 'wrongpass');
-        await user.type(screen.getByLabelText('Nova senha'), 'newpass123');
-        await user.type(screen.getByLabelText('Confirmar nova senha'), 'newpass123');
+        await user.type(screen.getByLabelText(/^senha atual/i), 'wrongpass');
+        await user.type(screen.getByLabelText(/^nova senha/i), 'newpass123');
+        await user.type(screen.getByLabelText(/^confirmar nova senha/i), 'newpass123');
         await user.click(screen.getByRole('button', { name: /alterar senha/i }));
 
         await waitFor(() => {
@@ -151,9 +151,9 @@ describe('PasswordSection', () => {
 
         await user.click(screen.getByRole('button', { name: /alterar senha/i }));
 
-        await user.type(screen.getByLabelText('Senha atual'), 'wrong');
-        await user.type(screen.getByLabelText('Nova senha'), 'short');
-        await user.type(screen.getByLabelText('Confirmar nova senha'), 'short');
+        await user.type(screen.getByLabelText(/^senha atual/i), 'wrong');
+        await user.type(screen.getByLabelText(/^nova senha/i), 'short');
+        await user.type(screen.getByLabelText(/^confirmar nova senha/i), 'short');
         await user.click(screen.getByRole('button', { name: /alterar senha/i }));
 
         await waitFor(() => {
@@ -172,9 +172,9 @@ describe('PasswordSection', () => {
 
         await user.click(screen.getByRole('button', { name: /alterar senha/i }));
 
-        await user.type(screen.getByLabelText('Senha atual'), 'oldpass');
-        await user.type(screen.getByLabelText('Nova senha'), 'newpass123');
-        await user.type(screen.getByLabelText('Confirmar nova senha'), 'newpass123');
+        await user.type(screen.getByLabelText(/^senha atual/i), 'oldpass');
+        await user.type(screen.getByLabelText(/^nova senha/i), 'newpass123');
+        await user.type(screen.getByLabelText(/^confirmar nova senha/i), 'newpass123');
         await user.click(screen.getByRole('button', { name: /alterar senha/i }));
 
         expect(screen.getByRole('button', { name: /salvando/i })).toBeInTheDocument();
@@ -194,15 +194,15 @@ describe('PasswordSection', () => {
 
         await user.click(screen.getByRole('button', { name: /alterar senha/i }));
 
-        await user.type(screen.getByLabelText('Senha atual'), 'some text');
-        await user.type(screen.getByLabelText('Nova senha'), 'some text');
-        await user.type(screen.getByLabelText('Confirmar nova senha'), 'some text');
+        await user.type(screen.getByLabelText(/^senha atual/i), 'some text');
+        await user.type(screen.getByLabelText(/^nova senha/i), 'some text');
+        await user.type(screen.getByLabelText(/^confirmar nova senha/i), 'some text');
 
         await user.click(screen.getByRole('button', { name: /cancelar/i }));
 
         // Back in display mode
         expect(screen.getByText(/use uma senha forte com pelo menos 8 caracteres/i)).toBeInTheDocument();
-        expect(screen.queryByLabelText('Senha atual')).not.toBeInTheDocument();
+        expect(screen.queryByLabelText(/^senha atual/i)).not.toBeInTheDocument();
     });
 
     it('returns to display mode after successful submission', async () => {
@@ -213,9 +213,9 @@ describe('PasswordSection', () => {
 
         await user.click(screen.getByRole('button', { name: /alterar senha/i }));
 
-        await user.type(screen.getByLabelText('Senha atual'), 'oldpass');
-        await user.type(screen.getByLabelText('Nova senha'), 'newpass123');
-        await user.type(screen.getByLabelText('Confirmar nova senha'), 'newpass123');
+        await user.type(screen.getByLabelText(/^senha atual/i), 'oldpass');
+        await user.type(screen.getByLabelText(/^nova senha/i), 'newpass123');
+        await user.type(screen.getByLabelText(/^confirmar nova senha/i), 'newpass123');
         await user.click(screen.getByRole('button', { name: /alterar senha/i }));
 
         await waitFor(() => {
@@ -223,7 +223,7 @@ describe('PasswordSection', () => {
         });
 
         // The form should no longer be visible, and password hint should not appear while success is shown
-        expect(screen.queryByLabelText('Senha atual')).not.toBeInTheDocument();
+        expect(screen.queryByLabelText(/^senha atual/i)).not.toBeInTheDocument();
     });
 
     it('hides password hint text when success message is shown', async () => {
@@ -234,9 +234,9 @@ describe('PasswordSection', () => {
 
         await user.click(screen.getByRole('button', { name: /alterar senha/i }));
 
-        await user.type(screen.getByLabelText('Senha atual'), 'oldpass');
-        await user.type(screen.getByLabelText('Nova senha'), 'newpass123');
-        await user.type(screen.getByLabelText('Confirmar nova senha'), 'newpass123');
+        await user.type(screen.getByLabelText(/^senha atual/i), 'oldpass');
+        await user.type(screen.getByLabelText(/^nova senha/i), 'newpass123');
+        await user.type(screen.getByLabelText(/^confirmar nova senha/i), 'newpass123');
         await user.click(screen.getByRole('button', { name: /alterar senha/i }));
 
         await waitFor(() => {
@@ -255,9 +255,9 @@ describe('PasswordSection', () => {
 
         await user.click(screen.getByRole('button', { name: /alterar senha/i }));
 
-        await user.type(screen.getByLabelText('Senha atual'), 'oldpass');
-        await user.type(screen.getByLabelText('Nova senha'), 'newpass123');
-        await user.type(screen.getByLabelText('Confirmar nova senha'), 'newpass123');
+        await user.type(screen.getByLabelText(/^senha atual/i), 'oldpass');
+        await user.type(screen.getByLabelText(/^nova senha/i), 'newpass123');
+        await user.type(screen.getByLabelText(/^confirmar nova senha/i), 'newpass123');
         await user.click(screen.getByRole('button', { name: /alterar senha/i }));
 
         await waitFor(() => {
@@ -267,8 +267,8 @@ describe('PasswordSection', () => {
         // Now click edit again - fields should be empty
         await user.click(screen.getByRole('button', { name: /alterar senha/i }));
 
-        expect(screen.getByLabelText('Senha atual')).toHaveValue('');
-        expect(screen.getByLabelText('Nova senha')).toHaveValue('');
-        expect(screen.getByLabelText('Confirmar nova senha')).toHaveValue('');
+        expect(screen.getByLabelText(/^senha atual/i)).toHaveValue('');
+        expect(screen.getByLabelText(/^nova senha/i)).toHaveValue('');
+        expect(screen.getByLabelText(/^confirmar nova senha/i)).toHaveValue('');
     });
 });

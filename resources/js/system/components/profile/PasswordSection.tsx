@@ -1,6 +1,7 @@
 import { profileApi } from "@shared/api/client";
 import { cn } from "@shared/lib/utils";
 import { analytics } from "@shared/lib/analytics";
+import { FormField } from "@shared/components/FormField";
 import { useMutation } from "@tanstack/react-query";
 import { Lock } from "lucide-react";
 import { useState } from "react";
@@ -37,6 +38,11 @@ export function PasswordSection() {
         ...mutationCallbacks,
     });
 
+    const mismatchError =
+        passwordConfirmation.length > 0 && password !== passwordConfirmation
+            ? "As senhas não coincidem"
+            : undefined;
+
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         mutation.mutate();
@@ -72,80 +78,37 @@ export function PasswordSection() {
                     <form onSubmit={handleSubmit} className="space-y-4">
                         {error && <ErrorAlert message={error} />}
 
-                        <div>
-                            <label
-                                htmlFor="current-password"
-                                className="block text-sm font-medium text-gray-700"
-                            >
-                                Senha atual
-                            </label>
-                            <input
-                                id="current-password"
-                                type="password"
-                                value={currentPassword}
-                                onChange={(e) =>
-                                    setCurrentPassword(e.target.value)
-                                }
-                                required
-                                className={cn(
-                                    "mt-1 block w-full rounded-md border px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1",
-                                    fieldErrors.current_password
-                                        ? "border-red-300 focus:border-red-500 focus:ring-red-500"
-                                        : "border-gray-300 focus:border-primary-500 focus:ring-primary-500",
-                                )}
-                            />
-                            {fieldErrors.current_password && (
-                                <p className="mt-1 text-sm text-red-600">
-                                    {fieldErrors.current_password}
-                                </p>
-                            )}
-                        </div>
-
-                        <div>
-                            <label
-                                htmlFor="new-password"
-                                className="block text-sm font-medium text-gray-700"
-                            >
-                                Nova senha
-                            </label>
-                            <input
-                                id="new-password"
-                                type="password"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                required
-                                className={cn(
-                                    "mt-1 block w-full rounded-md border px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1",
-                                    fieldErrors.password
-                                        ? "border-red-300 focus:border-red-500 focus:ring-red-500"
-                                        : "border-gray-300 focus:border-primary-500 focus:ring-primary-500",
-                                )}
-                            />
-                            {fieldErrors.password && (
-                                <p className="mt-1 text-sm text-red-600">
-                                    {fieldErrors.password}
-                                </p>
-                            )}
-                        </div>
-
-                        <div>
-                            <label
-                                htmlFor="password-confirmation"
-                                className="block text-sm font-medium text-gray-700"
-                            >
-                                Confirmar nova senha
-                            </label>
-                            <input
-                                id="password-confirmation"
-                                type="password"
-                                value={passwordConfirmation}
-                                onChange={(e) =>
-                                    setPasswordConfirmation(e.target.value)
-                                }
-                                required
-                                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
-                            />
-                        </div>
+                        <FormField
+                            id="current-password"
+                            label="Senha atual"
+                            type="password"
+                            autoComplete="current-password"
+                            required
+                            value={currentPassword}
+                            onChange={(e) => setCurrentPassword(e.target.value)}
+                            error={fieldErrors.current_password}
+                        />
+                        <FormField
+                            id="new-password"
+                            label="Nova senha"
+                            type="password"
+                            autoComplete="new-password"
+                            required
+                            hint="Use uma senha forte com pelo menos 8 caracteres"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            error={fieldErrors.password}
+                        />
+                        <FormField
+                            id="password-confirmation"
+                            label="Confirmar nova senha"
+                            type="password"
+                            autoComplete="new-password"
+                            required
+                            value={passwordConfirmation}
+                            onChange={(e) => setPasswordConfirmation(e.target.value)}
+                            error={mismatchError}
+                        />
 
                         <div className="flex gap-3 pt-2">
                             <button
