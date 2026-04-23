@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\BugReportController;
 use App\Http\Controllers\Api\CourseController;
 use App\Http\Controllers\Api\PresenceController;
+use App\Http\Controllers\Api\ProfileAlertPreferenceController;
 use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\ProfileRatingController;
 use App\Http\Controllers\Api\ProfileRegistrationController;
@@ -85,6 +86,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/profile', [ProfileController::class, 'update']);
     Route::put('/profile/student-data', [ProfileController::class, 'updateStudentData']);
     Route::put('/profile/password', [ProfileController::class, 'updatePassword']);
+
+    // Profile - Alert Preferences
+    Route::get('/profile/alert-preferences', [ProfileAlertPreferenceController::class, 'show']);
+    Route::put('/profile/alert-preferences', [ProfileAlertPreferenceController::class, 'update']);
 
     // Profile - Registrations & Certificates
     Route::get('/profile/registrations', [ProfileRegistrationController::class, 'registrations']);
