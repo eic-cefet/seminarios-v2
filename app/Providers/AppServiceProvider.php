@@ -9,6 +9,7 @@ use App\Models\Seminar;
 use App\Models\SeminarLocation;
 use App\Models\Subject;
 use App\Models\User;
+use App\Observers\SeminarAlertObserver;
 use App\Policies\AuditLogPolicy;
 use App\Policies\RegistrationPolicy;
 use App\Policies\SeminarLocationPolicy;
@@ -67,6 +68,8 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(AuditLog::class, AuditLogPolicy::class);
 
         Event::listen(MessageSent::class, AuditEmailSent::class);
+
+        Seminar::observe(SeminarAlertObserver::class);
 
         Scramble::registerUiRoute('api/external/docs');
         Scramble::registerJsonSpecificationRoute('api/external/docs.json');
