@@ -34,9 +34,6 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->trustProxies(at: '*');
         $middleware->append(LogRequestMiddleware::class);
         $middleware->append(AuditContextMiddleware::class);
-        $middleware->encryptCookies(except: [
-            \App\Services\TwoFactorDeviceService::COOKIE_NAME,
-        ]);
         $middleware->alias([
             'admin' => EnsureUserIsAdmin::class,
             'ability' => CheckTokenAbility::class,

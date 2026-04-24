@@ -1,5 +1,7 @@
 <?php
 
+use App\Enums\AuditEvent;
+use App\Models\AuditLog;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use PragmaRX\Google2FA\Google2FA;
@@ -56,7 +58,7 @@ it('completes login with a valid TOTP code', function () {
 
     $response->assertSuccessful()->assertJsonPath('user.email', $user->email);
     $this->assertAuthenticatedAs($user);
-    expect(\App\Models\AuditLog::where('event_name', \App\Enums\AuditEvent::UserMfaUsed->value)->exists())->toBeTrue();
+    expect(AuditLog::where('event_name', AuditEvent::UserMfaUsed->value)->exists())->toBeTrue();
 });
 
 it('rejects invalid TOTP code', function () {
@@ -70,7 +72,7 @@ it('rejects invalid TOTP code', function () {
     ])->assertUnprocessable();
 
     $this->assertGuest();
-    expect(\App\Models\AuditLog::where('event_name', \App\Enums\AuditEvent::UserMfaChallengeFailed->value)->exists())->toBeTrue();
+    expect(AuditLog::where('event_name', AuditEvent::UserMfaChallengeFailed->value)->exists())->toBeTrue();
 });
 
 it('accepts a recovery code once and removes it', function () {
@@ -88,7 +90,7 @@ it('accepts a recovery code once and removes it', function () {
 
     $remaining = json_decode(decrypt($user->fresh()->two_factor_recovery_codes), true);
     expect($remaining)->not->toContain('code-one')->toContain('code-two');
-    expect(\App\Models\AuditLog::where('event_name', \App\Enums\AuditEvent::UserMfaRecoveryCodeUsed->value)->exists())->toBeTrue();
+    expect(AuditLog::where('event_name', AuditEvent::UserMfaRecoveryCodeUsed->value)->exists())->toBeTrue();
 });
 
 it('rejects unknown recovery code', function () {
@@ -100,6 +102,36 @@ it('rejects unknown recovery code', function () {
         'challenge_token' => $challenge,
         'recovery_code' => 'nope',
     ])->assertUnprocessable();
+});
+
+it('does not consume the same recovery code twice across two challenges', function () {
+    $user = userWithConfirmed2fa();
+
+    // First challenge consumes 'code-one'
+    $challenge1 = $this->postJson('/api/auth/login', ['email' => $user->email, 'password' => 'secret123'])
+        ->json('two_factor.challenge_token');
+    $this->postJson('/api/auth/two-factor-challenge', [
+        'challenge_token' => $challenge1,
+        'recovery_code' => 'code-one',
+    ])->assertSuccessful();
+
+    // Log out and try the same code again on a fresh challenge
+    auth()->logout();
+
+    $challenge2 = $this->postJson('/api/auth/login', ['email' => $user->email, 'password' => 'secret123'])
+        ->json('two_factor.challenge_token');
+    $this->postJson('/api/auth/two-factor-challenge', [
+        'challenge_token' => $challenge2,
+        'recovery_code' => 'code-one',
+    ])->assertUnprocessable();
+
+    // 'code-two' still works
+    $challenge3 = $this->postJson('/api/auth/login', ['email' => $user->email, 'password' => 'secret123'])
+        ->json('two_factor.challenge_token');
+    $this->postJson('/api/auth/two-factor-challenge', [
+        'challenge_token' => $challenge3,
+        'recovery_code' => 'code-two',
+    ])->assertSuccessful();
 });
 
 it('rejects expired or unknown challenge tokens', function () {

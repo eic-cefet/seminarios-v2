@@ -111,7 +111,6 @@ export default function TwoFactorChallenge() {
                                         value={code}
                                         onChange={setCode}
                                         autoComplete="one-time-code"
-                                        autoFocus
                                     >
                                         <InputOTPGroup>
                                             <InputOTPSlot index={0} />

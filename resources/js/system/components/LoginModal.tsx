@@ -279,7 +279,6 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
                                             value={twoFactorCode}
                                             onChange={setTwoFactorCode}
                                             autoComplete="one-time-code"
-                                            autoFocus
                                         >
                                             <InputOTPGroup>
                                                 <InputOTPSlot index={0} />

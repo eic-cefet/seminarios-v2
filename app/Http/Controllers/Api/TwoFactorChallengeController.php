@@ -12,6 +12,7 @@ use App\Models\User;
 use App\Services\TwoFactorDeviceService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use PragmaRX\Google2FA\Google2FA;
 
 class TwoFactorChallengeController extends Controller
@@ -81,15 +82,20 @@ class TwoFactorChallengeController extends Controller
 
     private function consumeRecoveryCode(User $user, string $input): bool
     {
-        $codes = json_decode(decrypt($user->two_factor_recovery_codes), true) ?: [];
-        $filtered = array_values(array_filter($codes, fn ($c) => ! hash_equals($c, $input)));
+        return DB::transaction(function () use ($user, $input) {
+            $locked = User::query()->whereKey($user->id)->lockForUpdate()->first();
 
-        if (count($filtered) === count($codes)) {
-            return false;
-        }
+            $codes = json_decode(decrypt($locked->two_factor_recovery_codes), true) ?: [];
+            $filtered = array_values(array_filter($codes, fn ($c) => ! hash_equals($c, $input)));
 
-        $user->forceFill(['two_factor_recovery_codes' => encrypt(json_encode($filtered))])->save();
+            if (count($filtered) === count($codes)) {
+                return false;
+            }
 
-        return true;
+            $locked->forceFill(['two_factor_recovery_codes' => encrypt(json_encode($filtered))])->save();
+            $user->setRawAttributes($locked->getAttributes(), true);
+
+            return true;
+        });
     }
 }
