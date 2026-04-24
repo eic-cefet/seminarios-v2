@@ -57,7 +57,8 @@ class ExportUserDataJob implements ShouldQueue
             throw new \RuntimeException("Failed to store data export on S3: {$filename}");
         }
 
-        $expiresAt = now()->addDay();
+        $hours = (int) config('lgpd.retention.data_export_link_hours', 24);
+        $expiresAt = now()->addHours($hours);
         $request->markCompleted($filename, $expiresAt, $size);
 
         $url = Storage::disk('s3')->temporaryUrl($filename, $expiresAt);
