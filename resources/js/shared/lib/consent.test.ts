@@ -1,6 +1,7 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import {
     COOKIE_CATEGORIES,
+    clearCookieConsent,
     ensureAnonymousId,
     loadCookieConsent,
     saveCookieConsent,
@@ -61,5 +62,25 @@ describe("consent storage", () => {
             decided_at: "2026-04-23T10:00:00Z",
         });
         expect(localStorage.getItem(CONSENT_STORAGE_KEY)).not.toBeNull();
+    });
+
+    it("clears stored consent", () => {
+        saveCookieConsent({
+            essential: true,
+            functional: true,
+            analytics: true,
+            version: "1.0",
+            decided_at: "2026-04-23T10:00:00Z",
+        });
+        clearCookieConsent();
+        expect(localStorage.getItem(CONSENT_STORAGE_KEY)).toBeNull();
+    });
+
+    it("returns null when localStorage.getItem throws", () => {
+        const spy = vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
+            throw new Error("storage unavailable");
+        });
+        expect(loadCookieConsent()).toBeNull();
+        spy.mockRestore();
     });
 });

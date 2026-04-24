@@ -52,14 +52,16 @@ export default function CookiePreferences() {
                                       ? functional
                                       : analytics;
                             const onChange = (value: boolean) => {
-                                if (category.id === "functional")
-                                    setFunctional(value);
-                                else if (category.id === "analytics")
-                                    setAnalytics(value);
+                                const setters: Record<string, (v: boolean) => void> = {
+                                    functional: setFunctional,
+                                    analytics: setAnalytics,
+                                };
+                                setters[category.id]?.(value);
                             };
                             return (
                                 <label
                                     key={category.id}
+                                    aria-label={category.label}
                                     className="flex items-start gap-3 rounded-md border border-gray-200 p-4"
                                 >
                                     <input
