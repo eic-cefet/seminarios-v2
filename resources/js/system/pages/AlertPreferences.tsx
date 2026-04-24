@@ -26,8 +26,8 @@ export default function AlertPreferences() {
     });
 
     const { data: subjectsResponse } = useQuery({
-        queryKey: ["subjects-all"],
-        queryFn: () => subjectsApi.list(),
+        queryKey: ["subjects-top-30"],
+        queryFn: () => subjectsApi.list({ sort: "seminars", limit: 30 }),
     });
 
     const [newSeminarAlert, setNewSeminarAlert] = useState(false);
@@ -203,7 +203,7 @@ export default function AlertPreferences() {
                                                         <label
                                                             key={type.id}
                                                             className={cn(
-                                                                "flex items-center gap-2 rounded-md border px-3 py-1.5 text-sm cursor-pointer select-none transition-colors",
+                                                                "flex items-center gap-2 rounded-md border px-3 py-1.5 text-sm cursor-pointer select-none transition-colors max-w-full min-w-0 break-all",
                                                                 checked
                                                                     ? "border-primary-600 bg-primary-50 text-primary-900"
                                                                     : "border-gray-300 bg-white text-gray-700 hover:bg-gray-50",
@@ -231,7 +231,7 @@ export default function AlertPreferences() {
                                                 Assuntos (opcional)
                                             </legend>
                                             <p className="text-xs text-gray-500 mb-3">
-                                                Vazio = todos os assuntos.
+                                                Vazio = todos os assuntos. Mostrando os 30 com mais apresentações.
                                             </p>
                                             <div className="flex flex-wrap gap-2">
                                                 {subjects.map((subject) => {
@@ -240,7 +240,7 @@ export default function AlertPreferences() {
                                                         <label
                                                             key={subject.id}
                                                             className={cn(
-                                                                "flex items-center gap-2 rounded-md border px-3 py-1.5 text-sm cursor-pointer select-none transition-colors",
+                                                                "flex items-center gap-2 rounded-md border px-3 py-1.5 text-sm cursor-pointer select-none transition-colors max-w-full min-w-0 break-all",
                                                                 checked
                                                                     ? "border-primary-600 bg-primary-50 text-primary-900"
                                                                     : "border-gray-300 bg-white text-gray-700 hover:bg-gray-50",
