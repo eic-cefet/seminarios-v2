@@ -34,6 +34,10 @@ vi.mock('../components/profile/CertificatesSection', () => ({
     CertificatesSection: () => <div>CertificatesSection</div>,
 }));
 
+vi.mock('../components/profile/PrivacySection', () => ({
+    PrivacySection: () => <div>PrivacySection</div>,
+}));
+
 import { useAuth } from '@shared/contexts/AuthContext';
 
 describe('Profile', () => {
@@ -81,5 +85,6 @@ describe('Profile', () => {
         expect(screen.getByText('PasswordSection')).toBeInTheDocument();
         expect(screen.getByText('RegistrationsSection')).toBeInTheDocument();
         expect(screen.getByText('CertificatesSection')).toBeInTheDocument();
+        expect(screen.getByText('PrivacySection')).toBeInTheDocument();
     });
 });
