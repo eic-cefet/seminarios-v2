@@ -98,4 +98,12 @@ Route::middleware('auth:sanctum')->group(function () {
     // Profile - Evaluations & Ratings
     Route::get('/profile/pending-evaluations', [ProfileRatingController::class, 'pendingEvaluations']);
     Route::post('/profile/ratings/{seminar}', [ProfileRatingController::class, 'submitRating']);
+
+    // Profile - Two-Factor Authentication
+    Route::prefix('profile/two-factor')->group(function () {
+        Route::post('/enable', [\App\Http\Controllers\Api\TwoFactorController::class, 'enable']);
+        Route::post('/confirm', [\App\Http\Controllers\Api\TwoFactorController::class, 'confirm']);
+        Route::post('/recovery-codes', [\App\Http\Controllers\Api\TwoFactorController::class, 'regenerateRecoveryCodes']);
+        Route::delete('/', [\App\Http\Controllers\Api\TwoFactorController::class, 'disable']);
+    });
 });
