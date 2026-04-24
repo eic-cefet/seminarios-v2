@@ -1,11 +1,13 @@
 <?php
 
 use App\Jobs\SendEvaluationReminderJob;
+use App\Mail\EvaluationReminder;
 use App\Models\Rating;
 use App\Models\Registration;
 use App\Models\Seminar;
 use App\Models\User;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Queue;
 
 describe('reminders:evaluations command', function () {
@@ -256,6 +258,7 @@ describe('reminders:evaluations command', function () {
     it('sends reminders synchronously with --sync option', function () {
         Queue::fake();
         Mail::fake();
+        Notification::fake();
 
         $threeDaysAgo = now()->subDays(3);
         $seminar = Seminar::factory()->create([
@@ -276,11 +279,11 @@ describe('reminders:evaluations command', function () {
             ->expectsOutput('Dispatched 1 evaluation reminder(s).')
             ->assertExitCode(0);
 
-        // Job should NOT be queued when using --sync
+        // Job should NOT be queued when using --sync (notifications are faked, so no SendQueuedNotifications)
         Queue::assertNothingPushed();
 
         // Mail should have been queued (mailable implements ShouldQueue)
-        Mail::assertQueued(\App\Mail\EvaluationReminder::class);
+        Mail::assertQueued(EvaluationReminder::class);
     });
 
 });

@@ -5,7 +5,9 @@ use App\Mail\EvaluationReminder;
 use App\Models\Registration;
 use App\Models\Seminar;
 use App\Models\User;
+use App\Notifications\EvaluationDueNotification;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Notification;
 
 describe('SendEvaluationReminderJob', function () {
     it('sends evaluation reminder email', function () {
@@ -83,5 +85,20 @@ describe('SendEvaluationReminderJob', function () {
 
         expect($registration1->fresh()->evaluation_sent_at)->not->toBeNull();
         expect($registration2->fresh()->evaluation_sent_at)->not->toBeNull();
+    });
+
+    it('dispatches one EvaluationDueNotification per seminar', function () {
+        Notification::fake();
+        Mail::fake();
+
+        $user = User::factory()->create();
+        $seminarA = Seminar::factory()->create();
+        $seminarB = Seminar::factory()->create();
+        $regA = Registration::factory()->for($user)->for($seminarA)->create(['present' => true]);
+        $regB = Registration::factory()->for($user)->for($seminarB)->create(['present' => true]);
+
+        (new SendEvaluationReminderJob($user, collect([$regA->id, $regB->id])))->handle();
+
+        Notification::assertSentToTimes($user, EvaluationDueNotification::class, 2);
     });
 });
