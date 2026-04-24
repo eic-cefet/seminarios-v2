@@ -2,7 +2,6 @@
 
 namespace App\Services;
 
-use App\Models\MfaTrustedDevice;
 use App\Models\User;
 use Illuminate\Support\Str;
 
@@ -20,6 +19,7 @@ class TwoFactorDeviceService
             'token_hash' => hash('sha256', $token),
             'label' => $label,
             'ip' => $ip,
+            'last_used_at' => now(),
             'expires_at' => now()->addDays(self::TTL_DAYS),
         ]);
 

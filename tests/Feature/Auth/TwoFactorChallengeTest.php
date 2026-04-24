@@ -3,6 +3,7 @@
 use App\Enums\AuditEvent;
 use App\Models\AuditLog;
 use App\Models\User;
+use Illuminate\Routing\Middleware\ThrottleRequests;
 use Illuminate\Support\Facades\Hash;
 use PragmaRX\Google2FA\Google2FA;
 
@@ -102,6 +103,31 @@ it('rejects unknown recovery code', function () {
         'challenge_token' => $challenge,
         'recovery_code' => 'nope',
     ])->assertUnprocessable();
+});
+
+it('caps brute-force attempts per challenge token even when per-IP throttle is bypassed', function () {
+    // Disable the per-IP throttle to simulate an attacker rotating IPs;
+    // the per-token counter must still cap attempts.
+    $this->withoutMiddleware(ThrottleRequests::class);
+
+    $user = userWithConfirmed2fa();
+    $challenge = $this->postJson('/api/auth/login', ['email' => $user->email, 'password' => 'secret123'])
+        ->json('two_factor.challenge_token');
+
+    foreach (range(1, 5) as $_) {
+        $this->postJson('/api/auth/two-factor-challenge', [
+            'challenge_token' => $challenge,
+            'code' => '000000',
+        ])->assertUnprocessable();
+    }
+
+    $code = app(Google2FA::class)->getCurrentOtp(decrypt($user->two_factor_secret));
+    $response = $this->postJson('/api/auth/two-factor-challenge', [
+        'challenge_token' => $challenge,
+        'code' => $code,
+    ])->assertUnprocessable();
+
+    expect($response->json('errors.challenge_token'))->not->toBeNull();
 });
 
 it('rejects a TOTP code that was already used (replay protection)', function () {

@@ -19,14 +19,27 @@ class TwoFactorChallengeController extends Controller
 {
     use FormatsUserResponse;
 
+    private const MAX_ATTEMPTS_PER_TOKEN = 5;
+
     public function __invoke(TwoFactorChallengeRequest $request, TwoFactorDeviceService $devices): JsonResponse
     {
         $key = "mfa:challenge:{$request->string('challenge_token')}";
+        $attemptsKey = "{$key}:attempts";
         $payload = cache()->get($key);
 
         if (! $payload) {
             throw ApiException::validation(['challenge_token' => 'Desafio inválido ou expirado']);
         }
+
+        if ((int) cache()->get($attemptsKey, 0) >= self::MAX_ATTEMPTS_PER_TOKEN) {
+            cache()->forget($key);
+            cache()->forget($attemptsKey);
+
+            throw ApiException::validation(['challenge_token' => 'Muitas tentativas. Faça login novamente.']);
+        }
+
+        cache()->increment($attemptsKey);
+        cache()->put($attemptsKey, (int) cache()->get($attemptsKey), now()->addMinutes(5));
 
         /** @var User $user */
         $user = User::findOrFail($payload['user_id']);
@@ -66,6 +79,7 @@ class TwoFactorChallengeController extends Controller
         }
 
         cache()->forget($key);
+        cache()->forget($attemptsKey);
 
         Auth::login($user, (bool) ($payload['remember'] ?? false));
         AuditLog::record(AuditEvent::UserLogin, auditable: $user);
@@ -105,7 +119,6 @@ class TwoFactorChallengeController extends Controller
             }
 
             $locked->forceFill(['two_factor_recovery_codes' => encrypt(json_encode($filtered))])->save();
-            $user->setRawAttributes($locked->getAttributes(), true);
 
             return true;
         });
