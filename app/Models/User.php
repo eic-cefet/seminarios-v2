@@ -14,14 +14,15 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Fortify\TwoFactorAuthenticatable;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable implements CanResetPassword
 {
-    use Auditable, HasApiTokens, HasFactory, HasRoles, Notifiable, SoftDeletes;
+    use Auditable, HasApiTokens, HasFactory, HasRoles, Notifiable, SoftDeletes, TwoFactorAuthenticatable;
 
-    protected array $auditExclude = ['password', 'remember_token'];
+    protected array $auditExclude = ['password', 'remember_token', 'two_factor_secret', 'two_factor_recovery_codes'];
 
     protected $fillable = [
         'name',
@@ -32,6 +33,8 @@ class User extends Authenticatable implements CanResetPassword
     protected $hidden = [
         'password',
         'remember_token',
+        'two_factor_secret',
+        'two_factor_recovery_codes',
     ];
 
     protected function casts(): array
@@ -75,6 +78,11 @@ class User extends Authenticatable implements CanResetPassword
     public function alertPreference(): HasOne
     {
         return $this->hasOne(AlertPreference::class);
+    }
+
+    public function trustedDevices(): HasMany
+    {
+        return $this->hasMany(MfaTrustedDevice::class);
     }
 
     public function isAdmin(): bool
