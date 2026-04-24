@@ -20,13 +20,36 @@ class AlertPreferenceFactory extends Factory
     {
         return [
             'user_id' => User::factory(),
-            'opted_in' => true,
+            'new_seminar_alert' => true,
+            'seminar_reminder_7d' => true,
+            'seminar_reminder_24h' => true,
+            'evaluation_prompt' => true,
+            'announcements' => true,
+            'certificate_ready' => true,
+            'seminar_rescheduled' => true,
         ];
     }
 
     public function optedOut(): self
     {
-        return $this->state(fn () => ['opted_in' => false]);
+        return $this->state(fn () => ['new_seminar_alert' => false]);
+    }
+
+    public function newSeminarAlertOff(): self
+    {
+        return $this->state(fn () => ['new_seminar_alert' => false]);
+    }
+
+    public function transactionalAllOff(): self
+    {
+        return $this->state(fn () => [
+            'seminar_reminder_7d' => false,
+            'seminar_reminder_24h' => false,
+            'evaluation_prompt' => false,
+            'announcements' => false,
+            'certificate_ready' => false,
+            'seminar_rescheduled' => false,
+        ]);
     }
 
     /**

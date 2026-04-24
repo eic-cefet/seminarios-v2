@@ -35,6 +35,10 @@ class SendSeminarRemindersCommand extends Command
             ->whereNotNull('seminars.scheduled_at')
             ->whereBetween('seminars.scheduled_at', [$tomorrowStart, $tomorrowEnd])
             ->where('seminars.active', true)
+            ->where(function ($q) {
+                $q->whereDoesntHave('user.alertPreference')
+                    ->orWhereHas('user.alertPreference', fn ($q2) => $q2->where('seminar_reminder_24h', true));
+            })
             ->with(['user', 'seminar.seminarLocation'])
             ->get();
 

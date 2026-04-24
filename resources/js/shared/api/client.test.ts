@@ -358,9 +358,9 @@ describe('fetchApi (via API namespaces)', () => {
 
     describe('alertPreferencesApi', () => {
         it('get fetches alert preferences', async () => {
-            mockFetchSuccess({ data: { optedIn: true, seminarTypeIds: [1], subjectIds: [2] } });
+            mockFetchSuccess({ data: { newSeminarAlert: true, seminarTypeIds: [1], subjectIds: [2] } });
             const result = await alertPreferencesApi.get();
-            expect(result).toEqual({ optedIn: true, seminarTypeIds: [1], subjectIds: [2] });
+            expect(result).toEqual({ newSeminarAlert: true, seminarTypeIds: [1], subjectIds: [2] });
             expect(fetchSpy).toHaveBeenCalledWith(
                 expect.stringContaining('/profile/alert-preferences'),
                 expect.any(Object),
@@ -370,14 +370,20 @@ describe('fetchApi (via API namespaces)', () => {
         it('update sends PUT with payload', async () => {
             mockFetchSuccess({
                 message: 'Updated',
-                data: { optedIn: true, seminarTypeIds: [1], subjectIds: [] },
+                data: { newSeminarAlert: true, seminarTypeIds: [1], subjectIds: [] },
             });
             const result = await alertPreferencesApi.update({
-                opted_in: true,
+                new_seminar_alert: true,
                 seminar_type_ids: [1],
                 subject_ids: [],
+                seminar_reminder_7d: true,
+                seminar_reminder_24h: true,
+                evaluation_prompt: true,
+                announcements: true,
+                certificate_ready: true,
+                seminar_rescheduled: true,
             });
-            expect(result.optedIn).toBe(true);
+            expect(result.newSeminarAlert).toBe(true);
             expect(fetchSpy).toHaveBeenCalledWith(
                 expect.stringContaining('/profile/alert-preferences'),
                 expect.objectContaining({ method: 'PUT' }),

@@ -7,7 +7,7 @@ use Database\Factories\AlertPreferenceFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\MorphToMany;
 
 class AlertPreference extends Model
 {
@@ -16,13 +16,25 @@ class AlertPreference extends Model
 
     protected $fillable = [
         'user_id',
-        'opted_in',
+        'new_seminar_alert',
+        'seminar_reminder_7d',
+        'seminar_reminder_24h',
+        'evaluation_prompt',
+        'announcements',
+        'certificate_ready',
+        'seminar_rescheduled',
     ];
 
     protected function casts(): array
     {
         return [
-            'opted_in' => 'boolean',
+            'new_seminar_alert' => 'boolean',
+            'seminar_reminder_7d' => 'boolean',
+            'seminar_reminder_24h' => 'boolean',
+            'evaluation_prompt' => 'boolean',
+            'announcements' => 'boolean',
+            'certificate_ready' => 'boolean',
+            'seminar_rescheduled' => 'boolean',
         ];
     }
 
@@ -31,13 +43,23 @@ class AlertPreference extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function seminarTypes(): BelongsToMany
+    public function seminarTypes(): MorphToMany
     {
-        return $this->belongsToMany(SeminarType::class, 'alert_preference_seminar_type');
+        return $this->morphedByMany(
+            SeminarType::class,
+            'settable',
+            'alert_preference_new_seminar_alert_settings',
+            'alert_preference_id',
+        );
     }
 
-    public function subjects(): BelongsToMany
+    public function subjects(): MorphToMany
     {
-        return $this->belongsToMany(Subject::class, 'alert_preference_subject');
+        return $this->morphedByMany(
+            Subject::class,
+            'settable',
+            'alert_preference_new_seminar_alert_settings',
+            'alert_preference_id',
+        );
     }
 }

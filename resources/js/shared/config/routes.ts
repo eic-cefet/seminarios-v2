@@ -20,7 +20,7 @@ export const ROUTES = {
         AUTH_CALLBACK: "/auth/callback",
         PROFILE: "/perfil",
         CERTIFICATES: "/certificados",
-        ALERT_PREFERENCES: "/preferencias-alertas",
+        ALERT_PREFERENCES: "/perfil/preferencias/alertas",
         EVALUATIONS: "/avaliar",
         BUG_REPORT: "/reportar-bug",
         PRESENTATIONS: "/apresentacoes",

@@ -43,6 +43,10 @@ class SendEvaluationRemindersCommand extends Command
                     ->whereColumn('ratings.seminar_id', 'registrations.seminar_id')
                     ->whereColumn('ratings.user_id', 'registrations.user_id');
             })
+            ->where(function ($q) {
+                $q->whereDoesntHave('user.alertPreference')
+                    ->orWhereHas('user.alertPreference', fn ($q2) => $q2->where('evaluation_prompt', true));
+            })
             ->with(['user', 'seminar'])
             ->get();
 

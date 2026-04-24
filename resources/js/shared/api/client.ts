@@ -397,9 +397,15 @@ export const profileApi = {
 };
 
 export interface AlertPreference {
-    optedIn: boolean;
+    newSeminarAlert: boolean;
     seminarTypeIds: number[];
     subjectIds: number[];
+    seminarReminder7d: boolean;
+    seminarReminder24h: boolean;
+    evaluationPrompt: boolean;
+    announcements: boolean;
+    certificateReady: boolean;
+    seminarRescheduled: boolean;
 }
 
 export const alertPreferencesApi = {
@@ -411,9 +417,15 @@ export const alertPreferencesApi = {
     },
 
     update: async (data: {
-        opted_in: boolean;
+        new_seminar_alert: boolean;
         seminar_type_ids: number[];
         subject_ids: number[];
+        seminar_reminder_7d: boolean;
+        seminar_reminder_24h: boolean;
+        evaluation_prompt: boolean;
+        announcements: boolean;
+        certificate_ready: boolean;
+        seminar_rescheduled: boolean;
     }): Promise<AlertPreference> => {
         await getCsrfCookie();
         const response = await fetchApi<{ message: string; data: AlertPreference }>(

@@ -22,7 +22,7 @@ class SeminarAlertService
 
         return AlertPreference::query()
             ->with('user')
-            ->where('opted_in', true)
+            ->where('new_seminar_alert', true)
             ->whereHas('user', fn ($q) => $q->whereNull('deleted_at'))
             ->whereNotExists(function ($q) use ($seminar) {
                 $q->select(DB::raw(1))

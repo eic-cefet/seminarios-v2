@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\CommunicationCategory;
 use App\Enums\Role;
 use App\Models\Concerns\Auditable;
 use App\Notifications\ResetPassword;
@@ -97,5 +98,16 @@ class User extends Authenticatable implements CanResetPassword
     public function sendPasswordResetNotification($token): void
     {
         $this->notify(new ResetPassword($token));
+    }
+
+    public function wantsCommunication(CommunicationCategory $category): bool
+    {
+        $pref = $this->alertPreference;
+
+        if ($pref === null) {
+            return $category->defaultWhenMissing();
+        }
+
+        return (bool) $pref->{$category->column()};
     }
 }

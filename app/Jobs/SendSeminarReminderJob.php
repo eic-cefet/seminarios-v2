@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Enums\CommunicationCategory;
 use App\Mail\SeminarReminder;
 use App\Models\Registration;
 use App\Models\User;
@@ -31,6 +32,10 @@ class SendSeminarReminderJob implements ShouldQueue
 
     public function handle(): void
     {
+        if (! $this->user->wantsCommunication(CommunicationCategory::SeminarReminder24h)) {
+            return;
+        }
+
         $registrations = Registration::whereIn('id', $this->registrationIds)
             ->with(['seminar.seminarLocation'])
             ->get();

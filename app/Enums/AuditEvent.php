@@ -11,6 +11,7 @@ enum AuditEvent: string
     case UserForgotPassword = 'user.forgot_password';
     case UserPasswordReset = 'user.password_reset';
     case UserSocialLogin = 'user.social_login';
+    case UserCommunicationPreferencesUpdated = 'user.communication_preferences.updated';
 
     // Presence
     case PresenceRegistered = 'presence.registered';
