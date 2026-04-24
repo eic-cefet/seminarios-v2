@@ -7,13 +7,18 @@ const mockLogin = vi.fn();
 vi.mock('@shared/contexts/AuthContext', () => ({
     useAuth: vi.fn(() => ({
         user: null, isLoading: false, isAuthenticated: false,
-        login: mockLogin, register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(),
+        login: mockLogin, register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(),
+        refreshUser: vi.fn(), completeTwoFactor: vi.fn(),
     })),
 }));
 
 vi.mock('@shared/api/client', () => ({
     authApi: { forgotPassword: vi.fn() },
     ApiRequestError: class extends Error {},
+}));
+
+vi.mock('@shared/api/twoFactorApi', () => ({
+    twoFactorApi: { challenge: vi.fn() },
 }));
 
 vi.mock('@shared/lib/analytics', () => ({
@@ -155,12 +160,15 @@ describe('LoginModal', () => {
         });
     });
 
-    it('navigates to /login/two-factor when login returns a 2FA challenge', async () => {
+    it('switches to 2FA step inside the modal when login returns a challenge', async () => {
+        onOpenChange.mockClear();
         mockLogin.mockResolvedValueOnce({
             status: 'two_factor_required',
             challengeToken: 'abc',
             remember: true,
         });
+        const { twoFactorApi } = await import('@shared/api/twoFactorApi');
+        vi.mocked(twoFactorApi.challenge).mockResolvedValueOnce({ user: { id: 1 } } as never);
         const user = userEvent.setup();
 
         render(<LoginModal open={true} onOpenChange={onOpenChange} />);
@@ -169,7 +177,21 @@ describe('LoginModal', () => {
         await user.type(screen.getByLabelText(/^senha/i), 'password123');
         await user.click(screen.getByRole('button', { name: 'Entrar' }));
 
+        // Modal stays open; switches to 2FA step
         await waitFor(() => {
+            expect(screen.getByRole('heading', { name: /verificação em duas etapas/i })).toBeInTheDocument();
+        });
+        expect(onOpenChange).not.toHaveBeenCalledWith(false);
+
+        await user.type(screen.getByLabelText(/^código\s*\*/i), '123456');
+        await user.click(screen.getByRole('button', { name: /verificar/i }));
+
+        await waitFor(() => {
+            expect(twoFactorApi.challenge).toHaveBeenCalledWith({
+                challenge_token: 'abc',
+                code: '123456',
+                remember_device: false,
+            });
             expect(onOpenChange).toHaveBeenCalledWith(false);
         });
     });
