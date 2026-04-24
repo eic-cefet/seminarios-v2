@@ -60,13 +60,13 @@ export function CookieConsentBanner() {
                                 .
                             </p>
                         </div>
-                        <div className="flex flex-wrap gap-2 md:flex-nowrap">
+                        <div className="flex flex-wrap gap-2 md:flex-nowrap md:shrink-0">
                             <button
                                 type="button"
                                 onClick={() => handleAll(false)}
                                 disabled={saving}
                                 className={cn(
-                                    "rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50",
+                                    "whitespace-nowrap rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50",
                                     /* v8 ignore next — cosmetic saving state styling */
                                     saving && "opacity-60",
                                 )}
@@ -78,7 +78,7 @@ export function CookieConsentBanner() {
                                 onClick={() => setMode("customize")}
                                 disabled={saving}
                                 className={cn(
-                                    "rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50",
+                                    "whitespace-nowrap rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50",
                                     /* v8 ignore next — cosmetic saving state styling */
                                     saving && "opacity-60",
                                 )}
@@ -90,7 +90,7 @@ export function CookieConsentBanner() {
                                 onClick={() => handleAll(true)}
                                 disabled={saving}
                                 className={cn(
-                                    "rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700",
+                                    "whitespace-nowrap rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700",
                                     /* v8 ignore next — cosmetic saving state styling */
                                     saving && "opacity-60",
                                 )}

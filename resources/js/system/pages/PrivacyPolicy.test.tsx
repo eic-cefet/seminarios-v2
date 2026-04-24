@@ -36,9 +36,9 @@ describe("PrivacyPolicy", () => {
     it("exposes the DPO contact email", () => {
         render(<PrivacyPolicy />);
         expect(screen.getAllByText(/encarregado/i).length).toBeGreaterThan(0);
-        expect(screen.getByRole("link", { name: /lgpd@cefet-rj\.br/i })).toHaveAttribute(
+        expect(screen.getByRole("link", { name: /lgpd@eic-seminarios\.com/i })).toHaveAttribute(
             "href",
-            "mailto:lgpd@cefet-rj.br",
+            "mailto:lgpd@eic-seminarios.com",
         );
     });
 });

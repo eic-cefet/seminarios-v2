@@ -11,7 +11,7 @@ return [
     */
     'encarregado' => [
         'name' => env('LGPD_DPO_NAME', 'Encarregado de Proteção de Dados'),
-        'email' => env('LGPD_DPO_EMAIL', 'lgpd@cefet-rj.br'),
+        'email' => env('LGPD_DPO_EMAIL', 'lgpd@eic-seminarios.com'),
         'phone' => env('LGPD_DPO_PHONE'),
     ],
 
