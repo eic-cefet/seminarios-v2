@@ -9,6 +9,7 @@ use App\Enums\CommunicationCategory;
 use App\Mail\SeminarRescheduled;
 use App\Models\AuditLog;
 use App\Models\Seminar;
+use App\Notifications\SeminarRescheduledNotification;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -51,6 +52,11 @@ class ProcessSeminarRescheduleJob implements ShouldQueue
         });
 
         foreach ($registrations as $registration) {
+            $registration->user->notify(new SeminarRescheduledNotification(
+                $this->seminar,
+                previousStartsAt: (string) $this->oldScheduledAt,
+            ));
+
             if (! $registration->user->wantsCommunication(CommunicationCategory::SeminarRescheduled)) {
                 continue;
             }
