@@ -126,7 +126,7 @@ class GenerateSemestralReportJob implements ShouldQueue
 
         DeleteS3FileJob::dispatch($filename)->delay(now()->addHours(2));
 
-        Mail::to($this->user->email)->send(new ReportReady(
+        Mail::to($this->user->email)->queue(new ReportReady(
             reportName: "Relatório Semestral {$this->semester}",
             downloadUrl: $url,
         ));

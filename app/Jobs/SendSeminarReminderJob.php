@@ -50,7 +50,7 @@ class SendSeminarReminderJob implements ShouldQueue
             return;
         }
 
-        Mail::to($this->user)->send(new SeminarReminder($this->user, $seminars));
+        Mail::to($this->user)->queue(new SeminarReminder($this->user, $seminars));
 
         Registration::whereIn('id', $this->registrationIds)->update(['reminder_sent' => true]);
     }

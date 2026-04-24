@@ -31,7 +31,7 @@ it('uploads the ZIP to S3 and emails a signed URL', function () {
         ->and($request->expires_at)->not->toBeNull();
 
     Storage::disk('s3')->assertExists($request->file_path);
-    Mail::assertSent(ReportReady::class, fn ($mail) => $mail->hasTo($user->email));
+    Mail::assertQueued(ReportReady::class, fn ($mail) => $mail->hasTo($user->email));
     Queue::assertPushed(DeleteS3FileJob::class);
     expect(AuditLog::where('event_name', AuditEvent::DataExportDelivered->value)->exists())->toBeTrue();
 });

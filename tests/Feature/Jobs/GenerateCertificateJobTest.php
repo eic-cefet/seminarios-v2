@@ -48,7 +48,7 @@ describe('GenerateCertificateJob', function () {
         $job = new GenerateCertificateJob($registration);
         $job->handle($mockService);
 
-        Mail::assertSent(CertificateGenerated::class);
+        Mail::assertQueued(CertificateGenerated::class);
         expect($registration->fresh()->certificate_sent)->toBeTrue();
     });
 

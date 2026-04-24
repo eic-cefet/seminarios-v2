@@ -58,7 +58,7 @@ class GenerateCertificateJob implements ShouldQueue
                 $pdfContent = Storage::disk('s3')->get($pdfPath);
 
                 Mail::to($this->registration->user->email)
-                    ->send(new CertificateGenerated($this->registration, $pdfContent));
+                    ->queue(new CertificateGenerated($this->registration, $pdfContent));
             }
 
             // Mark sent whether the email went out or was intentionally skipped by the

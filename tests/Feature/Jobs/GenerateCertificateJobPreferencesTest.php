@@ -97,6 +97,6 @@ it('sends certificate email when user has no preferences row', function () {
 
     (new GenerateCertificateJob($registration))->handle($mockService);
 
-    Mail::assertSent(CertificateGenerated::class);
+    Mail::assertQueued(CertificateGenerated::class);
     expect($registration->fresh()->certificate_sent)->toBeTrue();
 });

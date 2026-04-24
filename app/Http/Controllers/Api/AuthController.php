@@ -159,7 +159,7 @@ class AuthController extends Controller
             ]);
         }
 
-        Mail::to($user)->send(new WelcomeUser($user));
+        Mail::to($user)->queue(new WelcomeUser($user));
 
         Auth::login($user);
 

@@ -37,7 +37,7 @@ describe('SendTestEmailsCommand', function () {
         Mail::assertQueued(SeminarReminder::class);
         Mail::assertQueued(EvaluationReminder::class);
         // Non-ShouldQueue mailable is sent
-        Mail::assertSent(CertificateGenerated::class);
+        Mail::assertQueued(CertificateGenerated::class);
     });
 
     it('sends only welcome email with --only=welcome', function () {
@@ -56,7 +56,7 @@ describe('SendTestEmailsCommand', function () {
             ->expectsOutputToContain('Sending: Certificate Generated...')
             ->assertExitCode(0);
 
-        Mail::assertSent(CertificateGenerated::class);
+        Mail::assertQueued(CertificateGenerated::class);
         Mail::assertNotQueued(WelcomeUser::class);
     });
 
@@ -102,7 +102,7 @@ describe('SendTestEmailsCommand', function () {
 
     it('handles exceptions during email sending', function () {
         Mail::shouldReceive('to')
-            ->andThrow(new \RuntimeException('Mail server unavailable'));
+            ->andThrow(new RuntimeException('Mail server unavailable'));
 
         $this->artisan('mail:send-tests', ['--to' => 'test@example.com', '--only' => 'welcome'])
             ->expectsOutputToContain('Error: Mail server unavailable')

@@ -16,7 +16,7 @@ it('sends bug report email with valid data', function () {
     $response->assertSuccessful()
         ->assertJson(['message' => 'Bug report enviado com sucesso!']);
 
-    Mail::assertSent(BugReportMail::class);
+    Mail::assertQueued(BugReportMail::class);
 });
 
 it('sends bug report without optional name and email', function () {
@@ -30,7 +30,7 @@ it('sends bug report without optional name and email', function () {
     $response->assertSuccessful()
         ->assertJson(['message' => 'Bug report enviado com sucesso!']);
 
-    Mail::assertSent(BugReportMail::class);
+    Mail::assertQueued(BugReportMail::class);
 });
 
 it('validates required fields', function () {

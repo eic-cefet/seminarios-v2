@@ -65,7 +65,7 @@ class ExportUserDataJob implements ShouldQueue
 
         DeleteS3FileJob::dispatch($filename)->delay($expiresAt);
 
-        Mail::to($user->email)->send(new ReportReady(
+        Mail::to($user->email)->queue(new ReportReady(
             reportName: 'Exportação de Dados Pessoais (LGPD)',
             downloadUrl: $url,
         ));

@@ -6,6 +6,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 > NEVER modify an existing migration file. Always create a new migration to make schema changes (including dropping tables).
 
+> ALWAYS use `Mail::to(...)->queue(...)` — never `->send(...)` — for any application mail. Every Mailable in this app implements `ShouldQueue`; HTTP responses must not block on SMTP and queued jobs must not block their worker on a single email. The only exception is direct unit tests that exercise the underlying mail event/transport (e.g. `tests/Feature/Mail/MailAuditLogTest.php`).
+
 ## Git Workflow
 
 **IMPORTANT:** When asked to push changes to GitHub, ALWAYS follow this workflow:
