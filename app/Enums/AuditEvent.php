@@ -67,6 +67,7 @@ enum AuditEvent: string
     case DataExportRequested = 'lgpd.data_export_requested';
     case DataExportDelivered = 'lgpd.data_export_delivered';
     case DataExportFailed = 'lgpd.data_export_failed';
+    case AccountDeletionConfirmationSent = 'lgpd.account_deletion_confirmation_sent';
     case AccountDeletionRequested = 'lgpd.account_deletion_requested';
     case AccountDeletionCancelled = 'lgpd.account_deletion_cancelled';
     case AccountDeletionExecuted = 'lgpd.account_deletion_executed';

@@ -655,17 +655,32 @@ describe('fetchApi (via API namespaces)', () => {
         });
 
         it('requestDeletion calls POST /api/profile/delete-request with JSON body', async () => {
-            mockFetchSuccess({ message: 'Deletion scheduled', scheduled_for: '2026-05-23T00:00:00.000000Z' });
+            mockFetchSuccess({ message: 'Enviamos um link de confirmação para o seu e-mail.' });
 
             const result = await dataPrivacyApi.requestDeletion('my-password');
 
-            expect(result.message).toBe('Deletion scheduled');
-            expect(result.scheduled_for).toBe('2026-05-23T00:00:00.000000Z');
+            expect(result.message).toBe('Enviamos um link de confirmação para o seu e-mail.');
             expect(fetchSpy).toHaveBeenCalledWith(
                 expect.stringContaining('/api/profile/delete-request'),
                 expect.objectContaining({
                     method: 'POST',
                     body: JSON.stringify({ password: 'my-password' }),
+                }),
+            );
+        });
+
+        it('confirmDeletion calls POST /api/profile/delete-confirm with token body', async () => {
+            mockFetchSuccess({ message: 'Conta excluída em 30 dias.', scheduled_for: '2026-05-23T00:00:00.000000Z' });
+
+            const result = await dataPrivacyApi.confirmDeletion('a'.repeat(64));
+
+            expect(result.message).toBe('Conta excluída em 30 dias.');
+            expect(result.scheduled_for).toBe('2026-05-23T00:00:00.000000Z');
+            expect(fetchSpy).toHaveBeenCalledWith(
+                expect.stringContaining('/api/profile/delete-confirm'),
+                expect.objectContaining({
+                    method: 'POST',
+                    body: JSON.stringify({ token: 'a'.repeat(64) }),
                 }),
             );
         });

@@ -5,6 +5,7 @@ use App\Enums\AuditEvent;
 use App\Jobs\AnonymizeUserJob;
 use App\Mail\AccountAnonymized;
 use App\Mail\AccountDeletionCancelled;
+use App\Mail\AccountDeletionConfirmation;
 use App\Mail\AccountDeletionScheduled;
 use App\Models\AuditLog;
 use App\Models\User;
@@ -98,7 +99,7 @@ it('AnonymizeUserJob does nothing when user is already anonymized', function () 
     expect($user->fresh()->anonymized_at)->not->toBeNull();
 });
 
-it('requires password to request deletion and marks the user', function () {
+it('requires password to request deletion and sends confirmation email without marking the user', function () {
     Mail::fake();
     $user = actingAsUser();
 
@@ -110,9 +111,10 @@ it('requires password to request deletion and marks the user', function () {
         'password' => 'password',
     ])->assertSuccessful();
 
-    expect($user->fresh()->anonymization_requested_at)->not->toBeNull();
-    Mail::assertQueued(AccountDeletionScheduled::class);
-    expect(AuditLog::where('event_name', AuditEvent::AccountDeletionRequested->value)->exists())->toBeTrue();
+    expect($user->fresh()->anonymization_requested_at)->toBeNull();
+    Mail::assertSent(AccountDeletionConfirmation::class, fn ($mail) => $mail->hasTo($user->email));
+    Mail::assertNotQueued(AccountDeletionScheduled::class);
+    expect(AuditLog::where('event_name', AuditEvent::AccountDeletionConfirmationSent->value)->exists())->toBeTrue();
 });
 
 it('rejects deletion when already requested', function () {

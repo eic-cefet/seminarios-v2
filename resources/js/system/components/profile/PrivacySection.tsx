@@ -21,6 +21,7 @@ export function PrivacySection({ user, onUpdate }: Props) {
     const [deleteModalOpen, setDeleteModalOpen] = useState(false);
     const [password, setPassword] = useState("");
     const [formError, setFormError] = useState<string | null>(null);
+    const [confirmationSent, setConfirmationSent] = useState(false);
 
     const exportsQuery = useQuery({
         queryKey: ["data-privacy", "exports"],
@@ -42,7 +43,7 @@ export function PrivacySection({ user, onUpdate }: Props) {
             setDeleteModalOpen(false);
             setPassword("");
             setFormError(null);
-            onUpdate();
+            setConfirmationSent(true);
         },
         onError: (err) => setFormError(getErrorMessage(err)),
     });
@@ -129,6 +130,13 @@ export function PrivacySection({ user, onUpdate }: Props) {
                             ? `Sua conta será excluída em 30 dias a partir de ${user.anonymization_requested_at?.slice(0, 10)}. Faça login para cancelar, ou use o botão abaixo.`
                             : "Dados pessoais serão pseudonimizados após 30 dias. Registros acadêmicos de presença são preservados como documentação institucional."}
                     </p>
+                    {confirmationSent && !pending && (
+                        <p className="mt-3 rounded-md border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-800">
+                            Enviamos um link de confirmação para{" "}
+                            <strong>{user.email}</strong>. Clique nele em até 1
+                            hora para finalizar a exclusão.
+                        </p>
+                    )}
                     {pending ? (
                         <button
                             type="button"
@@ -142,7 +150,7 @@ export function PrivacySection({ user, onUpdate }: Props) {
                         >
                             Cancelar exclusão
                         </button>
-                    ) : (
+                    ) : !confirmationSent ? (
                         <button
                             type="button"
                             onClick={() => setDeleteModalOpen(true)}
@@ -150,7 +158,7 @@ export function PrivacySection({ user, onUpdate }: Props) {
                         >
                             Excluir minha conta
                         </button>
-                    )}
+                    ) : null}
                 </div>
             </div>
 

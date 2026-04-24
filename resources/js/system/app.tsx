@@ -32,6 +32,7 @@ import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
 import DataRights from "./pages/DataRights";
 import CookiePreferences from "./pages/CookiePreferences";
+import DeletionConfirm from "./pages/DeletionConfirm";
 import NotFound from "./pages/NotFound";
 import { CookieConsentBanner } from "./components/CookieConsentBanner";
 
@@ -72,6 +73,7 @@ function AppRoutes() {
             <Route path={ROUTES.SYSTEM.TERMS} element={<TermsOfService />} />
             <Route path={ROUTES.SYSTEM.DATA_RIGHTS} element={<DataRights />} />
             <Route path={ROUTES.SYSTEM.COOKIE_PREFERENCES} element={<CookiePreferences />} />
+            <Route path={ROUTES.SYSTEM.DELETION_CONFIRM_PATTERN} element={<DeletionConfirm />} />
             <Route path="*" element={<NotFound />} />
         </Routes>
     );

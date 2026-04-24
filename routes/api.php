@@ -118,6 +118,8 @@ Route::middleware('auth:sanctum')->group(function () {
     // Profile - Account Deletion (LGPD)
     Route::post('/profile/delete-request', [DataPrivacyController::class, 'requestDeletion'])
         ->middleware('throttle:3,1');
+    Route::post('/profile/delete-confirm', [DataPrivacyController::class, 'confirmDeletion'])
+        ->middleware('throttle:3,1');
     Route::post('/profile/delete-cancel', [DataPrivacyController::class, 'cancelDeletion'])
         ->middleware('throttle:3,1');
 

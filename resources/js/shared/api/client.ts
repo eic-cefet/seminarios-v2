@@ -540,11 +540,19 @@ export const dataPrivacyApi = {
             method: "POST",
         }),
     requestDeletion: (password: string) =>
-        fetchApi<{ message: string; scheduled_for: string }>(
+        fetchApi<{ message: string }>(
             "/api/profile/delete-request",
             {
                 method: "POST",
                 body: JSON.stringify({ password }),
+            },
+        ),
+    confirmDeletion: (token: string) =>
+        fetchApi<{ message: string; scheduled_for: string }>(
+            "/api/profile/delete-confirm",
+            {
+                method: "POST",
+                body: JSON.stringify({ token }),
             },
         ),
     cancelDeletion: () =>

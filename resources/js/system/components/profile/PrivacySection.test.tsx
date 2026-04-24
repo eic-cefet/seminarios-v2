@@ -10,7 +10,7 @@ const mockListExports = vi.fn(() =>
     Promise.resolve({ data: [] as ExportRecord[] }),
 );
 const mockRequestDeletion = vi.fn((_password: string) =>
-    Promise.resolve({ message: "ok", scheduled_for: "2026-05-23T00:00:00Z" }),
+    Promise.resolve({ message: "Enviamos um link de confirmação para o seu e-mail." }),
 );
 const mockCancelDeletion = vi.fn(() => Promise.resolve({ message: "ok" }));
 
@@ -133,6 +133,24 @@ describe("PrivacySection", () => {
             expect(screen.getByText(/completed/i)).toBeInTheDocument(),
         );
         expect(screen.getByText(/queued/i)).toBeInTheDocument();
+    });
+
+    it("shows email confirmation banner after successful deletion request", async () => {
+        renderSection();
+        fireEvent.click(
+            screen.getByRole("button", { name: /excluir minha conta/i }),
+        );
+        const input = screen.getByLabelText(/senha/i);
+        fireEvent.change(input, { target: { value: "password" } });
+        fireEvent.click(
+            screen.getByRole("button", { name: /^confirmar exclusão$/i }),
+        );
+        await waitFor(() =>
+            expect(
+                screen.getByText(/enviamos um link de confirmação/i),
+            ).toBeInTheDocument(),
+        );
+        expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     });
 
     it("closes the deletion modal when the cancel button is clicked", async () => {

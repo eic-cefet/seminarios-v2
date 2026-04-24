@@ -8,13 +8,16 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\DataExportRequestResource;
 use App\Jobs\ExportUserDataJob;
 use App\Mail\AccountDeletionCancelled;
+use App\Mail\AccountDeletionConfirmation;
 use App\Mail\AccountDeletionScheduled;
 use App\Models\AuditLog;
 use App\Models\DataExportRequest;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
 
 class DataPrivacyController extends Controller
 {
@@ -83,6 +86,60 @@ class DataPrivacyController extends Controller
             throw ApiException::mismatchedCredentials();
         }
 
+        $token = Str::random(64);
+        $cacheKey = 'lgpd.deletion-confirm:'.$token;
+        $ttl = now()->addHour();
+
+        Cache::put($cacheKey, $user->id, $ttl);
+
+        $confirmUrl = url('/confirmar-exclusao/'.$token);
+
+        Mail::to($user->email)->send(new AccountDeletionConfirmation(
+            user: $user,
+            confirmUrl: $confirmUrl,
+            expiresAt: $ttl,
+        ));
+
+        AuditLog::record(
+            event: AuditEvent::AccountDeletionConfirmationSent,
+            auditable: $user,
+        );
+
+        return response()->json([
+            'message' => 'Enviamos um link de confirmação para o seu e-mail. Clique nele em até 1 hora para concluir a exclusão.',
+        ]);
+    }
+
+    public function confirmDeletion(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'token' => ['required', 'string', 'size:64'],
+        ]);
+
+        $cacheKey = 'lgpd.deletion-confirm:'.$validated['token'];
+        $cachedUserId = Cache::pull($cacheKey);
+
+        if ($cachedUserId === null) {
+            throw ApiException::validation([
+                'token' => ['O link de confirmação é inválido ou expirou.'],
+            ]);
+        }
+
+        $user = $request->user();
+
+        if ((int) $cachedUserId !== (int) $user->id) {
+            throw ApiException::forbidden('Este link pertence a outra conta.');
+        }
+
+        if ($user->anonymization_requested_at !== null) {
+            return response()->json([
+                'message' => 'Sua solicitação já foi confirmada.',
+                'scheduled_for' => $user->anonymization_requested_at
+                    ->addDays((int) config('lgpd.retention.account_deletion_grace_days', 30))
+                    ->toIso8601String(),
+            ]);
+        }
+
         $user->forceFill(['anonymization_requested_at' => now()])->save();
 
         $graceDays = (int) config('lgpd.retention.account_deletion_grace_days', 30);
@@ -93,9 +150,7 @@ class DataPrivacyController extends Controller
             auditable: $user,
         );
 
-        Mail::to($user->email)->queue(
-            new AccountDeletionScheduled($user, $scheduledFor),
-        );
+        Mail::to($user->email)->queue(new AccountDeletionScheduled($user, $scheduledFor));
 
         return response()->json([
             'message' => 'Sua conta será excluída em '.$scheduledFor->format('d/m/Y').'.',
