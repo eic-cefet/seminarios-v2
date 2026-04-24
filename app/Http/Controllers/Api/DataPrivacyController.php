@@ -12,9 +12,11 @@ use App\Mail\AccountDeletionConfirmation;
 use App\Mail\AccountDeletionScheduled;
 use App\Models\AuditLog;
 use App\Models\DataExportRequest;
+use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
@@ -94,7 +96,7 @@ class DataPrivacyController extends Controller
 
         $confirmUrl = url('/confirmar-exclusao/'.$token);
 
-        Mail::to($user->email)->send(new AccountDeletionConfirmation(
+        Mail::to($user->email)->queue(new AccountDeletionConfirmation(
             user: $user,
             confirmUrl: $confirmUrl,
             expiresAt: $ttl,
@@ -125,17 +127,36 @@ class DataPrivacyController extends Controller
             ]);
         }
 
-        $user = $request->user();
+        $requestingUser = $request->user();
 
-        if ((int) $cachedUserId !== (int) $user->id) {
+        if ((int) $cachedUserId !== (int) $requestingUser->id) {
             // Do not consume the token — the legitimate owner should still be
             // able to confirm with the same link.
             throw ApiException::forbidden('Este link pertence a outra conta.');
         }
 
-        Cache::forget($cacheKey);
+        // Lock the row + consume the token inside a transaction so concurrent
+        // confirm requests can never both pass the "not yet flagged" check.
+        [$user, $alreadyFlagged] = DB::transaction(
+            function () use ($requestingUser, $cacheKey) {
+                $locked = User::query()
+                    ->whereKey($requestingUser->id)
+                    ->lockForUpdate()
+                    ->firstOrFail();
 
-        if ($user->anonymization_requested_at !== null) {
+                $already = $locked->anonymization_requested_at !== null;
+
+                if (! $already) {
+                    $locked->forceFill(['anonymization_requested_at' => now()])->save();
+                }
+
+                Cache::forget($cacheKey);
+
+                return [$locked, $already];
+            },
+        );
+
+        if ($alreadyFlagged) {
             return response()->json([
                 'message' => 'Sua solicitação já foi confirmada.',
                 'scheduled_for' => $user->anonymization_requested_at
@@ -143,8 +164,6 @@ class DataPrivacyController extends Controller
                     ->toIso8601String(),
             ]);
         }
-
-        $user->forceFill(['anonymization_requested_at' => now()])->save();
 
         $graceDays = (int) config('lgpd.retention.account_deletion_grace_days', 30);
         $scheduledFor = now()->addDays($graceDays);

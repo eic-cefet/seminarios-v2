@@ -16,7 +16,7 @@ it('sends a confirmation email without marking the user', function () {
 
     $response->assertSuccessful();
     expect($user->fresh()->anonymization_requested_at)->toBeNull();
-    Mail::assertSent(AccountDeletionConfirmation::class, fn ($mail) => $mail->hasTo($user->email));
+    Mail::assertQueued(AccountDeletionConfirmation::class, fn ($mail) => $mail->hasTo($user->email));
     expect(AuditLog::where('event_name', AuditEvent::AccountDeletionConfirmationSent->value)->exists())->toBeTrue();
 });
 
@@ -26,7 +26,7 @@ it('confirms deletion via token and marks the user', function () {
 
     $this->postJson('/api/profile/delete-request', ['password' => 'password'])->assertSuccessful();
 
-    $sent = Mail::sent(AccountDeletionConfirmation::class)->first();
+    $sent = Mail::queued(AccountDeletionConfirmation::class)->first();
     expect($sent)->not->toBeNull();
 
     preg_match('#/confirmar-exclusao/([a-zA-Z0-9]{64})#', $sent->confirmUrl, $m);
@@ -52,7 +52,7 @@ it('rejects tokens belonging to another user', function () {
     $alice = actingAsUser();
 
     $this->postJson('/api/profile/delete-request', ['password' => 'password']);
-    $sent = Mail::sent(AccountDeletionConfirmation::class)->first();
+    $sent = Mail::queued(AccountDeletionConfirmation::class)->first();
     preg_match('#/confirmar-exclusao/([a-zA-Z0-9]{64})#', $sent->confirmUrl, $m);
     $token = $m[1];
 
@@ -67,7 +67,7 @@ it('does not consume the token when a different user attempts to confirm', funct
     $alice = actingAsUser();
 
     $this->postJson('/api/profile/delete-request', ['password' => 'password'])->assertSuccessful();
-    $sent = Mail::sent(AccountDeletionConfirmation::class)->first();
+    $sent = Mail::queued(AccountDeletionConfirmation::class)->first();
     preg_match('#/confirmar-exclusao/([a-zA-Z0-9]{64})#', $sent->confirmUrl, $m);
     $token = $m[1];
 

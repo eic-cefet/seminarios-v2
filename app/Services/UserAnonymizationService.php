@@ -6,8 +6,10 @@ use App\Enums\AuditEvent;
 use App\Models\AuditLog;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Throwable;
 
 class UserAnonymizationService
 {
@@ -50,7 +52,18 @@ class UserAnonymizationService
         });
 
         foreach ($exportPaths as $path) {
-            Storage::disk('s3')->delete($path);
+            try {
+                Storage::disk('s3')->delete($path);
+            } catch (Throwable $e) {
+                // DB rows are already gone — log so ops can retry the remote
+                // delete via lgpd:purge / an S3 lifecycle rule. Do not rethrow:
+                // the anonymization itself must remain successful.
+                Log::warning('LGPD anonymization: failed to delete export artifact from S3', [
+                    'user_id' => $user->id,
+                    'path' => $path,
+                    'error' => $e->getMessage(),
+                ]);
+            }
         }
 
         AuditLog::record(

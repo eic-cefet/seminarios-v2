@@ -17,25 +17,23 @@ class AnonymizePendingUsersCommand extends Command
         $graceDays = (int) config('lgpd.retention.account_deletion_grace_days', 30);
         $cutoff = now()->subDays($graceDays);
 
-        $due = User::withTrashed()
+        $query = User::withTrashed()
             ->whereNotNull('anonymization_requested_at')
             ->whereNull('anonymized_at')
-            ->where('anonymization_requested_at', '<=', $cutoff)
-            ->get();
+            ->where('anonymization_requested_at', '<=', $cutoff);
 
-        $this->info("Found {$due->count()} user(s) past grace period.");
+        $this->info("Found {$query->count()} user(s) past grace period.");
 
-        if ($this->option('dry-run')) {
-            foreach ($due as $user) {
+        $dryRun = $this->option('dry-run');
+        $query->select(['id'])->lazyById()->each(function (User $user) use ($dryRun): void {
+            if ($dryRun) {
                 $this->line("would-anonymize user_id={$user->id}");
+
+                return;
             }
 
-            return self::SUCCESS;
-        }
-
-        foreach ($due as $user) {
             AnonymizeUserJob::dispatch($user->id);
-        }
+        });
 
         return self::SUCCESS;
     }

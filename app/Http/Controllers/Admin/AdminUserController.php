@@ -46,7 +46,13 @@ class AdminUserController extends Controller
         }
 
         if ($role = $request->string('role')->trim()->toString()) {
-            $query->role($role);
+            if ($role === 'user') {
+                // "user" is the UI shorthand for "no privilege" — filter users
+                // with no assigned role (Admin and Teacher are the only real roles).
+                $query->whereDoesntHave('roles');
+            } else {
+                $query->role($role);
+            }
         }
 
         return AdminUserResource::collection($query->paginate(15));

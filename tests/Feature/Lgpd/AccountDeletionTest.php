@@ -112,7 +112,7 @@ it('requires password to request deletion and sends confirmation email without m
     ])->assertSuccessful();
 
     expect($user->fresh()->anonymization_requested_at)->toBeNull();
-    Mail::assertSent(AccountDeletionConfirmation::class, fn ($mail) => $mail->hasTo($user->email));
+    Mail::assertQueued(AccountDeletionConfirmation::class, fn ($mail) => $mail->hasTo($user->email));
     Mail::assertNotQueued(AccountDeletionScheduled::class);
     expect(AuditLog::where('event_name', AuditEvent::AccountDeletionConfirmationSent->value)->exists())->toBeTrue();
 });
