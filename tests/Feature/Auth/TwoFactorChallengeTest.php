@@ -127,23 +127,24 @@ it('rejects a TOTP code that was already used (replay protection)', function () 
     ])->assertUnprocessable();
 });
 
-it('invalidates the challenge token after a failed attempt', function () {
+it('keeps the challenge token usable after a typo so the user can retry', function () {
     $user = userWithConfirmed2fa();
 
     $challenge = $this->postJson('/api/auth/login', ['email' => $user->email, 'password' => 'secret123'])
         ->json('two_factor.challenge_token');
 
+    // Wrong code first
     $this->postJson('/api/auth/two-factor-challenge', [
         'challenge_token' => $challenge,
         'code' => '000000',
     ])->assertUnprocessable();
 
-    // Same token can no longer be retried even with a valid code.
+    // Same token still works with a valid code (no need to redo the password step)
     $code = app(Google2FA::class)->getCurrentOtp(decrypt($user->two_factor_secret));
     $this->postJson('/api/auth/two-factor-challenge', [
         'challenge_token' => $challenge,
         'code' => $code,
-    ])->assertUnprocessable();
+    ])->assertSuccessful();
 });
 
 it('does not consume the same recovery code twice across two challenges', function () {
