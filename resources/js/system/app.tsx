@@ -6,6 +6,7 @@ import { HelmetProvider } from "react-helmet-async";
 import { ErrorBoundary } from "@shared/components/ErrorBoundary";
 import { ROUTES } from "@shared/config/routes";
 import { AuthProvider } from "@shared/contexts/AuthContext";
+import { ConsentProvider } from "@shared/contexts/ConsentContext";
 import { usePageTracking } from "@shared/hooks/usePageTracking";
 
 import Home from "./pages/Home";
@@ -27,7 +28,12 @@ import Evaluations from "./pages/Evaluations";
 import BugReport from "./pages/BugReport";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import TermsOfService from "./pages/TermsOfService";
+import DataRights from "./pages/DataRights";
+import CookiePreferences from "./pages/CookiePreferences";
 import NotFound from "./pages/NotFound";
+import { CookieConsentBanner } from "./components/CookieConsentBanner";
 
 const queryClient = new QueryClient({
     defaultOptions: {
@@ -62,6 +68,10 @@ function AppRoutes() {
             <Route path={ROUTES.SYSTEM.PRESENCE_PATTERN} element={<Presence />} />
             <Route path={ROUTES.SYSTEM.EVALUATIONS} element={<Evaluations />} />
             <Route path={ROUTES.SYSTEM.BUG_REPORT} element={<BugReport />} />
+            <Route path={ROUTES.SYSTEM.PRIVACY_POLICY} element={<PrivacyPolicy />} />
+            <Route path={ROUTES.SYSTEM.TERMS} element={<TermsOfService />} />
+            <Route path={ROUTES.SYSTEM.DATA_RIGHTS} element={<DataRights />} />
+            <Route path={ROUTES.SYSTEM.COOKIE_PREFERENCES} element={<CookiePreferences />} />
             <Route path="*" element={<NotFound />} />
         </Routes>
     );
@@ -73,9 +83,12 @@ function App() {
             <HelmetProvider>
                 <QueryClientProvider client={queryClient}>
                     <AuthProvider>
-                        <BrowserRouter basename={app.ROUTER_BASE || undefined}>
-                            <AppRoutes />
-                        </BrowserRouter>
+                        <ConsentProvider>
+                            <BrowserRouter basename={app.ROUTER_BASE || undefined}>
+                                <AppRoutes />
+                                <CookieConsentBanner />
+                            </BrowserRouter>
+                        </ConsentProvider>
                     </AuthProvider>
                 </QueryClientProvider>
             </HelmetProvider>
