@@ -1,4 +1,4 @@
-import { ApiRequestError, seminarsApi, subjectsApi, workshopsApi, seminarTypesApi, coursesApi, statsApi, authApi, registrationApi, profileApi, bugReportApi, alertPreferencesApi } from './client';
+import { ApiRequestError, seminarsApi, subjectsApi, workshopsApi, seminarTypesApi, coursesApi, statsApi, authApi, registrationApi, profileApi, bugReportApi, alertPreferencesApi, consentsApi } from './client';
 import { createSeminar, createSubject, createWorkshop, createPaginatedResponse } from '@/test/factories';
 import { getCookie } from './httpUtils';
 
@@ -554,6 +554,66 @@ describe('fetchApi (via API namespaces)', () => {
             );
 
             mockGetCookie.mockReturnValue(null);
+        });
+    });
+
+    describe('consentsApi', () => {
+        it('list calls GET /api/consents', async () => {
+            mockFetchSuccess({ data: [] });
+
+            const result = await consentsApi.list();
+
+            expect(result.data).toEqual([]);
+            expect(fetchSpy).toHaveBeenCalledWith(
+                expect.stringContaining('/api/consents'),
+                expect.any(Object),
+            );
+        });
+
+        it('record calls POST /api/consents with JSON body', async () => {
+            const consentRecord = {
+                id: 1,
+                type: 'privacy_policy',
+                granted: true,
+                version: '1.0',
+                source: 'banner',
+                created_at: '2026-01-01T00:00:00.000000Z',
+            };
+            mockFetchSuccess({ data: consentRecord });
+
+            const result = await consentsApi.record({
+                type: 'privacy_policy',
+                granted: true,
+                version: '1.0',
+            });
+
+            expect(result.data.type).toBe('privacy_policy');
+            expect(result.data.granted).toBe(true);
+            expect(fetchSpy).toHaveBeenCalledWith(
+                expect.stringContaining('/api/consents'),
+                expect.objectContaining({
+                    method: 'POST',
+                    body: JSON.stringify({ type: 'privacy_policy', granted: true, version: '1.0' }),
+                }),
+            );
+        });
+
+        it('record passes anonymous_id when provided', async () => {
+            mockFetchSuccess({ data: { id: 2, type: 'cookies_functional', granted: false, version: null, source: null, created_at: null } });
+
+            await consentsApi.record({
+                type: 'cookies_functional',
+                granted: false,
+                anonymous_id: 'anon-abc123',
+            });
+
+            expect(fetchSpy).toHaveBeenCalledWith(
+                expect.stringContaining('/api/consents'),
+                expect.objectContaining({
+                    method: 'POST',
+                    body: JSON.stringify({ type: 'cookies_functional', granted: false, anonymous_id: 'anon-abc123' }),
+                }),
+            );
         });
     });
 

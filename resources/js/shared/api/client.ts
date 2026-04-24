@@ -486,6 +486,39 @@ export const presenceApi = {
     },
 };
 
+// LGPD Consents
+export type ConsentType =
+    | "terms_of_service"
+    | "privacy_policy"
+    | "cookies_functional"
+    | "cookies_analytics"
+    | "ai_sentiment_analysis";
+
+export interface ConsentRecord {
+    id: number;
+    type: ConsentType;
+    granted: boolean;
+    version: string | null;
+    source: string | null;
+    created_at: string | null;
+}
+
+export interface RecordConsentInput {
+    type: ConsentType;
+    granted: boolean;
+    version?: string;
+    anonymous_id?: string;
+}
+
+export const consentsApi = {
+    list: () => fetchApi<{ data: ConsentRecord[] }>("/api/consents"),
+    record: (input: RecordConsentInput) =>
+        fetchApi<{ data: ConsentRecord }>("/api/consents", {
+            method: "POST",
+            body: JSON.stringify(input),
+        }),
+};
+
 // Bug Report
 export const bugReportApi = {
     submit: async (data: {
