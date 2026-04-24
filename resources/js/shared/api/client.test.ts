@@ -376,6 +376,12 @@ describe('fetchApi (via API namespaces)', () => {
                 opted_in: true,
                 seminar_type_ids: [1],
                 subject_ids: [],
+                seminar_reminder_7d: true,
+                seminar_reminder_24h: true,
+                evaluation_prompt: true,
+                announcements: true,
+                certificate_ready: true,
+                seminar_rescheduled: true,
             });
             expect(result.optedIn).toBe(true);
             expect(fetchSpy).toHaveBeenCalledWith(

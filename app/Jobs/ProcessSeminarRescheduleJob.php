@@ -39,7 +39,7 @@ class ProcessSeminarRescheduleJob implements ShouldQueue
         $registrations = DB::transaction(function () {
             $this->seminar->registrations()->update(['reminder_sent' => false]);
 
-            $registrations = $this->seminar->registrations()->with('user')->get();
+            $registrations = $this->seminar->registrations()->with('user.alertPreference')->get();
 
             AuditLog::record(AuditEvent::SeminarRescheduled, AuditEventType::System, $this->seminar, [
                 'old_scheduled_at' => $this->oldScheduledAt->format('Y-m-d H:i:s'),

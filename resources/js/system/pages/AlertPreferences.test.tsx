@@ -29,7 +29,20 @@ vi.mock('@shared/api/client', () => ({
 }));
 
 import { useAuth } from '@shared/contexts/AuthContext';
-import { alertPreferencesApi, seminarTypesApi, subjectsApi } from '@shared/api/client';
+import { alertPreferencesApi, seminarTypesApi, subjectsApi, type AlertPreference } from '@shared/api/client';
+
+const prefs = (overrides: Partial<AlertPreference> = {}): AlertPreference => ({
+    optedIn: false,
+    seminarTypeIds: [],
+    subjectIds: [],
+    seminarReminder7d: true,
+    seminarReminder24h: true,
+    evaluationPrompt: true,
+    announcements: true,
+    certificateReady: true,
+    seminarRescheduled: true,
+    ...overrides,
+});
 
 const authedUser = () => ({
     user: createUser({ name: 'Test User' }), isLoading: false, isAuthenticated: true,
@@ -38,15 +51,17 @@ const authedUser = () => ({
 
 describe('AlertPreferences', () => {
     beforeEach(() => {
-        vi.mocked(alertPreferencesApi.get).mockResolvedValue({
-            optedIn: false,
-            seminarTypeIds: [],
-            subjectIds: [],
-        });
-        vi.mocked(alertPreferencesApi.update).mockImplementation(async (payload) => ({
+        vi.mocked(alertPreferencesApi.get).mockResolvedValue(prefs());
+        vi.mocked(alertPreferencesApi.update).mockImplementation(async (payload) => prefs({
             optedIn: payload.opted_in,
             seminarTypeIds: payload.seminar_type_ids,
             subjectIds: payload.subject_ids,
+            seminarReminder7d: payload.seminar_reminder_7d,
+            seminarReminder24h: payload.seminar_reminder_24h,
+            evaluationPrompt: payload.evaluation_prompt,
+            announcements: payload.announcements,
+            certificateReady: payload.certificate_ready,
+            seminarRescheduled: payload.seminar_rescheduled,
         }));
         vi.mocked(seminarTypesApi.list).mockResolvedValue({
             data: [{ id: 1, name: 'Palestra' }, { id: 2, name: 'Workshop' }],
@@ -85,11 +100,11 @@ describe('AlertPreferences', () => {
         await user.click(screen.getByRole('button', { name: /salvar preferências/i }));
 
         await waitFor(() => {
-            expect(alertPreferencesApi.update).toHaveBeenCalledWith({
+            expect(alertPreferencesApi.update).toHaveBeenCalledWith(expect.objectContaining({
                 opted_in: true,
                 seminar_type_ids: [1],
                 subject_ids: [10],
-            });
+            }));
         });
     });
 
@@ -103,11 +118,11 @@ describe('AlertPreferences', () => {
         await user.click(screen.getByRole('button', { name: /salvar preferências/i }));
 
         await waitFor(() => {
-            expect(alertPreferencesApi.update).toHaveBeenCalledWith({
+            expect(alertPreferencesApi.update).toHaveBeenCalledWith(expect.objectContaining({
                 opted_in: true,
                 seminar_type_ids: [],
                 subject_ids: [],
-            });
+            }));
         });
     });
 
@@ -134,11 +149,11 @@ describe('AlertPreferences', () => {
 
     it('hydrates form from existing preferences', async () => {
         vi.mocked(useAuth).mockReturnValue(authedUser());
-        vi.mocked(alertPreferencesApi.get).mockResolvedValue({
+        vi.mocked(alertPreferencesApi.get).mockResolvedValue(prefs({
             optedIn: true,
             seminarTypeIds: [2],
             subjectIds: [20],
-        });
+        }));
 
         render(<AlertPreferences />);
 
@@ -149,11 +164,11 @@ describe('AlertPreferences', () => {
 
     it('toggles a filter off when already selected', async () => {
         vi.mocked(useAuth).mockReturnValue(authedUser());
-        vi.mocked(alertPreferencesApi.get).mockResolvedValue({
+        vi.mocked(alertPreferencesApi.get).mockResolvedValue(prefs({
             optedIn: true,
             seminarTypeIds: [1],
             subjectIds: [],
-        });
+        }));
         const user = userEvent.setup();
 
         render(<AlertPreferences />);
@@ -166,11 +181,11 @@ describe('AlertPreferences', () => {
         await user.click(screen.getByRole('button', { name: /salvar preferências/i }));
 
         await waitFor(() => {
-            expect(alertPreferencesApi.update).toHaveBeenCalledWith({
+            expect(alertPreferencesApi.update).toHaveBeenCalledWith(expect.objectContaining({
                 opted_in: true,
                 seminar_type_ids: [],
                 subject_ids: [],
-            });
+            }));
         });
     });
 
@@ -189,7 +204,7 @@ describe('AlertPreferences', () => {
 
     it('shows saving state on submit button during pending mutation', async () => {
         vi.mocked(useAuth).mockReturnValue(authedUser());
-        let resolveUpdate: (v: { optedIn: boolean; seminarTypeIds: number[]; subjectIds: number[] }) => void = () => {};
+        let resolveUpdate: (v: AlertPreference) => void = () => {};
         vi.mocked(alertPreferencesApi.update).mockImplementation(
             () => new Promise((resolve) => { resolveUpdate = resolve; }),
         );
@@ -202,7 +217,7 @@ describe('AlertPreferences', () => {
 
         expect(await screen.findByRole('button', { name: /salvando/i })).toBeInTheDocument();
 
-        resolveUpdate({ optedIn: true, seminarTypeIds: [], subjectIds: [] });
+        resolveUpdate(prefs({ optedIn: true }));
     });
 
     it('redirects when unauthenticated', () => {
