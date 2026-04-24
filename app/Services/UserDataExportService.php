@@ -19,8 +19,8 @@ class UserDataExportService
         $user->loadMissing([
             'studentData.course',
             'speakerData',
-            'registrations.seminar:id,slug,title,scheduled_at',
-            'ratings.seminar:id,slug,title',
+            'registrations.seminar:id,slug,name,scheduled_at',
+            'ratings.seminar:id,slug,name',
             'consents',
             'socialIdentities:id,user_id,provider,provider_id,token_expires_at,created_at',
         ]);
@@ -47,7 +47,7 @@ class UserDataExportService
             'registrations' => $user->registrations->map(fn ($r) => [
                 'seminar' => [
                     'slug' => $r->seminar?->slug,
-                    'title' => $r->seminar?->title,
+                    'name' => $r->seminar?->name,
                     'scheduled_at' => $r->seminar?->scheduled_at?->toIso8601String(),
                 ],
                 'present' => (bool) $r->present,
@@ -57,7 +57,7 @@ class UserDataExportService
             'ratings' => $user->ratings->map(fn ($r) => [
                 'seminar' => [
                     'slug' => $r->seminar?->slug,
-                    'title' => $r->seminar?->title,
+                    'name' => $r->seminar?->name,
                 ],
                 'score' => $r->score,
                 'comment' => $r->comment,
