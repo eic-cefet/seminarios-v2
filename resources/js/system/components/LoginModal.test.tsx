@@ -155,6 +155,25 @@ describe('LoginModal', () => {
         });
     });
 
+    it('navigates to /login/two-factor when login returns a 2FA challenge', async () => {
+        mockLogin.mockResolvedValueOnce({
+            status: 'two_factor_required',
+            challengeToken: 'abc',
+            remember: true,
+        });
+        const user = userEvent.setup();
+
+        render(<LoginModal open={true} onOpenChange={onOpenChange} />);
+
+        await user.type(screen.getByLabelText(/e-mail/i), 'test@example.com');
+        await user.type(screen.getByLabelText(/^senha/i), 'password123');
+        await user.click(screen.getByRole('button', { name: 'Entrar' }));
+
+        await waitFor(() => {
+            expect(onOpenChange).toHaveBeenCalledWith(false);
+        });
+    });
+
     it('shows error message when login fails', async () => {
         mockLogin.mockRejectedValueOnce(new Error('E-mail ou senha incorretos.'));
         const user = userEvent.setup();

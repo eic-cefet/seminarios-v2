@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import * as Dialog from "@radix-ui/react-dialog";
 import { X } from "lucide-react";
 import { SocialLoginButtons } from "@shared/components/SocialLoginButtons";
@@ -18,6 +18,7 @@ interface LoginModalProps {
 export function LoginModal({ open, onOpenChange }: LoginModalProps) {
     const { login } = useAuth();
     const location = useLocation();
+    const navigate = useNavigate();
     const [view, setView] = useState<"login" | "forgot">("login");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
@@ -33,7 +34,18 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
         setError(null);
 
         try {
-            await login(email, password, true);
+            const result = await login(email, password, true);
+            if (result?.status === "two_factor_required") {
+                onOpenChange(false);
+                navigate(ROUTES.SYSTEM.TWO_FACTOR_CHALLENGE, {
+                    state: {
+                        challengeToken: result.challengeToken,
+                        remember: result.remember,
+                        from: location.pathname,
+                    },
+                });
+                return;
+            }
             onOpenChange(false);
         } catch (err) {
             setError(getErrorMessage(err));
