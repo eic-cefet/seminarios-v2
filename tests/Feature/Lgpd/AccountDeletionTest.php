@@ -108,3 +108,19 @@ it('rejects cancellation when no pending deletion', function () {
 
     $this->postJson('/api/profile/delete-cancel')->assertNotFound();
 });
+
+it('cancels pending deletion when the user logs in again', function () {
+    Mail::fake();
+    $user = User::factory()->create([
+        'password' => bcrypt('password'),
+        'anonymization_requested_at' => now()->subDays(2),
+    ]);
+
+    $this->postJson('/api/auth/login', [
+        'email' => $user->email,
+        'password' => 'password',
+    ])->assertSuccessful();
+
+    expect($user->fresh()->anonymization_requested_at)->toBeNull();
+    Mail::assertQueued(AccountDeletionCancelled::class);
+});
