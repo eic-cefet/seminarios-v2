@@ -130,9 +130,9 @@ describe("PrivacySection", () => {
         mockListExports.mockResolvedValueOnce({ data: exports });
         renderSection();
         await waitFor(() =>
-            expect(screen.getByText(/completed/i)).toBeInTheDocument(),
+            expect(screen.getByText(/concluída/i)).toBeInTheDocument(),
         );
-        expect(screen.getByText(/queued/i)).toBeInTheDocument();
+        expect(screen.getByText(/na fila/i)).toBeInTheDocument();
     });
 
     it("shows email confirmation banner after successful deletion request", async () => {

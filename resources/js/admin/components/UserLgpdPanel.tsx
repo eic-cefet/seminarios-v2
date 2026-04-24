@@ -8,6 +8,32 @@ interface Props {
     userId: number;
 }
 
+const EXPORT_STATUS_STYLES: Record<string, string> = {
+    queued: "bg-gray-100 text-gray-700 ring-gray-200",
+    running: "bg-blue-50 text-blue-700 ring-blue-200",
+    completed: "bg-green-50 text-green-700 ring-green-200",
+    failed: "bg-red-50 text-red-700 ring-red-200",
+};
+
+const EXPORT_STATUS_LABELS: Record<string, string> = {
+    queued: "na fila",
+    running: "em execução",
+    completed: "concluída",
+    failed: "falhou",
+};
+
+function ExportStatusBadge({ status }: { status: string }) {
+    const cls = EXPORT_STATUS_STYLES[status] ?? EXPORT_STATUS_STYLES.queued;
+    const label = EXPORT_STATUS_LABELS[status] ?? status;
+    return (
+        <span
+            className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset ${cls}`}
+        >
+            {label}
+        </span>
+    );
+}
+
 export function UserLgpdPanel({ userId }: Props) {
     const queryClient = useQueryClient();
     const [reasonOpen, setReasonOpen] = useState(false);
@@ -170,20 +196,57 @@ export function UserLgpdPanel({ userId }: Props) {
             </section>
 
             <section>
-                <h3 className="text-sm font-semibold text-gray-900">
-                    Exportações de dados
-                </h3>
+                <div className="flex items-baseline justify-between">
+                    <h3 className="text-sm font-semibold text-gray-900">
+                        Exportações de dados
+                    </h3>
+                    <span className="text-xs text-gray-500">
+                        {data.data_export_requests.length}{" "}
+                        {data.data_export_requests.length === 1
+                            ? "registro"
+                            : "registros"}
+                    </span>
+                </div>
                 {data.data_export_requests.length === 0 ? (
-                    <p className="mt-2 text-sm text-gray-500">Nenhuma.</p>
+                    <p className="mt-3 rounded-md border border-dashed border-gray-200 bg-gray-50 px-4 py-6 text-center text-sm text-gray-500">
+                        Nenhuma exportação solicitada.
+                    </p>
                 ) : (
-                    <ul className="mt-2 space-y-1 text-sm">
-                        {data.data_export_requests.map((r) => (
-                            <li key={r.id}>
-                                #{r.id} — {r.status} —{" "}
-                                {r.created_at?.slice(0, 10)}
-                            </li>
-                        ))}
-                    </ul>
+                    <div className="mt-3 overflow-hidden rounded-lg border border-gray-200">
+                        <table className="w-full text-sm">
+                            <thead>
+                                <tr className="bg-gray-50 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">
+                                    <th className="px-3 py-2">ID</th>
+                                    <th className="px-3 py-2">Status</th>
+                                    <th className="px-3 py-2">Criado</th>
+                                    <th className="px-3 py-2">Concluído</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-200 bg-white">
+                                {data.data_export_requests.map((r) => (
+                                    <tr
+                                        key={r.id}
+                                        className="hover:bg-gray-50"
+                                    >
+                                        <td className="px-3 py-2 font-mono text-xs text-gray-500">
+                                            #{r.id}
+                                        </td>
+                                        <td className="px-3 py-2">
+                                            <ExportStatusBadge
+                                                status={r.status}
+                                            />
+                                        </td>
+                                        <td className="px-3 py-2 whitespace-nowrap text-gray-500">
+                                            {r.created_at?.slice(0, 10) ?? "—"}
+                                        </td>
+                                        <td className="px-3 py-2 whitespace-nowrap text-gray-500">
+                                            {r.completed_at?.slice(0, 10) ?? "—"}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
                 )}
             </section>
 

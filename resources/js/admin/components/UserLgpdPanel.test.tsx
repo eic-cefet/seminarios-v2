@@ -167,7 +167,7 @@ describe("UserLgpdPanel", () => {
         await waitFor(() =>
             expect(screen.getByText(/#7/)).toBeInTheDocument(),
         );
-        expect(screen.getByText(/completed/)).toBeInTheDocument();
+        expect(screen.getByText(/concluída/i)).toBeInTheDocument();
     });
 
     it("shows pending deletion message when anonymization_requested_at is set", async () => {

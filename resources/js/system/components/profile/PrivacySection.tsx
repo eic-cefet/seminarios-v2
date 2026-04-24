@@ -16,6 +16,32 @@ interface Props {
     onUpdate: () => void;
 }
 
+const EXPORT_STATUS_STYLES: Record<string, string> = {
+    queued: "bg-gray-100 text-gray-700 ring-gray-200",
+    running: "bg-blue-50 text-blue-700 ring-blue-200",
+    completed: "bg-green-50 text-green-700 ring-green-200",
+    failed: "bg-red-50 text-red-700 ring-red-200",
+};
+
+const EXPORT_STATUS_LABELS: Record<string, string> = {
+    queued: "na fila",
+    running: "em execução",
+    completed: "concluída",
+    failed: "falhou",
+};
+
+function ExportStatusBadge({ status }: { status: string }) {
+    const cls = EXPORT_STATUS_STYLES[status] ?? EXPORT_STATUS_STYLES.queued;
+    const label = EXPORT_STATUS_LABELS[status] ?? status;
+    return (
+        <span
+            className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset ${cls}`}
+        >
+            {label}
+        </span>
+    );
+}
+
 export function PrivacySection({ user, onUpdate }: Props) {
     const queryClient = useQueryClient();
     const [deleteModalOpen, setDeleteModalOpen] = useState(false);
@@ -77,7 +103,7 @@ export function PrivacySection({ user, onUpdate }: Props) {
                     <p className="mt-1 text-sm text-gray-600">
                         Receba um arquivo <code>.zip</code> com todos os seus
                         dados em formato JSON. Enviaremos um link por e-mail
-                        (válido por 2h).
+                        (válido por 1 dia).
                     </p>
                     <button
                         type="button"
@@ -108,16 +134,40 @@ export function PrivacySection({ user, onUpdate }: Props) {
                     )}
                     {exportsQuery.data?.data &&
                         exportsQuery.data.data.length > 0 && (
-                            <ul className="mt-4 space-y-1 text-sm text-gray-600">
-                                {exportsQuery.data.data
-                                    .slice(0, 3)
-                                    .map((r) => (
-                                        <li key={r.id}>
-                                            {r.created_at?.slice(0, 10)} —{" "}
-                                            {r.status}
-                                        </li>
-                                    ))}
-                            </ul>
+                            <div className="mt-4 overflow-hidden rounded-lg border border-gray-200">
+                                <table className="w-full text-sm">
+                                    <thead>
+                                        <tr className="bg-gray-50 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">
+                                            <th className="px-3 py-2">Data</th>
+                                            <th className="px-3 py-2">
+                                                Status
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-200 bg-white">
+                                        {exportsQuery.data.data
+                                            .slice(0, 3)
+                                            .map((r) => (
+                                                <tr
+                                                    key={r.id}
+                                                    className="hover:bg-gray-50"
+                                                >
+                                                    <td className="px-3 py-2 whitespace-nowrap text-gray-500">
+                                                        {r.created_at?.slice(
+                                                            0,
+                                                            10,
+                                                        ) ?? "—"}
+                                                    </td>
+                                                    <td className="px-3 py-2">
+                                                        <ExportStatusBadge
+                                                            status={r.status}
+                                                        />
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                    </tbody>
+                                </table>
+                            </div>
                         )}
                 </div>
 

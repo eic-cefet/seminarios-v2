@@ -28,7 +28,7 @@ return [
         'personal_access_tokens_days' => (int) env('LGPD_RETENTION_API_TOKENS_DAYS', 180),
         'presence_links_days' => (int) env('LGPD_RETENTION_PRESENCE_LINKS_DAYS', 30),
         'account_deletion_grace_days' => (int) env('LGPD_DELETION_GRACE_DAYS', 30),
-        'data_export_link_hours' => (int) env('LGPD_DATA_EXPORT_LINK_HOURS', 2),
+        'data_export_link_hours' => (int) env('LGPD_DATA_EXPORT_LINK_HOURS', 24),
     ],
 
     /*

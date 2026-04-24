@@ -57,7 +57,7 @@ class ExportUserDataJob implements ShouldQueue
             throw new \RuntimeException("Failed to store data export on S3: {$filename}");
         }
 
-        $expiresAt = now()->addHours(2);
+        $expiresAt = now()->addDay();
         $request->markCompleted($filename, $expiresAt, $size);
 
         $url = Storage::disk('s3')->temporaryUrl($filename, $expiresAt);

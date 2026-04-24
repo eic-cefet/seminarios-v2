@@ -35,7 +35,7 @@ it('uploads the ZIP to S3 and emails a signed URL', function () {
     expect(AuditLog::where('event_name', AuditEvent::DataExportDelivered->value)->exists())->toBeTrue();
 });
 
-it('uses a 2-hour signed URL and schedules S3 cleanup at the same offset', function () {
+it('uses a 1-day signed URL and schedules S3 cleanup at the same offset', function () {
     Storage::fake('s3');
     Mail::fake();
     Queue::fake();
@@ -46,8 +46,8 @@ it('uses a 2-hour signed URL and schedules S3 cleanup at the same offset', funct
     (new ExportUserDataJob($request->id))->handle(app(UserDataExportService::class));
 
     $request->refresh();
-    // expires_at must be approximately now+2h (within a 10-second window)
-    expect($request->expires_at->diffInSeconds(now()->addHours(2), true))->toBeLessThan(10);
+    // expires_at must be approximately now+1d (within a 10-second window)
+    expect($request->expires_at->diffInSeconds(now()->addDay(), true))->toBeLessThan(10);
 
     Queue::assertPushed(DeleteS3FileJob::class, fn ($job) => $job->path === $request->file_path);
 });

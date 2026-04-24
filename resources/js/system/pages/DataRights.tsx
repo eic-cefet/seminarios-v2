@@ -47,7 +47,7 @@ export default function DataRights() {
                             </PathChip>
                             <p className="mt-3 text-sm text-gray-600">
                                 O arquivo é enviado por e-mail e fica
-                                disponível por 2 horas.
+                                disponível por 1 dia.
                             </p>
                         </Section>
 
