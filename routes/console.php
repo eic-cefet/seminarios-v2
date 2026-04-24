@@ -63,6 +63,13 @@ Schedule::command('audit:prune --days=365')
     ->timezone('America/Sao_Paulo')
     ->onOneServer();
 
+// Purge data past LGPD retention windows (sessions, tokens, presence links), daily at 4:15 AM
+Schedule::command('lgpd:purge')
+    ->dailyAt('04:15')
+    ->timezone('America/Sao_Paulo')
+    ->withoutOverlapping()
+    ->onOneServer();
+
 // Anonymize users whose LGPD deletion grace period has elapsed, daily at 4:30 AM
 Schedule::command('lgpd:anonymize-pending')
     ->dailyAt('04:30')
