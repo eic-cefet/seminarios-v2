@@ -9,8 +9,10 @@ use App\Mail\AccountDeletionScheduled;
 use App\Models\AuditLog;
 use App\Models\User;
 use App\Services\UserAnonymizationService;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Queue;
+use PragmaRX\Google2FA\Google2FA;
 
 use function Pest\Laravel\artisan;
 
@@ -123,4 +125,60 @@ it('cancels pending deletion when the user logs in again', function () {
 
     expect($user->fresh()->anonymization_requested_at)->toBeNull();
     Mail::assertQueued(AccountDeletionCancelled::class);
+});
+
+it('cancels pending deletion when a 2FA user completes login via TOTP code', function () {
+    Mail::fake();
+    $google = app(Google2FA::class);
+
+    $user = User::factory()->create([
+        'password' => Hash::make('secret123'),
+        'anonymization_requested_at' => now()->subDays(2),
+        'two_factor_secret' => encrypt($google->generateSecretKey()),
+        'two_factor_recovery_codes' => encrypt(json_encode(['code-a', 'code-b'])),
+        'two_factor_confirmed_at' => now(),
+    ]);
+
+    $challenge = $this->postJson('/api/auth/login', [
+        'email' => $user->email,
+        'password' => 'secret123',
+    ])->json('two_factor.challenge_token');
+
+    $code = $google->getCurrentOtp(decrypt($user->two_factor_secret));
+
+    $this->postJson('/api/auth/two-factor-challenge', [
+        'challenge_token' => $challenge,
+        'code' => $code,
+    ])->assertSuccessful();
+
+    expect($user->fresh()->anonymization_requested_at)->toBeNull();
+    Mail::assertQueued(AccountDeletionCancelled::class, fn ($mail) => $mail->hasTo($user->email));
+    expect(AuditLog::where('event_name', AuditEvent::AccountDeletionCancelled->value)->exists())->toBeTrue();
+});
+
+it('cancels pending deletion when a 2FA user completes login via recovery code', function () {
+    Mail::fake();
+    $google = app(Google2FA::class);
+
+    $user = User::factory()->create([
+        'password' => Hash::make('secret123'),
+        'anonymization_requested_at' => now()->subDays(2),
+        'two_factor_secret' => encrypt($google->generateSecretKey()),
+        'two_factor_recovery_codes' => encrypt(json_encode(['code-x', 'code-y'])),
+        'two_factor_confirmed_at' => now(),
+    ]);
+
+    $challenge = $this->postJson('/api/auth/login', [
+        'email' => $user->email,
+        'password' => 'secret123',
+    ])->json('two_factor.challenge_token');
+
+    $this->postJson('/api/auth/two-factor-challenge', [
+        'challenge_token' => $challenge,
+        'recovery_code' => 'code-x',
+    ])->assertSuccessful();
+
+    expect($user->fresh()->anonymization_requested_at)->toBeNull();
+    Mail::assertQueued(AccountDeletionCancelled::class, fn ($mail) => $mail->hasTo($user->email));
+    expect(AuditLog::where('event_name', AuditEvent::AccountDeletionCancelled->value)->exists())->toBeTrue();
 });
