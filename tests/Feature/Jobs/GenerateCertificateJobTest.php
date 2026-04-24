@@ -4,8 +4,10 @@ use App\Jobs\GenerateCertificateJob;
 use App\Mail\CertificateGenerated;
 use App\Models\Registration;
 use App\Models\Seminar;
+use App\Notifications\CertificateReadyNotification;
 use App\Services\CertificateService;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 
 describe('GenerateCertificateJob', function () {
@@ -147,5 +149,33 @@ describe('GenerateCertificateJob', function () {
         $job->handle($mockService);
 
         Mail::assertNothingSent();
+    });
+
+    it('dispatches CertificateReadyNotification after successful certificate generation', function () {
+        Notification::fake();
+        Mail::fake();
+        Storage::fake('s3');
+
+        $seminar = Seminar::factory()->create();
+        $registration = Registration::factory()->create([
+            'seminar_id' => $seminar->id,
+            'present' => true,
+            'certificate_code' => 'TEST123',
+            'certificate_sent' => false,
+        ]);
+
+        $mockService = $this->mock(CertificateService::class);
+        $mockService->shouldReceive('ensureCertificateCode')->once();
+        $mockService->shouldReceive('jpgExists')->once()->andReturn(false);
+        $mockService->shouldReceive('generateJpg')->once();
+        $mockService->shouldReceive('pdfExists')->once()->andReturn(false);
+        $mockService->shouldReceive('generatePdf')->once();
+        $mockService->shouldReceive('getPdfPath')->once()->andReturn('certificates/test.pdf');
+
+        Storage::disk('s3')->put('certificates/test.pdf', 'pdf content');
+
+        (new GenerateCertificateJob($registration))->handle($mockService);
+
+        Notification::assertSentTo($registration->user, CertificateReadyNotification::class);
     });
 });

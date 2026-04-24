@@ -6,8 +6,10 @@ use App\Models\AlertPreference;
 use App\Models\Registration;
 use App\Models\Seminar;
 use App\Models\User;
+use App\Notifications\CertificateReadyNotification;
 use App\Services\CertificateService;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 
 beforeEach(function () {
@@ -72,6 +74,36 @@ it('still generates artifacts for opted-out users (only email is skipped)', func
     (new GenerateCertificateJob($registration))->handle($mockService);
 
     Mail::assertNothingSent();
+});
+
+it('still dispatches CertificateReadyNotification when user opted out of certificate email', function () {
+    Notification::fake();
+
+    $user = User::factory()->create();
+    AlertPreference::updateOrCreate(
+        ['user_id' => $user->id],
+        ['new_seminar_alert' => false, 'certificate_ready' => false],
+    );
+
+    $seminar = Seminar::factory()->create();
+    $registration = Registration::factory()->create([
+        'user_id' => $user->id,
+        'seminar_id' => $seminar->id,
+        'present' => true,
+        'certificate_code' => 'TEST123',
+        'certificate_sent' => false,
+    ]);
+
+    $mockService = $this->mock(CertificateService::class);
+    $mockService->shouldReceive('ensureCertificateCode')->once();
+    $mockService->shouldReceive('jpgExists')->once()->andReturn(false);
+    $mockService->shouldReceive('generateJpg')->once();
+    $mockService->shouldReceive('pdfExists')->once()->andReturn(false);
+    $mockService->shouldReceive('generatePdf')->once();
+
+    (new GenerateCertificateJob($registration))->handle($mockService);
+
+    Notification::assertSentTo($registration->user, CertificateReadyNotification::class);
 });
 
 it('sends certificate email when user has no preferences row', function () {
