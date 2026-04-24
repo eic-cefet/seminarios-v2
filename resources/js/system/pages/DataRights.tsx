@@ -27,7 +27,7 @@ export default function DataRights() {
                             Perfil → Privacidade → Exportar meus dados
                         </strong>
                         . O arquivo é enviado por e-mail e fica disponível por
-                        48 horas.
+                        2 horas.
                     </p>
 
                     <h2>Corrigir dados incompletos ou desatualizados</h2>

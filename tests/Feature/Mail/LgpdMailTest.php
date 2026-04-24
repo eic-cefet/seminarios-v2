@@ -3,8 +3,6 @@
 use App\Mail\AccountAnonymized;
 use App\Mail\AccountDeletionCancelled;
 use App\Mail\AccountDeletionScheduled;
-use App\Mail\DataExportFailed;
-use App\Mail\DataExportReady;
 use App\Models\User;
 use Illuminate\Support\Carbon;
 
@@ -89,64 +87,5 @@ describe('AccountDeletionScheduled', function () {
 
         expect($text['X-Entity-Ref-ID'])->toBe('account-deletion-scheduled:'.$user->id)
             ->and($text['X-Mail-Class'])->toBe(AccountDeletionScheduled::class);
-    });
-});
-
-describe('DataExportFailed', function () {
-    it('has correct subject', function () {
-        $user = User::factory()->create();
-        $mail = new DataExportFailed($user);
-
-        expect($mail->envelope()->subject)->toBe('Sua solicitação de exportação de dados falhou');
-    });
-
-    it('uses markdown template with user name', function () {
-        $user = User::factory()->create(['name' => 'Pedro Lima']);
-        $mail = new DataExportFailed($user);
-        $content = $mail->content();
-
-        expect($content->markdown)->toBe('emails.data-export-failed')
-            ->and($content->with['userName'])->toBe('Pedro Lima');
-    });
-
-    it('includes anti-threading headers with user id', function () {
-        $user = User::factory()->create();
-        $mail = new DataExportFailed($user);
-        $headers = $mail->headers();
-        $text = $headers->text;
-
-        expect($text['X-Entity-Ref-ID'])->toBe('data-export-failed:'.$user->id)
-            ->and($text['X-Mail-Class'])->toBe(DataExportFailed::class);
-    });
-});
-
-describe('DataExportReady', function () {
-    it('has correct subject', function () {
-        $user = User::factory()->create();
-        $mail = new DataExportReady($user, 'https://s3.example.com/file.zip', now()->addHours(48));
-
-        expect($mail->envelope()->subject)->toBe('Seus dados estão prontos para download');
-    });
-
-    it('uses markdown template with download url and expiry', function () {
-        $user = User::factory()->create(['name' => 'Carla Souza']);
-        $expiresAt = Carbon::parse('2026-04-25 14:30:00');
-        $mail = new DataExportReady($user, 'https://s3.example.com/file.zip', $expiresAt);
-        $content = $mail->content();
-
-        expect($content->markdown)->toBe('emails.data-export-ready')
-            ->and($content->with['userName'])->toBe('Carla Souza')
-            ->and($content->with['downloadUrl'])->toBe('https://s3.example.com/file.zip')
-            ->and($content->with['expiresAt'])->toBe('25/04/2026 14:30');
-    });
-
-    it('includes anti-threading headers with user id', function () {
-        $user = User::factory()->create();
-        $mail = new DataExportReady($user, 'https://s3.example.com/file.zip', now()->addHours(48));
-        $headers = $mail->headers();
-        $text = $headers->text;
-
-        expect($text['X-Entity-Ref-ID'])->toBe('data-export:'.$user->id)
-            ->and($text['X-Mail-Class'])->toBe(DataExportReady::class);
     });
 });

@@ -76,7 +76,7 @@ export function PrivacySection({ user, onUpdate }: Props) {
                     <p className="mt-1 text-sm text-gray-600">
                         Receba um arquivo <code>.zip</code> com todos os seus
                         dados em formato JSON. Enviaremos um link por e-mail
-                        (válido por 48h).
+                        (válido por 2h).
                     </p>
                     <button
                         type="button"

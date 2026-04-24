@@ -1,9 +1,9 @@
 <?php
 
 use App\Enums\AuditEvent;
+use App\Jobs\DeleteS3FileJob;
 use App\Jobs\ExportUserDataJob;
-use App\Mail\DataExportFailed;
-use App\Mail\DataExportReady;
+use App\Mail\ReportReady;
 use App\Models\AuditLog;
 use App\Models\DataExportRequest;
 use App\Models\User;
@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Storage;
 it('uploads the ZIP to S3 and emails a signed URL', function () {
     Storage::fake('s3');
     Mail::fake();
+    Queue::fake();
 
     $user = User::factory()->create();
     $request = DataExportRequest::factory()->for($user)->create();
@@ -29,28 +30,39 @@ it('uploads the ZIP to S3 and emails a signed URL', function () {
         ->and($request->expires_at)->not->toBeNull();
 
     Storage::disk('s3')->assertExists($request->file_path);
-    Mail::assertQueued(DataExportReady::class, fn ($mail) => $mail->hasTo($user->email));
+    Mail::assertSent(ReportReady::class, fn ($mail) => $mail->hasTo($user->email));
+    Queue::assertPushed(DeleteS3FileJob::class);
     expect(AuditLog::where('event_name', AuditEvent::DataExportDelivered->value)->exists())->toBeTrue();
 });
 
-it('marks the request failed and emails on error', function () {
+it('uses a 2-hour signed URL and schedules S3 cleanup at the same offset', function () {
+    Storage::fake('s3');
+    Mail::fake();
+    Queue::fake();
+
+    $user = User::factory()->create();
+    $request = DataExportRequest::factory()->for($user)->create();
+
+    (new ExportUserDataJob($request->id))->handle(app(UserDataExportService::class));
+
+    $request->refresh();
+    // expires_at must be approximately now+2h (within a 10-second window)
+    expect($request->expires_at->diffInSeconds(now()->addHours(2), true))->toBeLessThan(10);
+
+    Queue::assertPushed(DeleteS3FileJob::class, fn ($job) => $job->path === $request->file_path);
+});
+
+it('marks the request failed via the failed() hook after final retry', function () {
     Storage::fake('s3');
     Mail::fake();
 
     $user = User::factory()->create();
     $request = DataExportRequest::factory()->for($user)->create();
 
-    $service = Mockery::mock(UserDataExportService::class);
-    $service->shouldReceive('writeZip')->andThrow(new RuntimeException('disk full'));
-
-    try {
-        (new ExportUserDataJob($request->id))->handle($service);
-    } catch (Throwable) {
-        // expected to rethrow
-    }
+    (new ExportUserDataJob($request->id))->failed(new RuntimeException('disk full'));
 
     expect($request->fresh()->status)->toBe(DataExportRequest::STATUS_FAILED);
-    Mail::assertQueued(DataExportFailed::class);
+    expect(AuditLog::where('event_name', AuditEvent::DataExportFailed->value)->exists())->toBeTrue();
 });
 
 it('queues an export job when the user requests one', function () {
