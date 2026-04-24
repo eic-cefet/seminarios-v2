@@ -32,7 +32,7 @@ import { useAuth } from '@shared/contexts/AuthContext';
 import { alertPreferencesApi, seminarTypesApi, subjectsApi, type AlertPreference } from '@shared/api/client';
 
 const prefs = (overrides: Partial<AlertPreference> = {}): AlertPreference => ({
-    optedIn: false,
+    newSeminarAlert: false,
     seminarTypeIds: [],
     subjectIds: [],
     seminarReminder7d: true,
@@ -53,7 +53,7 @@ describe('AlertPreferences', () => {
     beforeEach(() => {
         vi.mocked(alertPreferencesApi.get).mockResolvedValue(prefs());
         vi.mocked(alertPreferencesApi.update).mockImplementation(async (payload) => prefs({
-            optedIn: payload.opted_in,
+            newSeminarAlert: payload.new_seminar_alert,
             seminarTypeIds: payload.seminar_type_ids,
             subjectIds: payload.subject_ids,
             seminarReminder7d: payload.seminar_reminder_7d,
@@ -101,7 +101,7 @@ describe('AlertPreferences', () => {
 
         await waitFor(() => {
             expect(alertPreferencesApi.update).toHaveBeenCalledWith(expect.objectContaining({
-                opted_in: true,
+                new_seminar_alert: true,
                 seminar_type_ids: [1],
                 subject_ids: [10],
             }));
@@ -119,7 +119,7 @@ describe('AlertPreferences', () => {
 
         await waitFor(() => {
             expect(alertPreferencesApi.update).toHaveBeenCalledWith(expect.objectContaining({
-                opted_in: true,
+                new_seminar_alert: true,
                 seminar_type_ids: [],
                 subject_ids: [],
             }));
@@ -150,7 +150,7 @@ describe('AlertPreferences', () => {
     it('hydrates form from existing preferences', async () => {
         vi.mocked(useAuth).mockReturnValue(authedUser());
         vi.mocked(alertPreferencesApi.get).mockResolvedValue(prefs({
-            optedIn: true,
+            newSeminarAlert: true,
             seminarTypeIds: [2],
             subjectIds: [20],
         }));
@@ -165,7 +165,7 @@ describe('AlertPreferences', () => {
     it('toggles a filter off when already selected', async () => {
         vi.mocked(useAuth).mockReturnValue(authedUser());
         vi.mocked(alertPreferencesApi.get).mockResolvedValue(prefs({
-            optedIn: true,
+            newSeminarAlert: true,
             seminarTypeIds: [1],
             subjectIds: [],
         }));
@@ -182,7 +182,7 @@ describe('AlertPreferences', () => {
 
         await waitFor(() => {
             expect(alertPreferencesApi.update).toHaveBeenCalledWith(expect.objectContaining({
-                opted_in: true,
+                new_seminar_alert: true,
                 seminar_type_ids: [],
                 subject_ids: [],
             }));
@@ -217,7 +217,7 @@ describe('AlertPreferences', () => {
 
         expect(await screen.findByRole('button', { name: /salvando/i })).toBeInTheDocument();
 
-        resolveUpdate(prefs({ optedIn: true }));
+        resolveUpdate(prefs({ newSeminarAlert: true }));
     });
 
     it('opts out of a transactional reminder', async () => {

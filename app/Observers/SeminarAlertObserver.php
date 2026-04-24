@@ -28,7 +28,7 @@ class SeminarAlertObserver
             return;
         }
 
-        if (! AlertPreference::query()->where('opted_in', true)->exists()) {
+        if (! AlertPreference::query()->where('new_seminar_alert', true)->exists()) {
             return;
         }
 

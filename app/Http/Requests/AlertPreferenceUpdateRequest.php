@@ -17,7 +17,7 @@ class AlertPreferenceUpdateRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'opted_in' => ['required', 'boolean'],
+            'new_seminar_alert' => ['required', 'boolean'],
             'seminar_type_ids' => ['array'],
             'seminar_type_ids.*' => ['integer', 'exists:seminar_types,id'],
             'subject_ids' => ['array'],

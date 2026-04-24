@@ -19,7 +19,7 @@ it('does not send certificate email when user opted out of certificate_ready', f
     $user = User::factory()->create();
     AlertPreference::updateOrCreate(
         ['user_id' => $user->id],
-        ['opted_in' => false, 'certificate_ready' => false],
+        ['new_seminar_alert' => false, 'certificate_ready' => false],
     );
 
     $seminar = Seminar::factory()->create();
@@ -48,7 +48,7 @@ it('still generates artifacts for opted-out users (only email is skipped)', func
     $user = User::factory()->create();
     AlertPreference::updateOrCreate(
         ['user_id' => $user->id],
-        ['opted_in' => false, 'certificate_ready' => false],
+        ['new_seminar_alert' => false, 'certificate_ready' => false],
     );
 
     $seminar = Seminar::factory()->create();

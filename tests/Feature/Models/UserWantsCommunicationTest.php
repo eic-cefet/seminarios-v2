@@ -9,7 +9,7 @@ function upsertPrefs(User $user, array $attrs): AlertPreference
     return AlertPreference::updateOrCreate(
         ['user_id' => $user->id],
         array_merge([
-            'opted_in' => false,
+            'new_seminar_alert' => false,
             'seminar_reminder_7d' => true,
             'seminar_reminder_24h' => true,
             'evaluation_prompt' => true,
@@ -32,7 +32,7 @@ it('returns false for topic-follow category when row is missing (opt-in default)
     $user = User::factory()->create();
     $user->alertPreference()?->delete();
 
-    expect($user->fresh()->wantsCommunication(CommunicationCategory::TopicFollow))->toBeFalse();
+    expect($user->fresh()->wantsCommunication(CommunicationCategory::NewSeminarAlert))->toBeFalse();
 });
 
 it('returns false when transactional flag is explicitly disabled', function () {
@@ -51,7 +51,7 @@ it('returns true when transactional flag is explicitly enabled', function () {
 
 it('returns opted_in value for topic-follow category', function () {
     $user = User::factory()->create();
-    upsertPrefs($user, ['opted_in' => true]);
+    upsertPrefs($user, ['new_seminar_alert' => true]);
 
-    expect($user->fresh()->wantsCommunication(CommunicationCategory::TopicFollow))->toBeTrue();
+    expect($user->fresh()->wantsCommunication(CommunicationCategory::NewSeminarAlert))->toBeTrue();
 });

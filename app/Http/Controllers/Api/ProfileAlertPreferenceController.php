@@ -23,7 +23,7 @@ class ProfileAlertPreferenceController extends Controller
         if (! $pref) {
             return response()->json([
                 'data' => [
-                    'optedIn' => false,
+                    'newSeminarAlert' => false,
                     'seminarTypeIds' => [],
                     'subjectIds' => [],
                     'seminarReminder7d' => true,
@@ -50,7 +50,7 @@ class ProfileAlertPreferenceController extends Controller
             $pref = AlertPreference::updateOrCreate(
                 ['user_id' => $user->id],
                 [
-                    'opted_in' => $validated['opted_in'],
+                    'new_seminar_alert' => $validated['new_seminar_alert'],
                     'seminar_reminder_7d' => $validated['seminar_reminder_7d'],
                     'seminar_reminder_24h' => $validated['seminar_reminder_24h'],
                     'evaluation_prompt' => $validated['evaluation_prompt'],

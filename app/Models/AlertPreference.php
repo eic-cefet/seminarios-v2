@@ -16,7 +16,7 @@ class AlertPreference extends Model
 
     protected $fillable = [
         'user_id',
-        'opted_in',
+        'new_seminar_alert',
         'seminar_reminder_7d',
         'seminar_reminder_24h',
         'evaluation_prompt',
@@ -28,7 +28,7 @@ class AlertPreference extends Model
     protected function casts(): array
     {
         return [
-            'opted_in' => 'boolean',
+            'new_seminar_alert' => 'boolean',
             'seminar_reminder_7d' => 'boolean',
             'seminar_reminder_24h' => 'boolean',
             'evaluation_prompt' => 'boolean',

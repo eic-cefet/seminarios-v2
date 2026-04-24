@@ -16,7 +16,7 @@ it('does not send seminar reminder when user opted out of 24h reminders', functi
     $user = User::factory()->create();
     AlertPreference::updateOrCreate(
         ['user_id' => $user->id],
-        ['opted_in' => false, 'seminar_reminder_24h' => false],
+        ['new_seminar_alert' => false, 'seminar_reminder_24h' => false],
     );
 
     $seminar = Seminar::factory()->create(['scheduled_at' => now()->addDay()]);

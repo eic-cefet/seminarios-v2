@@ -19,7 +19,7 @@ it('only queues reschedule emails to users who want them', function () {
     $optedOut = User::factory()->create();
     AlertPreference::updateOrCreate(
         ['user_id' => $optedOut->id],
-        ['opted_in' => false, 'seminar_rescheduled' => false],
+        ['new_seminar_alert' => false, 'seminar_rescheduled' => false],
     );
 
     $optedIn = User::factory()->create();

@@ -16,7 +16,7 @@ it('does not send evaluation reminder when user opted out', function () {
     $user = User::factory()->create();
     AlertPreference::updateOrCreate(
         ['user_id' => $user->id],
-        ['opted_in' => false, 'evaluation_prompt' => false],
+        ['new_seminar_alert' => false, 'evaluation_prompt' => false],
     );
 
     $seminar = Seminar::factory()->create(['scheduled_at' => now()->subDays(3)]);

@@ -10,16 +10,16 @@ enum CommunicationCategory: string
     case CertificateReady = 'certificate_ready';
     case SeminarRescheduled = 'seminar_rescheduled';
     case Announcements = 'announcements';
-    case TopicFollow = 'topic_follow';
+    case NewSeminarAlert = 'new_seminar_alert';
 
     public function isTransactional(): bool
     {
-        return $this !== self::TopicFollow;
+        return $this !== self::NewSeminarAlert;
     }
 
     public function column(): string
     {
-        return $this === self::TopicFollow ? 'opted_in' : $this->value;
+        return $this->value;
     }
 
     public function defaultWhenMissing(): bool

@@ -20,7 +20,7 @@ class AlertPreferenceFactory extends Factory
     {
         return [
             'user_id' => User::factory(),
-            'opted_in' => true,
+            'new_seminar_alert' => true,
             'seminar_reminder_7d' => true,
             'seminar_reminder_24h' => true,
             'evaluation_prompt' => true,
@@ -32,7 +32,12 @@ class AlertPreferenceFactory extends Factory
 
     public function optedOut(): self
     {
-        return $this->state(fn () => ['opted_in' => false]);
+        return $this->state(fn () => ['new_seminar_alert' => false]);
+    }
+
+    public function newSeminarAlertOff(): self
+    {
+        return $this->state(fn () => ['new_seminar_alert' => false]);
     }
 
     public function transactionalAllOff(): self

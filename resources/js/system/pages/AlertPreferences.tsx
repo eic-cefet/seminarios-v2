@@ -30,7 +30,7 @@ export default function AlertPreferences() {
         queryFn: () => subjectsApi.list(),
     });
 
-    const [optedIn, setOptedIn] = useState(false);
+    const [newSeminarAlert, setNewSeminarAlert] = useState(false);
     const [seminarTypeIds, setSeminarTypeIds] = useState<number[]>([]);
     const [subjectIds, setSubjectIds] = useState<number[]>([]);
     const [seminarReminder7d, setSeminarReminder7d] = useState(true);
@@ -43,7 +43,7 @@ export default function AlertPreferences() {
 
     useEffect(() => {
         if (preference) {
-            setOptedIn(preference.optedIn);
+            setNewSeminarAlert(preference.newSeminarAlert);
             setSeminarTypeIds(preference.seminarTypeIds);
             setSubjectIds(preference.subjectIds);
             setSeminarReminder7d(preference.seminarReminder7d);
@@ -58,7 +58,7 @@ export default function AlertPreferences() {
     const mutation = useMutation({
         mutationFn: () =>
             alertPreferencesApi.update({
-                opted_in: optedIn,
+                new_seminar_alert: newSeminarAlert,
                 seminar_type_ids: seminarTypeIds,
                 subject_ids: subjectIds,
                 seminar_reminder_7d: seminarReminder7d,
@@ -168,8 +168,8 @@ export default function AlertPreferences() {
                                         <input
                                             id="alert-preferences-opted-in"
                                             type="checkbox"
-                                            checked={optedIn}
-                                            onChange={(e) => setOptedIn(e.target.checked)}
+                                            checked={newSeminarAlert}
+                                            onChange={(e) => setNewSeminarAlert(e.target.checked)}
                                             className="mt-1 h-4 w-4 rounded border-gray-300 cursor-pointer"
                                         />
                                         <label
@@ -186,7 +186,7 @@ export default function AlertPreferences() {
                                     </div>
 
                                     <fieldset
-                                        disabled={!optedIn}
+                                        disabled={!newSeminarAlert}
                                         className="space-y-6 disabled:opacity-50"
                                     >
                                         <div>

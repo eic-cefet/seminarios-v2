@@ -16,7 +16,7 @@ it('reminders:seminars skips users opted out of 24h reminder', function () {
     $optedOut = User::factory()->create();
     AlertPreference::updateOrCreate(
         ['user_id' => $optedOut->id],
-        ['opted_in' => false, 'seminar_reminder_24h' => false],
+        ['new_seminar_alert' => false, 'seminar_reminder_24h' => false],
     );
 
     $optedIn = User::factory()->create();
@@ -48,7 +48,7 @@ it('reminders:evaluations skips users opted out of evaluation prompt', function 
     $optedOut = User::factory()->create();
     AlertPreference::updateOrCreate(
         ['user_id' => $optedOut->id],
-        ['opted_in' => false, 'evaluation_prompt' => false],
+        ['new_seminar_alert' => false, 'evaluation_prompt' => false],
     );
 
     $optedIn = User::factory()->create();

@@ -397,7 +397,7 @@ export const profileApi = {
 };
 
 export interface AlertPreference {
-    optedIn: boolean;
+    newSeminarAlert: boolean;
     seminarTypeIds: number[];
     subjectIds: number[];
     seminarReminder7d: boolean;
@@ -417,7 +417,7 @@ export const alertPreferencesApi = {
     },
 
     update: async (data: {
-        opted_in: boolean;
+        new_seminar_alert: boolean;
         seminar_type_ids: number[];
         subject_ids: number[];
         seminar_reminder_7d: boolean;

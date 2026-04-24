@@ -16,7 +16,7 @@ uses(RefreshDatabase::class);
 function fullPayload(array $overrides = []): array
 {
     return array_merge([
-        'opted_in' => true,
+        'new_seminar_alert' => true,
         'seminar_type_ids' => [],
         'subject_ids' => [],
         'seminar_reminder_7d' => true,
@@ -42,7 +42,7 @@ it('returns a default preference payload when none exists', function () {
     $this->actingAs($user)
         ->getJson('/api/profile/alert-preferences')
         ->assertOk()
-        ->assertJsonPath('data.optedIn', false)
+        ->assertJsonPath('data.newSeminarAlert', false)
         ->assertJsonPath('data.seminarTypeIds', [])
         ->assertJsonPath('data.subjectIds', [])
         ->assertJsonPath('data.seminarReminder7d', true)
@@ -60,12 +60,12 @@ it('returns existing preference with filters', function () {
     AlertPreference::factory()->for($user)
         ->forTypes([$type->id])
         ->forSubjects([$subject->id])
-        ->create(['opted_in' => true]);
+        ->create(['new_seminar_alert' => true]);
 
     $this->actingAs($user)
         ->getJson('/api/profile/alert-preferences')
         ->assertOk()
-        ->assertJsonPath('data.optedIn', true)
+        ->assertJsonPath('data.newSeminarAlert', true)
         ->assertJsonPath('data.seminarTypeIds', [$type->id])
         ->assertJsonPath('data.subjectIds', [$subject->id]);
 });
@@ -79,7 +79,7 @@ it('creates a preference on first update', function () {
             'seminar_type_ids' => [$type->id],
         ]))
         ->assertOk()
-        ->assertJsonPath('data.optedIn', true)
+        ->assertJsonPath('data.newSeminarAlert', true)
         ->assertJsonPath('data.seminarTypeIds', [$type->id]);
 
     expect(AlertPreference::where('user_id', $user->id)->count())->toBe(1);
@@ -91,7 +91,7 @@ it('updates existing preference and replaces filters', function () {
     $drop = SeminarType::factory()->create();
     $pref = AlertPreference::factory()->for($user)
         ->forTypes([$keep->id, $drop->id])
-        ->create(['opted_in' => true]);
+        ->create(['new_seminar_alert' => true]);
 
     $this->actingAs($user)
         ->putJson('/api/profile/alert-preferences', fullPayload([
@@ -109,7 +109,7 @@ it('allows opt-in with empty filters (ALLOW ALL)', function () {
     $this->actingAs($user)
         ->putJson('/api/profile/alert-preferences', fullPayload())
         ->assertOk()
-        ->assertJsonPath('data.optedIn', true);
+        ->assertJsonPath('data.newSeminarAlert', true);
 });
 
 it('rejects unknown seminar type ids', function () {
@@ -139,13 +139,13 @@ it('updates transactional flags independently of topic-follow opt-in', function 
 
     $this->actingAs($user)
         ->putJson('/api/profile/alert-preferences', fullPayload([
-            'opted_in' => false,
+            'new_seminar_alert' => false,
             'seminar_reminder_24h' => false,
             'evaluation_prompt' => false,
             'certificate_ready' => false,
         ]))
         ->assertOk()
-        ->assertJsonPath('data.optedIn', false)
+        ->assertJsonPath('data.newSeminarAlert', false)
         ->assertJsonPath('data.seminarReminder24h', false)
         ->assertJsonPath('data.evaluationPrompt', false)
         ->assertJsonPath('data.certificateReady', false)
@@ -163,7 +163,7 @@ it('rejects missing transactional flags', function () {
 
     $this->actingAs($user)
         ->putJson('/api/profile/alert-preferences', [
-            'opted_in' => false,
+            'new_seminar_alert' => false,
             'seminar_type_ids' => [],
             'subject_ids' => [],
         ])
