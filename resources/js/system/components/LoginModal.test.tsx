@@ -77,6 +77,44 @@ describe('LoginModal', () => {
         expect(screen.getByRole('button', { name: 'Entrar' })).toBeInTheDocument();
     });
 
+    it('stays open when user presses escape or clicks outside', () => {
+        render(<LoginModal open={true} onOpenChange={onOpenChange} />);
+
+        expect(capturedDialogOnOpenChange).toBeDefined();
+
+        const escapeEvent = new KeyboardEvent('keydown', {
+            key: 'Escape',
+            bubbles: true,
+            cancelable: true,
+        });
+        document.dispatchEvent(escapeEvent);
+
+        document.body.dispatchEvent(
+            new MouseEvent('pointerdown', { bubbles: true, cancelable: true }),
+        );
+
+        expect(onOpenChange).not.toHaveBeenCalledWith(false);
+    });
+
+    it('keeps the recovery-code toggle outside the 2FA form', async () => {
+        onOpenChange.mockClear();
+        mockLogin.mockResolvedValueOnce({
+            status: 'two_factor_required',
+            challengeToken: 'abc',
+            remember: true,
+        });
+        const user = userEvent.setup();
+
+        render(<LoginModal open={true} onOpenChange={onOpenChange} />);
+
+        await user.type(screen.getByLabelText(/e-mail/i), 'test@example.com');
+        await user.type(screen.getByLabelText(/^senha/i), 'password123');
+        await user.click(screen.getByRole('button', { name: 'Entrar' }));
+
+        const toggle = await screen.findByRole('button', { name: /usar código de recuperação/i });
+        expect(toggle.closest('form')).toBeNull();
+    });
+
     it('shows social login buttons', () => {
         render(<LoginModal open={true} onOpenChange={onOpenChange} />);
 

@@ -135,6 +135,9 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
                         e.preventDefault();
                         emailRef.current?.focus();
                     }}
+                    onPointerDownOutside={(e) => e.preventDefault()}
+                    onInteractOutside={(e) => e.preventDefault()}
+                    onEscapeKeyDown={(e) => e.preventDefault()}
                     className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-white rounded-lg shadow-xl p-6 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%]"
                 >
                     <Dialog.Close asChild>
@@ -331,22 +334,22 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
                                         {loading ? "Verificando..." : "Verificar"}
                                     </button>
                                 </div>
-
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        setUseRecovery((v) => !v);
-                                        setTwoFactorCode("");
-                                        setRecoveryCode("");
-                                        setError(null);
-                                    }}
-                                    className="w-full text-center text-sm font-medium text-primary-600 hover:text-primary-700 cursor-pointer"
-                                >
-                                    {useRecovery
-                                        ? "Usar aplicativo autenticador"
-                                        : "Usar código de recuperação"}
-                                </button>
                             </form>
+
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setUseRecovery((v) => !v);
+                                    setTwoFactorCode("");
+                                    setRecoveryCode("");
+                                    setError(null);
+                                }}
+                                className="mt-4 w-full text-center text-sm font-medium text-primary-600 hover:text-primary-700 cursor-pointer"
+                            >
+                                {useRecovery
+                                    ? "Usar aplicativo autenticador"
+                                    : "Usar código de recuperação"}
+                            </button>
                         </>
                     )}
 
