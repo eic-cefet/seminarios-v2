@@ -156,22 +156,22 @@ export default function TwoFactorChallenge() {
                                     {loading ? "Verificando..." : "Verificar"}
                                 </button>
                             </div>
-
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    setUseRecovery((v) => !v);
-                                    setCode("");
-                                    setRecoveryCode("");
-                                    setError(null);
-                                }}
-                                className="w-full text-center text-sm font-medium text-primary-600 hover:text-primary-700"
-                            >
-                                {useRecovery
-                                    ? "Usar aplicativo autenticador"
-                                    : "Usar código de recuperação"}
-                            </button>
                         </form>
+
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setUseRecovery((v) => !v);
+                                setCode("");
+                                setRecoveryCode("");
+                                setError(null);
+                            }}
+                            className="w-full text-center text-sm font-medium text-primary-600 hover:text-primary-700"
+                        >
+                            {useRecovery
+                                ? "Usar aplicativo autenticador"
+                                : "Usar código de recuperação"}
+                        </button>
                     </div>
                 </div>
             </Layout>
