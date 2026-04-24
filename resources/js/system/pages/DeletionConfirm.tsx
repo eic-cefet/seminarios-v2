@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { dataPrivacyApi } from "@shared/api/client";
 import { PageTitle } from "@shared/components/PageTitle";
@@ -14,8 +14,14 @@ type State =
 export default function DeletionConfirm() {
     const { token } = useParams<{ token: string }>();
     const [state, setState] = useState<State>({ status: "loading" });
+    const calledRef = useRef(false);
 
     useEffect(() => {
+        if (calledRef.current) {
+            return;
+        }
+        calledRef.current = true;
+
         if (!token) {
             setState({ status: "error", message: "Link inválido." });
             return;
