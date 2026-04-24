@@ -22,6 +22,15 @@ class UserAnonymizationService
      */
     public function anonymize(User $user): void
     {
+        // Collect S3 paths before the transaction so the remote deletes
+        // happen AFTER the DB work commits — never hold the transaction
+        // open on a slow S3 call, and never orphan S3 objects if the DB
+        // rolls back.
+        $exportPaths = $user->dataExportRequests()
+            ->whereNotNull('file_path')
+            ->pluck('file_path')
+            ->all();
+
         DB::transaction(function () use ($user): void {
             $this->scrubAuditLogs($user);
             $this->deleteIdentities($user);
@@ -39,6 +48,10 @@ class UserAnonymizationService
                 'deleted_at' => $user->deleted_at ?? now(),
             ])->saveQuietly();
         });
+
+        foreach ($exportPaths as $path) {
+            Storage::disk('s3')->delete($path);
+        }
 
         AuditLog::record(
             event: AuditEvent::AccountAnonymized,
@@ -79,16 +92,6 @@ class UserAnonymizationService
         $user->studentData()->delete();
         $user->speakerData()->delete();
         $user->socialIdentities()->delete();
-        $this->deleteExportArtifacts($user);
-    }
-
-    private function deleteExportArtifacts(User $user): void
-    {
-        foreach ($user->dataExportRequests as $request) {
-            if ($request->file_path) {
-                Storage::disk('s3')->delete($request->file_path);
-            }
-        }
         $user->dataExportRequests()->delete();
     }
 

@@ -117,7 +117,7 @@ class DataPrivacyController extends Controller
         ]);
 
         $cacheKey = 'lgpd.deletion-confirm:'.$validated['token'];
-        $cachedUserId = Cache::pull($cacheKey);
+        $cachedUserId = Cache::get($cacheKey);
 
         if ($cachedUserId === null) {
             throw ApiException::validation([
@@ -128,8 +128,12 @@ class DataPrivacyController extends Controller
         $user = $request->user();
 
         if ((int) $cachedUserId !== (int) $user->id) {
+            // Do not consume the token — the legitimate owner should still be
+            // able to confirm with the same link.
             throw ApiException::forbidden('Este link pertence a outra conta.');
         }
+
+        Cache::forget($cacheKey);
 
         if ($user->anonymization_requested_at !== null) {
             return response()->json([

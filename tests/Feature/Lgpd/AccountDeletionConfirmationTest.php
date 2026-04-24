@@ -62,6 +62,26 @@ it('rejects tokens belonging to another user', function () {
     $this->postJson('/api/profile/delete-confirm', ['token' => $token])->assertForbidden();
 });
 
+it('does not consume the token when a different user attempts to confirm', function () {
+    Mail::fake();
+    $alice = actingAsUser();
+
+    $this->postJson('/api/profile/delete-request', ['password' => 'password'])->assertSuccessful();
+    $sent = Mail::sent(AccountDeletionConfirmation::class)->first();
+    preg_match('#/confirmar-exclusao/([a-zA-Z0-9]{64})#', $sent->confirmUrl, $m);
+    $token = $m[1];
+
+    // Bob tries to use Alice's token — should fail without consuming it.
+    $bob = User::factory()->create();
+    $this->actingAs($bob);
+    $this->postJson('/api/profile/delete-confirm', ['token' => $token])->assertForbidden();
+
+    // Alice can still confirm with the same token afterwards.
+    $this->actingAs($alice);
+    $this->postJson('/api/profile/delete-confirm', ['token' => $token])->assertSuccessful();
+    expect($alice->fresh()->anonymization_requested_at)->not->toBeNull();
+});
+
 it('is idempotent when the user is already flagged for deletion', function () {
     Mail::fake();
     $user = actingAsUser();
