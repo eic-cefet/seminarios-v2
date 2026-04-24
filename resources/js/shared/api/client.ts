@@ -389,7 +389,7 @@ export const profileApi = {
 
     submitRating: async (
         seminarId: number,
-        data: { score: number; comment?: string },
+        data: { score: number; comment?: string; ai_analysis_consent?: boolean },
     ) => {
         await getCsrfCookie();
         return fetchApi<{
