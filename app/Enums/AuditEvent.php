@@ -60,4 +60,16 @@ enum AuditEvent: string
     case UserMfaRecoveryCodesRegenerated = 'user.mfa_recovery_codes_regenerated';
     case UserMfaDeviceRemembered = 'user.mfa_device_remembered';
     case UserMfaDeviceRevoked = 'user.mfa_device_revoked';
+
+    // LGPD
+    case ConsentGranted = 'lgpd.consent_granted';
+    case ConsentRevoked = 'lgpd.consent_revoked';
+    case DataExportRequested = 'lgpd.data_export_requested';
+    case DataExportDelivered = 'lgpd.data_export_delivered';
+    case DataExportFailed = 'lgpd.data_export_failed';
+    case AccountDeletionRequested = 'lgpd.account_deletion_requested';
+    case AccountDeletionCancelled = 'lgpd.account_deletion_cancelled';
+    case AccountDeletionExecuted = 'lgpd.account_deletion_executed';
+    case AccountAnonymized = 'lgpd.account_anonymized';
+    case LgpdRetentionPurged = 'lgpd.retention_purged';
 }
