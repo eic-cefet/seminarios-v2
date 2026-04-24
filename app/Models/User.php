@@ -75,6 +75,11 @@ class User extends Authenticatable implements CanResetPassword
         return $this->hasMany(SocialIdentity::class);
     }
 
+    public function consents(): HasMany
+    {
+        return $this->hasMany(UserConsent::class);
+    }
+
     public function alertPreference(): HasOne
     {
         return $this->hasOne(AlertPreference::class);
