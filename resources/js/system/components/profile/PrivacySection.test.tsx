@@ -5,13 +5,27 @@ import { MemoryRouter } from "react-router-dom";
 import { PrivacySection } from "./PrivacySection";
 
 const mockRequestExport = vi.fn(() => Promise.resolve({ data: { id: 1 } }));
-const mockListExports = vi.fn(() => Promise.resolve({ data: [] }));
+type ExportRecord = { id: number; status: string; created_at?: string | null };
+const mockListExports = vi.fn(() =>
+    Promise.resolve({ data: [] as ExportRecord[] }),
+);
 const mockRequestDeletion = vi.fn((_password: string) =>
     Promise.resolve({ message: "ok", scheduled_for: "2026-05-23T00:00:00Z" }),
 );
 const mockCancelDeletion = vi.fn(() => Promise.resolve({ message: "ok" }));
 
 vi.mock("@shared/api/client", () => ({
+    // Provide a no-op ApiRequestError class so errors.ts instanceof check works
+    ApiRequestError: class extends Error {
+        constructor(
+            public code: string,
+            message: string,
+            public status: number,
+        ) {
+            super(message);
+            this.name = "ApiRequestError";
+        }
+    },
     dataPrivacyApi: {
         listExports: () => mockListExports(),
         requestExport: () => mockRequestExport(),
@@ -77,5 +91,68 @@ describe("PrivacySection", () => {
             screen.getByRole("button", { name: /cancelar exclusão/i }),
         );
         await waitFor(() => expect(mockCancelDeletion).toHaveBeenCalled());
+    });
+
+    it("shows error when deletion request fails", async () => {
+        mockRequestDeletion.mockRejectedValueOnce(new Error("Senha incorreta"));
+        renderSection();
+        fireEvent.click(
+            screen.getByRole("button", { name: /excluir minha conta/i }),
+        );
+        const input = screen.getByLabelText(/senha/i);
+        fireEvent.change(input, { target: { value: "wrong" } });
+        fireEvent.click(
+            screen.getByRole("button", { name: /^confirmar exclusão$/i }),
+        );
+        await waitFor(() =>
+            expect(screen.getByText(/senha incorreta/i)).toBeInTheDocument(),
+        );
+    });
+
+    it("shows error when export request fails", async () => {
+        mockRequestExport.mockRejectedValueOnce(new Error("Muitas tentativas"));
+        renderSection();
+        fireEvent.click(
+            screen.getByRole("button", { name: /exportar meus dados/i }),
+        );
+        await waitFor(() =>
+            expect(
+                screen.getByText(/muitas tentativas/i),
+            ).toBeInTheDocument(),
+        );
+    });
+
+    it("shows recent export requests when available", async () => {
+        const exports: ExportRecord[] = [
+            { id: 1, status: "completed", created_at: "2026-04-20T10:00:00Z" },
+            { id: 2, status: "queued", created_at: "2026-04-21T08:00:00Z" },
+        ];
+        mockListExports.mockResolvedValueOnce({ data: exports });
+        renderSection();
+        await waitFor(() =>
+            expect(screen.getByText(/completed/i)).toBeInTheDocument(),
+        );
+        expect(screen.getByText(/queued/i)).toBeInTheDocument();
+    });
+
+    it("closes the deletion modal when the cancel button is clicked", async () => {
+        renderSection();
+        fireEvent.click(
+            screen.getByRole("button", { name: /excluir minha conta/i }),
+        );
+        expect(
+            screen.getByRole("dialog"),
+        ).toBeInTheDocument();
+        // The cancel button inside the modal
+        const cancelButtons = screen.getAllByRole("button", {
+            name: /cancelar/i,
+        });
+        // The cancel button inside the dialog (last one, inside the modal)
+        fireEvent.click(cancelButtons[cancelButtons.length - 1]);
+        await waitFor(() =>
+            expect(
+                screen.queryByRole("dialog"),
+            ).not.toBeInTheDocument(),
+        );
     });
 });

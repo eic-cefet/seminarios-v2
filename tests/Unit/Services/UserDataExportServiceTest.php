@@ -53,3 +53,25 @@ it('builds a ZIP containing JSON files and a README', function () {
 
     @unlink($zipPath);
 });
+
+it('creates the tmp directory when it does not exist', function () {
+    $user = User::factory()->create();
+
+    $tmpDir = storage_path('app/tmp');
+    $existed = is_dir($tmpDir);
+
+    // Temporarily remove the directory if it exists to force the mkdir branch
+    if ($existed) {
+        $files = glob($tmpDir.'/*');
+        foreach ($files as $file) {
+            if (is_file($file)) {
+                @unlink($file);
+            }
+        }
+        rmdir($tmpDir);
+    }
+
+    $zipPath = $this->service->writeZip($user);
+    expect(file_exists($zipPath))->toBeTrue();
+    @unlink($zipPath);
+});

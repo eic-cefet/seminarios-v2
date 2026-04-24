@@ -109,8 +109,8 @@ class UserDataExportService
         }
 
         $zip = new ZipArchive;
-        if ($zip->open($tmp, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
-            throw new \RuntimeException('Unable to create export ZIP.');
+        if ($zip->open($tmp, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) { // @codeCoverageIgnore
+            throw new \RuntimeException('Unable to create export ZIP.'); // @codeCoverageIgnore
         }
 
         $encode = fn (mixed $d) => json_encode(
