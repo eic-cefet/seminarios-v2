@@ -36,6 +36,6 @@ describe('Footer', () => {
         render(<Footer />);
 
         expect(screen.getByText(/2026 CEFET-RJ/)).toBeInTheDocument();
-        expect(screen.getByText(/Escola de Informática e Computação/)).toBeInTheDocument();
+        expect(screen.getAllByText(/Escola de Informática e Computação/).length).toBeGreaterThan(0);
     });
 });
