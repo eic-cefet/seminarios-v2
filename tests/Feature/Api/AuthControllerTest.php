@@ -2,7 +2,9 @@
 
 use App\Models\Course;
 use App\Models\User;
+use Illuminate\Hashing\HashManager;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Password;
@@ -76,7 +78,7 @@ describe('POST /api/auth/login', function () {
 
         $user = User::factory()->create();
         // Update directly in DB to bypass the 'hashed' cast which would double-hash
-        \Illuminate\Support\Facades\DB::table('users')
+        DB::table('users')
             ->where('id', $user->id)
             ->update(['password' => $legacyHash]);
         $user->refresh();
@@ -96,7 +98,7 @@ describe('POST /api/auth/login', function () {
 
         // Bind a custom hasher to 'hash'
         $this->app->singleton('hash', function () use (&$callCount) {
-            return new class($callCount) extends \Illuminate\Hashing\HashManager
+            return new class($callCount) extends HashManager
             {
                 private int $callCount;
 
@@ -110,7 +112,7 @@ describe('POST /api/auth/login', function () {
                 {
                     $this->callCount++;
                     if ($this->callCount === 1) {
-                        throw new \RuntimeException('Invalid hash format');
+                        throw new RuntimeException('Invalid hash format');
                     }
 
                     return password_verify($value, $hashedValue);
@@ -137,7 +139,7 @@ describe('POST /api/auth/login', function () {
 
         $user = User::factory()->create();
         // Update directly in DB to bypass the 'hashed' cast which would double-hash
-        \Illuminate\Support\Facades\DB::table('users')
+        DB::table('users')
             ->where('id', $user->id)
             ->update(['password' => $legacyHash]);
         $user->refresh();
@@ -147,7 +149,7 @@ describe('POST /api/auth/login', function () {
 
         // Bind a custom hasher that always throws
         $this->app->singleton('hash', function () {
-            return new class extends \Illuminate\Hashing\HashManager
+            return new class extends HashManager
             {
                 public function __construct()
                 {
@@ -156,7 +158,7 @@ describe('POST /api/auth/login', function () {
 
                 public function check($value, $hashedValue, array $options = []): bool
                 {
-                    throw new \RuntimeException('Invalid hash format');
+                    throw new RuntimeException('Invalid hash format');
                 }
             };
         });
@@ -230,6 +232,8 @@ describe('POST /api/auth/register', function () {
             'course_situation' => 'studying',
             'course_role' => 'Aluno',
             'course_id' => $course->id,
+            'accepted_terms' => true,
+            'accepted_privacy_policy' => true,
         ]);
 
         $response->assertStatus(201)
@@ -247,6 +251,8 @@ describe('POST /api/auth/register', function () {
             'password_confirmation' => 'password123',
             'course_situation' => 'graduated',
             'course_role' => 'Outro',
+            'accepted_terms' => true,
+            'accepted_privacy_policy' => true,
         ]);
 
         $response->assertStatus(201);

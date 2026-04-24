@@ -27,6 +27,8 @@ class UserRegistrationRequest extends FormRequest
             'course_situation' => ['required', Rule::enum(CourseSituation::class)],
             'course_role' => ['required', Rule::enum(CourseRole::class)],
             'course_id' => ['nullable', 'integer', 'exists:courses,id'],
+            'accepted_terms' => ['required', 'accepted'],
+            'accepted_privacy_policy' => ['required', 'accepted'],
         ];
     }
 
@@ -46,6 +48,10 @@ class UserRegistrationRequest extends FormRequest
             'password.min' => 'A senha deve ter no mínimo 8 caracteres.',
             'course_situation.required' => 'A situação do curso é obrigatória.',
             'course_role.required' => 'O papel no curso é obrigatório.',
+            'accepted_terms.required' => 'Você deve aceitar os Termos de Uso para criar uma conta.',
+            'accepted_terms.accepted' => 'Você deve aceitar os Termos de Uso para criar uma conta.',
+            'accepted_privacy_policy.required' => 'Você deve aceitar a Política de Privacidade para criar uma conta.',
+            'accepted_privacy_policy.accepted' => 'Você deve aceitar a Política de Privacidade para criar uma conta.',
         ];
     }
 }

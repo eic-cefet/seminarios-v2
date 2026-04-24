@@ -3,9 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Enums\AuditEvent;
+use App\Enums\ConsentType;
 use App\Exceptions\ApiException;
 use App\Models\AuditLog;
 use App\Models\User;
+use App\Models\UserConsent;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -21,7 +23,7 @@ class SocialAuthController extends Controller
         return Socialite::driver($provider)->redirect();
     }
 
-    public function callback(string $provider): RedirectResponse
+    public function callback(Request $request, string $provider): RedirectResponse
     {
         try {
             $socialUser = Socialite::driver($provider)->user();
@@ -37,6 +39,18 @@ class SocialAuthController extends Controller
                 ]);
 
                 $user->assignRole('user');
+
+                foreach ([ConsentType::TermsOfService, ConsentType::PrivacyPolicy] as $type) {
+                    UserConsent::create([
+                        'user_id' => $user->id,
+                        'type' => $type,
+                        'granted' => true,
+                        'version' => config('lgpd.versions.'.$type->value) ?? '1.0',
+                        'ip_address' => $request->ip(),
+                        'user_agent' => substr((string) $request->userAgent(), 0, 500),
+                        'source' => 'oauth',
+                    ]);
+                }
             }
 
             $code = Str::random(64);

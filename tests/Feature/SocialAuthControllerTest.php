@@ -1,11 +1,18 @@
 <?php
 
+use App\Enums\ConsentType;
 use App\Enums\CourseRole;
 use App\Enums\CourseSituation;
+use App\Models\Course;
 use App\Models\User;
+use App\Models\UserConsent;
+use App\Models\UserStudentData;
 use Illuminate\Support\Facades\Cache;
+use Laravel\Socialite\Contracts\Factory;
+use Laravel\Socialite\Contracts\Provider;
 use Laravel\Socialite\Facades\Socialite;
 use Laravel\Socialite\Two\User as SocialiteUser;
+use Spatie\Permission\Models\Role;
 
 describe('GET /auth/{provider} (redirect)', function () {
     it('redirects to google oauth', function () {
@@ -28,7 +35,7 @@ describe('GET /auth/{provider} (redirect)', function () {
 describe('GET /auth/{provider}/callback', function () {
     beforeEach(function () {
         // Create the 'user' role that the controller assigns to new users
-        \Spatie\Permission\Models\Role::firstOrCreate(['name' => 'user', 'guard_name' => 'web']);
+        Role::firstOrCreate(['name' => 'user', 'guard_name' => 'web']);
     });
 
     it('creates new user from google oauth and redirects with code', function () {
@@ -54,6 +61,39 @@ describe('GET /auth/{provider}/callback', function () {
         // User should have user role
         $user = User::where('email', 'newuser@example.com')->first();
         expect($user->hasRole('user'))->toBeTrue();
+    });
+
+    it('records terms and privacy consent on first-time oauth signup', function () {
+        $fakeUser = new SocialiteUser;
+        $fakeUser->id = 'google-consent-test';
+        $fakeUser->name = 'Consent User';
+        $fakeUser->email = 'consentuser@example.com';
+
+        Socialite::fake('google', $fakeUser);
+
+        $this->get('/auth/google/callback')->assertRedirect();
+
+        $user = User::where('email', 'consentuser@example.com')->firstOrFail();
+
+        expect(UserConsent::where('user_id', $user->id)->where('type', ConsentType::TermsOfService)->where('granted', true)->where('source', 'oauth')->exists())->toBeTrue()
+            ->and(UserConsent::where('user_id', $user->id)->where('type', ConsentType::PrivacyPolicy)->where('granted', true)->where('source', 'oauth')->exists())->toBeTrue();
+    });
+
+    it('does not record consent on existing user oauth login', function () {
+        $existingUser = User::factory()->create([
+            'email' => 'existing-oauth@example.com',
+        ]);
+
+        $fakeUser = new SocialiteUser;
+        $fakeUser->id = 'google-existing-login';
+        $fakeUser->name = 'Existing User';
+        $fakeUser->email = 'existing-oauth@example.com';
+
+        Socialite::fake('google', $fakeUser);
+
+        $this->get('/auth/google/callback')->assertRedirect();
+
+        expect(UserConsent::where('user_id', $existingUser->id)->where('source', 'oauth')->count())->toBe(0);
     });
 
     it('uses existing user on oauth callback', function () {
@@ -161,13 +201,13 @@ describe('GET /auth/{provider}/callback', function () {
 
     it('redirects with error on oauth failure', function () {
         // Don't provide a fake user - this will cause an error
-        $provider = Mockery::mock(\Laravel\Socialite\Contracts\Provider::class);
-        $provider->shouldReceive('user')->andThrow(new \Exception('OAuth failed'));
+        $provider = Mockery::mock(Provider::class);
+        $provider->shouldReceive('user')->andThrow(new Exception('OAuth failed'));
 
-        $socialiteManager = Mockery::mock(\Laravel\Socialite\Contracts\Factory::class);
+        $socialiteManager = Mockery::mock(Factory::class);
         $socialiteManager->shouldReceive('driver')->with('google')->andReturn($provider);
 
-        $this->app->instance(\Laravel\Socialite\Contracts\Factory::class, $socialiteManager);
+        $this->app->instance(Factory::class, $socialiteManager);
 
         $response = $this->get('/auth/google/callback');
 
@@ -197,9 +237,9 @@ describe('POST /api/auth/exchange', function () {
 
     it('returns user with student data if available', function () {
         $user = User::factory()->create();
-        $course = \App\Models\Course::factory()->create();
+        $course = Course::factory()->create();
 
-        \App\Models\UserStudentData::factory()->create([
+        UserStudentData::factory()->create([
             'user_id' => $user->id,
             'course_id' => $course->id,
             'course_situation' => CourseSituation::Studying,

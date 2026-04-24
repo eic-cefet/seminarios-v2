@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Enums\AuditEvent;
+use App\Enums\ConsentType;
 use App\Exceptions\ApiException;
 use App\Http\Controllers\Concerns\FormatsUserResponse;
 use App\Http\Controllers\Controller;
@@ -10,6 +11,8 @@ use App\Http\Requests\UserRegistrationRequest;
 use App\Mail\WelcomeUser;
 use App\Models\AuditLog;
 use App\Models\User;
+use App\Models\UserConsent;
+use App\Services\TwoFactorDeviceService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -55,9 +58,9 @@ class AuthController extends Controller
         }
 
         if ($user->two_factor_confirmed_at !== null) {
-            $trustedToken = $request->cookie(\App\Services\TwoFactorDeviceService::COOKIE_NAME);
+            $trustedToken = $request->cookie(TwoFactorDeviceService::COOKIE_NAME);
 
-            if (app(\App\Services\TwoFactorDeviceService::class)->isTrusted($user, $trustedToken)) {
+            if (app(TwoFactorDeviceService::class)->isTrusted($user, $trustedToken)) {
                 Auth::login($user, $request->boolean('remember', false));
                 AuditLog::record(AuditEvent::UserLogin, auditable: $user, eventData: ['trusted_device' => true]);
 
@@ -127,6 +130,18 @@ class AuthController extends Controller
             'course_role' => $validated['course_role'],
             'course_id' => $validated['course_id'] ?? null,
         ]);
+
+        foreach ([ConsentType::TermsOfService, ConsentType::PrivacyPolicy] as $type) {
+            UserConsent::create([
+                'user_id' => $user->id,
+                'type' => $type,
+                'granted' => true,
+                'version' => config('lgpd.versions.'.$type->value) ?? '1.0',
+                'ip_address' => $request->ip(),
+                'user_agent' => substr((string) $request->userAgent(), 0, 500),
+                'source' => 'registration',
+            ]);
+        }
 
         Mail::to($user)->send(new WelcomeUser($user));
 
