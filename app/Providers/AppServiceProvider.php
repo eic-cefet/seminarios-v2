@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Listeners\AuditEmailSent;
+use App\Listeners\AuditNotificationSent;
 use App\Models\AuditLog;
 use App\Models\Registration;
 use App\Models\Seminar;
@@ -23,6 +24,7 @@ use Dedoc\Scramble\Support\Generator\SecurityScheme;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Mail\Events\MessageSent;
+use Illuminate\Notifications\Events\NotificationSent;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
@@ -68,6 +70,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(AuditLog::class, AuditLogPolicy::class);
 
         Event::listen(MessageSent::class, AuditEmailSent::class);
+        Event::listen(NotificationSent::class, AuditNotificationSent::class);
 
         Seminar::observe(SeminarAlertObserver::class);
 
