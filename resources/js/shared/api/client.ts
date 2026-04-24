@@ -513,9 +513,9 @@ export interface RecordConsentInput {
 }
 
 export const consentsApi = {
-    list: () => fetchApi<{ data: ConsentRecord[] }>("/api/consents"),
+    list: () => fetchApi<{ data: ConsentRecord[] }>("/consents"),
     record: (input: RecordConsentInput) =>
-        fetchApi<{ data: ConsentRecord }>("/api/consents", {
+        fetchApi<{ data: ConsentRecord }>("/consents", {
             method: "POST",
             body: JSON.stringify(input),
         }),
@@ -534,14 +534,14 @@ export interface DataExportRequest {
 
 export const dataPrivacyApi = {
     listExports: () =>
-        fetchApi<{ data: DataExportRequest[] }>("/api/profile/data-export"),
+        fetchApi<{ data: DataExportRequest[] }>("/profile/data-export"),
     requestExport: () =>
-        fetchApi<{ data: DataExportRequest }>("/api/profile/data-export", {
+        fetchApi<{ data: DataExportRequest }>("/profile/data-export", {
             method: "POST",
         }),
     requestDeletion: (password: string) =>
         fetchApi<{ message: string }>(
-            "/api/profile/delete-request",
+            "/profile/delete-request",
             {
                 method: "POST",
                 body: JSON.stringify({ password }),
@@ -549,14 +549,14 @@ export const dataPrivacyApi = {
         ),
     confirmDeletion: (token: string) =>
         fetchApi<{ message: string; scheduled_for: string }>(
-            "/api/profile/delete-confirm",
+            "/profile/delete-confirm",
             {
                 method: "POST",
                 body: JSON.stringify({ token }),
             },
         ),
     cancelDeletion: () =>
-        fetchApi<{ message: string }>("/api/profile/delete-cancel", {
+        fetchApi<{ message: string }>("/profile/delete-cancel", {
             method: "POST",
         }),
 };
