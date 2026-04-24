@@ -9,6 +9,7 @@ use App\Models\DataExportRequest;
 use App\Models\User;
 use App\Services\UserDataExportService;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 
 it('uploads the ZIP to S3 and emails a signed URL', function () {
@@ -50,4 +51,37 @@ it('marks the request failed and emails on error', function () {
 
     expect($request->fresh()->status)->toBe(DataExportRequest::STATUS_FAILED);
     Mail::assertQueued(DataExportFailed::class);
+});
+
+it('queues an export job when the user requests one', function () {
+    Queue::fake();
+    $user = actingAsUser();
+
+    $response = $this->postJson('/api/profile/data-export');
+
+    $response->assertSuccessful();
+    expect(DataExportRequest::where('user_id', $user->id)->count())->toBe(1);
+    Queue::assertPushed(ExportUserDataJob::class);
+    expect(AuditLog::where('event_name', AuditEvent::DataExportRequested->value)->exists())->toBeTrue();
+});
+
+it('rate-limits export requests to one every 24h', function () {
+    Queue::fake();
+    $user = actingAsUser();
+    DataExportRequest::factory()->for($user)->create([
+        'status' => DataExportRequest::STATUS_QUEUED,
+        'created_at' => now()->subHour(),
+    ]);
+
+    $this->postJson('/api/profile/data-export')->assertStatus(429);
+});
+
+it('lists past export requests', function () {
+    $user = actingAsUser();
+    DataExportRequest::factory()->for($user)->count(2)->create();
+
+    $response = $this->getJson('/api/profile/data-export');
+
+    $response->assertSuccessful();
+    expect($response->json('data'))->toHaveCount(2);
 });

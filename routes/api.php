@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\BugReportController;
 use App\Http\Controllers\Api\ConsentController;
 use App\Http\Controllers\Api\CourseController;
+use App\Http\Controllers\Api\DataPrivacyController;
 use App\Http\Controllers\Api\PresenceController;
 use App\Http\Controllers\Api\ProfileAlertPreferenceController;
 use App\Http\Controllers\Api\ProfileController;
@@ -108,6 +109,11 @@ Route::middleware('auth:sanctum')->group(function () {
     // Profile - Evaluations & Ratings
     Route::get('/profile/pending-evaluations', [ProfileRatingController::class, 'pendingEvaluations']);
     Route::post('/profile/ratings/{seminar}', [ProfileRatingController::class, 'submitRating']);
+
+    // Profile - Data Export (LGPD)
+    Route::get('/profile/data-export', [DataPrivacyController::class, 'indexExports']);
+    Route::post('/profile/data-export', [DataPrivacyController::class, 'requestExport'])
+        ->middleware('throttle:5,60');
 
     // Profile - Two-Factor Authentication
     Route::prefix('profile/two-factor')->group(function () {
