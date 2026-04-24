@@ -182,6 +182,8 @@ describe('AuthContext', () => {
                     passwordConfirmation: 'password',
                     courseSituation: 'studying',
                     courseRole: 'Aluno',
+                    acceptedTerms: true,
+                    acceptedPrivacy: true,
                 });
             });
 

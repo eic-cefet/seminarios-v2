@@ -172,6 +172,8 @@ describe('Register', () => {
         await user.type(screen.getByLabelText(/^senha/i), 'password123');
         await user.type(screen.getByLabelText(/confirmar senha/i), 'password123');
         await user.click(screen.getByText('ReCaptcha'));
+        fireEvent.click(screen.getByLabelText(/Termos de Uso/i));
+        fireEvent.click(screen.getByLabelText(/Política de Privacidade/i));
         await user.click(screen.getByRole('button', { name: /criar conta/i }));
 
         await waitFor(() => {
@@ -183,12 +185,36 @@ describe('Register', () => {
                 courseSituation: 'studying',
                 courseRole: 'Aluno',
                 courseId: undefined,
+                acceptedTerms: true,
+                acceptedPrivacy: true,
             });
         });
 
         await waitFor(() => {
             expect(mockNavigate).toHaveBeenCalledWith('/', { replace: true });
         });
+    });
+
+    it('blocks submission without terms+privacy acceptance', async () => {
+        const user = userEvent.setup();
+
+        render(<Register />);
+
+        await user.type(screen.getByLabelText(/nome completo/i), 'Test User');
+        await user.type(screen.getByLabelText(/e-mail/i), 'test@example.com');
+        await user.selectOptions(screen.getByLabelText(/situação/i), 'studying');
+        await user.selectOptions(screen.getByLabelText(/vínculo/i), 'Aluno');
+        await user.type(screen.getByLabelText(/^senha/i), 'password123');
+        await user.type(screen.getByLabelText(/confirmar senha/i), 'password123');
+        await user.click(screen.getByText('ReCaptcha'));
+        // Do NOT check the consent checkboxes
+        const form = screen.getByRole('button', { name: /criar conta/i }).closest('form')!;
+        fireEvent.submit(form);
+
+        await waitFor(() => {
+            expect(screen.getByText(/você precisa aceitar os Termos de Uso e a Política de Privacidade/i)).toBeInTheDocument();
+        });
+        expect(mockRegister).not.toHaveBeenCalled();
     });
 
     it('fires analytics event on successful registration', async () => {
@@ -204,6 +230,8 @@ describe('Register', () => {
         await user.type(screen.getByLabelText(/^senha/i), 'password123');
         await user.type(screen.getByLabelText(/confirmar senha/i), 'password123');
         await user.click(screen.getByText('ReCaptcha'));
+        fireEvent.click(screen.getByLabelText(/Termos de Uso/i));
+        fireEvent.click(screen.getByLabelText(/Política de Privacidade/i));
         await user.click(screen.getByRole('button', { name: /criar conta/i }));
 
         await waitFor(() => {
@@ -227,6 +255,8 @@ describe('Register', () => {
         await user.type(screen.getByLabelText(/^senha/i), 'password123');
         await user.type(screen.getByLabelText(/confirmar senha/i), 'password123');
         await user.click(screen.getByText('ReCaptcha'));
+        fireEvent.click(screen.getByLabelText(/Termos de Uso/i));
+        fireEvent.click(screen.getByLabelText(/Política de Privacidade/i));
         await user.click(screen.getByRole('button', { name: /criar conta/i }));
 
         await waitFor(() => {
@@ -318,6 +348,8 @@ describe('Register', () => {
         await user.type(screen.getByLabelText(/^senha/i), 'password123');
         await user.type(screen.getByLabelText(/confirmar senha/i), 'password123');
         await user.click(screen.getByText('ReCaptcha'));
+        fireEvent.click(screen.getByLabelText(/Termos de Uso/i));
+        fireEvent.click(screen.getByLabelText(/Política de Privacidade/i));
         await user.click(screen.getByRole('button', { name: /criar conta/i }));
 
         await waitFor(() => {
@@ -349,6 +381,8 @@ describe('Register', () => {
         await user.type(screen.getByLabelText(/^senha/i), 'password123');
         await user.type(screen.getByLabelText(/confirmar senha/i), 'password123');
         await user.click(screen.getByText('ReCaptcha'));
+        fireEvent.click(screen.getByLabelText(/Termos de Uso/i));
+        fireEvent.click(screen.getByLabelText(/Política de Privacidade/i));
         await user.click(screen.getByRole('button', { name: /criar conta/i }));
 
         await waitFor(() => {
@@ -399,6 +433,8 @@ describe('Register', () => {
             await user.type(screen.getByLabelText(/^senha/i), 'password123');
             await user.type(screen.getByLabelText(/confirmar senha/i), 'password123');
             await user.click(screen.getByText('ReCaptcha'));
+            fireEvent.click(screen.getByLabelText(/Termos de Uso/i));
+            fireEvent.click(screen.getByLabelText(/Política de Privacidade/i));
             await user.click(screen.getByRole('button', { name: /criar conta/i }));
 
             await waitFor(() => {

@@ -175,6 +175,8 @@ describe('fetchApi (via API namespaces)', () => {
                 password_confirmation: 'password',
                 course_situation: 'studying',
                 course_role: 'Aluno',
+                accepted_terms: true,
+                accepted_privacy_policy: true,
             });
             expect(result.user).toBeDefined();
         });

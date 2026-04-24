@@ -22,6 +22,8 @@ interface RegisterData {
     courseSituation: "studying" | "graduated";
     courseRole: "Aluno" | "Professor" | "Outro";
     courseId?: number;
+    acceptedTerms: boolean;
+    acceptedPrivacy: boolean;
 }
 
 interface AuthContextValue {
@@ -106,6 +108,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 course_situation: data.courseSituation,
                 course_role: data.courseRole,
                 course_id: data.courseId,
+                accepted_terms: data.acceptedTerms,
+                accepted_privacy_policy: data.acceptedPrivacy,
             });
             setUser(response.user);
             invalidateAuthQueries();

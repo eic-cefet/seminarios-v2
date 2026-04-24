@@ -32,6 +32,8 @@ export default function Register() {
         courseSituation: "" as "" | "studying" | "graduated",
         courseRole: "" as "" | "Aluno" | "Professor" | "Outro",
         courseId: "",
+        acceptedTerms: false,
+        acceptedPrivacy: false,
     });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -88,6 +90,11 @@ export default function Register() {
             return;
         }
 
+        if (!formData.acceptedTerms || !formData.acceptedPrivacy) {
+            setError("Você precisa aceitar os Termos de Uso e a Política de Privacidade.");
+            return;
+        }
+
         setLoading(true);
 
         try {
@@ -101,6 +108,8 @@ export default function Register() {
                 courseId: formData.courseId
                     ? parseInt(formData.courseId)
                     : undefined,
+                acceptedTerms: formData.acceptedTerms,
+                acceptedPrivacy: formData.acceptedPrivacy,
             });
             analytics.event("register_account", {
                 course_situation: formData.courseSituation,
@@ -287,6 +296,59 @@ export default function Register() {
                                 onVerify={setCaptchaToken}
                                 onExpire={() => setCaptchaToken(null)}
                             />
+
+                            <div className="space-y-2 text-sm text-gray-700">
+                                <label className="flex items-start gap-2">
+                                    <input
+                                        type="checkbox"
+                                        checked={formData.acceptedTerms}
+                                        onChange={(e) =>
+                                            setFormData((prev) => ({
+                                                ...prev,
+                                                acceptedTerms: e.target.checked,
+                                            }))
+                                        }
+                                        className="mt-1"
+                                    />
+                                    <span>
+                                        Li e aceito os{" "}
+                                        <Link
+                                            to={ROUTES.SYSTEM.TERMS}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="text-primary-600 underline"
+                                        >
+                                            Termos de Uso
+                                        </Link>
+                                        .
+                                    </span>
+                                </label>
+                                <label className="flex items-start gap-2">
+                                    <input
+                                        type="checkbox"
+                                        checked={formData.acceptedPrivacy}
+                                        onChange={(e) =>
+                                            setFormData((prev) => ({
+                                                ...prev,
+                                                acceptedPrivacy: e.target.checked,
+                                            }))
+                                        }
+                                        className="mt-1"
+                                    />
+                                    <span>
+                                        Li e aceito a{" "}
+                                        <Link
+                                            to={ROUTES.SYSTEM.PRIVACY_POLICY}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="text-primary-600 underline"
+                                        >
+                                            Política de Privacidade
+                                        </Link>
+                                        .
+                                    </span>
+                                </label>
+                            </div>
 
                             <button
                                 type="submit"

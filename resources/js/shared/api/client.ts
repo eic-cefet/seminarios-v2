@@ -197,6 +197,8 @@ export const authApi = {
         course_situation: "studying" | "graduated";
         course_role: "Aluno" | "Professor" | "Outro";
         course_id?: number;
+        accepted_terms: boolean;
+        accepted_privacy_policy: boolean;
     }) => {
         await getCsrfCookie();
         return fetchApi<{ user: User }>("/auth/register", {
