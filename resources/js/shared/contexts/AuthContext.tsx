@@ -10,6 +10,10 @@ import { useQueryClient } from "@tanstack/react-query";
 import { authApi, ApiRequestError } from "@shared/api/client";
 import type { User } from "@shared/types";
 
+export type LoginResult =
+    | { status: "authenticated" }
+    | { status: "two_factor_required"; challengeToken: string; remember: boolean };
+
 interface RegisterData {
     name: string;
     email: string;
@@ -28,11 +32,12 @@ interface AuthContextValue {
         email: string,
         password: string,
         remember?: boolean,
-    ) => Promise<void>;
+    ) => Promise<LoginResult>;
     register: (data: RegisterData) => Promise<void>;
     logout: () => Promise<void>;
     exchangeCode: (code: string) => Promise<void>;
     refreshUser: () => Promise<void>;
+    completeTwoFactor: (user: User) => void;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -63,9 +68,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }, [refreshUser]);
 
     const login = useCallback(
-        async (email: string, password: string, remember = false) => {
+        async (
+            email: string,
+            password: string,
+            remember = false,
+        ): Promise<LoginResult> => {
             const response = await authApi.login({ email, password, remember });
+            if ("two_factor" in response) {
+                return {
+                    status: "two_factor_required",
+                    challengeToken: response.two_factor.challenge_token,
+                    remember,
+                };
+            }
             setUser(response.user);
+            invalidateAuthQueries();
+            return { status: "authenticated" };
+        },
+        [invalidateAuthQueries],
+    );
+
+    const completeTwoFactor = useCallback(
+        (user: User) => {
+            setUser(user);
             invalidateAuthQueries();
         },
         [invalidateAuthQueries],
@@ -114,6 +139,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 logout,
                 exchangeCode,
                 refreshUser,
+                completeTwoFactor,
             }}
         >
             {children}
