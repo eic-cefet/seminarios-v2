@@ -33,6 +33,12 @@ export default function AlertPreferences() {
     const [optedIn, setOptedIn] = useState(false);
     const [seminarTypeIds, setSeminarTypeIds] = useState<number[]>([]);
     const [subjectIds, setSubjectIds] = useState<number[]>([]);
+    const [seminarReminder7d, setSeminarReminder7d] = useState(true);
+    const [seminarReminder24h, setSeminarReminder24h] = useState(true);
+    const [evaluationPrompt, setEvaluationPrompt] = useState(true);
+    const [announcements, setAnnouncements] = useState(true);
+    const [certificateReady, setCertificateReady] = useState(true);
+    const [seminarRescheduled, setSeminarRescheduled] = useState(true);
     const [success, setSuccess] = useState(false);
 
     useEffect(() => {
@@ -40,6 +46,12 @@ export default function AlertPreferences() {
             setOptedIn(preference.optedIn);
             setSeminarTypeIds(preference.seminarTypeIds);
             setSubjectIds(preference.subjectIds);
+            setSeminarReminder7d(preference.seminarReminder7d);
+            setSeminarReminder24h(preference.seminarReminder24h);
+            setEvaluationPrompt(preference.evaluationPrompt);
+            setAnnouncements(preference.announcements);
+            setCertificateReady(preference.certificateReady);
+            setSeminarRescheduled(preference.seminarRescheduled);
         }
     }, [preference]);
 
@@ -49,6 +61,12 @@ export default function AlertPreferences() {
                 opted_in: optedIn,
                 seminar_type_ids: seminarTypeIds,
                 subject_ids: subjectIds,
+                seminar_reminder_7d: seminarReminder7d,
+                seminar_reminder_24h: seminarReminder24h,
+                evaluation_prompt: evaluationPrompt,
+                announcements,
+                certificate_ready: certificateReady,
+                seminar_rescheduled: seminarRescheduled,
             }),
         onSuccess: (updated) => {
             queryClient.setQueryData(["alert-preferences"], updated);
@@ -76,39 +94,76 @@ export default function AlertPreferences() {
                 <div className="bg-white border-b border-gray-200">
                     <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
                         <h1 className="text-2xl font-bold text-gray-900">
-                            Alertas de novos seminários
+                            Preferências de comunicação
                         </h1>
                         <p className="mt-1 text-sm text-gray-500">
-                            Receba um e-mail quando um novo seminário ativo for publicado.
-                            Deixe os filtros vazios para receber alertas de todos os seminários.
+                            Escolha quais e-mails você deseja receber do sistema.
                         </p>
                     </div>
                 </div>
 
-                <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
-                    <section className="rounded-lg border border-gray-200 bg-white">
-                        <div className="border-b border-gray-200 px-6 py-4">
-                            <div className="flex items-center gap-2">
-                                <Bell className="h-5 w-5 text-gray-400" />
-                                <h2 className="text-lg font-semibold text-gray-900">
-                                    Suas preferências
-                                </h2>
-                            </div>
-                        </div>
+                <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8 space-y-6">
+                    {isLoading ? (
+                        <p className="text-sm text-gray-500">Carregando…</p>
+                    ) : (
+                        <form onSubmit={handleSubmit} className="space-y-6">
+                            {success && (
+                                <SuccessAlert message="Preferências salvas com sucesso!" />
+                            )}
 
-                        <div className="px-6 py-6">
-                            {isLoading ? (
-                                <p className="text-sm text-gray-500">Carregando…</p>
-                            ) : (
-                                <form onSubmit={handleSubmit} className="space-y-6">
-                                    {success && (
-                                        <SuccessAlert message="Preferências salvas com sucesso!" />
-                                    )}
+                            {mutation.isError && (
+                                <ErrorAlert message="Não foi possível salvar suas preferências. Tente novamente." />
+                            )}
 
-                                    {mutation.isError && (
-                                        <ErrorAlert message="Não foi possível salvar suas preferências. Tente novamente." />
-                                    )}
+                            <section className="rounded-lg border border-gray-200 bg-white">
+                                <div className="border-b border-gray-200 px-6 py-4">
+                                    <div className="flex items-center gap-2">
+                                        <Bell className="h-5 w-5 text-gray-400" />
+                                        <h2 className="text-lg font-semibold text-gray-900">
+                                            E-mails transacionais
+                                        </h2>
+                                    </div>
+                                    <p className="mt-1 text-xs text-gray-500">
+                                        Esses e-mails estão ativados por padrão. Desmarque o que você não quer mais receber.
+                                    </p>
+                                </div>
+                                <div className="px-6 py-6 space-y-4">
+                                    {([
+                                        { id: "pref-sr24h", label: "Lembrete 24h antes do seminário", checked: seminarReminder24h, set: setSeminarReminder24h },
+                                        { id: "pref-sr7d", label: "Lembrete 7 dias antes do seminário", checked: seminarReminder7d, set: setSeminarReminder7d },
+                                        { id: "pref-eval", label: "Pedido para avaliar seminários assistidos", checked: evaluationPrompt, set: setEvaluationPrompt },
+                                        { id: "pref-cert", label: "Certificado pronto", checked: certificateReady, set: setCertificateReady },
+                                        { id: "pref-resched", label: "Seminário reagendado", checked: seminarRescheduled, set: setSeminarRescheduled },
+                                        { id: "pref-announce", label: "Comunicados gerais", checked: announcements, set: setAnnouncements },
+                                    ] as const).map((row) => (
+                                        <label key={row.id} className="flex items-start gap-3 cursor-pointer">
+                                            <input
+                                                id={row.id}
+                                                type="checkbox"
+                                                checked={row.checked}
+                                                onChange={(e) => row.set(e.target.checked)}
+                                                className="mt-1 h-4 w-4 rounded border-gray-300 cursor-pointer"
+                                            />
+                                            <span className="text-sm text-gray-900">{row.label}</span>
+                                        </label>
+                                    ))}
+                                </div>
+                            </section>
 
+                            <section className="rounded-lg border border-gray-200 bg-white">
+                                <div className="border-b border-gray-200 px-6 py-4">
+                                    <div className="flex items-center gap-2">
+                                        <Bell className="h-5 w-5 text-gray-400" />
+                                        <h2 className="text-lg font-semibold text-gray-900">
+                                            Alertas de novos seminários
+                                        </h2>
+                                    </div>
+                                    <p className="mt-1 text-xs text-gray-500">
+                                        Receba um e-mail quando um novo seminário ativo for publicado. Deixe os filtros vazios para receber alertas de todos os seminários.
+                                    </p>
+                                </div>
+
+                                <div className="px-6 py-6 space-y-6">
                                     <div className="flex items-start gap-3">
                                         <input
                                             id="alert-preferences-opted-in"
@@ -207,23 +262,24 @@ export default function AlertPreferences() {
                                         </div>
                                     </fieldset>
 
-                                    <div className="flex justify-end pt-2">
-                                        <button
-                                            type="submit"
-                                            disabled={mutation.isPending}
-                                            className={cn(
-                                                "rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-primary-700 transition-colors cursor-pointer",
-                                                mutation.isPending &&
-                                                    "opacity-70 cursor-not-allowed",
-                                            )}
-                                        >
-                                            {mutation.isPending ? "Salvando..." : "Salvar preferências"}
-                                        </button>
-                                    </div>
-                                </form>
-                            )}
-                        </div>
-                    </section>
+                                </div>
+                            </section>
+
+                            <div className="flex justify-end pt-2">
+                                <button
+                                    type="submit"
+                                    disabled={mutation.isPending}
+                                    className={cn(
+                                        "rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-primary-700 transition-colors cursor-pointer",
+                                        mutation.isPending &&
+                                            "opacity-70 cursor-not-allowed",
+                                    )}
+                                >
+                                    {mutation.isPending ? "Salvando..." : "Salvar preferências"}
+                                </button>
+                            </div>
+                        </form>
+                    )}
                 </div>
             </Layout>
         </ProtectedRoute>

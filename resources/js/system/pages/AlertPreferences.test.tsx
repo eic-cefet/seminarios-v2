@@ -220,6 +220,29 @@ describe('AlertPreferences', () => {
         resolveUpdate(prefs({ optedIn: true }));
     });
 
+    it('opts out of a transactional reminder', async () => {
+        vi.mocked(useAuth).mockReturnValue(authedUser());
+        const user = userEvent.setup();
+
+        render(<AlertPreferences />);
+
+        const toggle = await screen.findByLabelText(/lembrete 24h antes do seminário/i);
+        expect(toggle).toBeChecked();
+        await user.click(toggle);
+        await user.click(screen.getByRole('button', { name: /salvar preferências/i }));
+
+        await waitFor(() => {
+            expect(alertPreferencesApi.update).toHaveBeenCalledWith(expect.objectContaining({
+                seminar_reminder_24h: false,
+                seminar_reminder_7d: true,
+                evaluation_prompt: true,
+                certificate_ready: true,
+                seminar_rescheduled: true,
+                announcements: true,
+            }));
+        });
+    });
+
     it('redirects when unauthenticated', () => {
         vi.mocked(useAuth).mockReturnValue({
             user: null, isLoading: false, isAuthenticated: false,
