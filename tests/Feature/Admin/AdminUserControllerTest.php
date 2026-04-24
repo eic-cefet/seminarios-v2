@@ -67,6 +67,22 @@ describe('GET /api/admin/users', function () {
         $response->assertSuccessful();
     });
 
+    it('filters users with no assigned role using the "user" shorthand', function () {
+        actingAsAdmin();
+
+        $plainUser = User::factory()->create();
+
+        $teacher = User::factory()->create();
+        $teacher->assignRole('teacher');
+
+        $response = $this->getJson('/api/admin/users?role=user');
+
+        $response->assertSuccessful();
+        $ids = collect($response->json('data'))->pluck('id');
+        expect($ids)->toContain($plainUser->id);
+        expect($ids)->not->toContain($teacher->id);
+    });
+
     it('filters trashed users', function () {
         actingAsAdmin();
 
