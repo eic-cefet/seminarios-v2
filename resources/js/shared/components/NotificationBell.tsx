@@ -43,7 +43,7 @@ export function NotificationBell({ userId }: Props) {
                         : "Notifications"
                 }
                 onClick={toggle}
-                className="relative p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800"
+                className="relative p-2 rounded-md hover:bg-gray-100"
             >
                 <Bell className="h-5 w-5" />
                 {unreadCount > 0 && (
@@ -54,8 +54,8 @@ export function NotificationBell({ userId }: Props) {
             </button>
 
             {open && (
-                <div className="absolute right-0 mt-2 w-96 max-h-[70vh] overflow-y-auto bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50">
-                    <div className="flex items-center justify-between p-3 border-b border-gray-200 dark:border-gray-700">
+                <div className="absolute right-0 mt-2 w-96 max-h-[70vh] overflow-y-auto bg-white border border-gray-200 rounded-lg shadow-lg z-50">
+                    <div className="flex items-center justify-between p-3 border-b border-gray-200">
                         <h3 className="font-semibold">Notificações</h3>
                         {unreadCount > 0 && (
                             <button
@@ -72,23 +72,21 @@ export function NotificationBell({ userId }: Props) {
                             Nenhuma notificação.
                         </p>
                     ) : (
-                        <ul className="divide-y divide-gray-200 dark:divide-gray-700">
+                        <ul className="divide-y divide-gray-200">
                             {notifications.map((n) => (
                                 <li
                                     key={n.id}
                                     onClick={() =>
                                         handleClick(n.id, n.action_url)
                                     }
-                                    className={`p-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 ${
-                                        n.read_at
-                                            ? ""
-                                            : "bg-blue-50 dark:bg-blue-950/30"
+                                    className={`p-3 cursor-pointer hover:bg-gray-50 ${
+                                        n.read_at ? "" : "bg-blue-50"
                                     }`}
                                 >
                                     <p className="font-medium text-sm">
                                         {n.title}
                                     </p>
-                                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                                    <p className="text-sm text-gray-600">
                                         {n.body}
                                     </p>
                                     <p className="mt-1 text-xs text-gray-500">
