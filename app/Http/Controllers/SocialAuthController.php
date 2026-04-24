@@ -38,8 +38,6 @@ class SocialAuthController extends Controller
                     'email_verified_at' => now(),
                 ]);
 
-                $user->assignRole('user');
-
                 foreach ([ConsentType::TermsOfService, ConsentType::PrivacyPolicy] as $type) {
                     UserConsent::create([
                         'user_id' => $user->id,

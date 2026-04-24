@@ -74,7 +74,7 @@ class AdminUserController extends Controller
                 'password' => Hash::make($password),
             ]);
 
-            if (isset($validated['role'])) {
+            if (isset($validated['role']) && $validated['role'] !== 'user') {
                 $user->assignRole($validated['role']);
             }
 
@@ -116,7 +116,9 @@ class AdminUserController extends Controller
             $user->save();
 
             if (isset($validated['role'])) {
-                $user->syncRoles([$validated['role']]);
+                $user->syncRoles(
+                    $validated['role'] === 'user' ? [] : [$validated['role']],
+                );
             }
 
             if (array_key_exists('student_data', $validated)) {

@@ -109,7 +109,7 @@ class User extends Authenticatable implements CanResetPassword
 
     public function isUser(): bool
     {
-        return $this->hasRole(Role::User);
+        return ! $this->isAdmin() && ! $this->isTeacher();
     }
 
     public function isAnonymizationPending(): bool

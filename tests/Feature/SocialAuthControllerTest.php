@@ -58,9 +58,11 @@ describe('GET /auth/{provider}/callback', function () {
             'email' => 'newuser@example.com',
         ]);
 
-        // User should have user role
+        // User exists with no assigned role (regular user is the default)
         $user = User::where('email', 'newuser@example.com')->first();
-        expect($user->hasRole('user'))->toBeTrue();
+        expect($user->isUser())->toBeTrue()
+            ->and($user->isAdmin())->toBeFalse()
+            ->and($user->isTeacher())->toBeFalse();
     });
 
     it('records terms and privacy consent on first-time oauth signup', function () {

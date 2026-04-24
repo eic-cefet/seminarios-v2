@@ -15,6 +15,5 @@ class RolesSeeder extends Seeder
 
         SpatieRole::firstOrCreate(['name' => Role::Admin->value, 'guard_name' => 'web']);
         SpatieRole::firstOrCreate(['name' => Role::Teacher->value, 'guard_name' => 'web']);
-        SpatieRole::firstOrCreate(['name' => Role::User->value, 'guard_name' => 'web']);
     }
 }
