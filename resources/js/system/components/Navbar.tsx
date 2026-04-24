@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { NotificationBell } from "@shared/components/NotificationBell";
 import { LoginModal } from "./LoginModal";
 
 const navigation = [
@@ -66,7 +67,10 @@ export function Navbar() {
                             </div>
                         </div>
 
-                        <div className="hidden sm:ml-6 sm:flex sm:items-center">
+                        <div className="hidden sm:ml-6 sm:flex sm:items-center gap-2">
+                            {user && (
+                                <NotificationBell userId={user.id} />
+                            )}
                             {user ? (
                                 <UserDropdown user={user} onLogout={logout} />
                             ) : (
