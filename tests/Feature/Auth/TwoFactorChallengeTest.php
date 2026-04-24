@@ -104,6 +104,48 @@ it('rejects unknown recovery code', function () {
     ])->assertUnprocessable();
 });
 
+it('rejects a TOTP code that was already used (replay protection)', function () {
+    $user = userWithConfirmed2fa();
+
+    $challenge1 = $this->postJson('/api/auth/login', ['email' => $user->email, 'password' => 'secret123'])
+        ->json('two_factor.challenge_token');
+    $code = app(Google2FA::class)->getCurrentOtp(decrypt($user->two_factor_secret));
+
+    $this->postJson('/api/auth/two-factor-challenge', [
+        'challenge_token' => $challenge1,
+        'code' => $code,
+    ])->assertSuccessful();
+
+    auth()->logout();
+
+    $challenge2 = $this->postJson('/api/auth/login', ['email' => $user->email, 'password' => 'secret123'])
+        ->json('two_factor.challenge_token');
+
+    $this->postJson('/api/auth/two-factor-challenge', [
+        'challenge_token' => $challenge2,
+        'code' => $code,
+    ])->assertUnprocessable();
+});
+
+it('invalidates the challenge token after a failed attempt', function () {
+    $user = userWithConfirmed2fa();
+
+    $challenge = $this->postJson('/api/auth/login', ['email' => $user->email, 'password' => 'secret123'])
+        ->json('two_factor.challenge_token');
+
+    $this->postJson('/api/auth/two-factor-challenge', [
+        'challenge_token' => $challenge,
+        'code' => '000000',
+    ])->assertUnprocessable();
+
+    // Same token can no longer be retried even with a valid code.
+    $code = app(Google2FA::class)->getCurrentOtp(decrypt($user->two_factor_secret));
+    $this->postJson('/api/auth/two-factor-challenge', [
+        'challenge_token' => $challenge,
+        'code' => $code,
+    ])->assertUnprocessable();
+});
+
 it('does not consume the same recovery code twice across two challenges', function () {
     $user = userWithConfirmed2fa();
 

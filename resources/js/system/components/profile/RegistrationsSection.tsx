@@ -122,7 +122,8 @@ export function RegistrationsSection() {
                                             </Badge>
                                         )}
 
-                                    {registration.seminar.scheduled_at && (
+                                    {registration.seminar.scheduled_at &&
+                                        !registration.seminar.is_expired && (
                                         <CalendarMenu
                                             event={{
                                                 title: registration.seminar.name,

@@ -35,6 +35,18 @@ it('confirms 2FA when code is valid', function () {
     expect(AuditLog::where('event_name', AuditEvent::UserMfaConfirmed->value)->exists())->toBeTrue();
 });
 
+it('rejects a TOTP code that was already used during confirmation', function () {
+    $this->postJson('/api/profile/two-factor/enable');
+    $this->user->refresh();
+
+    $code = app(Google2FA::class)->getCurrentOtp(decrypt($this->user->two_factor_secret));
+
+    $this->postJson('/api/profile/two-factor/confirm', ['code' => $code])->assertSuccessful();
+
+    // Replay: same code immediately after — must be blocked.
+    $this->postJson('/api/profile/two-factor/confirm', ['code' => $code])->assertUnprocessable();
+});
+
 it('rejects invalid confirmation code', function () {
     $this->postJson('/api/profile/two-factor/enable');
 

@@ -35,6 +35,7 @@ class TwoFactorChallengeController extends Controller
             $matched = $this->consumeRecoveryCode($user, $request->string('recovery_code'));
 
             if (! $matched) {
+                cache()->forget($key);
                 AuditLog::record(AuditEvent::UserMfaChallengeFailed, auditable: $user, userId: $user->id);
 
                 throw ApiException::validation(['recovery_code' => 'Código de recuperação inválido']);
@@ -42,13 +43,27 @@ class TwoFactorChallengeController extends Controller
 
             AuditLog::record(AuditEvent::UserMfaRecoveryCodeUsed, auditable: $user, userId: $user->id);
         } else {
-            $ok = app(Google2FA::class)->verifyKey(decrypt($user->two_factor_secret), $request->string('code'));
+            $code = $request->string('code')->toString();
+            $usedKey = "mfa:used:{$user->id}:{$code}";
+
+            if (cache()->has($usedKey)) {
+                cache()->forget($key);
+                AuditLog::record(AuditEvent::UserMfaChallengeFailed, auditable: $user, userId: $user->id);
+
+                throw ApiException::validation(['code' => 'Código já utilizado']);
+            }
+
+            $ok = app(Google2FA::class)->verifyKey(decrypt($user->two_factor_secret), $code);
 
             if (! $ok) {
+                cache()->forget($key);
                 AuditLog::record(AuditEvent::UserMfaChallengeFailed, auditable: $user, userId: $user->id);
 
                 throw ApiException::validation(['code' => 'Código inválido']);
             }
+
+            // Block this code from being reused for the rest of its validity window.
+            cache()->put($usedKey, true, now()->addMinutes(2));
 
             AuditLog::record(AuditEvent::UserMfaUsed, auditable: $user, userId: $user->id);
         }

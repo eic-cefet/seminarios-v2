@@ -41,11 +41,20 @@ class TwoFactorController extends Controller
             throw ApiException::validation(['code' => '2FA not initialised']);
         }
 
-        $valid = app(Google2FA::class)->verifyKey(decrypt($user->two_factor_secret), $request->string('code'));
+        $code = $request->string('code')->toString();
+        $usedKey = "mfa:used:{$user->id}:{$code}";
+
+        if (cache()->has($usedKey)) {
+            throw ApiException::validation(['code' => 'Código já utilizado']);
+        }
+
+        $valid = app(Google2FA::class)->verifyKey(decrypt($user->two_factor_secret), $code);
 
         if (! $valid) {
             throw ApiException::validation(['code' => 'Código inválido']);
         }
+
+        cache()->put($usedKey, true, now()->addMinutes(2));
 
         $user->forceFill(['two_factor_confirmed_at' => now()])->save();
 

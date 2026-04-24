@@ -3,6 +3,7 @@ import { FormField } from "@shared/components/FormField";
 import { useAuth } from "@shared/contexts/AuthContext";
 import { cn, formatDateTime } from "@shared/lib/utils";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import DOMPurify from "dompurify";
 import { ShieldCheck } from "lucide-react";
 import { useState } from "react";
 import { ErrorAlert, SuccessAlert } from "./FormAlerts";
@@ -131,7 +132,11 @@ export function TwoFactorSection() {
                                 <div
                                     aria-label="QR Code"
                                     className="inline-block w-48 rounded border border-gray-200 bg-white p-2"
-                                    dangerouslySetInnerHTML={{ __html: setup.qrCodeSvg }}
+                                    dangerouslySetInnerHTML={{
+                                        __html: DOMPurify.sanitize(setup.qrCodeSvg, {
+                                            USE_PROFILES: { svg: true, svgFilters: true },
+                                        }),
+                                    }}
                                 />
                                 {setup.secret && (
                                     <p className="break-all text-xs text-gray-600">
