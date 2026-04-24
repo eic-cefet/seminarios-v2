@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\BugReportController;
 use App\Http\Controllers\Api\ConsentController;
 use App\Http\Controllers\Api\CourseController;
 use App\Http\Controllers\Api\DataPrivacyController;
+use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\PresenceController;
 use App\Http\Controllers\Api\ProfileAlertPreferenceController;
 use App\Http\Controllers\Api\ProfileController;
@@ -122,6 +123,12 @@ Route::middleware('auth:sanctum')->group(function () {
         ->middleware('throttle:3,1');
     Route::post('/profile/delete-cancel', [DataPrivacyController::class, 'cancelDeletion'])
         ->middleware('throttle:3,1');
+
+    // Notifications
+    Route::get('/notifications', [NotificationController::class, 'index']);
+    Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount']);
+    Route::post('/notifications/{id}/read', [NotificationController::class, 'markRead']);
+    Route::post('/notifications/read-all', [NotificationController::class, 'markAllRead']);
 
     // Profile - Two-Factor Authentication
     Route::prefix('profile/two-factor')->group(function () {
