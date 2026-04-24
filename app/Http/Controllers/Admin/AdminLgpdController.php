@@ -15,8 +15,10 @@ use Illuminate\Http\Request;
 
 class AdminLgpdController extends Controller
 {
-    public function show(User $user): JsonResponse
+    public function show(Request $request, User $user): JsonResponse
     {
+        abort_unless($request->user()?->isAdmin(), 403);
+
         $user->load(['consents', 'dataExportRequests']);
 
         return response()->json([
@@ -24,8 +26,10 @@ class AdminLgpdController extends Controller
         ]);
     }
 
-    public function export(User $user): JsonResponse
+    public function export(Request $request, User $user): JsonResponse
     {
+        abort_unless($request->user()?->isAdmin(), 403);
+
         $exportRequest = $user->dataExportRequests()->create([
             'status' => DataExportRequest::STATUS_QUEUED,
         ]);
@@ -46,6 +50,8 @@ class AdminLgpdController extends Controller
 
     public function anonymize(Request $request, User $user): JsonResponse
     {
+        abort_unless($request->user()?->isAdmin(), 403);
+
         $validated = $request->validate([
             'reason' => ['required', 'string', 'max:500'],
         ]);

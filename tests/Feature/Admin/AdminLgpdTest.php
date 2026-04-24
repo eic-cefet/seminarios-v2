@@ -66,3 +66,12 @@ it('rejects non-admin callers', function () {
     postJson("/api/admin/users/{$target->id}/lgpd/export")->assertForbidden();
     getJson("/api/admin/users/{$target->id}/lgpd")->assertForbidden();
 });
+
+it('rejects teachers from LGPD endpoints', function () {
+    actingAsTeacher();
+    $target = User::factory()->create();
+
+    $this->getJson("/api/admin/users/{$target->id}/lgpd")->assertForbidden();
+    $this->postJson("/api/admin/users/{$target->id}/lgpd/export")->assertForbidden();
+    $this->postJson("/api/admin/users/{$target->id}/lgpd/anonymize", ['reason' => 'x'])->assertForbidden();
+});
