@@ -174,7 +174,7 @@ export default function AlertPreferences() {
                                         />
                                         <label
                                             htmlFor="alert-preferences-opted-in"
-                                            className="cursor-pointer"
+                                            className="cursor-pointer select-none"
                                         >
                                             <span className="block text-sm font-medium text-gray-900">
                                                 Quero receber alertas por e-mail
@@ -203,7 +203,7 @@ export default function AlertPreferences() {
                                                         <label
                                                             key={type.id}
                                                             className={cn(
-                                                                "flex items-center gap-2 rounded-md border px-3 py-1.5 text-sm cursor-pointer transition-colors",
+                                                                "flex items-center gap-2 rounded-md border px-3 py-1.5 text-sm cursor-pointer select-none transition-colors",
                                                                 checked
                                                                     ? "border-primary-600 bg-primary-50 text-primary-900"
                                                                     : "border-gray-300 bg-white text-gray-700 hover:bg-gray-50",
@@ -240,7 +240,7 @@ export default function AlertPreferences() {
                                                         <label
                                                             key={subject.id}
                                                             className={cn(
-                                                                "flex items-center gap-2 rounded-md border px-3 py-1.5 text-sm cursor-pointer transition-colors",
+                                                                "flex items-center gap-2 rounded-md border px-3 py-1.5 text-sm cursor-pointer select-none transition-colors",
                                                                 checked
                                                                     ? "border-primary-600 bg-primary-50 text-primary-900"
                                                                     : "border-gray-300 bg-white text-gray-700 hover:bg-gray-50",
