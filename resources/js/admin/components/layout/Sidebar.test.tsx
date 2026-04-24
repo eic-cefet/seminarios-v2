@@ -9,7 +9,7 @@ vi.mock('@shared/contexts/AuthContext', () => ({
         register: vi.fn(),
         logout: vi.fn(),
         exchangeCode: vi.fn(),
-        refreshUser: vi.fn(),
+        refreshUser: vi.fn(), completeTwoFactor: vi.fn(),
     })),
 }));
 
@@ -26,7 +26,7 @@ describe('Sidebar', () => {
             register: vi.fn(),
             logout: vi.fn(),
             exchangeCode: vi.fn(),
-            refreshUser: vi.fn(),
+            refreshUser: vi.fn(), completeTwoFactor: vi.fn(),
         });
     });
 
@@ -88,7 +88,7 @@ describe('Sidebar', () => {
             register: vi.fn(),
             logout: mockLogout,
             exchangeCode: vi.fn(),
-            refreshUser: vi.fn(),
+            refreshUser: vi.fn(), completeTwoFactor: vi.fn(),
         });
 
         render(<Sidebar />);
@@ -106,7 +106,7 @@ describe('Sidebar', () => {
             register: vi.fn(),
             logout: vi.fn(),
             exchangeCode: vi.fn(),
-            refreshUser: vi.fn(),
+            refreshUser: vi.fn(), completeTwoFactor: vi.fn(),
         });
 
         render(<Sidebar />);
@@ -148,7 +148,7 @@ describe('Sidebar', () => {
             register: vi.fn(),
             logout: vi.fn(),
             exchangeCode: vi.fn(),
-            refreshUser: vi.fn(),
+            refreshUser: vi.fn(), completeTwoFactor: vi.fn(),
         });
 
         render(<Sidebar />);
@@ -182,7 +182,7 @@ describe('Sidebar', () => {
             register: vi.fn(),
             logout: vi.fn(),
             exchangeCode: vi.fn(),
-            refreshUser: vi.fn(),
+            refreshUser: vi.fn(), completeTwoFactor: vi.fn(),
         });
 
         render(<Sidebar />);
@@ -223,7 +223,7 @@ describe('Sidebar', () => {
             register: vi.fn(),
             logout: vi.fn(),
             exchangeCode: vi.fn(),
-            refreshUser: vi.fn(),
+            refreshUser: vi.fn(), completeTwoFactor: vi.fn(),
         });
 
         render(<Sidebar />);
@@ -260,7 +260,7 @@ describe('Sidebar', () => {
             register: vi.fn(),
             logout: vi.fn(),
             exchangeCode: vi.fn(),
-            refreshUser: vi.fn(),
+            refreshUser: vi.fn(), completeTwoFactor: vi.fn(),
         });
 
         render(<Sidebar />);

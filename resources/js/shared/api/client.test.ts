@@ -163,7 +163,7 @@ describe('fetchApi (via API namespaces)', () => {
         it('login sends credentials', async () => {
             mockFetchSuccess({ user: { id: 1, name: 'Test', email: 'test@test.com' } });
             const result = await authApi.login({ email: 'test@test.com', password: 'pass' });
-            expect(result.user.email).toBe('test@test.com');
+            expect('user' in result && result.user.email).toBe('test@test.com');
         });
 
         it('register sends registration data', async () => {

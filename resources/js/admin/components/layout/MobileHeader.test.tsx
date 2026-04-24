@@ -9,7 +9,7 @@ vi.mock('@shared/contexts/AuthContext', () => ({
         register: vi.fn(),
         logout: vi.fn(),
         exchangeCode: vi.fn(),
-        refreshUser: vi.fn(),
+        refreshUser: vi.fn(), completeTwoFactor: vi.fn(),
     })),
 }));
 
@@ -73,7 +73,7 @@ describe('MobileHeader', () => {
             register: vi.fn(),
             logout: vi.fn(),
             exchangeCode: vi.fn(),
-            refreshUser: vi.fn(),
+            refreshUser: vi.fn(), completeTwoFactor: vi.fn(),
         });
 
         render(<MobileHeader />);
@@ -104,7 +104,7 @@ describe('MobileHeader', () => {
             register: vi.fn(),
             logout: mockLogout,
             exchangeCode: vi.fn(),
-            refreshUser: vi.fn(),
+            refreshUser: vi.fn(), completeTwoFactor: vi.fn(),
         });
 
         render(<MobileHeader />);
@@ -185,7 +185,7 @@ describe('MobileHeader', () => {
             register: vi.fn(),
             logout: vi.fn(),
             exchangeCode: vi.fn(),
-            refreshUser: vi.fn(),
+            refreshUser: vi.fn(), completeTwoFactor: vi.fn(),
         });
 
         render(<MobileHeader />);
@@ -203,7 +203,7 @@ describe('MobileHeader', () => {
             register: vi.fn(),
             logout: vi.fn(),
             exchangeCode: vi.fn(),
-            refreshUser: vi.fn(),
+            refreshUser: vi.fn(), completeTwoFactor: vi.fn(),
         });
 
         render(<MobileHeader />);
@@ -239,7 +239,7 @@ describe('MobileHeader', () => {
             register: vi.fn(),
             logout: vi.fn(),
             exchangeCode: vi.fn(),
-            refreshUser: vi.fn(),
+            refreshUser: vi.fn(), completeTwoFactor: vi.fn(),
         });
 
         render(<MobileHeader />);
@@ -282,7 +282,7 @@ describe('MobileHeader', () => {
             register: vi.fn(),
             logout: vi.fn(),
             exchangeCode: vi.fn(),
-            refreshUser: vi.fn(),
+            refreshUser: vi.fn(), completeTwoFactor: vi.fn(),
         });
 
         render(<MobileHeader />);
@@ -305,7 +305,7 @@ describe('MobileHeader', () => {
             register: vi.fn(),
             logout: vi.fn(),
             exchangeCode: vi.fn(),
-            refreshUser: vi.fn(),
+            refreshUser: vi.fn(), completeTwoFactor: vi.fn(),
         });
 
         render(<MobileHeader />, {

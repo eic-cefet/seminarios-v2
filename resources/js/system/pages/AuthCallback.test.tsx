@@ -14,7 +14,7 @@ vi.mock('@shared/contexts/AuthContext', () => ({
         register: vi.fn(),
         logout: vi.fn(),
         exchangeCode: mockExchangeCode,
-        refreshUser: vi.fn(),
+        refreshUser: vi.fn(), completeTwoFactor: vi.fn(),
     })),
     AuthProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
@@ -78,7 +78,7 @@ describe('AuthCallback', () => {
             register: vi.fn(),
             logout: vi.fn(),
             exchangeCode: mockExchangeCode,
-            refreshUser: vi.fn(),
+            refreshUser: vi.fn(), completeTwoFactor: vi.fn(),
         });
 
         // Force re-render with updated auth state
@@ -194,7 +194,7 @@ describe('AuthCallback', () => {
                 register: vi.fn(),
                 logout: vi.fn(),
                 exchangeCode: mockExchangeCode,
-                refreshUser: vi.fn(),
+                refreshUser: vi.fn(), completeTwoFactor: vi.fn(),
             });
 
             rerender(<AuthCallback />);
@@ -224,7 +224,7 @@ describe('AuthCallback', () => {
                 register: vi.fn(),
                 logout: vi.fn(),
                 exchangeCode: mockExchangeCode,
-                refreshUser: vi.fn(),
+                refreshUser: vi.fn(), completeTwoFactor: vi.fn(),
             });
 
             rerender(<AuthCallback />);
@@ -255,7 +255,7 @@ describe('AuthCallback', () => {
                 register: vi.fn(),
                 logout: vi.fn(),
                 exchangeCode: mockExchangeCode,
-                refreshUser: vi.fn(),
+                refreshUser: vi.fn(), completeTwoFactor: vi.fn(),
             });
 
             rerender(<AuthCallback />);
@@ -285,7 +285,7 @@ describe('AuthCallback', () => {
                 register: vi.fn(),
                 logout: vi.fn(),
                 exchangeCode: mockExchangeCode,
-                refreshUser: vi.fn(),
+                refreshUser: vi.fn(), completeTwoFactor: vi.fn(),
             });
 
             rerender(<AuthCallback />);

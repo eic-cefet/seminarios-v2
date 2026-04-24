@@ -8,7 +8,7 @@ const mockLogout = vi.fn();
 vi.mock('@shared/contexts/AuthContext', () => ({
     useAuth: vi.fn(() => ({
         user: null, isLoading: false, isAuthenticated: false,
-        login: vi.fn(), register: vi.fn(), logout: mockLogout, exchangeCode: vi.fn(), refreshUser: vi.fn(),
+        login: vi.fn(), register: vi.fn(), logout: mockLogout, exchangeCode: vi.fn(), refreshUser: vi.fn(), completeTwoFactor: vi.fn(),
     })),
 }));
 
@@ -25,7 +25,7 @@ describe('Navbar', () => {
         vi.clearAllMocks();
         vi.mocked(useAuth).mockReturnValue({
             user: null, isLoading: false, isAuthenticated: false,
-            login: vi.fn(), register: vi.fn(), logout: mockLogout, exchangeCode: vi.fn(), refreshUser: vi.fn(),
+            login: vi.fn(), register: vi.fn(), logout: mockLogout, exchangeCode: vi.fn(), refreshUser: vi.fn(), completeTwoFactor: vi.fn(),
         });
     });
 
@@ -75,7 +75,7 @@ describe('Navbar', () => {
         vi.mocked(useAuth).mockReturnValue({
             user: { id: 1, name: 'John Doe', email: 'john@example.com' } as any,
             isLoading: false, isAuthenticated: true,
-            login: vi.fn(), register: vi.fn(), logout: mockLogout, exchangeCode: vi.fn(), refreshUser: vi.fn(),
+            login: vi.fn(), register: vi.fn(), logout: mockLogout, exchangeCode: vi.fn(), refreshUser: vi.fn(), completeTwoFactor: vi.fn(),
         });
 
         render(<Navbar />);
@@ -88,7 +88,7 @@ describe('Navbar', () => {
         vi.mocked(useAuth).mockReturnValue({
             user: { id: 1, name: 'Admin User', email: 'admin@example.com', roles: ['admin'] } as any,
             isLoading: false, isAuthenticated: true,
-            login: vi.fn(), register: vi.fn(), logout: mockLogout, exchangeCode: vi.fn(), refreshUser: vi.fn(),
+            login: vi.fn(), register: vi.fn(), logout: mockLogout, exchangeCode: vi.fn(), refreshUser: vi.fn(), completeTwoFactor: vi.fn(),
         });
 
         render(<Navbar />);
@@ -101,7 +101,7 @@ describe('Navbar', () => {
         vi.mocked(useAuth).mockReturnValue({
             user: { id: 1, name: 'Teacher User', email: 'teacher@example.com', roles: ['teacher'] } as any,
             isLoading: false, isAuthenticated: true,
-            login: vi.fn(), register: vi.fn(), logout: mockLogout, exchangeCode: vi.fn(), refreshUser: vi.fn(),
+            login: vi.fn(), register: vi.fn(), logout: mockLogout, exchangeCode: vi.fn(), refreshUser: vi.fn(), completeTwoFactor: vi.fn(),
         });
 
         render(<Navbar />);
@@ -114,7 +114,7 @@ describe('Navbar', () => {
         vi.mocked(useAuth).mockReturnValue({
             user: { id: 1, name: 'Regular User', email: 'user@example.com', roles: [] } as any,
             isLoading: false, isAuthenticated: true,
-            login: vi.fn(), register: vi.fn(), logout: mockLogout, exchangeCode: vi.fn(), refreshUser: vi.fn(),
+            login: vi.fn(), register: vi.fn(), logout: mockLogout, exchangeCode: vi.fn(), refreshUser: vi.fn(), completeTwoFactor: vi.fn(),
         });
 
         render(<Navbar />);
@@ -126,7 +126,7 @@ describe('Navbar', () => {
         vi.mocked(useAuth).mockReturnValue({
             user: { id: 1, name: 'Mobile User', email: 'mobile@example.com' } as any,
             isLoading: false, isAuthenticated: true,
-            login: vi.fn(), register: vi.fn(), logout: mockLogout, exchangeCode: vi.fn(), refreshUser: vi.fn(),
+            login: vi.fn(), register: vi.fn(), logout: mockLogout, exchangeCode: vi.fn(), refreshUser: vi.fn(), completeTwoFactor: vi.fn(),
         });
 
         render(<Navbar />);
@@ -180,7 +180,7 @@ describe('Navbar', () => {
         vi.mocked(useAuth).mockReturnValue({
             user: { id: 1, name: 'Jane Doe', email: 'jane@example.com' } as any,
             isLoading: false, isAuthenticated: true,
-            login: vi.fn(), register: vi.fn(), logout: mockLogout, exchangeCode: vi.fn(), refreshUser: vi.fn(),
+            login: vi.fn(), register: vi.fn(), logout: mockLogout, exchangeCode: vi.fn(), refreshUser: vi.fn(), completeTwoFactor: vi.fn(),
         });
 
         render(<Navbar />);
@@ -194,7 +194,7 @@ describe('Navbar', () => {
         vi.mocked(useAuth).mockReturnValue({
             user: { id: 1, name: 'Jane Doe', email: 'jane@example.com' } as any,
             isLoading: false, isAuthenticated: true,
-            login: vi.fn(), register: vi.fn(), logout: mockLogout, exchangeCode: vi.fn(), refreshUser: vi.fn(),
+            login: vi.fn(), register: vi.fn(), logout: mockLogout, exchangeCode: vi.fn(), refreshUser: vi.fn(), completeTwoFactor: vi.fn(),
         });
 
         const user = userEvent.setup();
@@ -212,7 +212,7 @@ describe('Navbar', () => {
         vi.mocked(useAuth).mockReturnValue({
             user: { id: 1, name: 'Test User', email: 'test@example.com' } as any,
             isLoading: false, isAuthenticated: true,
-            login: vi.fn(), register: vi.fn(), logout: mockLogout, exchangeCode: vi.fn(), refreshUser: vi.fn(),
+            login: vi.fn(), register: vi.fn(), logout: mockLogout, exchangeCode: vi.fn(), refreshUser: vi.fn(), completeTwoFactor: vi.fn(),
         });
 
         render(<Navbar />);
@@ -224,7 +224,7 @@ describe('Navbar', () => {
         vi.mocked(useAuth).mockReturnValue({
             user: { id: 1, name: 'Test User', email: 'test@example.com' } as any,
             isLoading: false, isAuthenticated: true,
-            login: vi.fn(), register: vi.fn(), logout: mockLogout, exchangeCode: vi.fn(), refreshUser: vi.fn(),
+            login: vi.fn(), register: vi.fn(), logout: mockLogout, exchangeCode: vi.fn(), refreshUser: vi.fn(), completeTwoFactor: vi.fn(),
         });
 
         render(<Navbar />);
@@ -236,7 +236,7 @@ describe('Navbar', () => {
         vi.mocked(useAuth).mockReturnValue({
             user: { id: 1, name: 'Admin User', email: 'admin@example.com', roles: ['admin'] } as any,
             isLoading: false, isAuthenticated: true,
-            login: vi.fn(), register: vi.fn(), logout: mockLogout, exchangeCode: vi.fn(), refreshUser: vi.fn(),
+            login: vi.fn(), register: vi.fn(), logout: mockLogout, exchangeCode: vi.fn(), refreshUser: vi.fn(), completeTwoFactor: vi.fn(),
         });
 
         render(<Navbar />);
@@ -266,7 +266,7 @@ describe('Navbar', () => {
         vi.mocked(useAuth).mockReturnValue({
             user: { id: 1, name: 'Jane Doe', email: 'jane@example.com', roles: [] } as any,
             isLoading: false, isAuthenticated: true,
-            login: vi.fn(), register: vi.fn(), logout: mockLogout, exchangeCode: vi.fn(), refreshUser: vi.fn(),
+            login: vi.fn(), register: vi.fn(), logout: mockLogout, exchangeCode: vi.fn(), refreshUser: vi.fn(), completeTwoFactor: vi.fn(),
         });
 
         const user = userEvent.setup();
@@ -292,7 +292,7 @@ describe('Navbar', () => {
         vi.mocked(useAuth).mockReturnValue({
             user: { id: 1, name: 'No Role User', email: 'norole@example.com' } as any,
             isLoading: false, isAuthenticated: true,
-            login: vi.fn(), register: vi.fn(), logout: mockLogout, exchangeCode: vi.fn(), refreshUser: vi.fn(),
+            login: vi.fn(), register: vi.fn(), logout: mockLogout, exchangeCode: vi.fn(), refreshUser: vi.fn(), completeTwoFactor: vi.fn(),
         });
 
         render(<Navbar />);
@@ -304,7 +304,7 @@ describe('Navbar', () => {
         vi.mocked(useAuth).mockReturnValue({
             user: { id: 1, name: 'Full User', email: 'full@example.com' } as any,
             isLoading: false, isAuthenticated: true,
-            login: vi.fn(), register: vi.fn(), logout: mockLogout, exchangeCode: vi.fn(), refreshUser: vi.fn(),
+            login: vi.fn(), register: vi.fn(), logout: mockLogout, exchangeCode: vi.fn(), refreshUser: vi.fn(), completeTwoFactor: vi.fn(),
         });
 
         render(<Navbar />);
@@ -330,7 +330,7 @@ describe('Navbar', () => {
         vi.mocked(useAuth).mockReturnValue({
             user: { id: 1, name: 'Admin User', email: 'admin@example.com', roles: ['admin'] } as any,
             isLoading: false, isAuthenticated: true,
-            login: vi.fn(), register: vi.fn(), logout: mockLogout, exchangeCode: vi.fn(), refreshUser: vi.fn(),
+            login: vi.fn(), register: vi.fn(), logout: mockLogout, exchangeCode: vi.fn(), refreshUser: vi.fn(), completeTwoFactor: vi.fn(),
         });
 
         const user = userEvent.setup();
