@@ -1,4 +1,4 @@
-import { ApiRequestError, seminarsApi, subjectsApi, workshopsApi, seminarTypesApi, coursesApi, statsApi, authApi, registrationApi, profileApi, bugReportApi, alertPreferencesApi, consentsApi } from './client';
+import { ApiRequestError, seminarsApi, subjectsApi, workshopsApi, seminarTypesApi, coursesApi, statsApi, authApi, registrationApi, profileApi, bugReportApi, alertPreferencesApi, consentsApi, dataPrivacyApi } from './client';
 import { createSeminar, createSubject, createWorkshop, createPaginatedResponse } from '@/test/factories';
 import { getCookie } from './httpUtils';
 
@@ -615,6 +615,70 @@ describe('fetchApi (via API namespaces)', () => {
                     method: 'POST',
                     body: JSON.stringify({ type: 'cookies_functional', granted: false, anonymous_id: 'anon-abc123' }),
                 }),
+            );
+        });
+    });
+
+    describe('dataPrivacyApi', () => {
+        it('listExports calls GET /api/profile/data-export', async () => {
+            mockFetchSuccess({ data: [] });
+
+            const result = await dataPrivacyApi.listExports();
+
+            expect(result.data).toEqual([]);
+            expect(fetchSpy).toHaveBeenCalledWith(
+                expect.stringContaining('/api/profile/data-export'),
+                expect.any(Object),
+            );
+        });
+
+        it('requestExport calls POST /api/profile/data-export', async () => {
+            const exportRecord = {
+                id: 1,
+                status: 'queued',
+                file_size_bytes: null,
+                expires_at: null,
+                completed_at: null,
+                created_at: '2026-04-23T00:00:00.000000Z',
+                is_downloadable: false,
+            };
+            mockFetchSuccess({ data: exportRecord });
+
+            const result = await dataPrivacyApi.requestExport();
+
+            expect(result.data.id).toBe(1);
+            expect(result.data.status).toBe('queued');
+            expect(fetchSpy).toHaveBeenCalledWith(
+                expect.stringContaining('/api/profile/data-export'),
+                expect.objectContaining({ method: 'POST' }),
+            );
+        });
+
+        it('requestDeletion calls POST /api/profile/delete-request with JSON body', async () => {
+            mockFetchSuccess({ message: 'Deletion scheduled', scheduled_for: '2026-05-23T00:00:00.000000Z' });
+
+            const result = await dataPrivacyApi.requestDeletion('my-password');
+
+            expect(result.message).toBe('Deletion scheduled');
+            expect(result.scheduled_for).toBe('2026-05-23T00:00:00.000000Z');
+            expect(fetchSpy).toHaveBeenCalledWith(
+                expect.stringContaining('/api/profile/delete-request'),
+                expect.objectContaining({
+                    method: 'POST',
+                    body: JSON.stringify({ password: 'my-password' }),
+                }),
+            );
+        });
+
+        it('cancelDeletion calls POST /api/profile/delete-cancel', async () => {
+            mockFetchSuccess({ message: 'Deletion cancelled' });
+
+            const result = await dataPrivacyApi.cancelDeletion();
+
+            expect(result.message).toBe('Deletion cancelled');
+            expect(fetchSpy).toHaveBeenCalledWith(
+                expect.stringContaining('/api/profile/delete-cancel'),
+                expect.objectContaining({ method: 'POST' }),
             );
         });
     });

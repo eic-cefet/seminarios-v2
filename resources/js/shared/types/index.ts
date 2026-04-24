@@ -3,6 +3,7 @@ export interface User {
     name: string;
     email: string;
     email_verified_at?: string;
+    anonymization_requested_at?: string | null;
     student_data?: UserStudentData;
     roles?: string[];
     two_factor_enabled?: boolean;

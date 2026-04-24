@@ -521,6 +521,38 @@ export const consentsApi = {
         }),
 };
 
+// LGPD Data Privacy
+export interface DataExportRequest {
+    id: number;
+    status: "queued" | "running" | "completed" | "failed";
+    file_size_bytes: number | null;
+    expires_at: string | null;
+    completed_at: string | null;
+    created_at: string | null;
+    is_downloadable: boolean;
+}
+
+export const dataPrivacyApi = {
+    listExports: () =>
+        fetchApi<{ data: DataExportRequest[] }>("/api/profile/data-export"),
+    requestExport: () =>
+        fetchApi<{ data: DataExportRequest }>("/api/profile/data-export", {
+            method: "POST",
+        }),
+    requestDeletion: (password: string) =>
+        fetchApi<{ message: string; scheduled_for: string }>(
+            "/api/profile/delete-request",
+            {
+                method: "POST",
+                body: JSON.stringify({ password }),
+            },
+        ),
+    cancelDeletion: () =>
+        fetchApi<{ message: string }>("/api/profile/delete-cancel", {
+            method: "POST",
+        }),
+};
+
 // Bug Report
 export const bugReportApi = {
     submit: async (data: {
