@@ -4,6 +4,12 @@ vi.mock('@shared/lib/analytics', () => ({
     analytics: { event: vi.fn(), pageview: vi.fn() },
 }));
 
+vi.mock('../../components/UserLgpdPanel', () => ({
+    UserLgpdPanel: ({ userId }: { userId: number }) => (
+        <div data-testid="user-lgpd-panel">LGPD Panel for user {userId}</div>
+    ),
+}));
+
 vi.mock('../../api/adminClient', () => ({
     usersApi: {
         list: vi.fn().mockResolvedValue({
@@ -1254,6 +1260,39 @@ describe('UserList', () => {
         HTMLElement.prototype.hasPointerCapture = origHasPointerCapture;
         HTMLElement.prototype.setPointerCapture = origSetPointerCapture;
         HTMLElement.prototype.releasePointerCapture = origReleasePointerCapture;
+    });
+
+    it('opens LGPD dialog when LGPD button is clicked', async () => {
+        vi.mocked(usersApi.list).mockResolvedValue({
+            data: [
+                {
+                    id: 42,
+                    name: 'LGPD Target',
+                    email: 'lgpd@test.com',
+                    roles: ['user'],
+                    created_at: '2026-01-01T00:00:00Z',
+                    updated_at: '2026-01-01T00:00:00Z',
+                },
+            ],
+            meta: { last_page: 1, current_page: 1, total: 1, from: 1, to: 1 },
+        } as any);
+
+        render(<UserList />);
+        const user = userEvent.setup();
+
+        await waitFor(() => {
+            expect(screen.getByText('LGPD Target')).toBeInTheDocument();
+        });
+
+        const row = screen.getByText('LGPD Target').closest('tr')!;
+        const buttons = row.querySelectorAll('button');
+        // buttons[0]=edit, buttons[1]=lgpd, buttons[2]=delete
+        await user.click(buttons[1]);
+
+        await waitFor(() => {
+            expect(screen.getByTestId('user-lgpd-panel')).toBeInTheDocument();
+        });
+        expect(screen.getByText(/LGPD Panel for user 42/)).toBeInTheDocument();
     });
 
     it('triggers course_situation Select onValueChange in dialog (line 701)', async () => {

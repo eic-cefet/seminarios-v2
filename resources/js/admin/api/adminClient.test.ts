@@ -1,4 +1,4 @@
-import { AdminApiError, dashboardApi, usersApi, locationsApi, subjectsApi, workshopsApi, registrationsApi, seminarsApi, presenceLinkApi, aiApi, apiTokensApi, dropdownApi, auditLogsApi } from './adminClient';
+import { AdminApiError, dashboardApi, usersApi, locationsApi, subjectsApi, workshopsApi, registrationsApi, seminarsApi, presenceLinkApi, aiApi, apiTokensApi, dropdownApi, auditLogsApi, adminLgpdApi } from './adminClient';
 import { getCookie } from '@shared/api/httpUtils';
 
 vi.mock('@shared/api/httpUtils', async (importOriginal) => {
@@ -902,6 +902,53 @@ describe('Admin API endpoints', () => {
                 }),
             );
             expect(result.data.suggestions).toEqual(['Docker', 'Kubernetes']);
+        });
+    });
+
+    describe('adminLgpdApi', () => {
+        it('show calls GET /users/:id/lgpd', async () => {
+            const payload = {
+                anonymization_requested_at: null,
+                anonymized_at: null,
+                consents: [],
+                data_export_requests: [],
+            };
+            mockSuccess({ data: payload });
+
+            const result = await adminLgpdApi.show(42);
+
+            expect(result.data).toEqual(payload);
+            expect(fetchSpy).toHaveBeenCalledWith(
+                expect.stringContaining('/users/42/lgpd'),
+                expect.any(Object),
+            );
+        });
+
+        it('export calls POST /users/:id/lgpd/export', async () => {
+            mockSuccess({ data: { data_export_request_id: 7 } });
+
+            const result = await adminLgpdApi.export(42);
+
+            expect(result.data.data_export_request_id).toBe(7);
+            expect(fetchSpy).toHaveBeenCalledWith(
+                expect.stringContaining('/users/42/lgpd/export'),
+                expect.objectContaining({ method: 'POST' }),
+            );
+        });
+
+        it('anonymize calls POST /users/:id/lgpd/anonymize with reason', async () => {
+            mockSuccess({ message: 'Anonymized' });
+
+            const result = await adminLgpdApi.anonymize(42, 'ANPD #123');
+
+            expect(result.message).toBe('Anonymized');
+            expect(fetchSpy).toHaveBeenCalledWith(
+                expect.stringContaining('/users/42/lgpd/anonymize'),
+                expect.objectContaining({
+                    method: 'POST',
+                    body: JSON.stringify({ reason: 'ANPD #123' }),
+                }),
+            );
         });
     });
 });
