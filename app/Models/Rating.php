@@ -18,6 +18,7 @@ class Rating extends Model
         'comment',
         'sentiment',
         'sentiment_analyzed_at',
+        'ai_analysis_consent',
     ];
 
     protected function casts(): array
@@ -25,6 +26,7 @@ class Rating extends Model
         return [
             'score' => 'integer',
             'sentiment_analyzed_at' => 'datetime',
+            'ai_analysis_consent' => 'boolean',
         ];
     }
 

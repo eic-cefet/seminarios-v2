@@ -19,6 +19,7 @@ class SubmitRatingRequest extends FormRequest
         return [
             'score' => ['required', 'integer', 'min:1', 'max:5'],
             'comment' => ['nullable', 'string', 'max:1000'],
+            'ai_analysis_consent' => ['nullable', 'boolean'],
         ];
     }
 

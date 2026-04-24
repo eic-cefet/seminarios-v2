@@ -25,6 +25,7 @@ describe('POST /profile/ratings/{seminar} - sentiment dispatch', function () {
         $this->postJson("/api/profile/ratings/{$seminar->id}", [
             'score' => 4,
             'comment' => 'Great seminar!',
+            'ai_analysis_consent' => true,
         ])->assertOk();
 
         Queue::assertPushed(AnalyzeRatingSentiment::class);
