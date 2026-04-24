@@ -115,6 +115,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/profile/data-export', [DataPrivacyController::class, 'requestExport'])
         ->middleware('throttle:5,60');
 
+    // Profile - Account Deletion (LGPD)
+    Route::post('/profile/delete-request', [DataPrivacyController::class, 'requestDeletion'])
+        ->middleware('throttle:3,1');
+    Route::post('/profile/delete-cancel', [DataPrivacyController::class, 'cancelDeletion'])
+        ->middleware('throttle:3,1');
+
     // Profile - Two-Factor Authentication
     Route::prefix('profile/two-factor')->group(function () {
         Route::post('/enable', [TwoFactorController::class, 'enable']);
