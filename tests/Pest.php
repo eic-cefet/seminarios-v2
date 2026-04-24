@@ -38,6 +38,15 @@ pest()->extend(TestCase::class)
     })
     ->in('Unit/Models');
 
+pest()->extend(TestCase::class)
+    ->use(RefreshDatabase::class)
+    ->beforeEach(function () {
+        app()[PermissionRegistrar::class]->forgetCachedPermissions();
+        Role::findOrCreate('admin');
+        Role::findOrCreate('teacher');
+    })
+    ->in('Unit/Services');
+
 /*
 |--------------------------------------------------------------------------
 | Expectations
