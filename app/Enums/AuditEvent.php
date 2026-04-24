@@ -49,4 +49,15 @@ enum AuditEvent: string
     case SeminarAlertDispatched = 'seminar_alert.dispatched';
     case S3FileDeleted = 's3.file_deleted';
     case EmailSent = 'email.sent';
+
+    // MFA
+    case UserMfaEnabled = 'user.mfa_enabled';
+    case UserMfaDisabled = 'user.mfa_disabled';
+    case UserMfaConfirmed = 'user.mfa_confirmed';
+    case UserMfaUsed = 'user.mfa_used';
+    case UserMfaChallengeFailed = 'user.mfa_challenge_failed';
+    case UserMfaRecoveryCodeUsed = 'user.mfa_recovery_code_used';
+    case UserMfaRecoveryCodesRegenerated = 'user.mfa_recovery_codes_regenerated';
+    case UserMfaDeviceRemembered = 'user.mfa_device_remembered';
+    case UserMfaDeviceRevoked = 'user.mfa_device_revoked';
 }

@@ -41,7 +41,17 @@ export default function Login() {
         setLoading(true);
 
         try {
-            await login(formData.email, formData.password);
+            const result = await login(formData.email, formData.password);
+            if (result?.status === "two_factor_required") {
+                navigate("/login/two-factor", {
+                    state: {
+                        challengeToken: result.challengeToken,
+                        remember: result.remember,
+                        from: redirectTo,
+                    },
+                });
+                return;
+            }
             analytics.event("login_email");
             navigate(redirectTo, { replace: true });
         } catch (err) {

@@ -11,7 +11,7 @@ vi.mock('@shared/contexts/AuthContext', () => ({
         register: vi.fn(),
         logout: vi.fn(),
         exchangeCode: vi.fn(),
-        refreshUser: vi.fn(),
+        refreshUser: vi.fn(), completeTwoFactor: vi.fn(),
     })),
     AuthProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));

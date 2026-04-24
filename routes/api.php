@@ -30,6 +30,7 @@ Route::post('/auth/register', [AuthController::class, 'register'])->middleware('
 Route::post('/auth/forgot-password', [AuthController::class, 'forgotPassword'])->middleware('throttle:5,1');
 Route::post('/auth/reset-password', [AuthController::class, 'resetPassword'])->middleware('throttle:5,1');
 Route::post('/auth/exchange', [SocialAuthController::class, 'exchange'])->middleware('throttle:5,1');
+Route::post('/auth/two-factor-challenge', [\App\Http\Controllers\Api\TwoFactorChallengeController::class, '__invoke'])->middleware('throttle:5,1');
 
 // Bug Report (tightest throttle)
 Route::post('/bug-report', [BugReportController::class, 'store'])->middleware('throttle:3,1');
@@ -98,4 +99,14 @@ Route::middleware('auth:sanctum')->group(function () {
     // Profile - Evaluations & Ratings
     Route::get('/profile/pending-evaluations', [ProfileRatingController::class, 'pendingEvaluations']);
     Route::post('/profile/ratings/{seminar}', [ProfileRatingController::class, 'submitRating']);
+
+    // Profile - Two-Factor Authentication
+    Route::prefix('profile/two-factor')->group(function () {
+        Route::post('/enable', [\App\Http\Controllers\Api\TwoFactorController::class, 'enable']);
+        Route::post('/confirm', [\App\Http\Controllers\Api\TwoFactorController::class, 'confirm']);
+        Route::post('/recovery-codes', [\App\Http\Controllers\Api\TwoFactorController::class, 'regenerateRecoveryCodes']);
+        Route::delete('/', [\App\Http\Controllers\Api\TwoFactorController::class, 'disable']);
+        Route::get('/devices', [\App\Http\Controllers\Api\TwoFactorController::class, 'devices']);
+        Route::delete('/devices/{device}', [\App\Http\Controllers\Api\TwoFactorController::class, 'revokeDevice']);
+    });
 });

@@ -7,13 +7,18 @@ const mockLogin = vi.fn();
 vi.mock('@shared/contexts/AuthContext', () => ({
     useAuth: vi.fn(() => ({
         user: null, isLoading: false, isAuthenticated: false,
-        login: mockLogin, register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(),
+        login: mockLogin, register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(),
+        refreshUser: vi.fn(), completeTwoFactor: vi.fn(),
     })),
 }));
 
 vi.mock('@shared/api/client', () => ({
     authApi: { forgotPassword: vi.fn() },
     ApiRequestError: class extends Error {},
+}));
+
+vi.mock('@shared/api/twoFactorApi', () => ({
+    twoFactorApi: { challenge: vi.fn() },
 }));
 
 vi.mock('@shared/lib/analytics', () => ({
@@ -153,6 +158,151 @@ describe('LoginModal', () => {
         await waitFor(() => {
             expect(onOpenChange).toHaveBeenCalledWith(false);
         });
+    });
+
+    it('switches to 2FA step inside the modal when login returns a challenge', async () => {
+        onOpenChange.mockClear();
+        mockLogin.mockResolvedValueOnce({
+            status: 'two_factor_required',
+            challengeToken: 'abc',
+            remember: true,
+        });
+        const { twoFactorApi } = await import('@shared/api/twoFactorApi');
+        vi.mocked(twoFactorApi.challenge).mockResolvedValueOnce({ user: { id: 1 } } as never);
+        const user = userEvent.setup();
+
+        render(<LoginModal open={true} onOpenChange={onOpenChange} />);
+
+        await user.type(screen.getByLabelText(/e-mail/i), 'test@example.com');
+        await user.type(screen.getByLabelText(/^senha/i), 'password123');
+        await user.click(screen.getByRole('button', { name: 'Entrar' }));
+
+        // Modal stays open; switches to 2FA step
+        await waitFor(() => {
+            expect(screen.getByRole('heading', { name: /verificação em duas etapas/i })).toBeInTheDocument();
+        });
+        expect(onOpenChange).not.toHaveBeenCalledWith(false);
+
+        const otpInput = screen.getByLabelText(/^código$/i);
+        await user.type(otpInput, '123456');
+        await user.click(screen.getByRole('button', { name: /verificar/i }));
+
+        await waitFor(() => {
+            expect(twoFactorApi.challenge).toHaveBeenCalledWith({
+                challenge_token: 'abc',
+                code: '123456',
+                remember_device: false,
+            });
+            expect(onOpenChange).toHaveBeenCalledWith(false);
+        });
+    });
+
+    it('shows an error in the 2FA step when the challenge fails', async () => {
+        onOpenChange.mockClear();
+        mockLogin.mockResolvedValueOnce({
+            status: 'two_factor_required',
+            challengeToken: 'abc',
+            remember: false,
+        });
+        const { twoFactorApi } = await import('@shared/api/twoFactorApi');
+        vi.mocked(twoFactorApi.challenge).mockRejectedValueOnce(new Error('Código inválido'));
+        const user = userEvent.setup();
+
+        render(<LoginModal open={true} onOpenChange={onOpenChange} />);
+
+        await user.type(screen.getByLabelText(/e-mail/i), 'test@example.com');
+        await user.type(screen.getByLabelText(/^senha/i), 'password123');
+        await user.click(screen.getByRole('button', { name: 'Entrar' }));
+
+        await screen.findByRole('heading', { name: /verificação em duas etapas/i });
+        await user.type(screen.getByLabelText(/^código$/i), '000000');
+        await user.click(screen.getByRole('button', { name: /verificar/i }));
+
+        await waitFor(() => {
+            expect(screen.getByRole('alert')).toHaveTextContent('Código inválido');
+        });
+    });
+
+    it('toggles to recovery code mode and submits a recovery code', async () => {
+        onOpenChange.mockClear();
+        mockLogin.mockResolvedValueOnce({
+            status: 'two_factor_required',
+            challengeToken: 'abc',
+            remember: false,
+        });
+        const { twoFactorApi } = await import('@shared/api/twoFactorApi');
+        vi.mocked(twoFactorApi.challenge).mockResolvedValueOnce({ user: { id: 1 } } as never);
+        const user = userEvent.setup();
+
+        render(<LoginModal open={true} onOpenChange={onOpenChange} />);
+
+        await user.type(screen.getByLabelText(/e-mail/i), 'test@example.com');
+        await user.type(screen.getByLabelText(/^senha/i), 'password123');
+        await user.click(screen.getByRole('button', { name: 'Entrar' }));
+
+        await screen.findByRole('heading', { name: /verificação em duas etapas/i });
+        await user.click(screen.getByRole('button', { name: /usar código de recuperação/i }));
+
+        await user.type(await screen.findByLabelText(/código de recuperação/i), 'rec-1');
+        await user.click(screen.getByRole('button', { name: /verificar/i }));
+
+        await waitFor(() => {
+            expect(twoFactorApi.challenge).toHaveBeenCalledWith({
+                challenge_token: 'abc',
+                recovery_code: 'rec-1',
+                remember_device: false,
+            });
+        });
+    });
+
+    it('passes remember_device when checkbox is checked in 2FA step', async () => {
+        onOpenChange.mockClear();
+        mockLogin.mockResolvedValueOnce({
+            status: 'two_factor_required',
+            challengeToken: 'abc',
+            remember: false,
+        });
+        const { twoFactorApi } = await import('@shared/api/twoFactorApi');
+        vi.mocked(twoFactorApi.challenge).mockResolvedValueOnce({ user: { id: 1 } } as never);
+        const user = userEvent.setup();
+
+        render(<LoginModal open={true} onOpenChange={onOpenChange} />);
+
+        await user.type(screen.getByLabelText(/e-mail/i), 'test@example.com');
+        await user.type(screen.getByLabelText(/^senha/i), 'password123');
+        await user.click(screen.getByRole('button', { name: 'Entrar' }));
+
+        await screen.findByRole('heading', { name: /verificação em duas etapas/i });
+        await user.type(screen.getByLabelText(/^código$/i), '123456');
+        await user.click(screen.getByRole('checkbox', { name: /lembrar este dispositivo/i }));
+        await user.click(screen.getByRole('button', { name: /verificar/i }));
+
+        await waitFor(() => {
+            expect(twoFactorApi.challenge).toHaveBeenCalledWith(
+                expect.objectContaining({ remember_device: true }),
+            );
+        });
+    });
+
+    it('returns to the login step when Voltar is clicked in the 2FA step', async () => {
+        onOpenChange.mockClear();
+        mockLogin.mockResolvedValueOnce({
+            status: 'two_factor_required',
+            challengeToken: 'abc',
+            remember: false,
+        });
+        const user = userEvent.setup();
+
+        render(<LoginModal open={true} onOpenChange={onOpenChange} />);
+
+        await user.type(screen.getByLabelText(/e-mail/i), 'test@example.com');
+        await user.type(screen.getByLabelText(/^senha/i), 'password123');
+        await user.click(screen.getByRole('button', { name: 'Entrar' }));
+
+        await screen.findByRole('heading', { name: /verificação em duas etapas/i });
+        await user.click(screen.getByRole('button', { name: /voltar/i }));
+
+        expect(screen.getByRole('heading', { name: 'Entrar' })).toBeInTheDocument();
     });
 
     it('shows error message when login fails', async () => {

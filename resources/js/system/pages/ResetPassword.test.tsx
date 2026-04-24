@@ -4,7 +4,7 @@ import ResetPassword from './ResetPassword';
 vi.mock('@shared/contexts/AuthContext', () => ({
     useAuth: vi.fn(() => ({
         user: null, isLoading: false, isAuthenticated: false,
-        login: vi.fn(), register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(),
+        login: vi.fn(), register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(), completeTwoFactor: vi.fn(),
     })),
     AuthProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));

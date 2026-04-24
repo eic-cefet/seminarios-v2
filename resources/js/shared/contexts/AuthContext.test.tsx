@@ -105,6 +105,45 @@ describe('AuthContext', () => {
             expect(result.current.isAuthenticated).toBe(true);
         });
 
+        it('login returns two_factor_required without setting user when 2FA is needed', async () => {
+            mockAuthApi.me.mockRejectedValue(new ApiRequestError('unauthenticated', '', 401));
+            mockAuthApi.login.mockResolvedValue({ two_factor: { challenge_token: 'abc' } });
+
+            const { result } = renderHook(() => useAuth(), { wrapper: createWrapper() });
+
+            await waitFor(() => {
+                expect(result.current.isLoading).toBe(false);
+            });
+
+            let outcome: Awaited<ReturnType<typeof result.current.login>> | undefined;
+            await act(async () => {
+                outcome = await result.current.login('test@test.com', 'password', true);
+            });
+
+            expect(outcome).toEqual({
+                status: 'two_factor_required',
+                challengeToken: 'abc',
+                remember: true,
+            });
+            expect(result.current.user).toBeNull();
+            expect(result.current.isAuthenticated).toBe(false);
+        });
+
+        it('completeTwoFactor sets the user', async () => {
+            mockAuthApi.me.mockRejectedValue(new ApiRequestError('unauthenticated', '', 401));
+            const user = { id: 7, name: 'X', email: 'x@y.z' };
+
+            const { result } = renderHook(() => useAuth(), { wrapper: createWrapper() });
+            await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+            act(() => {
+                result.current.completeTwoFactor(user as never);
+            });
+
+            expect(result.current.user).toEqual(user);
+            expect(result.current.isAuthenticated).toBe(true);
+        });
+
         it('logout clears user', async () => {
             const user = { id: 1, name: 'Test', email: 'test@test.com' };
             mockAuthApi.me.mockResolvedValue({ user });

@@ -6,7 +6,7 @@ const mockNavigate = vi.fn();
 vi.mock('@shared/contexts/AuthContext', () => ({
     useAuth: vi.fn(() => ({
         user: null, isLoading: false, isAuthenticated: false,
-        login: vi.fn(), register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(),
+        login: vi.fn(), register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(), completeTwoFactor: vi.fn(),
     })),
     AuthProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
@@ -63,7 +63,7 @@ describe('Login', () => {
         const mockLogin = vi.fn().mockResolvedValue(undefined);
         vi.mocked(useAuth).mockReturnValue({
             user: null, isLoading: false, isAuthenticated: false,
-            login: mockLogin, register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(),
+            login: mockLogin, register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(), completeTwoFactor: vi.fn(),
         });
         const user = userEvent.setup();
 
@@ -84,7 +84,7 @@ describe('Login', () => {
         const mockLogin = vi.fn().mockRejectedValue(new Error('E-mail ou senha incorretos.'));
         vi.mocked(useAuth).mockReturnValue({
             user: null, isLoading: false, isAuthenticated: false,
-            login: mockLogin, register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(),
+            login: mockLogin, register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(), completeTwoFactor: vi.fn(),
         });
         const user = userEvent.setup();
 
@@ -104,7 +104,7 @@ describe('Login', () => {
         const mockLogin = vi.fn(() => new Promise(() => {}));
         vi.mocked(useAuth).mockReturnValue({
             user: null, isLoading: false, isAuthenticated: false,
-            login: mockLogin as any, register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(),
+            login: mockLogin as any, register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(), completeTwoFactor: vi.fn(),
         });
         const user = userEvent.setup();
 
@@ -163,7 +163,7 @@ describe('Login', () => {
             const mockLogin = vi.fn().mockResolvedValue(undefined);
             vi.mocked(useAuth).mockReturnValue({
                 user: null, isLoading: false, isAuthenticated: false,
-                login: mockLogin, register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(),
+                login: mockLogin, register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(), completeTwoFactor: vi.fn(),
             });
             const user = userEvent.setup();
 
@@ -183,7 +183,7 @@ describe('Login', () => {
             const mockLogin = vi.fn().mockResolvedValue(undefined);
             vi.mocked(useAuth).mockReturnValue({
                 user: null, isLoading: false, isAuthenticated: false,
-                login: mockLogin, register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(),
+                login: mockLogin, register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(), completeTwoFactor: vi.fn(),
             });
             const user = userEvent.setup();
 
@@ -207,7 +207,7 @@ describe('Login', () => {
             const mockLogin = vi.fn().mockResolvedValue(undefined);
             vi.mocked(useAuth).mockReturnValue({
                 user: null, isLoading: false, isAuthenticated: false,
-                login: mockLogin, register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(),
+                login: mockLogin, register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(), completeTwoFactor: vi.fn(),
             });
             const user = userEvent.setup();
 
@@ -285,7 +285,7 @@ describe('Login', () => {
             const mockLogin = vi.fn().mockResolvedValue(undefined);
             vi.mocked(useAuth).mockReturnValue({
                 user: null, isLoading: false, isAuthenticated: false,
-                login: mockLogin, register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(),
+                login: mockLogin, register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(), completeTwoFactor: vi.fn(),
             });
             const user = userEvent.setup();
 
@@ -305,11 +305,40 @@ describe('Login', () => {
             });
         });
 
+        it('redirects to /login/two-factor when login returns a challenge', async () => {
+            const mockLogin = vi.fn().mockResolvedValue({
+                status: 'two_factor_required',
+                challengeToken: 'abc123',
+                remember: false,
+            });
+            vi.mocked(useAuth).mockReturnValue({
+                user: null, isLoading: false, isAuthenticated: false,
+                login: mockLogin, register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(), completeTwoFactor: vi.fn(),
+            });
+            const user = userEvent.setup();
+
+            render(<Login />);
+
+            await user.type(screen.getByLabelText(/e-mail/i), 'test@example.com');
+            await user.type(screen.getByLabelText(/^senha/i), 'mypassword123');
+            const buttons = screen.getAllByRole('button', { name: /^entrar$/i });
+            await user.click(buttons[buttons.length - 1]);
+
+            await waitFor(() => {
+                expect(mockNavigate).toHaveBeenCalledWith(
+                    '/login/two-factor',
+                    expect.objectContaining({
+                        state: expect.objectContaining({ challengeToken: 'abc123' }),
+                    }),
+                );
+            });
+        });
+
         it('rejects absolute URL redirect from state (open redirect protection)', async () => {
             const mockLogin = vi.fn().mockResolvedValue(undefined);
             vi.mocked(useAuth).mockReturnValue({
                 user: null, isLoading: false, isAuthenticated: false,
-                login: mockLogin, register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(),
+                login: mockLogin, register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(), completeTwoFactor: vi.fn(),
             });
             const user = userEvent.setup();
 

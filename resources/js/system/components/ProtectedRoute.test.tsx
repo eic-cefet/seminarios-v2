@@ -5,7 +5,7 @@ import { ProtectedRoute } from './ProtectedRoute';
 vi.mock('@shared/contexts/AuthContext', () => ({
     useAuth: vi.fn(() => ({
         user: null, isLoading: false, isAuthenticated: false,
-        login: vi.fn(), register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(),
+        login: vi.fn(), register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(), completeTwoFactor: vi.fn(),
     })),
     AuthProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
@@ -61,7 +61,7 @@ describe('ProtectedRoute', () => {
         vi.mocked(useAuth).mockReturnValue({
             user: { id: 1, name: 'Test', email: 'test@test.com' },
             isLoading: false, isAuthenticated: true,
-            login: vi.fn(), register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(),
+            login: vi.fn(), register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(), completeTwoFactor: vi.fn(),
         });
 
         render(<TestApp />, {
@@ -74,7 +74,7 @@ describe('ProtectedRoute', () => {
     it('redirects to /login when user is not authenticated', () => {
         vi.mocked(useAuth).mockReturnValue({
             user: null, isLoading: false, isAuthenticated: false,
-            login: vi.fn(), register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(),
+            login: vi.fn(), register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(), completeTwoFactor: vi.fn(),
         });
 
         render(<TestApp />, {
@@ -87,7 +87,7 @@ describe('ProtectedRoute', () => {
     it('shows loading spinner when auth is loading', () => {
         vi.mocked(useAuth).mockReturnValue({
             user: null, isLoading: true, isAuthenticated: false,
-            login: vi.fn(), register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(),
+            login: vi.fn(), register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(), completeTwoFactor: vi.fn(),
         });
 
         render(<TestApp />, {
@@ -101,7 +101,7 @@ describe('ProtectedRoute', () => {
     it('passes the current path as state.from when redirecting to login', () => {
         vi.mocked(useAuth).mockReturnValue({
             user: null, isLoading: false, isAuthenticated: false,
-            login: vi.fn(), register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(),
+            login: vi.fn(), register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(), completeTwoFactor: vi.fn(),
         });
 
         render(<AppWithLoginState />, {
@@ -114,7 +114,7 @@ describe('ProtectedRoute', () => {
     it('includes search params in the from state', () => {
         vi.mocked(useAuth).mockReturnValue({
             user: null, isLoading: false, isAuthenticated: false,
-            login: vi.fn(), register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(),
+            login: vi.fn(), register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(), completeTwoFactor: vi.fn(),
         });
 
         render(<AppWithLoginState />, {

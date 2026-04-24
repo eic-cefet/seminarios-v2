@@ -16,6 +16,7 @@ trait FormatsUserResponse
             'email' => $user->email,
             'email_verified_at' => $user->email_verified_at?->toISOString(),
             'roles' => $user->getRoleNames()->toArray(),
+            'two_factor_enabled' => $user->two_factor_confirmed_at !== null,
             'student_data' => $user->studentData ? [
                 'course_situation' => $user->studentData->course_situation,
                 'course_role' => $user->studentData->course_role,

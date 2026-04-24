@@ -5,7 +5,7 @@ import SeminarDetails from './SeminarDetails';
 vi.mock('@shared/contexts/AuthContext', () => ({
     useAuth: vi.fn(() => ({
         user: null, isLoading: false, isAuthenticated: false,
-        login: vi.fn(), register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(),
+        login: vi.fn(), register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(), completeTwoFactor: vi.fn(),
     })),
     AuthProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
@@ -244,7 +244,7 @@ describe('SeminarDetails', () => {
         vi.mocked(seminarsApi.get).mockResolvedValue({ data: seminar });
         vi.mocked(useAuth).mockReturnValue({
             user: createUser(), isLoading: false, isAuthenticated: true,
-            login: vi.fn(), register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(),
+            login: vi.fn(), register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(), completeTwoFactor: vi.fn(),
         });
 
         render(<SeminarDetails />);
@@ -264,7 +264,7 @@ describe('SeminarDetails', () => {
             .mockResolvedValue({ registered: true });
         vi.mocked(useAuth).mockReturnValue({
             user: createUser(), isLoading: false, isAuthenticated: true,
-            login: vi.fn(), register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(),
+            login: vi.fn(), register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(), completeTwoFactor: vi.fn(),
         });
         const user = userEvent.setup();
 
@@ -287,7 +287,7 @@ describe('SeminarDetails', () => {
         vi.mocked(registrationApi.status).mockResolvedValue({ registered: true });
         vi.mocked(useAuth).mockReturnValue({
             user: createUser(), isLoading: false, isAuthenticated: true,
-            login: vi.fn(), register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(),
+            login: vi.fn(), register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(), completeTwoFactor: vi.fn(),
         });
 
         render(<SeminarDetails />);
@@ -311,7 +311,7 @@ describe('SeminarDetails', () => {
         vi.mocked(registrationApi.status).mockResolvedValue({ registered: true });
         vi.mocked(useAuth).mockReturnValue({
             user: createUser(), isLoading: false, isAuthenticated: true,
-            login: vi.fn(), register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(),
+            login: vi.fn(), register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(), completeTwoFactor: vi.fn(),
         });
 
         render(<SeminarDetails />);
@@ -333,7 +333,7 @@ describe('SeminarDetails', () => {
         vi.mocked(registrationApi.unregister).mockResolvedValue({ message: 'ok' });
         vi.mocked(useAuth).mockReturnValue({
             user: createUser(), isLoading: false, isAuthenticated: true,
-            login: vi.fn(), register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(),
+            login: vi.fn(), register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(), completeTwoFactor: vi.fn(),
         });
         const user = userEvent.setup();
 
@@ -357,7 +357,7 @@ describe('SeminarDetails', () => {
         vi.mocked(registrationApi.register).mockRejectedValue(new Error('Already registered'));
         vi.mocked(useAuth).mockReturnValue({
             user: createUser(), isLoading: false, isAuthenticated: true,
-            login: vi.fn(), register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(),
+            login: vi.fn(), register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(), completeTwoFactor: vi.fn(),
         });
         const user = userEvent.setup();
 
@@ -581,7 +581,7 @@ describe('SeminarDetails', () => {
         vi.mocked(registrationApi.unregister).mockImplementation(() => new Promise(() => {}));
         vi.mocked(useAuth).mockReturnValue({
             user: createUser(), isLoading: false, isAuthenticated: true,
-            login: vi.fn(), register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(),
+            login: vi.fn(), register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(), completeTwoFactor: vi.fn(),
         });
         const user = userEvent.setup();
 
@@ -606,7 +606,7 @@ describe('SeminarDetails', () => {
         vi.mocked(registrationApi.register).mockImplementation(() => new Promise(() => {}));
         vi.mocked(useAuth).mockReturnValue({
             user: createUser(), isLoading: false, isAuthenticated: true,
-            login: vi.fn(), register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(),
+            login: vi.fn(), register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(), completeTwoFactor: vi.fn(),
         });
         const user = userEvent.setup();
 
@@ -630,7 +630,7 @@ describe('SeminarDetails', () => {
         vi.mocked(registrationApi.unregister).mockRejectedValue(new Error('Cannot unregister'));
         vi.mocked(useAuth).mockReturnValue({
             user: createUser(), isLoading: false, isAuthenticated: true,
-            login: vi.fn(), register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(),
+            login: vi.fn(), register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(), completeTwoFactor: vi.fn(),
         });
         const user = userEvent.setup();
 

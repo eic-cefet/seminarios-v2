@@ -4,6 +4,7 @@ import type {
     Seminar,
     SeminarType,
     Subject,
+    TwoFactorChallenge,
     User,
     Workshop,
 } from "@shared/types";
@@ -29,7 +30,7 @@ export class ApiRequestError extends Error {
 
 export { getCsrfCookie };
 
-async function fetchApi<T>(
+export async function fetchApi<T>(
     endpoint: string,
     options?: RequestInit,
 ): Promise<T> {
@@ -179,10 +180,13 @@ export const authApi = {
         remember?: boolean;
     }) => {
         await getCsrfCookie();
-        return fetchApi<{ user: User }>("/auth/login", {
-            method: "POST",
-            body: JSON.stringify(data),
-        });
+        return fetchApi<{ user: User } | { two_factor: TwoFactorChallenge }>(
+            "/auth/login",
+            {
+                method: "POST",
+                body: JSON.stringify(data),
+            },
+        );
     },
 
     register: async (data: {

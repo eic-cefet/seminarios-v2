@@ -9,7 +9,7 @@ vi.mock('@shared/contexts/AuthContext', () => ({
         register: vi.fn(),
         logout: vi.fn(),
         exchangeCode: vi.fn(),
-        refreshUser: vi.fn(),
+        refreshUser: vi.fn(), completeTwoFactor: vi.fn(),
     })),
 }));
 
@@ -65,7 +65,7 @@ describe('AdminLayout', () => {
             register: vi.fn(),
             logout: vi.fn(),
             exchangeCode: vi.fn(),
-            refreshUser: vi.fn(),
+            refreshUser: vi.fn(), completeTwoFactor: vi.fn(),
         });
 
         render(<AdminLayout />);
@@ -82,7 +82,7 @@ describe('AdminLayout', () => {
             register: vi.fn(),
             logout: vi.fn(),
             exchangeCode: vi.fn(),
-            refreshUser: vi.fn(),
+            refreshUser: vi.fn(), completeTwoFactor: vi.fn(),
         });
 
         render(<AdminLayout />);
@@ -99,7 +99,7 @@ describe('AdminLayout', () => {
             register: vi.fn(),
             logout: vi.fn(),
             exchangeCode: vi.fn(),
-            refreshUser: vi.fn(),
+            refreshUser: vi.fn(), completeTwoFactor: vi.fn(),
         });
 
         render(<AdminLayout />);
@@ -116,7 +116,7 @@ describe('AdminLayout', () => {
             register: vi.fn(),
             logout: vi.fn(),
             exchangeCode: vi.fn(),
-            refreshUser: vi.fn(),
+            refreshUser: vi.fn(), completeTwoFactor: vi.fn(),
         });
 
         const originalLocation = window.location;

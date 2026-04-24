@@ -2,6 +2,7 @@ import { PageTitle } from "@shared/components/PageTitle";
 import { useAuth } from "@shared/contexts/AuthContext";
 import { CertificatesSection } from "../components/profile/CertificatesSection";
 import { PasswordSection } from "../components/profile/PasswordSection";
+import { TwoFactorSection } from "../components/profile/TwoFactorSection";
 import { ProfileInfoSection } from "../components/profile/ProfileInfoSection";
 import { RegistrationsSection } from "../components/profile/RegistrationsSection";
 import { StudentDataSection } from "../components/profile/StudentDataSection";
@@ -30,6 +31,7 @@ export default function Profile() {
                     <ProfileInfoSection user={user!} onUpdate={refreshUser} />
                     <StudentDataSection user={user!} onUpdate={refreshUser} />
                     <PasswordSection />
+                    <TwoFactorSection />
                     <RegistrationsSection />
                     <CertificatesSection />
                 </div>

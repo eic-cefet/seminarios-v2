@@ -5,7 +5,7 @@ import Certificates from './Certificates';
 vi.mock('@shared/contexts/AuthContext', () => ({
     useAuth: vi.fn(() => ({
         user: null, isLoading: false, isAuthenticated: false,
-        login: vi.fn(), register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(),
+        login: vi.fn(), register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(), completeTwoFactor: vi.fn(),
     })),
     AuthProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
@@ -27,7 +27,7 @@ describe('Certificates', () => {
     it('renders "Meus Certificados" heading when authenticated', async () => {
         vi.mocked(useAuth).mockReturnValue({
             user: createUser({ name: 'Test User' }), isLoading: false, isAuthenticated: true,
-            login: vi.fn(), register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(),
+            login: vi.fn(), register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(), completeTwoFactor: vi.fn(),
         });
 
         render(<Certificates />);
@@ -38,7 +38,7 @@ describe('Certificates', () => {
     it('renders certificate list', async () => {
         vi.mocked(useAuth).mockReturnValue({
             user: createUser({ name: 'Test User' }), isLoading: false, isAuthenticated: true,
-            login: vi.fn(), register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(),
+            login: vi.fn(), register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(), completeTwoFactor: vi.fn(),
         });
 
         const certificates = [
@@ -58,7 +58,7 @@ describe('Certificates', () => {
     it('shows empty state when no certificates', async () => {
         vi.mocked(useAuth).mockReturnValue({
             user: createUser({ name: 'Test User' }), isLoading: false, isAuthenticated: true,
-            login: vi.fn(), register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(),
+            login: vi.fn(), register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(), completeTwoFactor: vi.fn(),
         });
         vi.mocked(profileApi.certificates).mockResolvedValue({ data: [], meta: { current_page: 1, last_page: 1, per_page: 10, total: 0 } });
 
@@ -72,7 +72,7 @@ describe('Certificates', () => {
     it('redirects to /login when not authenticated and not loading', () => {
         vi.mocked(useAuth).mockReturnValue({
             user: null, isLoading: false, isAuthenticated: false,
-            login: vi.fn(), register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(),
+            login: vi.fn(), register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(), completeTwoFactor: vi.fn(),
         });
 
         render(<Certificates />);
@@ -84,7 +84,7 @@ describe('Certificates', () => {
     it('shows loading spinner when auth is loading', () => {
         vi.mocked(useAuth).mockReturnValue({
             user: null, isLoading: true, isAuthenticated: false,
-            login: vi.fn(), register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(),
+            login: vi.fn(), register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(), completeTwoFactor: vi.fn(),
         });
 
         render(<Certificates />);
@@ -96,7 +96,7 @@ describe('Certificates', () => {
     it('shows singular "certificado" when total is 1', async () => {
         vi.mocked(useAuth).mockReturnValue({
             user: createUser({ name: 'Test User' }), isLoading: false, isAuthenticated: true,
-            login: vi.fn(), register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(),
+            login: vi.fn(), register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(), completeTwoFactor: vi.fn(),
         });
 
         vi.mocked(profileApi.certificates).mockResolvedValue({
@@ -114,7 +114,7 @@ describe('Certificates', () => {
     it('renders pagination with fallback values when meta is undefined', async () => {
         vi.mocked(useAuth).mockReturnValue({
             user: createUser({ name: 'Test User' }), isLoading: false, isAuthenticated: true,
-            login: vi.fn(), register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(),
+            login: vi.fn(), register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(), completeTwoFactor: vi.fn(),
         });
 
         const certificates = [

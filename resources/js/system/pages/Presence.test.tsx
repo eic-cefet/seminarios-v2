@@ -5,7 +5,7 @@ import Presence from './Presence';
 vi.mock('@shared/contexts/AuthContext', () => ({
     useAuth: vi.fn(() => ({
         user: null, isLoading: false, isAuthenticated: false,
-        login: vi.fn(), register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(),
+        login: vi.fn(), register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(), completeTwoFactor: vi.fn(),
     })),
     AuthProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
@@ -160,7 +160,7 @@ describe('Presence', () => {
 
         vi.mocked(useAuth).mockReturnValue({
             user: createUser({ name: 'John Doe' }), isLoading: false, isAuthenticated: true,
-            login: vi.fn(), register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(),
+            login: vi.fn(), register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(), completeTwoFactor: vi.fn(),
         });
 
         render(<Presence />);
@@ -179,7 +179,7 @@ describe('Presence', () => {
 
         vi.mocked(useAuth).mockReturnValue({
             user: createUser({ name: 'John Doe' }), isLoading: false, isAuthenticated: true,
-            login: vi.fn(), register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(),
+            login: vi.fn(), register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(), completeTwoFactor: vi.fn(),
         });
 
         render(<Presence />);
@@ -197,7 +197,7 @@ describe('Presence', () => {
 
         vi.mocked(useAuth).mockReturnValue({
             user: createUser({ name: 'John Doe' }), isLoading: false, isAuthenticated: true,
-            login: vi.fn(), register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(),
+            login: vi.fn(), register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(), completeTwoFactor: vi.fn(),
         });
 
         render(<Presence />);
@@ -219,7 +219,7 @@ describe('Presence', () => {
 
         vi.mocked(useAuth).mockReturnValue({
             user: createUser({ name: 'John Doe' }), isLoading: false, isAuthenticated: true,
-            login: vi.fn(), register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(),
+            login: vi.fn(), register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(), completeTwoFactor: vi.fn(),
         });
 
         render(<Presence />);
@@ -239,7 +239,7 @@ describe('Presence', () => {
 
         vi.mocked(useAuth).mockReturnValue({
             user: createUser({ name: 'John Doe' }), isLoading: false, isAuthenticated: true,
-            login: vi.fn(), register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(),
+            login: vi.fn(), register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(), completeTwoFactor: vi.fn(),
         });
 
         render(<Presence />);
@@ -259,7 +259,7 @@ describe('Presence', () => {
 
         vi.mocked(useAuth).mockReturnValue({
             user: createUser({ name: 'John Doe' }), isLoading: false, isAuthenticated: true,
-            login: vi.fn(), register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(),
+            login: vi.fn(), register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(), completeTwoFactor: vi.fn(),
         });
 
         render(<Presence />);
@@ -279,7 +279,7 @@ describe('Presence', () => {
 
         vi.mocked(useAuth).mockReturnValue({
             user: createUser({ name: 'John Doe' }), isLoading: false, isAuthenticated: true,
-            login: vi.fn(), register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(),
+            login: vi.fn(), register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(), completeTwoFactor: vi.fn(),
         });
 
         render(<Presence />);
@@ -352,7 +352,7 @@ describe('Presence', () => {
 
         vi.mocked(useAuth).mockReturnValue({
             user: createUser({ name: 'John Doe' }), isLoading: false, isAuthenticated: true,
-            login: vi.fn(), register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(),
+            login: vi.fn(), register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(), completeTwoFactor: vi.fn(),
         });
 
         render(<Presence />);
@@ -374,7 +374,7 @@ describe('Presence', () => {
 
         vi.mocked(useAuth).mockReturnValue({
             user: createUser({ name: 'John Doe' }), isLoading: false, isAuthenticated: true,
-            login: vi.fn(), register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(),
+            login: vi.fn(), register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(), completeTwoFactor: vi.fn(),
         });
 
         render(<Presence />);
@@ -394,7 +394,7 @@ describe('Presence', () => {
 
         vi.mocked(useAuth).mockReturnValue({
             user: createUser({ name: 'John Doe' }), isLoading: false, isAuthenticated: true,
-            login: vi.fn(), register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(),
+            login: vi.fn(), register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(), completeTwoFactor: vi.fn(),
         });
 
         render(<Presence />);
@@ -412,7 +412,7 @@ describe('Presence', () => {
 
         vi.mocked(useAuth).mockReturnValue({
             user: createUser({ name: 'John Doe' }), isLoading: false, isAuthenticated: true,
-            login: vi.fn(), register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(),
+            login: vi.fn(), register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(), completeTwoFactor: vi.fn(),
         });
 
         render(<Presence />);
@@ -433,7 +433,7 @@ describe('Presence', () => {
 
         vi.mocked(useAuth).mockReturnValue({
             user: createUser({ name: 'John Doe' }), isLoading: false, isAuthenticated: true,
-            login: vi.fn(), register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(),
+            login: vi.fn(), register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(), completeTwoFactor: vi.fn(),
         });
 
         render(<Presence />);

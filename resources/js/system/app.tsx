@@ -10,6 +10,7 @@ import { usePageTracking } from "@shared/hooks/usePageTracking";
 
 import Home from "./pages/Home";
 import Login from "./pages/Login";
+import TwoFactorChallenge from "./pages/TwoFactorChallenge";
 import Register from "./pages/Register";
 import AuthCallback from "./pages/AuthCallback";
 import Profile from "./pages/Profile";
@@ -44,6 +45,7 @@ function AppRoutes() {
         <Routes>
             <Route path={ROUTES.SYSTEM.HOME} element={<Home />} />
             <Route path={ROUTES.SYSTEM.LOGIN} element={<Login />} />
+            <Route path={ROUTES.SYSTEM.TWO_FACTOR_CHALLENGE} element={<TwoFactorChallenge />} />
             <Route path={ROUTES.SYSTEM.REGISTER} element={<Register />} />
             <Route path={ROUTES.SYSTEM.FORGOT_PASSWORD} element={<ForgotPassword />} />
             <Route path={ROUTES.SYSTEM.RESET_PASSWORD} element={<ResetPassword />} />

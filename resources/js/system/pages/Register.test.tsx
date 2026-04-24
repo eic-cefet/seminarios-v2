@@ -7,7 +7,7 @@ const mockNavigate = vi.fn();
 vi.mock('@shared/contexts/AuthContext', () => ({
     useAuth: vi.fn(() => ({
         user: null, isLoading: false, isAuthenticated: false,
-        login: vi.fn(), register: mockRegister, logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(),
+        login: vi.fn(), register: mockRegister, logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(), completeTwoFactor: vi.fn(),
     })),
     AuthProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
@@ -45,7 +45,7 @@ describe('Register', () => {
         mockRegister.mockResolvedValue(undefined);
         vi.mocked(useAuth).mockReturnValue({
             user: null, isLoading: false, isAuthenticated: false,
-            login: vi.fn(), register: mockRegister, logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(),
+            login: vi.fn(), register: mockRegister, logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(), completeTwoFactor: vi.fn(),
         });
     });
     it('renders "Criar conta" heading', () => {
@@ -279,7 +279,7 @@ describe('Register', () => {
     it('redirects to home when already authenticated', () => {
         vi.mocked(useAuth).mockReturnValue({
             user: { id: 1, name: 'Test', email: 'test@test.com' }, isLoading: false, isAuthenticated: true,
-            login: vi.fn(), register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(),
+            login: vi.fn(), register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(), completeTwoFactor: vi.fn(),
         });
 
         render(<Register />);
@@ -409,7 +409,7 @@ describe('Register', () => {
         it('redirects already-authenticated user to intended page from state', () => {
             vi.mocked(useAuth).mockReturnValue({
                 user: { id: 1, name: 'Test', email: 'test@test.com' }, isLoading: false, isAuthenticated: true,
-                login: vi.fn(), register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(),
+                login: vi.fn(), register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(), completeTwoFactor: vi.fn(),
             });
 
             render(<Register />, {
@@ -447,7 +447,7 @@ describe('Register', () => {
         it('rejects unsafe redirect and falls back to "/" (open redirect protection)', () => {
             vi.mocked(useAuth).mockReturnValue({
                 user: { id: 1, name: 'Test', email: 'test@test.com' }, isLoading: false, isAuthenticated: true,
-                login: vi.fn(), register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(),
+                login: vi.fn(), register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(), completeTwoFactor: vi.fn(),
             });
 
             render(<Register />, {

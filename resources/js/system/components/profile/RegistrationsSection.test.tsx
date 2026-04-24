@@ -199,6 +199,39 @@ describe('RegistrationsSection', () => {
         });
     });
 
+    it('hides the calendar button for expired seminars', async () => {
+        const registrations = [
+            createUserRegistration({
+                id: 1,
+                present: false,
+                seminar: {
+                    id: 10,
+                    name: 'Seminário Passado',
+                    slug: 'seminario-passado',
+                    scheduled_at: '2026-01-01T14:00:00Z',
+                    is_expired: true,
+                    seminar_type: null,
+                    location: null,
+                },
+            }),
+        ];
+
+        vi.mocked(profileApi.registrations).mockResolvedValue({
+            data: registrations,
+            meta: { current_page: 1, last_page: 1, per_page: 10, total: 1 },
+        });
+
+        render(<RegistrationsSection />);
+
+        await waitFor(() => {
+            expect(screen.getByText('Seminário Passado')).toBeInTheDocument();
+        });
+
+        expect(
+            screen.queryByRole('button', { name: /adicionar ao calendário/i }),
+        ).not.toBeInTheDocument();
+    });
+
     it('does not render scheduled date when scheduled_at is null', async () => {
         const registrations = [
             createUserRegistration({
