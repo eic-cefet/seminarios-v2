@@ -175,9 +175,11 @@ class AuthController extends Controller
 
         Password::sendResetLink($request->only('email'));
 
-        AuditLog::record(AuditEvent::UserForgotPassword, eventData: [
-            'email' => $request->input('email'),
-        ]);
+        $user = User::where('email', $request->input('email'))->first();
+
+        if ($user) {
+            AuditLog::record(AuditEvent::UserForgotPassword, auditable: $user);
+        }
 
         return response()->json([
             'message' => 'Se o e-mail existir, você receberá um link de recuperação.',
@@ -192,13 +194,17 @@ class AuthController extends Controller
             'password' => ['required', 'confirmed', PasswordRule::min(8)],
         ]);
 
+        $resetUser = null;
+
         $status = Password::reset(
             $request->only('email', 'password', 'password_confirmation', 'token'),
-            function (User $user, string $password) {
+            function (User $user, string $password) use (&$resetUser) {
                 $user->forceFill([
                     'password' => $password,
                     'remember_token' => Str::random(60),
                 ])->save();
+
+                $resetUser = $user;
             }
         );
 
@@ -206,9 +212,7 @@ class AuthController extends Controller
             throw ApiException::invalidToken();
         }
 
-        AuditLog::record(AuditEvent::UserPasswordReset, eventData: [
-            'email' => $request->input('email'),
-        ]);
+        AuditLog::record(AuditEvent::UserPasswordReset, auditable: $resetUser);
 
         return response()->json([
             'message' => 'Senha redefinida com sucesso.',
