@@ -1,5 +1,16 @@
 import { render, screen } from '@/test/test-utils';
 
+vi.mock('@shared/hooks/useNotifications', () => ({
+    useNotifications: () => ({
+        notifications: [],
+        unreadCount: 0,
+        isLoading: false,
+        refresh: vi.fn(),
+        markRead: vi.fn(),
+        markAllRead: vi.fn(),
+    }),
+}));
+
 vi.mock('@shared/contexts/AuthContext', () => ({
     useAuth: vi.fn(() => ({
         user: { id: 1, name: 'Admin', email: 'admin@test.com', roles: ['admin'], is_admin: true },
@@ -135,5 +146,22 @@ describe('AdminLayout', () => {
             writable: true,
             value: originalLocation,
         });
+    });
+
+    it('renders NotificationBell for the authenticated admin', async () => {
+        const { useAuth } = await import('@shared/contexts/AuthContext');
+        vi.mocked(useAuth).mockReturnValue({
+            user: { id: 1, name: 'Admin', email: 'admin@test.com', roles: ['admin'] } as any,
+            isLoading: false,
+            isAuthenticated: true,
+            login: vi.fn(),
+            register: vi.fn(),
+            logout: vi.fn(),
+            exchangeCode: vi.fn(),
+            refreshUser: vi.fn(), completeTwoFactor: vi.fn(),
+        });
+
+        render(<AdminLayout />);
+        expect(screen.getByLabelText(/notification/i)).toBeInTheDocument();
     });
 });

@@ -1,4 +1,5 @@
 import { Favicon } from "@shared/components/Favicon";
+import { NotificationBell } from "@shared/components/NotificationBell";
 import { useAuth } from "@shared/contexts/AuthContext";
 import { hasAdminAccess } from "@shared/lib/roles";
 import { buildUrl } from "@shared/lib/utils";
@@ -58,6 +59,10 @@ export function AdminLayout() {
 
                 {/* Main content */}
                 <main className="flex-1 min-w-0 overflow-auto">
+                    {/* Desktop top-bar with user actions */}
+                    <div className="hidden lg:flex items-center justify-end gap-2 border-b border-border px-6 h-12">
+                        <NotificationBell userId={user?.id ?? null} />
+                    </div>
                     <div className="w-full max-w-7xl mx-auto p-6">
                         <Outlet />
                     </div>
