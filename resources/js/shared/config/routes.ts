@@ -14,6 +14,7 @@ export const ROUTES = {
     SYSTEM: {
         HOME: "/",
         LOGIN: "/login",
+        TWO_FACTOR_CHALLENGE: "/login/two-factor",
         REGISTER: "/cadastro",
         FORGOT_PASSWORD: "/recuperar-senha",
         RESET_PASSWORD: "/redefinir-senha",
