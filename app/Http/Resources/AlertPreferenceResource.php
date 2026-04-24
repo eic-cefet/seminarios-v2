@@ -20,6 +20,12 @@ class AlertPreferenceResource extends JsonResource
             'optedIn' => (bool) $this->opted_in,
             'seminarTypeIds' => $this->seminarTypes->pluck('id')->values()->all(),
             'subjectIds' => $this->subjects->pluck('id')->values()->all(),
+            'seminarReminder7d' => (bool) $this->seminar_reminder_7d,
+            'seminarReminder24h' => (bool) $this->seminar_reminder_24h,
+            'evaluationPrompt' => (bool) $this->evaluation_prompt,
+            'announcements' => (bool) $this->announcements,
+            'certificateReady' => (bool) $this->certificate_ready,
+            'seminarRescheduled' => (bool) $this->seminar_rescheduled,
         ];
     }
 }

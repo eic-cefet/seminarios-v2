@@ -22,6 +22,12 @@ class AlertPreferenceUpdateRequest extends FormRequest
             'seminar_type_ids.*' => ['integer', 'exists:seminar_types,id'],
             'subject_ids' => ['array'],
             'subject_ids.*' => ['integer', 'exists:subjects,id'],
+            'seminar_reminder_7d' => ['required', 'boolean'],
+            'seminar_reminder_24h' => ['required', 'boolean'],
+            'evaluation_prompt' => ['required', 'boolean'],
+            'announcements' => ['required', 'boolean'],
+            'certificate_ready' => ['required', 'boolean'],
+            'seminar_rescheduled' => ['required', 'boolean'],
         ];
     }
 }

@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Enums\AuditEvent;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\AlertPreferenceUpdateRequest;
 use App\Http\Resources\AlertPreferenceResource;
 use App\Models\AlertPreference;
+use App\Models\AuditLog;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -24,6 +26,12 @@ class ProfileAlertPreferenceController extends Controller
                     'optedIn' => false,
                     'seminarTypeIds' => [],
                     'subjectIds' => [],
+                    'seminarReminder7d' => true,
+                    'seminarReminder24h' => true,
+                    'evaluationPrompt' => true,
+                    'announcements' => true,
+                    'certificateReady' => true,
+                    'seminarRescheduled' => true,
                 ],
             ]);
         }
@@ -41,7 +49,15 @@ class ProfileAlertPreferenceController extends Controller
         $pref = DB::transaction(function () use ($user, $validated) {
             $pref = AlertPreference::updateOrCreate(
                 ['user_id' => $user->id],
-                ['opted_in' => $validated['opted_in']],
+                [
+                    'opted_in' => $validated['opted_in'],
+                    'seminar_reminder_7d' => $validated['seminar_reminder_7d'],
+                    'seminar_reminder_24h' => $validated['seminar_reminder_24h'],
+                    'evaluation_prompt' => $validated['evaluation_prompt'],
+                    'announcements' => $validated['announcements'],
+                    'certificate_ready' => $validated['certificate_ready'],
+                    'seminar_rescheduled' => $validated['seminar_rescheduled'],
+                ],
             );
 
             $pref->seminarTypes()->sync($validated['seminar_type_ids'] ?? []);
@@ -51,6 +67,8 @@ class ProfileAlertPreferenceController extends Controller
         });
 
         $pref->load(['seminarTypes:id', 'subjects:id']);
+
+        AuditLog::record(AuditEvent::UserCommunicationPreferencesUpdated, auditable: $pref);
 
         return response()->json([
             'message' => 'Preferências atualizadas com sucesso.',
