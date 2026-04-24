@@ -5,6 +5,26 @@ export interface User {
     email_verified_at?: string;
     student_data?: UserStudentData;
     roles?: string[];
+    two_factor_enabled?: boolean;
+}
+
+export interface TwoFactorChallenge {
+    challenge_token: string;
+}
+
+export interface TwoFactorEnableResponse {
+    secret: string;
+    qr_code_svg: string;
+    recovery_codes: string[];
+}
+
+export interface TwoFactorDevice {
+    id: number;
+    label: string | null;
+    ip: string | null;
+    last_used_at: string | null;
+    expires_at: string;
+    created_at: string;
 }
 
 export interface UserStudentData {
