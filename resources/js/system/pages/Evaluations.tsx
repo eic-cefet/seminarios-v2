@@ -127,6 +127,7 @@ function EvaluationItem({ evaluation, onRated }: EvaluationItemProps) {
     const [score, setScore] = useState(0);
     const [hoveredScore, setHoveredScore] = useState(0);
     const [comment, setComment] = useState("");
+    const [aiConsent, setAiConsent] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState(false);
     const queryClient = useQueryClient();
@@ -136,6 +137,7 @@ function EvaluationItem({ evaluation, onRated }: EvaluationItemProps) {
             profileApi.submitRating(evaluation.seminar.id, {
                 score,
                 comment: comment.trim() || undefined,
+                ai_analysis_consent: aiConsent,
             }),
         onSuccess: () => {
             setError(null);
@@ -307,6 +309,28 @@ function EvaluationItem({ evaluation, onRated }: EvaluationItemProps) {
                             {comment.length}/1000
                         </p>
                     </div>
+
+                    <label className="mt-3 flex items-start gap-2 text-sm text-gray-700">
+                        <input
+                            type="checkbox"
+                            checked={aiConsent}
+                            onChange={(e) => setAiConsent(e.target.checked)}
+                            className="mt-1"
+                        />
+                        <span>
+                            Autorizo que o comentário acima seja enviado ao
+                            serviço de IA (OpenAI) para análise de sentimento.
+                            Este consentimento é opcional e pode ser revogado a
+                            qualquer momento nas{" "}
+                            <Link
+                                to={ROUTES.SYSTEM.COOKIE_PREFERENCES}
+                                className="underline text-primary-700"
+                            >
+                                preferências
+                            </Link>
+                            .
+                        </span>
+                    </label>
 
                     <div className="flex justify-end">
                         <button

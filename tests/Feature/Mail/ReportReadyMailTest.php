@@ -21,12 +21,12 @@ it('can be sent to a recipient', function () {
 
     $user = User::factory()->create(['email' => 'test@example.com']);
 
-    Mail::to($user->email)->send(new ReportReady(
+    Mail::to($user->email)->queue(new ReportReady(
         reportName: 'Logs de Auditoria — últimos 30 dias',
         downloadUrl: 'https://s3.example.com/audit.xlsx',
     ));
 
-    Mail::assertSent(ReportReady::class, function ($mail) use ($user) {
+    Mail::assertQueued(ReportReady::class, function ($mail) use ($user) {
         return $mail->hasTo($user->email)
             && $mail->reportName === 'Logs de Auditoria — últimos 30 dias';
     });

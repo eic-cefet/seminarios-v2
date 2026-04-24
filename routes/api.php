@@ -2,7 +2,9 @@
 
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\BugReportController;
+use App\Http\Controllers\Api\ConsentController;
 use App\Http\Controllers\Api\CourseController;
+use App\Http\Controllers\Api\DataPrivacyController;
 use App\Http\Controllers\Api\PresenceController;
 use App\Http\Controllers\Api\ProfileAlertPreferenceController;
 use App\Http\Controllers\Api\ProfileController;
@@ -13,6 +15,8 @@ use App\Http\Controllers\Api\SeminarController;
 use App\Http\Controllers\Api\SeminarTypeController;
 use App\Http\Controllers\Api\StatsController;
 use App\Http\Controllers\Api\SubjectController;
+use App\Http\Controllers\Api\TwoFactorChallengeController;
+use App\Http\Controllers\Api\TwoFactorController;
 use App\Http\Controllers\Api\VersionController;
 use App\Http\Controllers\Api\WorkshopController;
 use App\Http\Controllers\SocialAuthController;
@@ -30,10 +34,13 @@ Route::post('/auth/register', [AuthController::class, 'register'])->middleware('
 Route::post('/auth/forgot-password', [AuthController::class, 'forgotPassword'])->middleware('throttle:5,1');
 Route::post('/auth/reset-password', [AuthController::class, 'resetPassword'])->middleware('throttle:5,1');
 Route::post('/auth/exchange', [SocialAuthController::class, 'exchange'])->middleware('throttle:5,1');
-Route::post('/auth/two-factor-challenge', [\App\Http\Controllers\Api\TwoFactorChallengeController::class, '__invoke'])->middleware('throttle:5,1');
+Route::post('/auth/two-factor-challenge', [TwoFactorChallengeController::class, '__invoke'])->middleware('throttle:5,1');
 
 // Bug Report (tightest throttle)
 Route::post('/bug-report', [BugReportController::class, 'store'])->middleware('throttle:3,1');
+
+// Consent (accessible to both authenticated and anonymous users)
+Route::post('/consents', [ConsentController::class, 'store'])->middleware('throttle:5,1');
 
 // General public endpoints (120/min per user or IP)
 Route::middleware('throttle:public')->group(function () {
@@ -78,6 +85,9 @@ Route::middleware('throttle:public')->group(function () {
 
 // Authenticated routes
 Route::middleware('auth:sanctum')->group(function () {
+    // Consents (listing requires auth)
+    Route::get('/consents', [ConsentController::class, 'index']);
+
     // Seminar Registration
     Route::post('/seminars/{slug}/register', [RegistrationController::class, 'register']);
     Route::delete('/seminars/{slug}/register', [RegistrationController::class, 'unregister']);
@@ -100,13 +110,26 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/profile/pending-evaluations', [ProfileRatingController::class, 'pendingEvaluations']);
     Route::post('/profile/ratings/{seminar}', [ProfileRatingController::class, 'submitRating']);
 
+    // Profile - Data Export (LGPD)
+    Route::get('/profile/data-export', [DataPrivacyController::class, 'indexExports']);
+    Route::post('/profile/data-export', [DataPrivacyController::class, 'requestExport'])
+        ->middleware('throttle:5,60');
+
+    // Profile - Account Deletion (LGPD)
+    Route::post('/profile/delete-request', [DataPrivacyController::class, 'requestDeletion'])
+        ->middleware('throttle:3,1');
+    Route::post('/profile/delete-confirm', [DataPrivacyController::class, 'confirmDeletion'])
+        ->middleware('throttle:3,1');
+    Route::post('/profile/delete-cancel', [DataPrivacyController::class, 'cancelDeletion'])
+        ->middleware('throttle:3,1');
+
     // Profile - Two-Factor Authentication
     Route::prefix('profile/two-factor')->group(function () {
-        Route::post('/enable', [\App\Http\Controllers\Api\TwoFactorController::class, 'enable']);
-        Route::post('/confirm', [\App\Http\Controllers\Api\TwoFactorController::class, 'confirm']);
-        Route::post('/recovery-codes', [\App\Http\Controllers\Api\TwoFactorController::class, 'regenerateRecoveryCodes']);
-        Route::delete('/', [\App\Http\Controllers\Api\TwoFactorController::class, 'disable']);
-        Route::get('/devices', [\App\Http\Controllers\Api\TwoFactorController::class, 'devices']);
-        Route::delete('/devices/{device}', [\App\Http\Controllers\Api\TwoFactorController::class, 'revokeDevice']);
+        Route::post('/enable', [TwoFactorController::class, 'enable']);
+        Route::post('/confirm', [TwoFactorController::class, 'confirm']);
+        Route::post('/recovery-codes', [TwoFactorController::class, 'regenerateRecoveryCodes']);
+        Route::delete('/', [TwoFactorController::class, 'disable']);
+        Route::get('/devices', [TwoFactorController::class, 'devices']);
+        Route::delete('/devices/{device}', [TwoFactorController::class, 'revokeDevice']);
     });
 });

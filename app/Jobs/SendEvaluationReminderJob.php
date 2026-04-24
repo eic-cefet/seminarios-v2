@@ -50,7 +50,7 @@ class SendEvaluationReminderJob implements ShouldQueue
             return;
         }
 
-        Mail::to($this->user)->send(new EvaluationReminder($this->user, $seminars));
+        Mail::to($this->user)->queue(new EvaluationReminder($this->user, $seminars));
 
         Registration::whereIn('id', $this->registrationIds)->update(['evaluation_sent_at' => now()]);
     }

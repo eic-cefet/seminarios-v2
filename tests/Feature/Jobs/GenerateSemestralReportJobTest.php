@@ -38,7 +38,7 @@ it('generates excel report and sends email to recipient', function () {
     $job = new GenerateSemestralReportJob($user, "{$currentYear}.1");
     $job->handle();
 
-    Mail::assertSent(ReportReady::class, function ($mail) use ($user) {
+    Mail::assertQueued(ReportReady::class, function ($mail) use ($user) {
         return $mail->hasTo($user->email)
             && str_contains($mail->reportName, (string) now()->year);
     });
@@ -66,7 +66,7 @@ it('applies types filter', function () {
     $job = new GenerateSemestralReportJob($user, "{$currentYear}.1", types: [$type->id]);
     $job->handle();
 
-    Mail::assertSent(ReportReady::class);
+    Mail::assertQueued(ReportReady::class);
 });
 
 it('applies situations filter', function () {
@@ -89,7 +89,7 @@ it('applies situations filter', function () {
     $job = new GenerateSemestralReportJob($user, "{$currentYear}.1", situations: ['studying']);
     $job->handle();
 
-    Mail::assertSent(ReportReady::class);
+    Mail::assertQueued(ReportReady::class);
 });
 
 it('applies course filter', function () {
@@ -118,7 +118,7 @@ it('applies course filter', function () {
     $job = new GenerateSemestralReportJob($user, "{$currentYear}.1", courses: [$course1->id]);
     $job->handle();
 
-    Mail::assertSent(ReportReady::class);
+    Mail::assertQueued(ReportReady::class);
 });
 
 it('handles second semester date range', function () {
@@ -139,7 +139,7 @@ it('handles second semester date range', function () {
     $job = new GenerateSemestralReportJob($user, "{$currentYear}.2");
     $job->handle();
 
-    Mail::assertSent(ReportReady::class);
+    Mail::assertQueued(ReportReady::class);
 });
 
 it('throws and does not send email when s3 upload fails', function () {

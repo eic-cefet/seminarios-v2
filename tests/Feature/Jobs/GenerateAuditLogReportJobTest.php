@@ -21,7 +21,7 @@ it('generates audit log excel and sends email to recipient', function () {
     $job = new GenerateAuditLogReportJob($user, days: 30);
     $job->handle();
 
-    Mail::assertSent(ReportReady::class, function ($mail) use ($user) {
+    Mail::assertQueued(ReportReady::class, function ($mail) use ($user) {
         return $mail->hasTo($user->email)
             && str_contains($mail->reportName, '30');
     });
@@ -41,7 +41,7 @@ it('applies event_type filter', function () {
     $job = new GenerateAuditLogReportJob($user, days: 30, eventType: 'manual');
     $job->handle();
 
-    Mail::assertSent(ReportReady::class);
+    Mail::assertQueued(ReportReady::class);
 });
 
 it('applies event_name filter', function () {
@@ -56,7 +56,7 @@ it('applies event_name filter', function () {
     $job = new GenerateAuditLogReportJob($user, days: 30, eventName: 'user.login');
     $job->handle();
 
-    Mail::assertSent(ReportReady::class);
+    Mail::assertQueued(ReportReady::class);
 });
 
 it('applies search filter', function () {
@@ -72,7 +72,7 @@ it('applies search filter', function () {
     $job = new GenerateAuditLogReportJob($searcher, days: 30, search: 'Jorge');
     $job->handle();
 
-    Mail::assertSent(ReportReady::class);
+    Mail::assertQueued(ReportReady::class);
 });
 
 it('throws and does not send email when s3 upload fails', function () {

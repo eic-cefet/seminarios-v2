@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Models\UserSpeakerData;
 use App\Models\UserStudentData;
 use App\Notifications\ResetPassword;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Notification;
 use Spatie\Permission\Models\Role;
 
@@ -85,7 +86,6 @@ describe('User Model', function () {
         beforeEach(function () {
             Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
             Role::firstOrCreate(['name' => 'teacher', 'guard_name' => 'web']);
-            Role::firstOrCreate(['name' => 'user', 'guard_name' => 'web']);
         });
 
         it('returns true for isAdmin when user has admin role', function () {
@@ -114,15 +114,22 @@ describe('User Model', function () {
             expect($user->isTeacher())->toBeFalse();
         });
 
-        it('returns true for isUser when user has user role', function () {
+        it('returns true for isUser when user has no admin or teacher role', function () {
             $user = User::factory()->create();
-            $user->assignRole('user');
 
             expect($user->isUser())->toBeTrue();
         });
 
-        it('returns false for isUser when user does not have user role', function () {
+        it('returns false for isUser when user has admin role', function () {
             $user = User::factory()->create();
+            $user->assignRole('admin');
+
+            expect($user->isUser())->toBeFalse();
+        });
+
+        it('returns false for isUser when user has teacher role', function () {
+            $user = User::factory()->create();
+            $user->assignRole('teacher');
 
             expect($user->isUser())->toBeFalse();
         });
@@ -163,7 +170,7 @@ describe('User Model', function () {
                 'email_verified_at' => '2024-01-15 10:30:00',
             ]);
 
-            expect($user->email_verified_at)->toBeInstanceOf(\Carbon\Carbon::class);
+            expect($user->email_verified_at)->toBeInstanceOf(Carbon::class);
         });
     });
 

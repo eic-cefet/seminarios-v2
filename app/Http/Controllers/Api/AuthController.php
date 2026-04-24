@@ -3,16 +3,21 @@
 namespace App\Http\Controllers\Api;
 
 use App\Enums\AuditEvent;
+use App\Enums\ConsentType;
 use App\Exceptions\ApiException;
 use App\Http\Controllers\Concerns\FormatsUserResponse;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\UserRegistrationRequest;
+use App\Mail\AccountDeletionCancelled;
 use App\Mail\WelcomeUser;
 use App\Models\AuditLog;
 use App\Models\User;
+use App\Models\UserConsent;
+use App\Services\TwoFactorDeviceService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Password;
@@ -55,11 +60,18 @@ class AuthController extends Controller
         }
 
         if ($user->two_factor_confirmed_at !== null) {
-            $trustedToken = $request->cookie(\App\Services\TwoFactorDeviceService::COOKIE_NAME);
+            $trustedToken = $request->cookie(TwoFactorDeviceService::COOKIE_NAME);
 
-            if (app(\App\Services\TwoFactorDeviceService::class)->isTrusted($user, $trustedToken)) {
+            if (app(TwoFactorDeviceService::class)->isTrusted($user, $trustedToken)) {
                 Auth::login($user, $request->boolean('remember', false));
                 AuditLog::record(AuditEvent::UserLogin, auditable: $user, eventData: ['trusted_device' => true]);
+
+                if ($user->anonymization_requested_at !== null && $user->anonymized_at === null) {
+                    $user->forceFill(['anonymization_requested_at' => null])->save();
+                    Cache::forget('lgpd.deletion-pending:'.$user->id);
+                    AuditLog::record(event: AuditEvent::AccountDeletionCancelled, auditable: $user);
+                    Mail::to($user->email)->queue(new AccountDeletionCancelled($user));
+                }
 
                 return response()->json(['user' => $this->formatUserResponse($user)]);
             }
@@ -77,6 +89,13 @@ class AuthController extends Controller
         Auth::login($user, $request->boolean('remember', false));
 
         AuditLog::record(AuditEvent::UserLogin, auditable: $user);
+
+        if ($user->anonymization_requested_at !== null && $user->anonymized_at === null) {
+            $user->forceFill(['anonymization_requested_at' => null])->save();
+            Cache::forget('lgpd.deletion-pending:'.$user->id);
+            AuditLog::record(event: AuditEvent::AccountDeletionCancelled, auditable: $user);
+            Mail::to($user->email)->queue(new AccountDeletionCancelled($user));
+        }
 
         return response()->json([
             'user' => $this->formatUserResponse($user),
@@ -128,7 +147,19 @@ class AuthController extends Controller
             'course_id' => $validated['course_id'] ?? null,
         ]);
 
-        Mail::to($user)->send(new WelcomeUser($user));
+        foreach ([ConsentType::TermsOfService, ConsentType::PrivacyPolicy] as $type) {
+            UserConsent::create([
+                'user_id' => $user->id,
+                'type' => $type,
+                'granted' => true,
+                'version' => config('lgpd.versions.'.$type->value) ?? '1.0',
+                'ip_address' => $request->ip(),
+                'user_agent' => substr((string) $request->userAgent(), 0, 500),
+                'source' => 'registration',
+            ]);
+        }
+
+        Mail::to($user)->queue(new WelcomeUser($user));
 
         Auth::login($user);
 
@@ -147,9 +178,11 @@ class AuthController extends Controller
 
         Password::sendResetLink($request->only('email'));
 
-        AuditLog::record(AuditEvent::UserForgotPassword, eventData: [
-            'email' => $request->input('email'),
-        ]);
+        $user = User::where('email', $request->input('email'))->first();
+
+        if ($user) {
+            AuditLog::record(AuditEvent::UserForgotPassword, auditable: $user);
+        }
 
         return response()->json([
             'message' => 'Se o e-mail existir, você receberá um link de recuperação.',
@@ -164,13 +197,17 @@ class AuthController extends Controller
             'password' => ['required', 'confirmed', PasswordRule::min(8)],
         ]);
 
+        $resetUser = null;
+
         $status = Password::reset(
             $request->only('email', 'password', 'password_confirmation', 'token'),
-            function (User $user, string $password) {
+            function (User $user, string $password) use (&$resetUser) {
                 $user->forceFill([
                     'password' => $password,
                     'remember_token' => Str::random(60),
                 ])->save();
+
+                $resetUser = $user;
             }
         );
 
@@ -178,9 +215,7 @@ class AuthController extends Controller
             throw ApiException::invalidToken();
         }
 
-        AuditLog::record(AuditEvent::UserPasswordReset, eventData: [
-            'email' => $request->input('email'),
-        ]);
+        AuditLog::record(AuditEvent::UserPasswordReset, auditable: $resetUser);
 
         return response()->json([
             'message' => 'Senha redefinida com sucesso.',

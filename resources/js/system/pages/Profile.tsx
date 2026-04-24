@@ -6,6 +6,7 @@ import { TwoFactorSection } from "../components/profile/TwoFactorSection";
 import { ProfileInfoSection } from "../components/profile/ProfileInfoSection";
 import { RegistrationsSection } from "../components/profile/RegistrationsSection";
 import { StudentDataSection } from "../components/profile/StudentDataSection";
+import { PrivacySection } from "../components/profile/PrivacySection";
 import { Layout } from "../components/Layout";
 import { ProtectedRoute } from "../components/ProtectedRoute";
 
@@ -34,6 +35,7 @@ export default function Profile() {
                     <TwoFactorSection />
                     <RegistrationsSection />
                     <CertificatesSection />
+                    <PrivacySection user={user!} onUpdate={refreshUser} />
                 </div>
             </Layout>
         </ProtectedRoute>

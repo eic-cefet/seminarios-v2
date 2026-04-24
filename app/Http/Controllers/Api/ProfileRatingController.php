@@ -74,14 +74,20 @@ class ProfileRatingController extends Controller
             throw ApiException::conflict('Você já avaliou este seminário.');
         }
 
+        $aiAnalysisConsent = (bool) ($validated['ai_analysis_consent'] ?? false);
+
         $rating = Rating::create([
             'seminar_id' => $seminarId,
             'user_id' => $user->id,
             'score' => $validated['score'],
             'comment' => $validated['comment'] ?? null,
+            'ai_analysis_consent' => $aiAnalysisConsent,
         ]);
 
-        if ($rating->comment && FeatureFlags::shouldRun('sentiment_analysis')) {
+        $lgpdOptInEnabled = config('lgpd.features.ai_sentiment_opt_in', true);
+        $consentGranted = ! $lgpdOptInEnabled || $rating->ai_analysis_consent;
+
+        if ($rating->comment && $consentGranted && FeatureFlags::shouldRun('sentiment_analysis')) {
             try {
                 AnalyzeRatingSentiment::dispatch($rating);
             } catch (Throwable $exception) {

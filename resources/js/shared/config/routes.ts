@@ -36,6 +36,12 @@ export const ROUTES = {
         WORKSHOP_DETAILS: (slug: string) => `/workshop/${slug}`,
         PRESENCE_PATTERN: "/p/:uuid",
         PRESENCE: (uuid: string) => `/p/${uuid}`,
+        DELETION_CONFIRM_PATTERN: "/confirmar-exclusao/:token",
+        DELETION_CONFIRM: (token: string) => `/confirmar-exclusao/${token}`,
+        PRIVACY_POLICY: "/politica-de-privacidade",
+        TERMS: "/termos-de-uso",
+        DATA_RIGHTS: "/direitos-de-dados",
+        COOKIE_PREFERENCES: "/preferencias-de-cookies",
     },
     ADMIN: {
         DASHBOARD: "/",

@@ -1,4 +1,4 @@
-import { ApiRequestError, seminarsApi, subjectsApi, workshopsApi, seminarTypesApi, coursesApi, statsApi, authApi, registrationApi, profileApi, bugReportApi, alertPreferencesApi } from './client';
+import { ApiRequestError, seminarsApi, subjectsApi, workshopsApi, seminarTypesApi, coursesApi, statsApi, authApi, registrationApi, profileApi, bugReportApi, alertPreferencesApi, consentsApi, dataPrivacyApi } from './client';
 import { createSeminar, createSubject, createWorkshop, createPaginatedResponse } from '@/test/factories';
 import { getCookie } from './httpUtils';
 
@@ -175,6 +175,8 @@ describe('fetchApi (via API namespaces)', () => {
                 password_confirmation: 'password',
                 course_situation: 'studying',
                 course_role: 'Aluno',
+                accepted_terms: true,
+                accepted_privacy_policy: true,
             });
             expect(result.user).toBeDefined();
         });
@@ -554,6 +556,145 @@ describe('fetchApi (via API namespaces)', () => {
             );
 
             mockGetCookie.mockReturnValue(null);
+        });
+    });
+
+    describe('consentsApi', () => {
+        it('list calls GET /api/consents', async () => {
+            mockFetchSuccess({ data: [] });
+
+            const result = await consentsApi.list();
+
+            expect(result.data).toEqual([]);
+            expect(fetchSpy).toHaveBeenCalledWith(
+                expect.stringContaining('/api/consents'),
+                expect.any(Object),
+            );
+        });
+
+        it('record calls POST /api/consents with JSON body', async () => {
+            const consentRecord = {
+                id: 1,
+                type: 'privacy_policy',
+                granted: true,
+                version: '1.0',
+                source: 'banner',
+                created_at: '2026-01-01T00:00:00.000000Z',
+            };
+            mockFetchSuccess({ data: consentRecord });
+
+            const result = await consentsApi.record({
+                type: 'privacy_policy',
+                granted: true,
+                version: '1.0',
+            });
+
+            expect(result.data.type).toBe('privacy_policy');
+            expect(result.data.granted).toBe(true);
+            expect(fetchSpy).toHaveBeenCalledWith(
+                expect.stringContaining('/api/consents'),
+                expect.objectContaining({
+                    method: 'POST',
+                    body: JSON.stringify({ type: 'privacy_policy', granted: true, version: '1.0' }),
+                }),
+            );
+        });
+
+        it('record passes anonymous_id when provided', async () => {
+            mockFetchSuccess({ data: { id: 2, type: 'cookies_functional', granted: false, version: null, source: null, created_at: null } });
+
+            await consentsApi.record({
+                type: 'cookies_functional',
+                granted: false,
+                anonymous_id: 'anon-abc123',
+            });
+
+            expect(fetchSpy).toHaveBeenCalledWith(
+                expect.stringContaining('/api/consents'),
+                expect.objectContaining({
+                    method: 'POST',
+                    body: JSON.stringify({ type: 'cookies_functional', granted: false, anonymous_id: 'anon-abc123' }),
+                }),
+            );
+        });
+    });
+
+    describe('dataPrivacyApi', () => {
+        it('listExports calls GET /api/profile/data-export', async () => {
+            mockFetchSuccess({ data: [] });
+
+            const result = await dataPrivacyApi.listExports();
+
+            expect(result.data).toEqual([]);
+            expect(fetchSpy).toHaveBeenCalledWith(
+                expect.stringContaining('/api/profile/data-export'),
+                expect.any(Object),
+            );
+        });
+
+        it('requestExport calls POST /api/profile/data-export', async () => {
+            const exportRecord = {
+                id: 1,
+                status: 'queued',
+                file_size_bytes: null,
+                expires_at: null,
+                completed_at: null,
+                created_at: '2026-04-23T00:00:00.000000Z',
+                is_downloadable: false,
+            };
+            mockFetchSuccess({ data: exportRecord });
+
+            const result = await dataPrivacyApi.requestExport();
+
+            expect(result.data.id).toBe(1);
+            expect(result.data.status).toBe('queued');
+            expect(fetchSpy).toHaveBeenCalledWith(
+                expect.stringContaining('/api/profile/data-export'),
+                expect.objectContaining({ method: 'POST' }),
+            );
+        });
+
+        it('requestDeletion calls POST /api/profile/delete-request with JSON body', async () => {
+            mockFetchSuccess({ message: 'Enviamos um link de confirmação para o seu e-mail.' });
+
+            const result = await dataPrivacyApi.requestDeletion('my-password');
+
+            expect(result.message).toBe('Enviamos um link de confirmação para o seu e-mail.');
+            expect(fetchSpy).toHaveBeenCalledWith(
+                expect.stringContaining('/api/profile/delete-request'),
+                expect.objectContaining({
+                    method: 'POST',
+                    body: JSON.stringify({ password: 'my-password' }),
+                }),
+            );
+        });
+
+        it('confirmDeletion calls POST /api/profile/delete-confirm with token body', async () => {
+            mockFetchSuccess({ message: 'Conta excluída em 30 dias.', scheduled_for: '2026-05-23T00:00:00.000000Z' });
+
+            const result = await dataPrivacyApi.confirmDeletion('a'.repeat(64));
+
+            expect(result.message).toBe('Conta excluída em 30 dias.');
+            expect(result.scheduled_for).toBe('2026-05-23T00:00:00.000000Z');
+            expect(fetchSpy).toHaveBeenCalledWith(
+                expect.stringContaining('/api/profile/delete-confirm'),
+                expect.objectContaining({
+                    method: 'POST',
+                    body: JSON.stringify({ token: 'a'.repeat(64) }),
+                }),
+            );
+        });
+
+        it('cancelDeletion calls POST /api/profile/delete-cancel', async () => {
+            mockFetchSuccess({ message: 'Deletion cancelled' });
+
+            const result = await dataPrivacyApi.cancelDeletion();
+
+            expect(result.message).toBe('Deletion cancelled');
+            expect(fetchSpy).toHaveBeenCalledWith(
+                expect.stringContaining('/api/profile/delete-cancel'),
+                expect.objectContaining({ method: 'POST' }),
+            );
         });
     });
 

@@ -60,6 +60,11 @@ class ApiException extends Exception
         return new self('rate_limited', 'Muitas tentativas. Tente novamente em alguns minutos.', 429);
     }
 
+    public static function tooManyAttempts(string $message = 'Too many requests.'): self
+    {
+        return new self('too_many_requests', $message, 429);
+    }
+
     public static function validation(array $errors): self
     {
         return new self('validation_error', 'Dados inválidos', 422, $errors);

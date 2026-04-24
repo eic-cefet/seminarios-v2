@@ -501,6 +501,7 @@ describe('Evaluations', () => {
             expect(profileApi.submitRating).toHaveBeenCalledWith(10, {
                 score: 2,
                 comment: 'Needs improvement',
+                ai_analysis_consent: false,
             });
         });
 
@@ -594,5 +595,59 @@ describe('Evaluations', () => {
 
         await user.click(starButtons[3]); // score = 4
         expect(screen.getByText('Bom')).toBeInTheDocument();
+    });
+
+    it('submits with ai_analysis_consent=true when the checkbox is checked', async () => {
+        vi.mocked(profileApi.pendingEvaluations).mockResolvedValue({ data: singleEvaluation() });
+        vi.mocked(profileApi.submitRating).mockResolvedValue({ message: 'ok', rating: { id: 1, score: 5, comment: null } });
+        const user = userEvent.setup();
+
+        render(<Evaluations />);
+
+        await waitFor(() => {
+            expect(screen.getByRole('button', { name: /^avaliar$/i })).toBeInTheDocument();
+        });
+
+        await user.click(screen.getByRole('button', { name: /^avaliar$/i }));
+
+        const starsContainer = screen.getByText(/como voce avalia este seminario/i).nextElementSibling!;
+        const starButtons = starsContainer.querySelectorAll('button');
+        await user.click(starButtons[4]); // score = 5
+
+        const consentCheckbox = screen.getByRole('checkbox');
+        await user.click(consentCheckbox);
+        expect(consentCheckbox).toBeChecked();
+
+        await user.click(screen.getByRole('button', { name: /enviar avaliacao/i }));
+
+        await waitFor(() => {
+            expect(profileApi.submitRating).toHaveBeenCalledWith(10, {
+                score: 5,
+                comment: undefined,
+                ai_analysis_consent: true,
+            });
+        });
+    });
+
+    it('renders AI consent checkbox with link to cookie preferences', async () => {
+        vi.mocked(profileApi.pendingEvaluations).mockResolvedValue({ data: singleEvaluation() });
+        const user = userEvent.setup();
+
+        render(<Evaluations />);
+
+        await waitFor(() => {
+            expect(screen.getByRole('button', { name: /^avaliar$/i })).toBeInTheDocument();
+        });
+
+        await user.click(screen.getByRole('button', { name: /^avaliar$/i }));
+
+        const checkbox = screen.getByRole('checkbox');
+        expect(checkbox).toBeInTheDocument();
+        expect(checkbox).not.toBeChecked();
+
+        // Find the cookie-preferences link specifically within the consent label
+        const consentLabel = checkbox.closest('label')!;
+        const preferencesLink = consentLabel.querySelector('a');
+        expect(preferencesLink).toHaveAttribute('href', '/preferencias-de-cookies');
     });
 });

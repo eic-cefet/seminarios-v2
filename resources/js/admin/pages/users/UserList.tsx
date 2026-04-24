@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, Pencil, Trash2, RotateCcw, Archive, Search } from "lucide-react";
+import { Plus, Pencil, Trash2, RotateCcw, Archive, Search, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { analytics } from "@shared/lib/analytics";
 import { useDebouncedSearch } from "@shared/hooks/useDebouncedSearch";
@@ -31,6 +31,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from "../../components/ui/dialog";
+import { UserLgpdPanel } from "../../components/UserLgpdPanel";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -96,8 +97,10 @@ export default function UserList() {
     });
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+    const [isLgpdDialogOpen, setIsLgpdDialogOpen] = useState(false);
     const [editingUser, setEditingUser] = useState<AdminUser | null>(null);
     const [deletingUser, setDeletingUser] = useState<AdminUser | null>(null);
+    const [lgpdUser, setLgpdUser] = useState<AdminUser | null>(null);
     const [formData, setFormData] = useState<UserFormData>(initialFormData);
     const [aiLoading, setAiLoading] = useState<boolean>(false);
 
@@ -477,6 +480,17 @@ export default function UserList() {
                                                             <Button
                                                                 variant="ghost"
                                                                 size="icon"
+                                                                title="Dados LGPD"
+                                                                onClick={() => {
+                                                                    setLgpdUser(user);
+                                                                    setIsLgpdDialogOpen(true);
+                                                                }}
+                                                            >
+                                                                <ShieldCheck className="h-4 w-4 text-blue-500" />
+                                                            </Button>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
                                                                 onClick={() =>
                                                                     openDeleteDialog(
                                                                         user,
@@ -844,6 +858,26 @@ export default function UserList() {
                             </Button>
                         </DialogFooter>
                     </form>
+                </DialogContent>
+            </Dialog>
+
+            {/* LGPD Dialog */}
+            <Dialog
+                open={isLgpdDialogOpen}
+                onOpenChange={setIsLgpdDialogOpen}
+            >
+                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                        <DialogTitle>
+                            Dados LGPD — {lgpdUser?.name}
+                        </DialogTitle>
+                        <DialogDescription>
+                            Gerencie exportações e anonimização de dados pessoais
+                        </DialogDescription>
+                    </DialogHeader>
+                    {lgpdUser && (
+                        <UserLgpdPanel userId={lgpdUser.id} />
+                    )}
                 </DialogContent>
             </Dialog>
 

@@ -8,6 +8,7 @@ use App\Http\Requests\BugReportRequest;
 use App\Mail\BugReportMail;
 use App\Models\AuditLog;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Mail;
 
 class BugReportController extends Controller
@@ -16,11 +17,11 @@ class BugReportController extends Controller
     {
         $validated = $request->validated();
 
-        /** @var array<int, \Illuminate\Http\UploadedFile> $files */
+        /** @var array<int, UploadedFile> $files */
         $files = $request->file('files', []);
 
         Mail::to(config('mail.bug_report_email'))
-            ->send(new BugReportMail(
+            ->queue(new BugReportMail(
                 reportSubject: $validated['subject'],
                 message: $validated['message'],
                 reporterName: $validated['name'] ?? null,

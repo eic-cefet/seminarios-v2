@@ -42,6 +42,8 @@ class User extends Authenticatable implements CanResetPassword
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'anonymization_requested_at' => 'datetime',
+            'anonymized_at' => 'datetime',
         ];
     }
 
@@ -75,6 +77,16 @@ class User extends Authenticatable implements CanResetPassword
         return $this->hasMany(SocialIdentity::class);
     }
 
+    public function consents(): HasMany
+    {
+        return $this->hasMany(UserConsent::class);
+    }
+
+    public function dataExportRequests(): HasMany
+    {
+        return $this->hasMany(DataExportRequest::class);
+    }
+
     public function alertPreference(): HasOne
     {
         return $this->hasOne(AlertPreference::class);
@@ -97,7 +109,17 @@ class User extends Authenticatable implements CanResetPassword
 
     public function isUser(): bool
     {
-        return $this->hasRole(Role::User);
+        return ! $this->isAdmin() && ! $this->isTeacher();
+    }
+
+    public function isAnonymizationPending(): bool
+    {
+        return $this->anonymization_requested_at !== null && $this->anonymized_at === null;
+    }
+
+    public function isAnonymized(): bool
+    {
+        return $this->anonymized_at !== null;
     }
 
     /**

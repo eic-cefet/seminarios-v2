@@ -82,7 +82,7 @@ class GenerateAuditLogReportJob implements ShouldQueue
 
         DeleteS3FileJob::dispatch($filename)->delay(now()->addHours(2));
 
-        Mail::to($this->user->email)->send(new ReportReady(
+        Mail::to($this->user->email)->queue(new ReportReady(
             reportName: "Logs de Auditoria — últimos {$this->days} dias",
             downloadUrl: $url,
         ));

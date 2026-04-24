@@ -46,7 +46,13 @@ class AdminUserController extends Controller
         }
 
         if ($role = $request->string('role')->trim()->toString()) {
-            $query->role($role);
+            if ($role === 'user') {
+                // "user" is the UI shorthand for "no privilege" — filter users
+                // with no assigned role (Admin and Teacher are the only real roles).
+                $query->whereDoesntHave('roles');
+            } else {
+                $query->role($role);
+            }
         }
 
         return AdminUserResource::collection($query->paginate(15));
@@ -74,7 +80,7 @@ class AdminUserController extends Controller
                 'password' => Hash::make($password),
             ]);
 
-            if (isset($validated['role'])) {
+            if (isset($validated['role']) && $validated['role'] !== 'user') {
                 $user->assignRole($validated['role']);
             }
 
@@ -116,7 +122,9 @@ class AdminUserController extends Controller
             $user->save();
 
             if (isset($validated['role'])) {
-                $user->syncRoles([$validated['role']]);
+                $user->syncRoles(
+                    $validated['role'] === 'user' ? [] : [$validated['role']],
+                );
             }
 
             if (array_key_exists('student_data', $validated)) {

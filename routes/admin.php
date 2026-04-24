@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\AdminApiTokenController;
 use App\Http\Controllers\Admin\AdminAuditLogController;
 use App\Http\Controllers\Admin\AdminDashboardController;
+use App\Http\Controllers\Admin\AdminLgpdController;
 use App\Http\Controllers\Admin\AdminLocationController;
 use App\Http\Controllers\Admin\AdminPresenceLinkController;
 use App\Http\Controllers\Admin\AdminRegistrationController;
@@ -23,6 +24,11 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function ()
     // All update requests use 'sometimes' validation, supporting partial payloads.
     Route::apiResource('users', AdminUserController::class);
     Route::post('/users/{user}/restore', [AdminUserController::class, 'restore'])->withTrashed();
+
+    // LGPD — admin can act on behalf of users via out-of-app channels (email/ANPD)
+    Route::get('/users/{user}/lgpd', [AdminLgpdController::class, 'show']);
+    Route::post('/users/{user}/lgpd/export', [AdminLgpdController::class, 'export']);
+    Route::post('/users/{user}/lgpd/anonymize', [AdminLgpdController::class, 'anonymize']);
 
     Route::apiResource('locations', AdminLocationController::class);
 

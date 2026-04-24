@@ -197,6 +197,8 @@ export const authApi = {
         course_situation: "studying" | "graduated";
         course_role: "Aluno" | "Professor" | "Outro";
         course_id?: number;
+        accepted_terms: boolean;
+        accepted_privacy_policy: boolean;
     }) => {
         await getCsrfCookie();
         return fetchApi<{ user: User }>("/auth/register", {
@@ -387,7 +389,7 @@ export const profileApi = {
 
     submitRating: async (
         seminarId: number,
-        data: { score: number; comment?: string },
+        data: { score: number; comment?: string; ai_analysis_consent?: boolean },
     ) => {
         await getCsrfCookie();
         return fetchApi<{
@@ -484,6 +486,79 @@ export const presenceApi = {
             method: "POST",
         });
     },
+};
+
+// LGPD Consents
+export type ConsentType =
+    | "terms_of_service"
+    | "privacy_policy"
+    | "cookies_functional"
+    | "cookies_analytics"
+    | "ai_sentiment_analysis";
+
+export interface ConsentRecord {
+    id: number;
+    type: ConsentType;
+    granted: boolean;
+    version: string | null;
+    source: string | null;
+    created_at: string | null;
+}
+
+export interface RecordConsentInput {
+    type: ConsentType;
+    granted: boolean;
+    version?: string;
+    anonymous_id?: string;
+}
+
+export const consentsApi = {
+    list: () => fetchApi<{ data: ConsentRecord[] }>("/consents"),
+    record: (input: RecordConsentInput) =>
+        fetchApi<{ data: ConsentRecord }>("/consents", {
+            method: "POST",
+            body: JSON.stringify(input),
+        }),
+};
+
+// LGPD Data Privacy
+export interface DataExportRequest {
+    id: number;
+    status: "queued" | "running" | "completed" | "failed";
+    file_size_bytes: number | null;
+    expires_at: string | null;
+    completed_at: string | null;
+    created_at: string | null;
+    is_downloadable: boolean;
+}
+
+export const dataPrivacyApi = {
+    listExports: () =>
+        fetchApi<{ data: DataExportRequest[] }>("/profile/data-export"),
+    requestExport: () =>
+        fetchApi<{ data: DataExportRequest }>("/profile/data-export", {
+            method: "POST",
+        }),
+    requestDeletion: (password: string) =>
+        fetchApi<{ message: string }>(
+            "/profile/delete-request",
+            {
+                method: "POST",
+                body: JSON.stringify({ password }),
+            },
+        ),
+    confirmDeletion: (token: string) =>
+        fetchApi<{ message: string; scheduled_for: string }>(
+            "/profile/delete-confirm",
+            {
+                method: "POST",
+                body: JSON.stringify({ token }),
+            },
+        ),
+    cancelDeletion: () =>
+        fetchApi<{ message: string }>("/profile/delete-cancel", {
+            method: "POST",
+        }),
 };
 
 // Bug Report

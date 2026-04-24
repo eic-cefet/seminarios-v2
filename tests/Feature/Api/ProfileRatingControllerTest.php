@@ -4,6 +4,7 @@ use App\Jobs\AnalyzeRatingSentiment;
 use App\Models\Rating;
 use App\Models\Registration;
 use App\Models\Seminar;
+use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
 
@@ -25,6 +26,7 @@ describe('POST /profile/ratings/{seminar} - sentiment dispatch', function () {
         $this->postJson("/api/profile/ratings/{$seminar->id}", [
             'score' => 4,
             'comment' => 'Great seminar!',
+            'ai_analysis_consent' => true,
         ])->assertOk();
 
         Queue::assertPushed(AnalyzeRatingSentiment::class);
@@ -131,5 +133,31 @@ describe('POST /profile/ratings/{seminar} - sentiment dispatch', function () {
         expect($rating)->not->toBeNull();
         expect($rating->sentiment)->toBeNull();
         expect($rating->sentiment_analyzed_at)->toBeNull();
+    });
+
+    it('reports the exception and still returns ok when dispatch itself throws', function () {
+        config([
+            'features.sentiment_analysis' => ['enabled' => true, 'sample_rate' => 100],
+            'lgpd.features.ai_sentiment_opt_in' => false,
+        ]);
+
+        Bus::fake();
+        Bus::shouldReceive('dispatch')->andThrow(new RuntimeException('queue connection failed'));
+
+        $user = actingAsUser();
+        $seminar = Seminar::factory()->create(['scheduled_at' => now()->subHour()]);
+        Registration::factory()->create([
+            'user_id' => $user->id,
+            'seminar_id' => $seminar->id,
+            'present' => true,
+        ]);
+
+        $this->postJson("/api/profile/ratings/{$seminar->id}", [
+            'score' => 3,
+            'comment' => 'Dispatch will throw',
+            'ai_analysis_consent' => true,
+        ])->assertOk();
+
+        expect(Rating::where('user_id', $user->id)->where('seminar_id', $seminar->id)->exists())->toBeTrue();
     });
 });

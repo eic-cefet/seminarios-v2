@@ -1,7 +1,10 @@
 <?php
 
 use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Spatie\Permission\Models\Role;
+use Spatie\Permission\PermissionRegistrar;
+use Tests\TestCase;
 
 /*
 |--------------------------------------------------------------------------
@@ -14,15 +17,35 @@ use Spatie\Permission\Models\Role;
 |
 */
 
-pest()->extend(Tests\TestCase::class)
-    ->use(Illuminate\Foundation\Testing\RefreshDatabase::class)
+pest()->extend(TestCase::class)
+    ->use(RefreshDatabase::class)
     ->beforeEach(function () {
         // Ensure roles exist for permission tests
-        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+        app()[PermissionRegistrar::class]->forgetCachedPermissions();
         Role::findOrCreate('admin');
         Role::findOrCreate('teacher');
     })
     ->in('Feature');
+
+pest()->extend(TestCase::class)->in('Unit/Config');
+
+pest()->extend(TestCase::class)
+    ->use(RefreshDatabase::class)
+    ->beforeEach(function () {
+        app()[PermissionRegistrar::class]->forgetCachedPermissions();
+        Role::findOrCreate('admin');
+        Role::findOrCreate('teacher');
+    })
+    ->in('Unit/Models');
+
+pest()->extend(TestCase::class)
+    ->use(RefreshDatabase::class)
+    ->beforeEach(function () {
+        app()[PermissionRegistrar::class]->forgetCachedPermissions();
+        Role::findOrCreate('admin');
+        Role::findOrCreate('teacher');
+    })
+    ->in('Unit/Services');
 
 /*
 |--------------------------------------------------------------------------

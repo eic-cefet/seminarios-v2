@@ -15,6 +15,7 @@ trait FormatsUserResponse
             'name' => $user->name,
             'email' => $user->email,
             'email_verified_at' => $user->email_verified_at?->toISOString(),
+            'anonymization_requested_at' => $user->anonymization_requested_at?->toIso8601String(),
             'roles' => $user->getRoleNames()->toArray(),
             'two_factor_enabled' => $user->two_factor_confirmed_at !== null,
             'student_data' => $user->studentData ? [

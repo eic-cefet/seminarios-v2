@@ -105,7 +105,7 @@ class SendTestEmailsCommand extends Command
         };
 
         $mailable->onConnection('sync');
-        Mail::to($testEmail)->send($mailable);
+        Mail::to($testEmail)->queue($mailable);
 
         $this->info("  ✓ {$name} sent");
     }
