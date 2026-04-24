@@ -1,3 +1,4 @@
+import { StrictMode } from "react";
 import { render, screen, waitFor } from "@/test/test-utils";
 import DeletionConfirm from "./DeletionConfirm";
 
@@ -112,5 +113,22 @@ describe("DeletionConfirm", () => {
         });
         render(<DeletionConfirm />);
         await waitFor(() => expect(mockConfirmDeletion).toHaveBeenCalledWith(TOKEN));
+    });
+
+    it("does not double-invoke the API when rendered inside StrictMode", async () => {
+        mockConfirmDeletion.mockResolvedValue({
+            message: "ok",
+            scheduled_for: "2026-05-23T00:00:00Z",
+        });
+        render(
+            <StrictMode>
+                <DeletionConfirm />
+            </StrictMode>,
+        );
+        await waitFor(() =>
+            expect(screen.getByText(/exclusão agendada/i)).toBeInTheDocument(),
+        );
+        // StrictMode invokes effects twice; the guard must ensure only one API call is made
+        expect(mockConfirmDeletion).toHaveBeenCalledTimes(1);
     });
 });

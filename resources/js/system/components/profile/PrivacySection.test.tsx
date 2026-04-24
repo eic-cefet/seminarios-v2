@@ -153,6 +153,29 @@ describe("PrivacySection", () => {
         expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     });
 
+    it("shows export table row with em dash when created_at is null", async () => {
+        const exports: ExportRecord[] = [
+            { id: 1, status: "queued", created_at: null },
+        ];
+        mockListExports.mockResolvedValueOnce({ data: exports });
+        renderSection();
+        await waitFor(() =>
+            expect(screen.getByText("—")).toBeInTheDocument(),
+        );
+    });
+
+    it("ExportStatusBadge falls back to queued style for unknown status", async () => {
+        const exports: ExportRecord[] = [
+            { id: 1, status: "unknown-status", created_at: "2026-04-20T10:00:00Z" },
+        ];
+        mockListExports.mockResolvedValueOnce({ data: exports });
+        renderSection();
+        // unknown status falls back to showing the status string as the label
+        await waitFor(() =>
+            expect(screen.getByText("unknown-status")).toBeInTheDocument(),
+        );
+    });
+
     it("closes the deletion modal when the cancel button is clicked", async () => {
         renderSection();
         fireEvent.click(

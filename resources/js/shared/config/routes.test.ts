@@ -28,6 +28,9 @@ describe("ROUTES.SYSTEM", () => {
         expect(ROUTES.SYSTEM.SUBJECT_DETAILS("ai")).toBe("/topico/ai");
         expect(ROUTES.SYSTEM.WORKSHOP_DETAILS("intro")).toBe("/workshop/intro");
         expect(ROUTES.SYSTEM.PRESENCE("abc-123")).toBe("/p/abc-123");
+        expect(ROUTES.SYSTEM.DELETION_CONFIRM("tok123")).toBe(
+            "/confirmar-exclusao/tok123",
+        );
     });
 
     it("exposes route patterns used in Route definitions", () => {
@@ -35,6 +38,9 @@ describe("ROUTES.SYSTEM", () => {
         expect(ROUTES.SYSTEM.SUBJECT_DETAILS_PATTERN).toBe("/topico/:slug");
         expect(ROUTES.SYSTEM.WORKSHOP_DETAILS_PATTERN).toBe("/workshop/:slug");
         expect(ROUTES.SYSTEM.PRESENCE_PATTERN).toBe("/p/:uuid");
+        expect(ROUTES.SYSTEM.DELETION_CONFIRM_PATTERN).toBe(
+            "/confirmar-exclusao/:token",
+        );
     });
 });
 

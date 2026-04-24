@@ -245,6 +245,102 @@ describe("UserLgpdPanel", () => {
         ).toBeDisabled();
     });
 
+    it("renders revoked consent with null optional fields", async () => {
+        mockShow.mockResolvedValueOnce({
+            data: {
+                consents: [
+                    {
+                        type: "terms",
+                        granted: false,
+                        version: null,
+                        source: null,
+                        created_at: null,
+                    },
+                ] as any[],
+                data_export_requests: [] as any[],
+                anonymization_requested_at: null as string | null,
+                anonymized_at: null as string | null,
+            },
+        });
+
+        renderPanel();
+        await waitFor(() =>
+            expect(screen.getByText("revogado")).toBeInTheDocument(),
+        );
+        // null version, source, created_at all render as em dashes
+        expect(screen.getAllByText("—").length).toBeGreaterThanOrEqual(3);
+    });
+
+    it("renders export request with null created_at and completed_at", async () => {
+        mockShow.mockResolvedValueOnce({
+            data: {
+                consents: [] as any[],
+                data_export_requests: [
+                    {
+                        id: 8,
+                        status: "queued",
+                        created_at: null,
+                        completed_at: null,
+                    },
+                ] as any[],
+                anonymization_requested_at: null as string | null,
+                anonymized_at: null as string | null,
+            },
+        });
+
+        renderPanel();
+        await waitFor(() =>
+            expect(screen.getByText(/#8/)).toBeInTheDocument(),
+        );
+        expect(screen.getAllByText("—").length).toBeGreaterThanOrEqual(2);
+    });
+
+    it("shows pending text on export button while mutation is in progress", async () => {
+        let resolveExport!: (value: any) => void;
+        mockExport.mockImplementationOnce(
+            () => new Promise((resolve) => { resolveExport = resolve; }),
+        );
+
+        renderPanel();
+        await waitFor(() =>
+            expect(
+                screen.getByRole("button", { name: /gerar exporta/i }),
+            ).toBeInTheDocument(),
+        );
+        fireEvent.click(screen.getByRole("button", { name: /gerar exporta/i }));
+        await waitFor(() =>
+            expect(
+                screen.getByRole("button", { name: /enfileirando/i }),
+            ).toBeInTheDocument(),
+        );
+
+        resolveExport({ data: { data_export_request_id: 1 } });
+    });
+
+    it("ExportStatusBadge falls back to queued style for unknown status", async () => {
+        mockShow.mockResolvedValueOnce({
+            data: {
+                consents: [] as any[],
+                data_export_requests: [
+                    {
+                        id: 9,
+                        status: "unknown-status",
+                        created_at: "2026-04-20T10:00:00Z",
+                        completed_at: null,
+                    },
+                ] as any[],
+                anonymization_requested_at: null as string | null,
+                anonymized_at: null as string | null,
+            },
+        });
+
+        renderPanel();
+        // unknown status label falls back to the raw status string
+        await waitFor(() =>
+            expect(screen.getByText("unknown-status")).toBeInTheDocument(),
+        );
+    });
+
     it("shows form error when anonymize mutation fails", async () => {
         mockAnonymize.mockRejectedValueOnce(new Error("Server error"));
 

@@ -8,6 +8,7 @@ use App\Models\AuditLog;
 use App\Models\DataExportRequest;
 use App\Models\User;
 use App\Services\UserDataExportService;
+use Illuminate\Contracts\Filesystem\Filesystem;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
@@ -50,6 +51,23 @@ it('uses a 1-day signed URL and schedules S3 cleanup at the same offset', functi
     expect($request->expires_at->diffInSeconds(now()->addDay(), true))->toBeLessThan(10);
 
     Queue::assertPushed(DeleteS3FileJob::class, fn ($job) => $job->path === $request->file_path);
+});
+
+it('throws a RuntimeException when S3 does not store the file', function () {
+    Mail::fake();
+    Queue::fake();
+
+    $disk = Mockery::mock(Filesystem::class);
+    $disk->shouldReceive('put')->once()->andReturn(true);
+    $disk->shouldReceive('exists')->once()->andReturn(false);
+
+    Storage::shouldReceive('disk')->with('s3')->andReturn($disk);
+
+    $user = User::factory()->create();
+    $request = DataExportRequest::factory()->for($user)->create();
+
+    expect(fn () => (new ExportUserDataJob($request->id))->handle(app(UserDataExportService::class)))
+        ->toThrow(RuntimeException::class, 'Failed to store data export on S3');
 });
 
 it('marks the request failed via the failed() hook after final retry', function () {

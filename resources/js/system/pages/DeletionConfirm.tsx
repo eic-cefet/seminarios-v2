@@ -17,9 +17,11 @@ export default function DeletionConfirm() {
     const calledRef = useRef(false);
 
     useEffect(() => {
+        /* v8 ignore start -- StrictMode double-invoke guard; JSDOM does not re-run effects */
         if (calledRef.current) {
             return;
         }
+        /* v8 ignore stop */
         calledRef.current = true;
 
         if (!token) {

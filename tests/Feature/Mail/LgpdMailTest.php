@@ -2,6 +2,7 @@
 
 use App\Mail\AccountAnonymized;
 use App\Mail\AccountDeletionCancelled;
+use App\Mail\AccountDeletionConfirmation;
 use App\Mail\AccountDeletionScheduled;
 use App\Models\User;
 use Illuminate\Support\Carbon;
@@ -56,6 +57,38 @@ describe('AccountDeletionCancelled', function () {
 
         expect($text['X-Entity-Ref-ID'])->toBe('account-deletion-cancelled:'.$user->id)
             ->and($text['X-Mail-Class'])->toBe(AccountDeletionCancelled::class);
+    });
+});
+
+describe('AccountDeletionConfirmation', function () {
+    it('has correct subject', function () {
+        $user = User::factory()->create();
+        $mail = new AccountDeletionConfirmation($user, 'https://example.com/confirm', now()->addHour());
+
+        expect($mail->envelope()->subject)->toBe('Confirme a exclusão da sua conta');
+    });
+
+    it('uses markdown template with correct data', function () {
+        $user = User::factory()->create(['name' => 'Carlos Lima']);
+        $expiresAt = Carbon::parse('2026-04-23 15:30:00');
+        $mail = new AccountDeletionConfirmation($user, 'https://example.com/confirmar-exclusao/abc', $expiresAt);
+        $content = $mail->content();
+
+        expect($content->markdown)->toBe('emails.account-deletion-confirmation')
+            ->and($content->with['userName'])->toBe('Carlos Lima')
+            ->and($content->with['confirmUrl'])->toBe('https://example.com/confirmar-exclusao/abc')
+            ->and($content->with['expiresAtFormatted'])->toBe('23/04/2026 15:30');
+    });
+
+    it('includes anti-threading headers', function () {
+        $user = User::factory()->create();
+        $mail = new AccountDeletionConfirmation($user, 'https://example.com/confirm', now()->addHour());
+        $headers = $mail->headers();
+        $text = $headers->text;
+
+        expect($text['X-Mail-Class'])->toBe(AccountDeletionConfirmation::class)
+            ->and($text)->toHaveKey('X-Entity-Ref-ID')
+            ->and($text['X-Entity-Ref-ID'])->toStartWith('deletion-confirmation:');
     });
 });
 
