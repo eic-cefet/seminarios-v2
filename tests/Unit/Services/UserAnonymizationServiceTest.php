@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Models\UserConsent;
 use App\Models\UserStudentData;
 use App\Services\UserAnonymizationService;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
 beforeEach(function () {
@@ -52,6 +53,33 @@ it('keeps registrations (academic records) but scrubs rating comments', function
 
     expect(Registration::where('user_id', $user->id)->count())->toBe(1)
         ->and(Rating::where('user_id', $user->id)->first()->comment)->toBe('[removido pelo usuário]');
+});
+
+it('swallows and logs S3 delete failures so anonymization still succeeds', function () {
+    $user = User::factory()->create();
+    DataExportRequest::factory()->for($user)->create([
+        'status' => DataExportRequest::STATUS_COMPLETED,
+        'file_path' => 'lgpd-exports/flaky.zip',
+    ]);
+
+    $disk = Mockery::mock(\Illuminate\Contracts\Filesystem\Filesystem::class);
+    $disk->shouldReceive('delete')->once()->andThrow(new RuntimeException('S3 down'));
+    Storage::shouldReceive('disk')->with('s3')->andReturn($disk);
+
+    Log::shouldReceive('warning')
+        ->once()
+        ->with(
+            'LGPD anonymization: failed to delete export artifact from S3',
+            Mockery::on(fn ($ctx) => $ctx['path'] === 'lgpd-exports/flaky.zip'
+                && $ctx['user_id'] === $user->id
+                && $ctx['error'] === 'S3 down'),
+        );
+
+    $this->service->anonymize($user);
+
+    $fresh = User::withTrashed()->find($user->id);
+    expect($fresh->anonymized_at)->not->toBeNull()
+        ->and(DataExportRequest::where('user_id', $user->id)->exists())->toBeFalse();
 });
 
 it('deletes past data-export ZIPs from S3 and their DB rows', function () {
