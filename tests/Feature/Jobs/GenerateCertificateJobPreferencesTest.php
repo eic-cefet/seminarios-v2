@@ -41,7 +41,9 @@ it('does not send certificate email when user opted out of certificate_ready', f
 
     Mail::assertNothingSent();
     Mail::assertNothingQueued();
-    expect($registration->fresh()->certificate_sent)->toBeFalse();
+    // certificate_sent is marked true even when the email is skipped by preference,
+    // so the hourly scheduler doesn't re-dispatch the job every hour.
+    expect($registration->fresh()->certificate_sent)->toBeTrue();
 });
 
 it('still generates artifacts for opted-out users (only email is skipped)', function () {
