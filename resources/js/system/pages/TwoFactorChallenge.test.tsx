@@ -53,7 +53,7 @@ describe('TwoFactorChallenge', () => {
         const user = userEvent.setup();
         renderPage({ challengeToken: 'abc', remember: false, from: '/' });
 
-        await user.type(screen.getByLabelText(/^código\s*\*/i), '123456');
+        await user.type(screen.getByLabelText(/^código$/i), '123456');
         await user.click(screen.getByRole('button', { name: /verificar/i }));
 
         await waitFor(() => {
@@ -91,7 +91,7 @@ describe('TwoFactorChallenge', () => {
         const user = userEvent.setup();
         renderPage();
 
-        await user.type(screen.getByLabelText(/^código\s*\*/i), '123456');
+        await user.type(screen.getByLabelText(/^código$/i), '123456');
         await user.click(screen.getByRole('checkbox', { name: /lembrar este dispositivo/i }));
         await user.click(screen.getByRole('button', { name: /verificar/i }));
 
@@ -102,12 +102,21 @@ describe('TwoFactorChallenge', () => {
         });
     });
 
+    it('navigates back to /login when the Voltar button is clicked', async () => {
+        const user = userEvent.setup();
+        renderPage();
+
+        await user.click(screen.getByRole('button', { name: /voltar/i }));
+
+        expect(mockNavigate).toHaveBeenCalledWith('/login', { replace: true });
+    });
+
     it('shows an error when the API call fails', async () => {
         vi.mocked(twoFactorApi.challenge).mockRejectedValueOnce(new Error('Código inválido'));
         const user = userEvent.setup();
         renderPage();
 
-        await user.type(screen.getByLabelText(/^código\s*\*/i), '000000');
+        await user.type(screen.getByLabelText(/^código$/i), '000000');
         await user.click(screen.getByRole('button', { name: /verificar/i }));
 
         await waitFor(() => {

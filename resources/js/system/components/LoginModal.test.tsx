@@ -183,7 +183,8 @@ describe('LoginModal', () => {
         });
         expect(onOpenChange).not.toHaveBeenCalledWith(false);
 
-        await user.type(screen.getByLabelText(/^código\s*\*/i), '123456');
+        const otpInput = screen.getByLabelText(/^código$/i);
+        await user.type(otpInput, '123456');
         await user.click(screen.getByRole('button', { name: /verificar/i }));
 
         await waitFor(() => {

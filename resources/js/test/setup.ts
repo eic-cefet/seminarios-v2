@@ -73,3 +73,8 @@ Object.defineProperty(window, 'scrollTo', {
     writable: true,
     value: vi.fn(),
 });
+
+// jsdom does not implement document.elementFromPoint (used by input-otp)
+if (typeof document.elementFromPoint !== 'function') {
+    document.elementFromPoint = () => null;
+}

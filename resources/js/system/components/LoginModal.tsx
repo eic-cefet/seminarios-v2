@@ -4,6 +4,12 @@ import * as Dialog from "@radix-ui/react-dialog";
 import { X } from "lucide-react";
 import { SocialLoginButtons } from "@shared/components/SocialLoginButtons";
 import { FormField } from "@shared/components/FormField";
+import {
+    InputOTP,
+    InputOTPGroup,
+    InputOTPSeparator,
+    InputOTPSlot,
+} from "@shared/components/InputOTP";
 import { ROUTES } from "@shared/config/routes";
 import { buildUrl, cn } from "@shared/lib/utils";
 import { useAuth } from "@shared/contexts/AuthContext";
@@ -260,22 +266,35 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
                                         onChange={(e) => setRecoveryCode(e.target.value)}
                                     />
                                 ) : (
-                                    <FormField
-                                        ref={twoFactorCodeRef}
-                                        id="login-modal-two-factor-code"
-                                        name="code"
-                                        type="text"
-                                        inputMode="numeric"
-                                        pattern="[0-9]{6}"
-                                        maxLength={6}
-                                        label="Código"
-                                        autoComplete="one-time-code"
-                                        required
-                                        value={twoFactorCode}
-                                        onChange={(e) =>
-                                            setTwoFactorCode(e.target.value.replace(/\D/g, ""))
-                                        }
-                                    />
+                                    <div className="flex flex-col items-center gap-2">
+                                        <label
+                                            htmlFor="login-modal-two-factor-code"
+                                            className="sr-only"
+                                        >
+                                            Código
+                                        </label>
+                                        <InputOTP
+                                            ref={twoFactorCodeRef}
+                                            id="login-modal-two-factor-code"
+                                            maxLength={6}
+                                            value={twoFactorCode}
+                                            onChange={setTwoFactorCode}
+                                            autoComplete="one-time-code"
+                                            autoFocus
+                                        >
+                                            <InputOTPGroup>
+                                                <InputOTPSlot index={0} />
+                                                <InputOTPSlot index={1} />
+                                                <InputOTPSlot index={2} />
+                                            </InputOTPGroup>
+                                            <InputOTPSeparator />
+                                            <InputOTPGroup>
+                                                <InputOTPSlot index={3} />
+                                                <InputOTPSlot index={4} />
+                                                <InputOTPSlot index={5} />
+                                            </InputOTPGroup>
+                                        </InputOTP>
+                                    </div>
                                 )}
 
                                 <label className="flex items-center gap-2 text-sm text-gray-700">
@@ -288,16 +307,32 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
                                     Lembrar este dispositivo por 30 dias
                                 </label>
 
-                                <button
-                                    type="submit"
-                                    disabled={loading}
-                                    className={cn(
-                                        "w-full rounded-md bg-primary-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors cursor-pointer",
-                                        loading && "opacity-70 cursor-not-allowed",
-                                    )}
-                                >
-                                    {loading ? "Verificando..." : "Verificar"}
-                                </button>
+                                <div className="flex gap-3">
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setView("login");
+                                            setError(null);
+                                            setTwoFactorCode("");
+                                            setRecoveryCode("");
+                                            setUseRecovery(false);
+                                            setChallengeToken(null);
+                                        }}
+                                        className="flex-1 rounded-md border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 transition-colors cursor-pointer"
+                                    >
+                                        Voltar
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        disabled={loading}
+                                        className={cn(
+                                            "flex-1 rounded-md bg-primary-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors cursor-pointer",
+                                            loading && "opacity-70 cursor-not-allowed",
+                                        )}
+                                    >
+                                        {loading ? "Verificando..." : "Verificar"}
+                                    </button>
+                                </div>
 
                                 <button
                                     type="button"
