@@ -98,38 +98,74 @@ export function UserLgpdPanel({ userId }: Props) {
             )}
 
             <section>
-                <h3 className="text-sm font-semibold text-gray-900">
-                    Consentimentos
-                </h3>
+                <div className="flex items-baseline justify-between">
+                    <h3 className="text-sm font-semibold text-gray-900">
+                        Consentimentos
+                    </h3>
+                    <span className="text-xs text-gray-500">
+                        {data.consents.length}{" "}
+                        {data.consents.length === 1 ? "registro" : "registros"}
+                    </span>
+                </div>
                 {data.consents.length === 0 ? (
-                    <p className="mt-2 text-sm text-gray-500">
+                    <p className="mt-3 rounded-md border border-dashed border-gray-200 bg-gray-50 px-4 py-6 text-center text-sm text-gray-500">
                         Nenhum registro.
                     </p>
                 ) : (
-                    <table className="mt-2 w-full text-sm">
-                        <thead>
-                            <tr className="text-left text-gray-500">
-                                <th>Tipo</th>
-                                <th>Estado</th>
-                                <th>Versão</th>
-                                <th>Origem</th>
-                                <th>Quando</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {data.consents.map((c, i) => (
-                                <tr key={i} className="border-t">
-                                    <td>{c.type}</td>
-                                    <td>
-                                        {c.granted ? "concedido" : "revogado"}
-                                    </td>
-                                    <td>{c.version ?? "—"}</td>
-                                    <td>{c.source ?? "—"}</td>
-                                    <td>{c.created_at?.slice(0, 10) ?? "—"}</td>
+                    <div className="mt-3 overflow-hidden rounded-lg border border-gray-200">
+                        <table className="w-full text-sm">
+                            <thead>
+                                <tr className="bg-gray-50 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">
+                                    <th className="px-3 py-2">Tipo</th>
+                                    <th className="px-3 py-2">Estado</th>
+                                    <th className="px-3 py-2">Versão</th>
+                                    <th className="px-3 py-2">Origem</th>
+                                    <th className="px-3 py-2">Quando</th>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody className="divide-y divide-gray-200 bg-white">
+                                {data.consents.map((c, i) => (
+                                    <tr
+                                        key={i}
+                                        className="hover:bg-gray-50"
+                                    >
+                                        <td className="px-3 py-2 font-mono text-xs text-gray-700">
+                                            {c.type}
+                                        </td>
+                                        <td className="px-3 py-2">
+                                            <span
+                                                className={
+                                                    c.granted
+                                                        ? "inline-flex items-center gap-1.5 rounded-full bg-green-50 px-2 py-0.5 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-200"
+                                                        : "inline-flex items-center gap-1.5 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-200"
+                                                }
+                                            >
+                                                <span
+                                                    className={
+                                                        c.granted
+                                                            ? "h-1.5 w-1.5 rounded-full bg-green-500"
+                                                            : "h-1.5 w-1.5 rounded-full bg-gray-400"
+                                                    }
+                                                />
+                                                {c.granted
+                                                    ? "concedido"
+                                                    : "revogado"}
+                                            </span>
+                                        </td>
+                                        <td className="px-3 py-2 text-gray-600">
+                                            {c.version ?? "—"}
+                                        </td>
+                                        <td className="px-3 py-2 text-gray-600">
+                                            {c.source ?? "—"}
+                                        </td>
+                                        <td className="px-3 py-2 whitespace-nowrap text-gray-500">
+                                            {c.created_at?.slice(0, 10) ?? "—"}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
                 )}
             </section>
 
