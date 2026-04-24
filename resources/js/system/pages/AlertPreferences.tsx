@@ -89,7 +89,7 @@ export default function AlertPreferences() {
 
     return (
         <ProtectedRoute>
-            <PageTitle title="Preferências de Alerta" />
+            <PageTitle title="Preferências de comunicação" />
             <Layout>
                 <div className="bg-white border-b border-gray-200">
                     <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
@@ -136,7 +136,7 @@ export default function AlertPreferences() {
                                         { id: "pref-resched", label: "Seminário reagendado", checked: seminarRescheduled, set: setSeminarRescheduled },
                                         { id: "pref-announce", label: "Comunicados gerais", checked: announcements, set: setAnnouncements },
                                     ] as const).map((row) => (
-                                        <label key={row.id} className="flex items-start gap-3 cursor-pointer">
+                                        <label key={row.id} className="flex items-start gap-3 cursor-pointer select-none">
                                             <input
                                                 id={row.id}
                                                 type="checkbox"
