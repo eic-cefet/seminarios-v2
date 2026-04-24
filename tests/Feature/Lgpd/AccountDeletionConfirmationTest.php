@@ -20,6 +20,36 @@ it('sends a confirmation email without marking the user', function () {
     expect(AuditLog::where('event_name', AuditEvent::AccountDeletionConfirmationSent->value)->exists())->toBeTrue();
 });
 
+it('rejects a second concurrent delete-request while the first is pending', function () {
+    Mail::fake();
+    actingAsUser();
+
+    $this->postJson('/api/profile/delete-request', ['password' => 'password'])->assertSuccessful();
+
+    // Second request while the cache lock is still held.
+    $this->postJson('/api/profile/delete-request', ['password' => 'password'])->assertConflict();
+
+    // Only one confirmation email ever queued.
+    Mail::assertQueuedCount(1);
+});
+
+it('releases the pending lock when the user cancels the deletion', function () {
+    Mail::fake();
+    $user = actingAsUser();
+
+    // First request holds the lock
+    $this->postJson('/api/profile/delete-request', ['password' => 'password'])->assertSuccessful();
+
+    // Simulate manual DB mark + cancel to clear state
+    $user->forceFill(['anonymization_requested_at' => now()])->save();
+    $this->postJson('/api/profile/delete-cancel')->assertSuccessful();
+
+    // A fresh request should succeed now — lock was released
+    $this->postJson('/api/profile/delete-request', ['password' => 'password'])->assertSuccessful();
+    // Two confirmation emails in total (the cancel email is a different mailable).
+    expect(Mail::queued(AccountDeletionConfirmation::class)->count())->toBe(2);
+});
+
 it('confirms deletion via token and marks the user', function () {
     Mail::fake();
     $user = actingAsUser();

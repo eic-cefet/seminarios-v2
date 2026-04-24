@@ -17,6 +17,7 @@ use App\Services\TwoFactorDeviceService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Password;
@@ -67,6 +68,7 @@ class AuthController extends Controller
 
                 if ($user->anonymization_requested_at !== null && $user->anonymized_at === null) {
                     $user->forceFill(['anonymization_requested_at' => null])->save();
+                    Cache::forget('lgpd.deletion-pending:'.$user->id);
                     AuditLog::record(event: AuditEvent::AccountDeletionCancelled, auditable: $user);
                     Mail::to($user->email)->queue(new AccountDeletionCancelled($user));
                 }
@@ -90,6 +92,7 @@ class AuthController extends Controller
 
         if ($user->anonymization_requested_at !== null && $user->anonymized_at === null) {
             $user->forceFill(['anonymization_requested_at' => null])->save();
+            Cache::forget('lgpd.deletion-pending:'.$user->id);
             AuditLog::record(event: AuditEvent::AccountDeletionCancelled, auditable: $user);
             Mail::to($user->email)->queue(new AccountDeletionCancelled($user));
         }

@@ -89,10 +89,17 @@ class DataPrivacyController extends Controller
         }
 
         $token = Str::random(64);
-        $cacheKey = 'lgpd.deletion-confirm:'.$token;
         $ttl = now()->addHour();
 
-        Cache::put($cacheKey, $user->id, $ttl);
+        // Atomic per-user lock: Cache::add returns false if a pending request
+        // is already in flight for this user. Prevents concurrent requests
+        // from each issuing a fresh token + email.
+        $pendingKey = 'lgpd.deletion-pending:'.$user->id;
+        if (! Cache::add($pendingKey, $token, $ttl)) {
+            throw ApiException::conflict('Já existe uma solicitação de exclusão pendente. Verifique seu e-mail.');
+        }
+
+        Cache::put('lgpd.deletion-confirm:'.$token, $user->id, $ttl);
 
         $confirmUrl = url('/confirmar-exclusao/'.$token);
 
@@ -151,6 +158,7 @@ class DataPrivacyController extends Controller
                 }
 
                 Cache::forget($cacheKey);
+                Cache::forget('lgpd.deletion-pending:'.$locked->id);
 
                 return [$locked, $already];
             },
@@ -190,6 +198,7 @@ class DataPrivacyController extends Controller
         }
 
         $user->forceFill(['anonymization_requested_at' => null])->save();
+        Cache::forget('lgpd.deletion-pending:'.$user->id);
 
         AuditLog::record(
             event: AuditEvent::AccountDeletionCancelled,
