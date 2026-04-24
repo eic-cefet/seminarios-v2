@@ -108,6 +108,103 @@ describe('TwoFactorSection', () => {
         });
     });
 
+    it('renders pending labels for enable, confirm and disable buttons', async () => {
+        // Enable: pending state
+        let resolveEnable: (v: never) => void;
+        vi.mocked(twoFactorApi.enable).mockImplementationOnce(
+            () => new Promise((res) => { resolveEnable = res as (v: never) => void; }),
+        );
+        const { unmount } = render(<TwoFactorSection />);
+        await userEvent.click(screen.getByRole('button', { name: /^ativar$/i }));
+        await waitFor(() => expect(screen.getByRole('button', { name: /gerando/i })).toBeInTheDocument());
+        resolveEnable!({ secret: 'S', qr_code_svg: '<svg/>', recovery_codes: ['a'] } as never);
+        unmount();
+
+        // Confirm: pending state
+        vi.mocked(twoFactorApi.enable).mockResolvedValueOnce({
+            secret: 'S', qr_code_svg: '<svg/>', recovery_codes: ['a'],
+        });
+        let resolveConfirm: (v: never) => void;
+        vi.mocked(twoFactorApi.confirm).mockImplementationOnce(
+            () => new Promise((res) => { resolveConfirm = res as (v: never) => void; }),
+        );
+        render(<TwoFactorSection />);
+        await userEvent.click(screen.getByRole('button', { name: /^ativar$/i }));
+        await userEvent.type(await screen.findByLabelText(/código do app/i), '123456');
+        await userEvent.click(screen.getByRole('button', { name: /confirmar/i }));
+        await waitFor(() => expect(screen.getByRole('button', { name: /confirmando/i })).toBeInTheDocument());
+        resolveConfirm!({ message: 'ok' } as never);
+    });
+
+    it('shows error when enable fails', async () => {
+        vi.mocked(twoFactorApi.enable).mockRejectedValueOnce(new Error('boom'));
+        render(<TwoFactorSection />);
+        await userEvent.click(screen.getByRole('button', { name: /^ativar$/i }));
+        await waitFor(() => expect(screen.getByText('boom')).toBeInTheDocument());
+    });
+
+    it('shows error when confirm fails', async () => {
+        vi.mocked(twoFactorApi.enable).mockResolvedValueOnce({
+            secret: 'S', qr_code_svg: '<svg/>', recovery_codes: ['a'],
+        });
+        vi.mocked(twoFactorApi.confirm).mockRejectedValueOnce(new Error('bad code'));
+        render(<TwoFactorSection />);
+        await userEvent.click(screen.getByRole('button', { name: /^ativar$/i }));
+        await userEvent.type(await screen.findByLabelText(/código do app/i), '123456');
+        await userEvent.click(screen.getByRole('button', { name: /confirmar/i }));
+        await waitFor(() => expect(screen.getByText('bad code')).toBeInTheDocument());
+    });
+
+    it('shows error when disable fails', async () => {
+        mockUser = { two_factor_enabled: true };
+        vi.mocked(twoFactorApi.disable).mockRejectedValueOnce(new Error('cant disable'));
+        render(<TwoFactorSection />);
+        await userEvent.click(screen.getByRole('button', { name: /desativar/i }));
+        await waitFor(() => expect(screen.getByText('cant disable')).toBeInTheDocument());
+    });
+
+    it('shows error when regenerating recovery codes fails', async () => {
+        mockUser = { two_factor_enabled: true };
+        vi.mocked(twoFactorApi.regenerateRecoveryCodes).mockRejectedValueOnce(new Error('regen failed'));
+        render(<TwoFactorSection />);
+        await userEvent.click(screen.getByRole('button', { name: /gerar novos códigos de recuperação/i }));
+        await waitFor(() => expect(screen.getByText('regen failed')).toBeInTheDocument());
+    });
+
+    it('shows the new recovery codes panel with a Fechar button after regeneration', async () => {
+        mockUser = { two_factor_enabled: true };
+        vi.mocked(twoFactorApi.regenerateRecoveryCodes).mockResolvedValueOnce({
+            recovery_codes: ['fresh-1'],
+        });
+        render(<TwoFactorSection />);
+        await userEvent.click(screen.getByRole('button', { name: /gerar novos códigos de recuperação/i }));
+        await waitFor(() => expect(screen.getByText('fresh-1')).toBeInTheDocument());
+        const closeBtn = screen.getByRole('button', { name: /fechar/i });
+        await userEvent.click(closeBtn);
+        await waitFor(() => expect(screen.queryByText('fresh-1')).not.toBeInTheDocument());
+    });
+
+    it('renders trusted device with last_used_at and falls back to defaults when label/ip null', async () => {
+        mockUser = { two_factor_enabled: true };
+        vi.mocked(twoFactorApi.listDevices).mockResolvedValueOnce({
+            devices: [
+                {
+                    id: 7,
+                    label: null,
+                    ip: null,
+                    last_used_at: '2026-04-23T10:00:00Z',
+                    expires_at: '2027-01-01T00:00:00Z',
+                    created_at: '2026-04-23T00:00:00Z',
+                },
+            ],
+        });
+
+        render(<TwoFactorSection />);
+
+        await waitFor(() => expect(screen.getByText('Dispositivo')).toBeInTheDocument());
+        expect(screen.getByText(/último uso/i)).toBeInTheDocument();
+    });
+
     it('lists trusted devices and supports revocation', async () => {
         mockUser = { two_factor_enabled: true };
         vi.mocked(twoFactorApi.listDevices).mockResolvedValueOnce({

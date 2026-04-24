@@ -102,6 +102,28 @@ describe('TwoFactorChallenge', () => {
         });
     });
 
+    it('redirects to /login when location.state is missing entirely', async () => {
+        render(<TwoFactorChallenge />, {
+            routerProps: { initialEntries: ['/login/two-factor'] },
+        });
+        await waitFor(() => {
+            expect(mockNavigate).toHaveBeenCalledWith('/login', { replace: true });
+        });
+    });
+
+    it('falls back to "/" when state.from is an unsafe redirect', async () => {
+        vi.mocked(twoFactorApi.challenge).mockResolvedValueOnce({ user: { id: 1 } } as never);
+        const user = userEvent.setup();
+        renderPage({ challengeToken: 'abc', from: 'https://evil.com' });
+
+        await user.type(screen.getByLabelText(/^código$/i), '123456');
+        await user.click(screen.getByRole('button', { name: /verificar/i }));
+
+        await waitFor(() => {
+            expect(mockNavigate).toHaveBeenCalledWith('/', { replace: true });
+        });
+    });
+
     it('navigates back to /login when the Voltar button is clicked', async () => {
         const user = userEvent.setup();
         renderPage();

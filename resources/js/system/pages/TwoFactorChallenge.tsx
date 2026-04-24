@@ -25,7 +25,7 @@ export default function TwoFactorChallenge() {
     const navigate = useNavigate();
     const location = useLocation();
     const { completeTwoFactor } = useAuth();
-    const state = (location.state ?? {}) as LocationState;
+    const state = (location.state || {}) as LocationState;
     const challengeToken = state.challengeToken;
 
     const fromRaw = state.from || "/";
@@ -46,12 +46,11 @@ export default function TwoFactorChallenge() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!challengeToken) return;
         setError(null);
         setLoading(true);
         try {
             const response = await twoFactorApi.challenge({
-                challenge_token: challengeToken,
+                challenge_token: challengeToken!,
                 ...(useRecovery
                     ? { recovery_code: recoveryCode }
                     : { code }),

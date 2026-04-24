@@ -63,13 +63,12 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
 
     const handleTwoFactor = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!challengeToken) return;
         setLoading(true);
         setError(null);
 
         try {
             const response = await twoFactorApi.challenge({
-                challenge_token: challengeToken,
+                challenge_token: challengeToken!,
                 ...(useRecovery
                     ? { recovery_code: recoveryCode }
                     : { code: twoFactorCode }),
