@@ -78,4 +78,28 @@ class TwoFactorController extends Controller
 
         return response()->json(['message' => '2FA desativado']);
     }
+
+    public function devices(Request $request): JsonResponse
+    {
+        return response()->json([
+            'devices' => $request->user()->trustedDevices()
+                ->orderByDesc('last_used_at')
+                ->get(['id', 'label', 'ip', 'last_used_at', 'expires_at', 'created_at']),
+        ]);
+    }
+
+    public function revokeDevice(Request $request, int $device): JsonResponse
+    {
+        $user = $request->user();
+        $row = $user->trustedDevices()->whereKey($device)->first();
+
+        if (! $row) {
+            throw ApiException::notFound('Device not found');
+        }
+
+        app(TwoFactorDeviceService::class)->revoke($user, $row->id);
+        AuditLog::record(AuditEvent::UserMfaDeviceRevoked, auditable: $user);
+
+        return response()->json(['message' => 'Device revoked']);
+    }
 }

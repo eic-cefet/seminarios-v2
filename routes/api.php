@@ -106,5 +106,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/confirm', [\App\Http\Controllers\Api\TwoFactorController::class, 'confirm']);
         Route::post('/recovery-codes', [\App\Http\Controllers\Api\TwoFactorController::class, 'regenerateRecoveryCodes']);
         Route::delete('/', [\App\Http\Controllers\Api\TwoFactorController::class, 'disable']);
+        Route::get('/devices', [\App\Http\Controllers\Api\TwoFactorController::class, 'devices']);
+        Route::delete('/devices/{device}', [\App\Http\Controllers\Api\TwoFactorController::class, 'revokeDevice']);
     });
 });

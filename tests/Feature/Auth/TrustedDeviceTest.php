@@ -40,3 +40,33 @@ it('skips the challenge when a trusted-device cookie is presented', function () 
     $response->assertSuccessful()->assertJsonPath('user.email', $user->email);
     $this->assertAuthenticatedAs($user);
 });
+
+it('lists the current user trusted devices', function () {
+    $user = \App\Models\User::factory()->create();
+    \App\Models\MfaTrustedDevice::factory()->for($user)->count(2)->create();
+    $this->actingAs($user);
+
+    $this->getJson('/api/profile/two-factor/devices')
+        ->assertSuccessful()
+        ->assertJsonCount(2, 'devices');
+});
+
+it('revokes a trusted device', function () {
+    $user = \App\Models\User::factory()->create();
+    $device = \App\Models\MfaTrustedDevice::factory()->for($user)->create();
+    $this->actingAs($user);
+
+    $this->deleteJson("/api/profile/two-factor/devices/{$device->id}")->assertSuccessful();
+
+    expect(\App\Models\MfaTrustedDevice::find($device->id))->toBeNull();
+    expect(\App\Models\AuditLog::where('event_name', \App\Enums\AuditEvent::UserMfaDeviceRevoked->value)->exists())->toBeTrue();
+});
+
+it('cannot revoke another users device', function () {
+    $mine = \App\Models\User::factory()->create();
+    $theirs = \App\Models\User::factory()->create();
+    $device = \App\Models\MfaTrustedDevice::factory()->for($theirs)->create();
+    $this->actingAs($mine);
+
+    $this->deleteJson("/api/profile/two-factor/devices/{$device->id}")->assertNotFound();
+});
