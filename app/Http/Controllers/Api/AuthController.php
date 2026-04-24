@@ -54,6 +54,26 @@ class AuthController extends Controller
             throw ApiException::mismatchedCredentials();
         }
 
+        if ($user->two_factor_confirmed_at !== null) {
+            $trustedToken = $request->cookie(\App\Services\TwoFactorDeviceService::COOKIE_NAME);
+
+            if (app(\App\Services\TwoFactorDeviceService::class)->isTrusted($user, $trustedToken)) {
+                Auth::login($user, $request->boolean('remember', false));
+                AuditLog::record(AuditEvent::UserLogin, auditable: $user, eventData: ['trusted_device' => true]);
+
+                return response()->json(['user' => $this->formatUserResponse($user)]);
+            }
+
+            $challengeToken = Str::random(80);
+            cache()->put(
+                "mfa:challenge:{$challengeToken}",
+                ['user_id' => $user->id, 'remember' => $request->boolean('remember', false)],
+                now()->addMinutes(5),
+            );
+
+            return response()->json(['two_factor' => ['challenge_token' => $challengeToken]]);
+        }
+
         Auth::login($user, $request->boolean('remember', false));
 
         AuditLog::record(AuditEvent::UserLogin, auditable: $user);
