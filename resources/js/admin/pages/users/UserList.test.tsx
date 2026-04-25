@@ -1384,6 +1384,140 @@ describe('UserList', () => {
         });
     });
 
+    it('does not submit when name and email are empty (Zod validation)', async () => {
+        vi.mocked(usersApi.create).mockClear();
+        vi.mocked(usersApi.create).mockResolvedValue({ data: { id: 999 } } as any);
+
+        render(<UserList />);
+        const user = userEvent.setup();
+
+        await user.click(screen.getByText('Novo Usuario'));
+
+        await waitFor(() => {
+            expect(screen.getByLabelText('Nome')).toBeInTheDocument();
+        });
+
+        // Submit without filling required fields -> validation should block the call
+        await user.click(screen.getByRole('button', { name: 'Salvar' }));
+
+        await waitFor(() => {
+            expect(screen.getByText('Nome é obrigatório')).toBeInTheDocument();
+        });
+
+        expect(usersApi.create).not.toHaveBeenCalled();
+    });
+
+    it('shows email validation error for invalid email (Zod)', async () => {
+        vi.mocked(usersApi.create).mockClear();
+        vi.mocked(usersApi.create).mockResolvedValue({ data: { id: 998 } } as any);
+
+        render(<UserList />);
+        const user = userEvent.setup();
+
+        await user.click(screen.getByText('Novo Usuario'));
+
+        await waitFor(() => {
+            expect(screen.getByLabelText('Nome')).toBeInTheDocument();
+        });
+
+        await user.type(screen.getByLabelText('Nome'), 'Bad Email User');
+        // Bypass HTML5 type=email by setting value directly via fill, then submit
+        const emailInput = screen.getByLabelText('Email') as HTMLInputElement;
+        await user.type(emailInput, 'not-an-email');
+        await user.type(screen.getByLabelText(/Senha/), 'password123');
+
+        await user.click(screen.getByRole('button', { name: 'Salvar' }));
+
+        await waitFor(() => {
+            expect(screen.getByText('Email inválido')).toBeInTheDocument();
+        });
+
+        expect(usersApi.create).not.toHaveBeenCalled();
+    });
+
+    it('uses hasRole helper to map admin role into form on edit', async () => {
+        vi.mocked(usersApi.list).mockResolvedValue({
+            data: [
+                {
+                    id: 88,
+                    name: 'Admin And Teacher',
+                    email: 'admin@test.com',
+                    roles: ['admin', 'teacher'],
+                    created_at: '2026-01-01T00:00:00Z',
+                    updated_at: '2026-01-01T00:00:00Z',
+                },
+            ],
+            meta: { last_page: 1, current_page: 1, total: 1, from: 1, to: 1 },
+        } as any);
+        vi.mocked(usersApi.update).mockResolvedValue({ data: { id: 88 } } as any);
+
+        render(<UserList />);
+        const user = userEvent.setup();
+
+        await waitFor(() => {
+            expect(screen.getByText('Admin And Teacher')).toBeInTheDocument();
+        });
+
+        const row = screen.getByText('Admin And Teacher').closest('tr')!;
+        const buttons = row.querySelectorAll('button');
+        await user.click(buttons[0]);
+
+        await waitFor(() => {
+            expect(screen.getByText('Editar Usuario')).toBeInTheDocument();
+        });
+
+        // Submit unchanged - role should be 'admin' (admin takes precedence over teacher)
+        await user.click(screen.getByRole('button', { name: 'Salvar' }));
+
+        await waitFor(() => {
+            expect(usersApi.update).toHaveBeenCalledWith(
+                88,
+                expect.objectContaining({ role: 'admin' }),
+            );
+        });
+    });
+
+    it('uses hasRole helper to map teacher role into form on edit', async () => {
+        vi.mocked(usersApi.list).mockResolvedValue({
+            data: [
+                {
+                    id: 89,
+                    name: 'Teacher Only',
+                    email: 'teach@test.com',
+                    roles: ['teacher'],
+                    created_at: '2026-01-01T00:00:00Z',
+                    updated_at: '2026-01-01T00:00:00Z',
+                },
+            ],
+            meta: { last_page: 1, current_page: 1, total: 1, from: 1, to: 1 },
+        } as any);
+        vi.mocked(usersApi.update).mockResolvedValue({ data: { id: 89 } } as any);
+
+        render(<UserList />);
+        const user = userEvent.setup();
+
+        await waitFor(() => {
+            expect(screen.getByText('Teacher Only')).toBeInTheDocument();
+        });
+
+        const row = screen.getByText('Teacher Only').closest('tr')!;
+        const buttons = row.querySelectorAll('button');
+        await user.click(buttons[0]);
+
+        await waitFor(() => {
+            expect(screen.getByText('Editar Usuario')).toBeInTheDocument();
+        });
+
+        await user.click(screen.getByRole('button', { name: 'Salvar' }));
+
+        await waitFor(() => {
+            expect(usersApi.update).toHaveBeenCalledWith(
+                89,
+                expect.objectContaining({ role: 'teacher' }),
+            );
+        });
+    });
+
     it('updates speaker description via AiTextToolbar onChange callback', async () => {
         const { aiApi } = await import('../../api/adminClient');
         vi.mocked(aiApi.transformText).mockResolvedValue({ data: { text: 'AI generated bio' } } as any);

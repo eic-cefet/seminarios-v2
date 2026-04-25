@@ -1,9 +1,16 @@
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { workshopsApi, type AdminWorkshop } from "../../api/adminClient";
 import { useCRUDListState } from "../../hooks/useCRUDListState";
+import {
+    workshopFormDefaults,
+    workshopFormSchema,
+    type WorkshopFormData,
+} from "./WorkshopList.schema";
 import { useDebouncedSearch } from "@shared/hooks/useDebouncedSearch";
 import { SeminarMultiSelect } from "../../components/SeminarMultiSelect";
 import { Button } from "../../components/ui/button";
@@ -46,18 +53,6 @@ import { Label } from "../../components/ui/label";
 import { MarkdownEditor } from "../../components/MarkdownEditor";
 import { PageTitle } from "@shared/components/PageTitle";
 
-interface WorkshopFormData {
-    name: string;
-    description: string;
-    seminar_ids: number[];
-}
-
-const initialFormData: WorkshopFormData = {
-    name: "",
-    description: "",
-    seminar_ids: [],
-};
-
 export default function WorkshopList() {
     const queryClient = useQueryClient();
     const [page, setPage] = useState(1);
@@ -72,27 +67,56 @@ export default function WorkshopList() {
     });
 
     const {
+        register,
+        handleSubmit,
+        watch,
+        setValue,
+        reset,
+        formState: { errors },
+    } = useForm<WorkshopFormData>({
+        resolver: zodResolver(workshopFormSchema),
+        defaultValues: workshopFormDefaults,
+    });
+
+    const {
         isDialogOpen,
         setIsDialogOpen,
         isDeleteDialogOpen,
         setIsDeleteDialogOpen,
         editingItem: editingWorkshop,
         deletingItem: deletingWorkshop,
-        formData,
-        setFormData,
-        openCreateDialog,
-        openEditDialog,
+        openCreateDialog: openCreateDialogBase,
+        openEditDialog: openEditDialogBase,
         openDeleteDialog,
-        closeDialog,
+        closeDialog: closeDialogBase,
         closeDeleteDialog,
     } = useCRUDListState<AdminWorkshop, WorkshopFormData>({
-        initialFormData,
+        initialFormData: workshopFormDefaults,
         populateForm: (workshop) => ({
             name: workshop.name,
             description: workshop.description || "",
             seminar_ids: [],
         }),
     });
+
+    const openCreateDialog = () => {
+        reset(workshopFormDefaults);
+        openCreateDialogBase();
+    };
+
+    const openEditDialog = (workshop: AdminWorkshop) => {
+        reset({
+            name: workshop.name,
+            description: workshop.description || "",
+            seminar_ids: [],
+        });
+        openEditDialogBase(workshop);
+    };
+
+    const closeDialog = () => {
+        reset(workshopFormDefaults);
+        closeDialogBase();
+    };
 
     const handleClearFilters = () => {
         clearSearch();
@@ -117,14 +141,14 @@ export default function WorkshopList() {
     // Update form when workshop detail loads
     useEffect(() => {
         if (workshopDetail?.data && editingWorkshop) {
-            setFormData({
+            reset({
                 name: workshopDetail.data.name,
                 description: workshopDetail.data.description || "",
                 seminar_ids:
                     workshopDetail.data.seminars?.map((s) => s.id) || [],
             });
         }
-    }, [workshopDetail, editingWorkshop]);
+    }, [workshopDetail, editingWorkshop, reset]);
 
     const createMutation = useMutation({
         mutationFn: (data: WorkshopFormData) => workshopsApi.create(data),
@@ -174,12 +198,11 @@ export default function WorkshopList() {
     const workshops = data?.data ?? [];
     const meta = data?.meta;
 
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
+    const onSubmit = (data: WorkshopFormData) => {
         if (editingWorkshop) {
-            updateMutation.mutate({ slug: editingWorkshop.slug, data: formData });
+            updateMutation.mutate({ slug: editingWorkshop.slug, data });
         } else {
-            createMutation.mutate(formData);
+            createMutation.mutate(data);
         }
     };
 
@@ -371,43 +394,35 @@ export default function WorkshopList() {
                                 : "Preencha os dados do novo workshop"}
                         </DialogDescription>
                     </DialogHeader>
-                    <form onSubmit={handleSubmit}>
+                    <form onSubmit={handleSubmit(onSubmit)} noValidate>
                         <div className="space-y-4 py-4">
                             <div className="space-y-2">
                                 <Label htmlFor="name">Nome *</Label>
                                 <Input
                                     id="name"
-                                    value={formData.name}
-                                    onChange={(e) =>
-                                        setFormData({
-                                            ...formData,
-                                            name: e.target.value,
-                                        })
-                                    }
+                                    {...register("name")}
                                     placeholder="Ex: Workshop de Machine Learning"
-                                    required
                                 />
+                                {errors.name && (
+                                    <p className="text-sm text-red-500">
+                                        {errors.name.message}
+                                    </p>
+                                )}
                             </div>
 
                             <MarkdownEditor
                                 label="Descricao"
-                                value={formData.description}
+                                value={watch("description") || ""}
                                 onChange={(value) =>
-                                    setFormData({
-                                        ...formData,
-                                        description: value,
-                                    })
+                                    setValue("description", value)
                                 }
                             />
 
                             <SeminarMultiSelect
                                 label="Seminarios"
-                                value={formData.seminar_ids}
+                                value={watch("seminar_ids")}
                                 onChange={(ids) =>
-                                    setFormData({
-                                        ...formData,
-                                        seminar_ids: ids,
-                                    })
+                                    setValue("seminar_ids", ids)
                                 }
                                 workshopId={editingWorkshop?.id}
                                 initialSeminars={workshopDetail?.data?.seminars}

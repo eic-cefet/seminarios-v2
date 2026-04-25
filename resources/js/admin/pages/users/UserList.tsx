@@ -2,10 +2,18 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, Pencil, Trash2, RotateCcw, Archive, Search, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { analytics } from "@shared/lib/analytics";
 import { useDebouncedSearch } from "@shared/hooks/useDebouncedSearch";
+import { hasRole, ROLES } from "@shared/lib/roles";
 import { usersApi, type AdminUser } from "../../api/adminClient";
 import { AiTextToolbar } from "../../components/AiTextToolbar";
+import {
+    userFormDefaults,
+    userFormSchema,
+    type UserFormData,
+} from "./UserList.schema";
 import { Button } from "../../components/ui/button";
 import {
     Card,
@@ -55,32 +63,6 @@ import { Separator } from "../../components/ui/separator";
 import { formatDateTime } from "@shared/lib/utils";
 import { PageTitle } from "@shared/components/PageTitle";
 
-interface UserFormData {
-    name: string;
-    email: string;
-    password: string;
-    role: "admin" | "teacher" | "user";
-    student_data: {
-        course_name: string;
-        course_situation: string;
-        course_role: string;
-    };
-    speaker_data: {
-        slug: string;
-        institution: string;
-        description: string;
-    };
-}
-
-const initialFormData: UserFormData = {
-    name: "",
-    email: "",
-    password: "",
-    role: "user",
-    student_data: { course_name: "", course_situation: "", course_role: "" },
-    speaker_data: { slug: "", institution: "", description: "" },
-};
-
 export default function UserList() {
     const queryClient = useQueryClient();
     const [showTrashed, setShowTrashed] = useState(false);
@@ -101,8 +83,20 @@ export default function UserList() {
     const [editingUser, setEditingUser] = useState<AdminUser | null>(null);
     const [deletingUser, setDeletingUser] = useState<AdminUser | null>(null);
     const [lgpdUser, setLgpdUser] = useState<AdminUser | null>(null);
-    const [formData, setFormData] = useState<UserFormData>(initialFormData);
     const [aiLoading, setAiLoading] = useState<boolean>(false);
+
+    const {
+        register,
+        handleSubmit,
+        watch,
+        setValue,
+        reset,
+        control,
+        formState: { errors },
+    } = useForm<UserFormData>({
+        resolver: zodResolver(userFormSchema),
+        defaultValues: userFormDefaults,
+    });
 
     const { data, isLoading } = useQuery({
         queryKey: [
@@ -203,17 +197,22 @@ export default function UserList() {
 
     const openCreateDialog = () => {
         setEditingUser(null);
-        setFormData(initialFormData);
+        reset(userFormDefaults);
         setIsDialogOpen(true);
     };
 
     const openEditDialog = (user: AdminUser) => {
         setEditingUser(user);
-        setFormData({
+        const role = hasRole(user.roles, ROLES.ADMIN)
+            ? "admin"
+            : hasRole(user.roles, ROLES.TEACHER)
+              ? "teacher"
+              : "user";
+        reset({
             name: user.name,
             email: user.email,
             password: "",
-            role: (user.roles[0] || "user") as "admin" | "teacher" | "user",
+            role,
             student_data: {
                 course_name: user.student_data?.course_name || "",
                 course_situation: user.student_data?.course_situation || "",
@@ -236,45 +235,40 @@ export default function UserList() {
     const closeDialog = () => {
         setIsDialogOpen(false);
         setEditingUser(null);
-        setFormData(initialFormData);
+        reset(userFormDefaults);
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
+    const onSubmit = (data: UserFormData) => {
+        const hasStudentData = Boolean(
+            data.student_data.course_name ||
+                data.student_data.course_situation ||
+                data.student_data.course_role,
+        );
 
-        const hasStudentData =
-            formData.student_data.course_name ||
-            formData.student_data.course_situation ||
-            formData.student_data.course_role;
-
-        const hasSpeakerData =
-            formData.speaker_data.institution ||
-            formData.speaker_data.description;
+        const hasSpeakerData = Boolean(
+            data.speaker_data.institution || data.speaker_data.description,
+        );
 
         if (editingUser) {
             updateMutation.mutate({
                 id: editingUser.id,
                 data: {
-                    name: formData.name,
-                    email: formData.email,
-                    password: formData.password || undefined,
-                    role: formData.role,
-                    student_data: hasStudentData ? formData.student_data : null,
-                    speaker_data: hasSpeakerData ? formData.speaker_data : null,
+                    name: data.name,
+                    email: data.email,
+                    password: data.password || undefined,
+                    role: data.role,
+                    student_data: hasStudentData ? data.student_data : null,
+                    speaker_data: hasSpeakerData ? data.speaker_data : null,
                 },
             });
         } else {
             createMutation.mutate({
-                name: formData.name,
-                email: formData.email,
-                password: formData.password,
-                role: formData.role,
-                student_data: hasStudentData
-                    ? formData.student_data
-                    : undefined,
-                speaker_data: hasSpeakerData
-                    ? formData.speaker_data
-                    : undefined,
+                name: data.name,
+                email: data.email,
+                password: data.password,
+                role: data.role,
+                student_data: hasStudentData ? data.student_data : undefined,
+                speaker_data: hasSpeakerData ? data.speaker_data : undefined,
             });
         }
     };
@@ -567,7 +561,7 @@ export default function UserList() {
                                 : "Preencha os dados do novo usuario"}
                         </DialogDescription>
                     </DialogHeader>
-                    <form onSubmit={handleSubmit}>
+                    <form onSubmit={handleSubmit(onSubmit)} noValidate>
                         <div className="space-y-6 py-4">
                             {/* Basic Info */}
                             <div className="space-y-4">
@@ -577,32 +571,25 @@ export default function UserList() {
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="space-y-2">
                                         <Label htmlFor="name">Nome</Label>
-                                        <Input
-                                            id="name"
-                                            value={formData.name}
-                                            onChange={(e) =>
-                                                setFormData({
-                                                    ...formData,
-                                                    name: e.target.value,
-                                                })
-                                            }
-                                            required
-                                        />
+                                        <Input id="name" {...register("name")} />
+                                        {errors.name && (
+                                            <p className="text-sm text-red-500">
+                                                {errors.name.message}
+                                            </p>
+                                        )}
                                     </div>
                                     <div className="space-y-2">
                                         <Label htmlFor="email">Email</Label>
                                         <Input
                                             id="email"
                                             type="email"
-                                            value={formData.email}
-                                            onChange={(e) =>
-                                                setFormData({
-                                                    ...formData,
-                                                    email: e.target.value,
-                                                })
-                                            }
-                                            required
+                                            {...register("email")}
                                         />
+                                        {errors.email && (
+                                            <p className="text-sm text-red-500">
+                                                {errors.email.message}
+                                            </p>
+                                        )}
                                     </div>
                                 </div>
                                 <div className="grid grid-cols-2 gap-4">
@@ -615,46 +602,38 @@ export default function UserList() {
                                         <Input
                                             id="password"
                                             type="password"
-                                            value={formData.password}
-                                            onChange={(e) =>
-                                                setFormData({
-                                                    ...formData,
-                                                    password: e.target.value,
-                                                })
-                                            }
+                                            {...register("password")}
                                             required={!editingUser}
                                             minLength={8}
                                         />
                                     </div>
                                     <div className="space-y-2">
                                         <Label htmlFor="role">Funcao</Label>
-                                        <Select
-                                            value={formData.role}
-                                            onValueChange={(value) =>
-                                                setFormData({
-                                                    ...formData,
-                                                    role: value as
-                                                        | "admin"
-                                                        | "teacher"
-                                                        | "user",
-                                                })
-                                            }
-                                        >
-                                            <SelectTrigger>
-                                                <SelectValue />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="user">
-                                                    Usuário
-                                                </SelectItem>
-                                                <SelectItem value="teacher">
-                                                    Professor
-                                                </SelectItem>
-                                                <SelectItem value="admin">
-                                                    Administrador
-                                                </SelectItem>
-                                            </SelectContent>
-                                        </Select>
+                                        <Controller
+                                            control={control}
+                                            name="role"
+                                            render={({ field }) => (
+                                                <Select
+                                                    value={field.value}
+                                                    onValueChange={field.onChange}
+                                                >
+                                                    <SelectTrigger>
+                                                        <SelectValue />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="user">
+                                                            Usuário
+                                                        </SelectItem>
+                                                        <SelectItem value="teacher">
+                                                            Professor
+                                                        </SelectItem>
+                                                        <SelectItem value="admin">
+                                                            Administrador
+                                                        </SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                            )}
+                                        />
                                     </div>
                                 </div>
                             </div>
@@ -673,53 +652,37 @@ export default function UserList() {
                                         </Label>
                                         <Input
                                             id="course_name"
-                                            value={
-                                                formData.student_data
-                                                    .course_name
-                                            }
-                                            onChange={(e) =>
-                                                setFormData({
-                                                    ...formData,
-                                                    student_data: {
-                                                        ...formData.student_data,
-                                                        course_name:
-                                                            e.target.value,
-                                                    },
-                                                })
-                                            }
+                                            {...register(
+                                                "student_data.course_name",
+                                            )}
                                         />
                                     </div>
                                     <div className="space-y-2">
                                         <Label htmlFor="course_situation">
                                             Situacao
                                         </Label>
-                                        <Select
-                                            value={
-                                                formData.student_data
-                                                    .course_situation
-                                            }
-                                            onValueChange={(value) =>
-                                                setFormData({
-                                                    ...formData,
-                                                    student_data: {
-                                                        ...formData.student_data,
-                                                        course_situation: value,
-                                                    },
-                                                })
-                                            }
-                                        >
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Selecione" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="studying">
-                                                    Cursando
-                                                </SelectItem>
-                                                <SelectItem value="graduated">
-                                                    Formado
-                                                </SelectItem>
-                                            </SelectContent>
-                                        </Select>
+                                        <Controller
+                                            control={control}
+                                            name="student_data.course_situation"
+                                            render={({ field }) => (
+                                                <Select
+                                                    value={field.value}
+                                                    onValueChange={field.onChange}
+                                                >
+                                                    <SelectTrigger>
+                                                        <SelectValue placeholder="Selecione" />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="studying">
+                                                            Cursando
+                                                        </SelectItem>
+                                                        <SelectItem value="graduated">
+                                                            Formado
+                                                        </SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                            )}
+                                        />
                                     </div>
                                     <div className="space-y-2">
                                         <Label htmlFor="course_role">
@@ -727,20 +690,9 @@ export default function UserList() {
                                         </Label>
                                         <Input
                                             id="course_role"
-                                            value={
-                                                formData.student_data
-                                                    .course_role
-                                            }
-                                            onChange={(e) =>
-                                                setFormData({
-                                                    ...formData,
-                                                    student_data: {
-                                                        ...formData.student_data,
-                                                        course_role:
-                                                            e.target.value,
-                                                    },
-                                                })
-                                            }
+                                            {...register(
+                                                "student_data.course_role",
+                                            )}
                                         />
                                     </div>
                                 </div>
@@ -758,16 +710,7 @@ export default function UserList() {
                                         <Label htmlFor="slug">Slug (URL)</Label>
                                         <Input
                                             id="slug"
-                                            value={formData.speaker_data.slug}
-                                            onChange={(e) =>
-                                                setFormData({
-                                                    ...formData,
-                                                    speaker_data: {
-                                                        ...formData.speaker_data,
-                                                        slug: e.target.value,
-                                                    },
-                                                })
-                                            }
+                                            {...register("speaker_data.slug")}
                                             placeholder="gerado-automaticamente"
                                         />
                                     </div>
@@ -777,20 +720,9 @@ export default function UserList() {
                                         </Label>
                                         <Input
                                             id="institution"
-                                            value={
-                                                formData.speaker_data
-                                                    .institution
-                                            }
-                                            onChange={(e) =>
-                                                setFormData({
-                                                    ...formData,
-                                                    speaker_data: {
-                                                        ...formData.speaker_data,
-                                                        institution:
-                                                            e.target.value,
-                                                    },
-                                                })
-                                            }
+                                            {...register(
+                                                "speaker_data.institution",
+                                            )}
                                         />
                                     </div>
                                 </div>
@@ -801,17 +733,15 @@ export default function UserList() {
                                         </Label>
                                         <AiTextToolbar
                                             value={
-                                                formData.speaker_data
-                                                    .description
+                                                watch(
+                                                    "speaker_data.description",
+                                                ) || ""
                                             }
                                             onChange={(value) =>
-                                                setFormData({
-                                                    ...formData,
-                                                    speaker_data: {
-                                                        ...formData.speaker_data,
-                                                        description: value,
-                                                    },
-                                                })
+                                                setValue(
+                                                    "speaker_data.description",
+                                                    value,
+                                                )
                                             }
                                             onLoadingChange={setAiLoading}
                                         />
@@ -819,18 +749,9 @@ export default function UserList() {
                                     <textarea
                                         id="description"
                                         className="flex min-h-20 w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-50 disabled:cursor-not-allowed"
-                                        value={
-                                            formData.speaker_data.description
-                                        }
-                                        onChange={(e) =>
-                                            setFormData({
-                                                ...formData,
-                                                speaker_data: {
-                                                    ...formData.speaker_data,
-                                                    description: e.target.value,
-                                                },
-                                            })
-                                        }
+                                        {...register(
+                                            "speaker_data.description",
+                                        )}
                                         disabled={aiLoading}
                                     />
                                 </div>

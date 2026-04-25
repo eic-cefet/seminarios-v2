@@ -906,6 +906,51 @@ describe('WorkshopList', () => {
         expect(textarea).toHaveValue('');
     });
 
+    it('does not submit when name is empty (Zod validation)', async () => {
+        vi.mocked(workshopsApi.create).mockClear();
+        vi.mocked(workshopsApi.create).mockResolvedValue({ data: { id: 99, name: 'X' } } as any);
+
+        render(<WorkshopList />);
+        const user = userEvent.setup();
+
+        await user.click(screen.getByText('Novo Workshop'));
+
+        await waitFor(() => {
+            expect(screen.getByLabelText('Nome *')).toBeInTheDocument();
+        });
+
+        // Submit without typing a name -> validation should block the call
+        await user.click(screen.getByRole('button', { name: 'Salvar' }));
+
+        await waitFor(() => {
+            expect(screen.getByText('Nome é obrigatório')).toBeInTheDocument();
+        });
+
+        expect(workshopsApi.create).not.toHaveBeenCalled();
+    });
+
+    it('submits valid create form via RHF (happy path)', async () => {
+        vi.mocked(workshopsApi.create).mockResolvedValue({ data: { id: 100, name: 'RHF Workshop' } } as any);
+
+        render(<WorkshopList />);
+        const user = userEvent.setup();
+
+        await user.click(screen.getByText('Novo Workshop'));
+
+        await waitFor(() => {
+            expect(screen.getByLabelText('Nome *')).toBeInTheDocument();
+        });
+
+        await user.type(screen.getByLabelText('Nome *'), 'RHF Workshop');
+        await user.click(screen.getByRole('button', { name: 'Salvar' }));
+
+        await waitFor(() => {
+            expect(workshopsApi.create).toHaveBeenCalledWith(
+                expect.objectContaining({ name: 'RHF Workshop' }),
+            );
+        });
+    });
+
     it('shows Salvando... text while create mutation is pending', async () => {
         // Make create take a long time so isPending is true
         vi.mocked(workshopsApi.create).mockImplementation(() => new Promise(() => {}));
