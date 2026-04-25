@@ -160,4 +160,17 @@ describe('POST /profile/ratings/{seminar} - sentiment dispatch', function () {
 
         expect(Rating::where('user_id', $user->id)->where('seminar_id', $seminar->id)->exists())->toBeTrue();
     });
+
+    it('returns conflict when a parallel rating slips past the check', function () {
+        $user = actingAsUser();
+        $seminar = Seminar::factory()->create(['scheduled_at' => now()->subDays(5)]);
+        Registration::factory()->for($user)->for($seminar)
+            ->create(['present' => true]);
+
+        Rating::factory()->for($user)->for($seminar)->create();
+
+        $this->postJson("/api/profile/ratings/{$seminar->id}", ['score' => 5, 'comment' => 'oi'])
+            ->assertConflict()
+            ->assertJsonFragment(['message' => 'Você já avaliou este seminário.']);
+    });
 });

@@ -10,6 +10,9 @@ use App\Jobs\AnalyzeRatingSentiment;
 use App\Models\Rating;
 use App\Services\FeatureFlags;
 use App\Services\RatingService;
+use App\Support\Locking\LockKey;
+use App\Support\Locking\Mutex;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Throwable;
@@ -46,24 +49,30 @@ class ProfileRatingController extends Controller
             throw ApiException::forbidden('O prazo para avaliar este seminário expirou.');
         }
 
-        $alreadyRated = Rating::query()
-            ->where('seminar_id', $seminarId)
-            ->where('user_id', $user->id)
-            ->exists();
-
-        if ($alreadyRated) {
-            throw ApiException::conflict('Você já avaliou este seminário.');
-        }
-
         $aiAnalysisConsent = (bool) ($validated['ai_analysis_consent'] ?? false);
 
-        $rating = Rating::create([
-            'seminar_id' => $seminarId,
-            'user_id' => $user->id,
-            'score' => $validated['score'],
-            'comment' => $validated['comment'] ?? null,
-            'ai_analysis_consent' => $aiAnalysisConsent,
-        ]);
+        $rating = Mutex::for(LockKey::ratingCreation($seminarId, $user->id))
+            ->protect(function () use ($seminarId, $user, $validated, $aiAnalysisConsent) {
+                if (Rating::query()
+                    ->where('seminar_id', $seminarId)
+                    ->where('user_id', $user->id)
+                    ->exists()
+                ) {
+                    throw ApiException::conflict('Você já avaliou este seminário.');
+                }
+
+                try {
+                    return Rating::create([
+                        'seminar_id' => $seminarId,
+                        'user_id' => $user->id,
+                        'score' => $validated['score'],
+                        'comment' => $validated['comment'] ?? null,
+                        'ai_analysis_consent' => $aiAnalysisConsent,
+                    ]);
+                } catch (UniqueConstraintViolationException) {
+                    throw ApiException::conflict('Você já avaliou este seminário.');
+                }
+            });
 
         $lgpdOptInEnabled = config('lgpd.features.ai_sentiment_opt_in', true);
         $consentGranted = ! $lgpdOptInEnabled || $rating->ai_analysis_consent;
