@@ -10,7 +10,8 @@
         "lint:a11y": "eslint --config eslint.a11y.config.js 'resources/js/system/**/*.{ts,tsx,js,jsx}' 'resources/js/shared/**/*.{ts,tsx,js,jsx}'",
         "test": "vitest run",
         "test:watch": "vitest",
-        "test:coverage": "rm -rf coverage && vitest run --coverage"
+        "test:coverage": "rm -rf coverage && vitest run --coverage",
+        "test:affected": "node scripts/test-affected-frontend.mjs"
     },
     "dependencies": {
         "@hookform/resolvers": "^5.2.2",
