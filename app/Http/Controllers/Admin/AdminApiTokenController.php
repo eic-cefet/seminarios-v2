@@ -4,13 +4,13 @@ namespace App\Http\Controllers\Admin;
 
 use App\Enums\AuditEvent;
 use App\Http\Controllers\Controller;
+use App\Http\Resources\Admin\ApiTokenResource;
 use App\Models\AuditLog;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
-use Laravel\Sanctum\PersonalAccessToken;
 
 class AdminApiTokenController extends Controller
 {
@@ -36,17 +36,8 @@ class AdminApiTokenController extends Controller
             ->latest()
             ->paginate(15);
 
-        $mapped = $tokens->through(fn (PersonalAccessToken $token) => [
-            'id' => $token->id,
-            'name' => $token->name,
-            'abilities' => $token->abilities,
-            'last_used_at' => $token->last_used_at?->toIso8601String(),
-            'expires_at' => $token->expires_at?->toIso8601String(),
-            'created_at' => $token->created_at?->toIso8601String(),
-        ]);
-
         return response()->json([
-            'data' => $mapped->items(),
+            'data' => ApiTokenResource::collection(collect($tokens->items()))->resolve($request),
             'meta' => [
                 'current_page' => $tokens->currentPage(),
                 'last_page' => $tokens->lastPage(),
@@ -82,12 +73,10 @@ class AdminApiTokenController extends Controller
 
         return response()->json([
             'message' => 'Token criado com sucesso. Guarde-o em um local seguro, pois não será possível visualizá-lo novamente.',
-            'data' => [
-                'id' => $token->accessToken->id,
-                'name' => $token->accessToken->name,
-                'abilities' => $token->accessToken->abilities,
-                'token' => Str::after($token->plainTextToken, '|'),
-            ],
+            'data' => array_merge(
+                (new ApiTokenResource($token->accessToken))->resolve($request),
+                ['token' => Str::after($token->plainTextToken, '|')],
+            ),
         ], 201);
     }
 
