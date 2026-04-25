@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Enums\AuditEvent;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\AdminLgpdAnonymizeRequest;
 use App\Http\Resources\Admin\AdminUserLgpdResource;
 use App\Jobs\AnonymizeUserJob;
 use App\Jobs\ExportUserDataJob;
@@ -49,13 +50,9 @@ class AdminLgpdController extends Controller
         );
     }
 
-    public function anonymize(Request $request, User $user): JsonResponse
+    public function anonymize(AdminLgpdAnonymizeRequest $request, User $user): JsonResponse
     {
-        Gate::authorize('anonymizeUser', User::class);
-
-        $validated = $request->validate([
-            'reason' => ['required', 'string', 'max:500'],
-        ]);
+        $validated = $request->validated();
 
         if ($user->anonymization_requested_at === null) {
             $user->forceFill(['anonymization_requested_at' => now()])->save();
