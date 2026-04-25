@@ -356,6 +356,30 @@ describe('GET /auth/{provider}/callback', function () {
             ->and($identity->refresh_token)->toBeNull()
             ->and($identity->token_expires_at)->toBeNull();
     });
+
+    it('redirects to error when SocialIdentity points to a soft-deleted user', function () {
+        $user = User::factory()->create([
+            'email' => 'deleted@example.com',
+        ]);
+
+        SocialIdentity::create([
+            'user_id' => $user->id,
+            'provider' => 'google',
+            'provider_id' => 'google-orphan',
+        ]);
+
+        $user->delete(); // soft-delete
+
+        $fakeUser = new SocialiteUser;
+        $fakeUser->id = 'google-orphan';
+        $fakeUser->name = 'Deleted User';
+        $fakeUser->email = 'deleted@example.com';
+
+        Socialite::fake('google', $fakeUser);
+
+        $this->get('/auth/google/callback')
+            ->assertRedirect('/auth/callback?error=authentication_failed');
+    });
 });
 
 describe('POST /api/auth/exchange', function () {

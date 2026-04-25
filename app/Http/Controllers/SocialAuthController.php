@@ -105,7 +105,13 @@ class SocialAuthController extends Controller
             ->first();
 
         if ($identity) {
-            return $identity->user;
+            $user = $identity->user;
+
+            if (! $user) {
+                throw new \RuntimeException('SocialIdentity points to a deleted user.');
+            }
+
+            return $user;
         }
 
         $user = User::where('email', $socialUser->getEmail())->first();
