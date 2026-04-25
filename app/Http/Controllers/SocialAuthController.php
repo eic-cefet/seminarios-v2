@@ -6,6 +6,7 @@ use App\Enums\AuditEvent;
 use App\Enums\ConsentType;
 use App\Exceptions\ApiException;
 use App\Models\AuditLog;
+use App\Models\SocialIdentity;
 use App\Models\User;
 use App\Models\UserConsent;
 use Illuminate\Http\JsonResponse;
@@ -28,28 +29,51 @@ class SocialAuthController extends Controller
         try {
             $socialUser = Socialite::driver($provider)->user();
 
-            $user = User::where('email', $socialUser->getEmail())->first();
+            $identity = SocialIdentity::where('provider', $provider)
+                ->where('provider_id', $socialUser->getId())
+                ->first();
 
-            if (! $user) {
-                $user = User::create([
-                    'name' => $socialUser->getName() ?? $socialUser->getNickname() ?? 'User',
-                    'email' => $socialUser->getEmail(),
-                    'password' => bcrypt(Str::random(32)),
-                    'email_verified_at' => now(),
-                ]);
+            if ($identity) {
+                $user = $identity->user;
+            } else {
+                $user = User::where('email', $socialUser->getEmail())->first();
 
-                foreach ([ConsentType::TermsOfService, ConsentType::PrivacyPolicy] as $type) {
-                    UserConsent::create([
-                        'user_id' => $user->id,
-                        'type' => $type,
-                        'granted' => true,
-                        'version' => config('lgpd.versions.'.$type->value) ?? '1.0',
-                        'ip_address' => $request->ip(),
-                        'user_agent' => substr((string) $request->userAgent(), 0, 500),
-                        'source' => 'oauth',
+                if (! $user) {
+                    $user = User::create([
+                        'name' => $socialUser->getName() ?? $socialUser->getNickname() ?? 'User',
+                        'email' => $socialUser->getEmail(),
+                        'password' => bcrypt(Str::random(32)),
+                        'email_verified_at' => now(),
                     ]);
+
+                    foreach ([ConsentType::TermsOfService, ConsentType::PrivacyPolicy] as $type) {
+                        UserConsent::create([
+                            'user_id' => $user->id,
+                            'type' => $type,
+                            'granted' => true,
+                            'version' => config('lgpd.versions.'.$type->value) ?? '1.0',
+                            'ip_address' => $request->ip(),
+                            'user_agent' => substr((string) $request->userAgent(), 0, 500),
+                            'source' => 'oauth',
+                        ]);
+                    }
                 }
             }
+
+            SocialIdentity::updateOrCreate(
+                [
+                    'provider' => $provider,
+                    'provider_id' => $socialUser->getId(),
+                ],
+                [
+                    'user_id' => $user->id,
+                    'token' => $socialUser->token ?? null,
+                    'refresh_token' => $socialUser->refreshToken ?? null,
+                    'token_expires_at' => isset($socialUser->expiresIn) && $socialUser->expiresIn
+                        ? now()->addSeconds($socialUser->expiresIn)
+                        : null,
+                ],
+            );
 
             $code = Str::random(64);
             Cache::put("auth_code:{$code}", $user->id, now()->addMinutes(5));
