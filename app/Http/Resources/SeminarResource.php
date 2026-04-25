@@ -2,7 +2,6 @@
 
 namespace App\Http\Resources;
 
-use App\Services\RatingService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -12,13 +11,6 @@ class SeminarResource extends JsonResource
     {
         $durationMinutes = (int) ($this->duration_minutes ?? 60);
         $endsAt = $this->scheduled_at?->copy()->addMinutes($durationMinutes);
-        $averageRating = $this->whenHas(
-            'ratings_avg_score',
-            fn ($value) => $value === null ? null : round((float) $value, 1),
-            fn () => ($computed = app(RatingService::class)->averageScore($this->resource)) === null
-                ? null
-                : round($computed, 1),
-        );
 
         return [
             'id' => $this->id,
@@ -46,7 +38,10 @@ class SeminarResource extends JsonResource
             'registrationsCount' => $this->whenCounted('registrations'),
 
             // Aggregations
-            'averageRating' => $averageRating,
+            'averageRating' => $this->whenHas(
+                'ratings_avg_score',
+                fn ($value) => $value === null ? null : round((float) $value, 1),
+            ),
         ];
     }
 }
