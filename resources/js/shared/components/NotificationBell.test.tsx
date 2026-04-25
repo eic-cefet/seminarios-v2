@@ -84,4 +84,79 @@ describe("NotificationBell", () => {
         fireEvent.click(screen.getByText("T"));
         expect(markRead).toHaveBeenCalledWith("abc");
     });
+
+    it("calls markAllRead when the 'Marcar todas como lidas' button is clicked", () => {
+        const markAllRead = vi.fn();
+        vi.spyOn(hook, "useNotifications").mockReturnValue(
+            mockHook({ unreadCount: 3, markAllRead }),
+        );
+        renderBell();
+        fireEvent.click(screen.getByRole("button", { name: /notifications/i }));
+        fireEvent.click(screen.getByText("Marcar todas como lidas"));
+        expect(markAllRead).toHaveBeenCalled();
+    });
+
+    it("does not refresh when closing the dropdown", () => {
+        const refresh = vi.fn();
+        vi.spyOn(hook, "useNotifications").mockReturnValue(
+            mockHook({ refresh }),
+        );
+        renderBell();
+        const trigger = screen.getByRole("button", { name: /notifications/i });
+        fireEvent.click(trigger);
+        expect(refresh).toHaveBeenCalledTimes(1);
+        fireEvent.click(trigger);
+        expect(refresh).toHaveBeenCalledTimes(1);
+    });
+
+    it("marks read without navigating when action_url is null", async () => {
+        const markRead = vi.fn();
+        const originalHref = window.location.href;
+        vi.spyOn(hook, "useNotifications").mockReturnValue(
+            mockHook({
+                notifications: [
+                    {
+                        id: "n1",
+                        category: "evaluation_due",
+                        title: "Avaliar",
+                        body: "Avalie o seminário",
+                        action_url: null,
+                        read_at: null,
+                        created_at: "2026-04-24T00:00:00Z",
+                    },
+                ],
+                unreadCount: 1,
+                markRead,
+            }),
+        );
+        renderBell();
+        fireEvent.click(screen.getByRole("button", { name: /notifications/i }));
+        fireEvent.click(screen.getByText("Avaliar"));
+        await Promise.resolve();
+        expect(markRead).toHaveBeenCalledWith("n1");
+        expect(window.location.href).toBe(originalHref);
+    });
+
+    it("renders read items without the unread highlight", () => {
+        vi.spyOn(hook, "useNotifications").mockReturnValue(
+            mockHook({
+                notifications: [
+                    {
+                        id: "n2",
+                        category: "certificate_ready",
+                        title: "Lido",
+                        body: "Já lido",
+                        action_url: null,
+                        read_at: "2026-04-24T00:00:00Z",
+                        created_at: "2026-04-23T00:00:00Z",
+                    },
+                ],
+                unreadCount: 0,
+            }),
+        );
+        renderBell();
+        fireEvent.click(screen.getByRole("button", { name: /notifications/i }));
+        const item = screen.getByText("Lido").closest("li");
+        expect(item?.className).not.toContain("bg-blue-50");
+    });
 });

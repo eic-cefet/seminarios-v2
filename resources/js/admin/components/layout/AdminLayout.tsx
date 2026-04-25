@@ -36,7 +36,7 @@ export function AdminLayout() {
         );
     }
 
-    if (!isAuthenticated || !canAccessAdmin) {
+    if (!isAuthenticated || !canAccessAdmin || !user) {
         // Show loading while redirect happens
         return (
             <div className="flex h-screen items-center justify-center bg-background">
@@ -61,7 +61,7 @@ export function AdminLayout() {
                 <main className="flex-1 min-w-0 overflow-auto">
                     {/* Desktop top-bar with user actions */}
                     <div className="hidden lg:flex items-center justify-end gap-2 border-b border-border px-6 h-12">
-                        <NotificationBell userId={user?.id ?? null} />
+                        <NotificationBell userId={user.id} />
                     </div>
                     <div className="w-full max-w-7xl mx-auto p-6">
                         <Outlet />

@@ -5,6 +5,7 @@ use App\Models\Registration;
 use App\Models\Seminar;
 use App\Models\User;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Queue;
 
 describe('certificates:process-pending command', function () {
@@ -183,6 +184,7 @@ describe('certificates:process-pending command', function () {
     it('processes synchronously with --sync option', function () {
         Queue::fake();
         Mail::fake();
+        Notification::fake();
 
         $registration = Registration::factory()->present()->create([
             'certificate_sent' => false,

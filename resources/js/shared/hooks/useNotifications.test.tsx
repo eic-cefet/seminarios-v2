@@ -72,4 +72,27 @@ describe("useNotifications", () => {
 
         expect(markRead).toHaveBeenCalledWith("abc");
     });
+
+    it("invalidates queries when markAllRead is called", async () => {
+        const markAllRead = vi
+            .spyOn(notificationsApi, "markAllRead")
+            .mockResolvedValue({ ok: true });
+        vi.spyOn(notificationsApi, "list").mockResolvedValue({
+            data: [],
+            meta: { current_page: 1, last_page: 1 },
+        });
+        vi.spyOn(notificationsApi, "unreadCount").mockResolvedValue({ count: 0 });
+
+        const client = new QueryClient({
+            defaultOptions: { queries: { retry: false } },
+        });
+        const { result } = renderHook(() => useNotifications({ userId: 1 }), {
+            wrapper: wrapper(client),
+        });
+
+        await waitFor(() => expect(result.current).toBeDefined());
+        await result.current.markAllRead();
+
+        expect(markAllRead).toHaveBeenCalled();
+    });
 });
