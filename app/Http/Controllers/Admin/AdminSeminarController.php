@@ -60,8 +60,7 @@ class AdminSeminarController extends Controller
     {
         Gate::authorize('view', $seminar);
 
-        $seminar->load(SeminarQueryService::DETAIL_RELATIONS)
-            ->load(['creator'])
+        $seminar->load([...SeminarQueryService::DETAIL_RELATIONS, 'creator'])
             ->loadCount('registrations');
 
         return new AdminSeminarResource($seminar);
