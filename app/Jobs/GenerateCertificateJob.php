@@ -12,6 +12,7 @@ use App\Models\Registration;
 use App\Notifications\CertificateReadyNotification;
 use App\Services\CertificateService;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
@@ -19,13 +20,20 @@ use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 
-class GenerateCertificateJob implements ShouldQueue
+class GenerateCertificateJob implements ShouldBeUnique, ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels, TracksAuditContext;
 
     public int $tries = 3;
 
     public int $backoff = 60;
+
+    public int $uniqueFor = 1800;
+
+    public function uniqueId(): string
+    {
+        return (string) $this->registration->id;
+    }
 
     public function __construct(
         public Registration $registration,
