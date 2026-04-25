@@ -5,6 +5,7 @@ use App\Http\Middleware\AuditContextMiddleware;
 use App\Http\Middleware\CheckTokenAbility;
 use App\Http\Middleware\EnsureUserIsAdmin;
 use App\Http\Middleware\LogRequestMiddleware;
+use App\Support\Locking\LockTimeoutException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -52,5 +53,16 @@ return Application::configure(basePath: dirname(__DIR__))
             if ($request->is('api/*')) {
                 return ApiException::validation($e->errors())->render();
             }
+        });
+
+        $exceptions->render(function (LockTimeoutException $e, $request) {
+            if ($request->is('api/*') || $request->is('admin/api/*')) {
+                return response()->json([
+                    'message' => 'Sistema ocupado, tente novamente em instantes.',
+                    'lock_key' => $e->key,
+                ], 503);
+            }
+
+            return null;
         });
     })->create();
