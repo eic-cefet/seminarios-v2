@@ -11,6 +11,7 @@ use App\Http\Requests\External\ExternalSeminarUpdateRequest;
 use App\Http\Resources\External\ExternalSeminarResource;
 use App\Jobs\ProcessSeminarRescheduleJob;
 use App\Models\Seminar;
+use App\Services\SeminarQueryService;
 use App\Services\SlugService;
 use Dedoc\Scramble\Attributes\BodyParameter;
 use Dedoc\Scramble\Attributes\QueryParameter;
@@ -31,17 +32,11 @@ class ExternalSeminarController extends Controller
 
     #[QueryParameter('search', description: 'Search seminars by name', type: 'string', example: 'Machine Learning')]
     #[QueryParameter('active', description: 'Filter by active status', type: 'boolean', example: true)]
-    public function index(Request $request): AnonymousResourceCollection
+    public function index(Request $request, SeminarQueryService $seminars): AnonymousResourceCollection
     {
         Gate::authorize('viewAny', Seminar::class);
 
-        $query = Seminar::with([
-            'seminarType',
-            'seminarLocation',
-            'workshop',
-            'subjects',
-            'speakers.speakerData',
-        ]);
+        $query = $seminars->forList(Seminar::query())->with(['workshop']);
 
         $user = $request->user();
         if ($user->hasRole(Role::Teacher) && ! $user->hasRole(Role::Admin)) {

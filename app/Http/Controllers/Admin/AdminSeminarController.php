@@ -14,6 +14,7 @@ use App\Models\Seminar;
 use App\Models\SeminarLocation;
 use App\Models\SeminarType;
 use App\Models\Workshop;
+use App\Services\SeminarQueryService;
 use App\Services\SlugService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -30,19 +31,12 @@ class AdminSeminarController extends Controller
         private readonly SlugService $slugService
     ) {}
 
-    public function index(Request $request): AnonymousResourceCollection
+    public function index(Request $request, SeminarQueryService $seminars): AnonymousResourceCollection
     {
         Gate::authorize('viewAny', Seminar::class);
 
         $user = $request->user();
-        $query = Seminar::with([
-            'seminarType',
-            'seminarLocation',
-            'workshop',
-            'creator',
-            'subjects',
-            'speakers',
-        ])->withCount('registrations');
+        $query = $seminars->forList(Seminar::query())->with(['workshop', 'creator']);
 
         if ($user->hasRole(Role::Teacher) && ! $user->hasRole(Role::Admin)) {
             $query->where('created_by', $user->id);
@@ -70,14 +64,9 @@ class AdminSeminarController extends Controller
     {
         Gate::authorize('view', $seminar);
 
-        $seminar->load([
-            'seminarType',
-            'seminarLocation',
-            'workshop',
-            'creator',
-            'subjects',
-            'speakers.speakerData',
-        ])->loadCount('registrations');
+        $seminar->load(SeminarQueryService::DETAIL_RELATIONS)
+            ->load(['creator'])
+            ->loadCount('registrations');
 
         return new AdminSeminarResource($seminar);
     }
