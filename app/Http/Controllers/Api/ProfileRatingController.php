@@ -9,41 +9,23 @@ use App\Http\Resources\PendingEvaluationResource;
 use App\Jobs\AnalyzeRatingSentiment;
 use App\Models\Rating;
 use App\Services\FeatureFlags;
+use App\Services\RatingService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Throwable;
 
 class ProfileRatingController extends Controller
 {
-    public function pendingEvaluations(Request $request): JsonResponse
+    public function pendingEvaluations(Request $request, RatingService $ratings): JsonResponse
     {
-        $user = $request->user();
-
-        // Get registrations where:
-        // - User was present
-        // - Seminar ended within the last 30 days
-        // - User hasn't rated the seminar yet
-        $thirtyDaysAgo = now()->subDays(30)->startOfDay();
-
-        $registrations = $user->registrations()
-            ->where('present', true)
-            ->whereHas('seminar', function ($query) use ($thirtyDaysAgo) {
-                $query->whereNotNull('scheduled_at')
-                    ->where('scheduled_at', '>=', $thirtyDaysAgo)
-                    ->where('scheduled_at', '<=', now());
-            })
-            ->whereDoesntHave('seminar.ratings', function ($query) use ($user) {
-                $query->where('user_id', $user->id);
-            })
-            ->with(['seminar.seminarType', 'seminar.seminarLocation'])
-            ->get();
-
         return response()->json([
-            'data' => PendingEvaluationResource::collection($registrations),
+            'data' => PendingEvaluationResource::collection(
+                $ratings->pendingEvaluationsFor($request->user())
+            ),
         ]);
     }
 
-    public function submitRating(SubmitRatingRequest $request, int $seminarId): JsonResponse
+    public function submitRating(SubmitRatingRequest $request, RatingService $ratings, int $seminarId): JsonResponse
     {
         $user = $request->user();
 
@@ -59,9 +41,8 @@ class ProfileRatingController extends Controller
         }
 
         $seminar = $registration->seminar;
-        $thirtyDaysAgo = now()->subDays(30)->startOfDay();
 
-        if (! $seminar->scheduled_at || $seminar->scheduled_at < $thirtyDaysAgo) {
+        if (! $ratings->isWithinWindow($seminar)) {
             throw ApiException::forbidden('O prazo para avaliar este seminário expirou.');
         }
 
