@@ -52,7 +52,7 @@ it('runs targeted tests with scoped coverage and 100% min', function (): void {
 
 it('returns a non-zero exit code when the underlying test run fails', function (): void {
     Process::fake([
-        "*'git' 'diff'*" => Process::result(output: "tests/Feature/Foo.php\n"),
+        "*'git' 'diff'*" => Process::result(output: "tests/Feature/FooTest.php\n"),
         "*'php'*'artisan'*'test'*" => Process::result(exitCode: 1, output: 'FAIL'),
     ]);
 

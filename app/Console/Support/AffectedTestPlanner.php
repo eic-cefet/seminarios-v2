@@ -21,7 +21,6 @@ class AffectedTestPlanner
 {
     /** @var list<string> */
     private const FULL_SUITE_TRIGGERS = [
-        'composer.json',
         'composer.lock',
         'phpunit.xml',
         'bootstrap/',
@@ -29,7 +28,6 @@ class AffectedTestPlanner
         'database/',
         'routes/',
         '.env.example',
-        '.github/workflows/',
     ];
 
     /**
@@ -65,7 +63,7 @@ class AffectedTestPlanner
 
         $changedTests = array_values(array_filter(
             $files,
-            fn (string $f): bool => str_starts_with($f, 'tests/') && str_ends_with($f, '.php'),
+            fn (string $f): bool => str_starts_with($f, 'tests/') && str_ends_with($f, 'Test.php'),
         ));
 
         $mappedTests = $this->mapSourcesToTests($sources);

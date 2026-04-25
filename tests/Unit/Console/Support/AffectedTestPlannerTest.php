@@ -91,3 +91,24 @@ it('skips when changes are unrelated to PHP code', function (): void {
 
     expect($plan['skip'])->toBeTrue();
 });
+
+it('does not treat composer.json or workflow changes as full-suite triggers', function (): void {
+    Process::fake([
+        "*'git' 'diff'*" => Process::result(output: "composer.json\n.github/workflows/pr-checks.yml\n"),
+    ]);
+
+    $plan = app(AffectedTestPlanner::class)->resolve('origin/main');
+
+    expect($plan['skip'])->toBeTrue()
+        ->and($plan['full_suite'])->toBeFalse();
+});
+
+it('does not treat tests/Pest.php as a runnable test file', function (): void {
+    Process::fake([
+        "*'git' 'diff'*" => Process::result(output: "tests/Pest.php\ntests/Feature/RealTest.php\n"),
+    ]);
+
+    $plan = app(AffectedTestPlanner::class)->resolve('origin/main');
+
+    expect($plan['test_files'])->toBe(['tests/Feature/RealTest.php']);
+});
