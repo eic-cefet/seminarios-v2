@@ -80,7 +80,7 @@ jobs:
           php artisan key:generate
 
       - name: Run tests with coverage
-        run: php artisan test --compact --coverage-clover=coverage/backend-clover.xml
+        run: php artisan test --compact --parallel --coverage-clover=coverage/backend-clover.xml
         env:
           DB_CONNECTION: mysql
           DB_HOST: 127.0.0.1

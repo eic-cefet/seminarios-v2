@@ -2,6 +2,8 @@
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
+use PragmaRX\Google2FA\Google2FA;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
@@ -106,6 +108,23 @@ function actingAsTeacher(?User $user = null): User
     $user ??= User::factory()->create();
     $user->assignRole('teacher');
     test()->actingAs($user, 'sanctum');
+
+    return $user;
+}
+
+/**
+ * Create a user with a confirmed TOTP 2FA secret. Used by the Auth/2FA test files;
+ * lives here so it is autoloaded by every parallel worker.
+ */
+function userWithConfirmed2fa(): User
+{
+    $user = User::factory()->create(['password' => Hash::make('secret123')]);
+    $google = app(Google2FA::class);
+    $user->forceFill([
+        'two_factor_secret' => encrypt($google->generateSecretKey()),
+        'two_factor_recovery_codes' => encrypt(json_encode(['code-one', 'code-two'])),
+        'two_factor_confirmed_at' => now(),
+    ])->save();
 
     return $user;
 }

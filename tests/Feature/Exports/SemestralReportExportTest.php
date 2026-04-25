@@ -128,7 +128,7 @@ describe('SemestralReportExport', function () {
     it('applies bold style to header row', function () {
         $export = new SemestralReportExport(collect([]), '2024', '1');
 
-        $worksheet = $this->createMock(Worksheet::class);
+        $worksheet = mock(Worksheet::class);
         $styles = $export->styles($worksheet);
 
         expect($styles)->toHaveKey(1);
