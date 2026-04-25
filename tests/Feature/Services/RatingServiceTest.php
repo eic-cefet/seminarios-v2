@@ -45,3 +45,8 @@ it('computes average score for a seminar', function () {
 
     expect($this->service->averageScore($seminar))->toBe(4.0);
 });
+
+it('returns null when the seminar has no ratings', function () {
+    $seminar = Seminar::factory()->create();
+    expect($this->service->averageScore($seminar))->toBeNull();
+});
