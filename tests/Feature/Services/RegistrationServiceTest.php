@@ -49,3 +49,10 @@ it('refuses cancellation on the day of or after a seminar', function () {
 
     expect(fn () => $this->service->unregister($user, $seminar))->toThrow(ApiException::class);
 });
+
+it('refuses cancellation when user is not registered', function () {
+    $user = User::factory()->create();
+    $seminar = Seminar::factory()->create(['scheduled_at' => now()->addDays(7)]);
+
+    expect(fn () => $this->service->unregister($user, $seminar))->toThrow(ApiException::class);
+});
