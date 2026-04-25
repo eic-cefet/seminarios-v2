@@ -130,14 +130,14 @@ class AffectedTestPlanner
         $tests = [];
 
         foreach ($sources as $source) {
-            $class = $this->classNameFromPath($source);
+            $fqcn = $this->fqcnFromPath($source);
 
-            if ($class === null) {
+            if ($fqcn === null) {
                 continue;
             }
 
             $result = Process::run([
-                'grep', '-rl', '--include=*.php', $class, 'tests/',
+                'grep', '-rlF', '--include=*.php', $fqcn, 'tests/',
             ]);
 
             if ($result->output() === '') {
@@ -156,14 +156,26 @@ class AffectedTestPlanner
         return array_values(array_unique($tests));
     }
 
-    private function classNameFromPath(string $path): ?string
+    private function fqcnFromPath(string $path): ?string
     {
-        $base = basename($path, '.php');
-
-        if ($base === '' || preg_match('/^[A-Z][A-Za-z0-9_]*$/', $base) !== 1) {
+        if (! str_starts_with($path, 'app/') || ! str_ends_with($path, '.php')) {
             return null;
         }
 
-        return $base;
+        $relative = substr($path, 4, -4);
+
+        if ($relative === '') {
+            return null;
+        }
+
+        $parts = explode('/', $relative);
+
+        foreach ($parts as $part) {
+            if (preg_match('/^[A-Z][A-Za-z0-9_]*$/', $part) !== 1) {
+                return null;
+            }
+        }
+
+        return 'App\\'.implode('\\', $parts);
     }
 }

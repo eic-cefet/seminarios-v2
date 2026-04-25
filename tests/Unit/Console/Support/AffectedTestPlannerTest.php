@@ -34,10 +34,10 @@ it('falls back to full suite when a trigger path changes', function (): void {
         ->and($plan['coverage_filter'])->toBe(['app/']);
 });
 
-it('maps changed source files to test files via class-name grep', function (): void {
+it('maps changed source files to test files via FQCN grep', function (): void {
     Process::fake([
         "*'git' 'diff'*" => Process::result(output: "app/Models/User.php\n"),
-        "*'grep'*'User'*'tests/'*" => Process::result(
+        "*'grep'*'App\\Models\\User'*'tests/'*" => Process::result(
             output: "tests/Feature/UserTest.php\ntests/Unit/Models/UserScopeTest.php\n"
         ),
     ]);
@@ -52,6 +52,22 @@ it('maps changed source files to test files via class-name grep', function (): v
             'tests/Unit/Models/UserScopeTest.php',
         ])
         ->and($plan['coverage_filter'])->toBe(['app/Models/User.php']);
+});
+
+it('skips source files whose path does not map to a valid FQCN', function (): void {
+    Process::fake([
+        "*'git' 'diff'*" => Process::result(output: "app/lower_case_dir/Foo.php\napp/Models/User.php\n"),
+        "*'grep'*'App\\Models\\User'*'tests/'*" => Process::result(
+            output: "tests/Feature/UserTest.php\n"
+        ),
+    ]);
+
+    $plan = app(AffectedTestPlanner::class)->resolve('origin/main');
+
+    expect($plan['source_files'])->toBe([
+        'app/lower_case_dir/Foo.php',
+        'app/Models/User.php',
+    ])->and($plan['test_files'])->toBe(['tests/Feature/UserTest.php']);
 });
 
 it('always includes directly changed test files', function (): void {

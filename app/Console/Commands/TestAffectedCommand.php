@@ -58,6 +58,6 @@ class TestAffectedCommand extends Command
             $this->output->write($buffer);
         });
 
-        return $result->exitCode();
+        return $result->exitCode() ?? 1;
     }
 }
