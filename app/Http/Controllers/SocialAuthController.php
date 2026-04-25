@@ -29,36 +29,7 @@ class SocialAuthController extends Controller
         try {
             $socialUser = Socialite::driver($provider)->user();
 
-            $identity = SocialIdentity::where('provider', $provider)
-                ->where('provider_id', $socialUser->getId())
-                ->first();
-
-            if ($identity) {
-                $user = $identity->user;
-            } else {
-                $user = User::where('email', $socialUser->getEmail())->first();
-
-                if (! $user) {
-                    $user = User::create([
-                        'name' => $socialUser->getName() ?? $socialUser->getNickname() ?? 'User',
-                        'email' => $socialUser->getEmail(),
-                        'password' => bcrypt(Str::random(32)),
-                        'email_verified_at' => now(),
-                    ]);
-
-                    foreach ([ConsentType::TermsOfService, ConsentType::PrivacyPolicy] as $type) {
-                        UserConsent::create([
-                            'user_id' => $user->id,
-                            'type' => $type,
-                            'granted' => true,
-                            'version' => config('lgpd.versions.'.$type->value) ?? '1.0',
-                            'ip_address' => $request->ip(),
-                            'user_agent' => substr((string) $request->userAgent(), 0, 500),
-                            'source' => 'oauth',
-                        ]);
-                    }
-                }
-            }
+            $user = $this->resolveUserForSocialLogin($socialUser, $provider, $request);
 
             SocialIdentity::updateOrCreate(
                 [
@@ -125,5 +96,48 @@ class SocialAuthController extends Controller
                 ] : null,
             ],
         ]);
+    }
+
+    private function resolveUserForSocialLogin(\Laravel\Socialite\Two\User $socialUser, string $provider, Request $request): User
+    {
+        $identity = SocialIdentity::where('provider', $provider)
+            ->where('provider_id', $socialUser->getId())
+            ->first();
+
+        if ($identity) {
+            return $identity->user;
+        }
+
+        $user = User::where('email', $socialUser->getEmail())->first();
+
+        if ($user) {
+            return $user;
+        }
+
+        $user = User::create([
+            'name' => $socialUser->getName() ?? $socialUser->getNickname() ?? 'User',
+            'email' => $socialUser->getEmail(),
+            'password' => bcrypt(Str::random(32)),
+            'email_verified_at' => now(),
+        ]);
+
+        $this->recordSignupConsents($user, $request);
+
+        return $user;
+    }
+
+    private function recordSignupConsents(User $user, Request $request): void
+    {
+        foreach ([ConsentType::TermsOfService, ConsentType::PrivacyPolicy] as $type) {
+            UserConsent::create([
+                'user_id' => $user->id,
+                'type' => $type,
+                'granted' => true,
+                'version' => config('lgpd.versions.'.$type->value) ?? '1.0',
+                'ip_address' => $request->ip(),
+                'user_agent' => substr((string) $request->userAgent(), 0, 500),
+                'source' => 'oauth',
+            ]);
+        }
     }
 }
