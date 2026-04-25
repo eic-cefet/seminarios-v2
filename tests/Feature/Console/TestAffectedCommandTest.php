@@ -30,8 +30,8 @@ it('falls back to the full suite when a trigger path changes', function (): void
     Process::assertRan(fn ($p): bool => is_string($p->command)
         && str_contains($p->command, 'artisan')
         && str_contains($p->command, 'test')
-        && str_contains($p->command, '--coverage')
-        && str_contains($p->command, '--min=95'));
+        && str_contains($p->command, '--min=95')
+        && ! str_contains($p->command, "'--coverage'"));
 });
 
 it('runs targeted tests with scoped coverage and 100% min', function (): void {

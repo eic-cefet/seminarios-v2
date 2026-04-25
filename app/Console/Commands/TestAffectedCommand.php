@@ -27,7 +27,7 @@ class TestAffectedCommand extends Command
             return self::SUCCESS;
         }
 
-        $command = ['php', 'artisan', 'test', '--compact', '--coverage'];
+        $command = ['php', 'artisan', 'test', '--compact'];
 
         if ($plan['full_suite']) {
             $this->warn('Running full suite — '.$plan['reason']);
