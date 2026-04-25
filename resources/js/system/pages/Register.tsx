@@ -3,6 +3,8 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import * as Label from "@radix-ui/react-label";
 import { useQuery } from "@tanstack/react-query";
 import ReCAPTCHA from "react-google-recaptcha";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Layout } from "../components/Layout";
 import { PageTitle } from "@shared/components/PageTitle";
 import { ROUTES } from "@shared/config/routes";
@@ -14,35 +16,37 @@ import { getErrorMessage } from "@shared/lib/errors";
 import { coursesApi } from "@shared/api/client";
 import { analytics } from "@shared/lib/analytics";
 import { FormField } from "@shared/components/FormField";
+import { registerSchema, type RegisterFormValues } from "./Register.schema";
 
 export default function Register() {
     const navigate = useNavigate();
     const location = useLocation();
-    const { register, isAuthenticated } = useAuth();
+    const { register: registerUser, isAuthenticated } = useAuth();
 
     const raw = (location.state as { from?: string })?.from || "/";
     const redirectTo = isSafeRedirect(raw) ? raw : "/";
     const recaptchaRef = useRef<ReCAPTCHA>(null);
     const [captchaToken, setCaptchaToken] = useState<string | null>(null);
-    const [formData, setFormData] = useState({
-        name: "",
-        email: "",
-        password: "",
-        passwordConfirmation: "",
-        courseSituation: "" as "" | "studying" | "graduated",
-        courseRole: "" as "" | "Aluno" | "Professor" | "Outro",
-        courseId: "",
-        acceptedTerms: false,
-        acceptedPrivacy: false,
-    });
-    const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    const mismatchError =
-        formData.passwordConfirmation.length > 0 &&
-        formData.password !== formData.passwordConfirmation
-            ? "As senhas não coincidem"
-            : undefined;
+    const {
+        register,
+        handleSubmit,
+        formState: { errors, isSubmitting },
+    } = useForm<RegisterFormValues>({
+        resolver: zodResolver(registerSchema),
+        defaultValues: {
+            name: "",
+            email: "",
+            password: "",
+            passwordConfirmation: "",
+            courseSituation: "",
+            courseRole: "",
+            courseId: "",
+            acceptedTerms: false,
+            acceptedPrivacy: false,
+        },
+    });
 
     const { data: coursesData } = useQuery({
         queryKey: ["courses"],
@@ -57,17 +61,7 @@ export default function Register() {
         }
     }, [isAuthenticated, navigate, redirectTo]);
 
-    const handleChange = (
-        e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
-    ) => {
-        setFormData((prev) => ({
-            ...prev,
-            [e.target.name]: e.target.value,
-        }));
-    };
-
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const onSubmit = handleSubmit(async (values) => {
         setError(null);
 
         if (isRecaptchaEnabled() && !captchaToken) {
@@ -75,55 +69,33 @@ export default function Register() {
             return;
         }
 
-        if (formData.password !== formData.passwordConfirmation) {
-            setError("As senhas não coincidem");
-            return;
-        }
-
-        if (formData.password.length < 8) {
-            setError("A senha deve ter pelo menos 8 caracteres");
-            return;
-        }
-
-        if (!formData.courseSituation || !formData.courseRole) {
-            setError("Preencha todos os campos obrigatórios");
-            return;
-        }
-
-        if (!formData.acceptedTerms || !formData.acceptedPrivacy) {
-            setError("Você precisa aceitar os Termos de Uso e a Política de Privacidade.");
-            return;
-        }
-
-        setLoading(true);
-
         try {
-            await register({
-                name: formData.name,
-                email: formData.email,
-                password: formData.password,
-                passwordConfirmation: formData.passwordConfirmation,
-                courseSituation: formData.courseSituation,
-                courseRole: formData.courseRole,
-                courseId: formData.courseId
-                    ? parseInt(formData.courseId)
+            await registerUser({
+                name: values.name,
+                email: values.email,
+                password: values.password,
+                passwordConfirmation: values.passwordConfirmation,
+                courseSituation:
+                    values.courseSituation as "studying" | "graduated",
+                courseRole:
+                    values.courseRole as "Aluno" | "Professor" | "Outro",
+                courseId: values.courseId
+                    ? parseInt(values.courseId)
                     : undefined,
-                acceptedTerms: formData.acceptedTerms,
-                acceptedPrivacy: formData.acceptedPrivacy,
+                acceptedTerms: values.acceptedTerms,
+                acceptedPrivacy: values.acceptedPrivacy,
             });
             analytics.event("register_account", {
-                course_situation: formData.courseSituation,
-                course_role: formData.courseRole,
+                course_situation: values.courseSituation,
+                course_role: values.courseRole,
             });
             navigate(redirectTo, { replace: true });
         } catch (err) {
             setError(getErrorMessage(err));
             recaptchaRef.current?.reset();
             setCaptchaToken(null);
-        } finally {
-            setLoading(false);
         }
-    };
+    });
 
     const handleSocialLogin = (provider: "google" | "github") => {
         analytics.event("register_social", { provider });
@@ -132,6 +104,21 @@ export default function Register() {
         }
         window.location.href = buildUrl(`/auth/${provider}`);
     };
+
+    const courseSelectionError =
+        errors.courseSituation?.message ?? errors.courseRole?.message;
+    const consentError =
+        errors.acceptedTerms?.message ?? errors.acceptedPrivacy?.message;
+
+    const nameField = register("name");
+    const emailField = register("email");
+    const passwordField = register("password");
+    const passwordConfirmationField = register("passwordConfirmation");
+    const courseSituationField = register("courseSituation");
+    const courseRoleField = register("courseRole");
+    const courseIdField = register("courseId");
+    const acceptedTermsField = register("acceptedTerms");
+    const acceptedPrivacyField = register("acceptedPrivacy");
 
     return (
         <>
@@ -155,35 +142,45 @@ export default function Register() {
                             dividerBgColor="bg-gray-50"
                         />
 
-                        <form onSubmit={handleSubmit} className="space-y-5">
+                        <form onSubmit={onSubmit} className="space-y-5" noValidate>
                             {error && (
                                 <div role="alert" className="rounded-md bg-red-50 p-3 text-sm text-red-700">
                                     {error}
                                 </div>
                             )}
 
+                            {courseSelectionError && (
+                                <div role="alert" className="rounded-md bg-red-50 p-3 text-sm text-red-700">
+                                    {courseSelectionError}
+                                </div>
+                            )}
+
+                            {consentError && (
+                                <div role="alert" className="rounded-md bg-red-50 p-3 text-sm text-red-700">
+                                    {consentError}
+                                </div>
+                            )}
+
                             <FormField
                                 id="name"
                                 label="Nome completo"
-                                name="name"
                                 type="text"
                                 required
-                                value={formData.name}
-                                onChange={handleChange}
                                 autoComplete="name"
                                 placeholder="Seu nome completo"
+                                error={errors.name?.message}
+                                {...nameField}
                             />
 
                             <FormField
                                 id="email"
                                 label="E-mail"
-                                name="email"
                                 type="email"
                                 required
-                                value={formData.email}
-                                onChange={handleChange}
                                 autoComplete="email"
                                 placeholder="seu@email.com"
+                                error={errors.email?.message}
+                                {...emailField}
                             />
 
                             <div className="grid grid-cols-2 gap-4">
@@ -196,11 +193,9 @@ export default function Register() {
                                     </Label.Root>
                                     <select
                                         id="courseSituation"
-                                        name="courseSituation"
                                         required
-                                        value={formData.courseSituation}
-                                        onChange={handleChange}
                                         className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                                        {...courseSituationField}
                                     >
                                         <option value="">Selecione...</option>
                                         <option value="studying">
@@ -221,11 +216,9 @@ export default function Register() {
                                     </Label.Root>
                                     <select
                                         id="courseRole"
-                                        name="courseRole"
                                         required
-                                        value={formData.courseRole}
-                                        onChange={handleChange}
                                         className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                                        {...courseRoleField}
                                     >
                                         <option value="">Selecione...</option>
                                         <option value="Aluno">Aluno</option>
@@ -246,10 +239,8 @@ export default function Register() {
                                 </Label.Root>
                                 <select
                                     id="courseId"
-                                    name="courseId"
-                                    value={formData.courseId}
-                                    onChange={handleChange}
                                     className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                                    {...courseIdField}
                                 >
                                     <option value="">
                                         Selecione um curso (opcional)
@@ -268,27 +259,24 @@ export default function Register() {
                             <FormField
                                 id="password"
                                 label="Senha"
-                                name="password"
                                 type="password"
                                 required
-                                value={formData.password}
-                                onChange={handleChange}
                                 autoComplete="new-password"
                                 placeholder="Mínimo de 8 caracteres"
                                 hint="Mínimo de 8 caracteres"
+                                error={errors.password?.message}
+                                {...passwordField}
                             />
 
                             <FormField
                                 id="passwordConfirmation"
                                 label="Confirmar senha"
-                                name="passwordConfirmation"
                                 type="password"
                                 required
-                                value={formData.passwordConfirmation}
-                                onChange={handleChange}
                                 autoComplete="new-password"
                                 placeholder="Digite a senha novamente"
-                                error={mismatchError}
+                                error={errors.passwordConfirmation?.message}
+                                {...passwordConfirmationField}
                             />
 
                             <ReCaptcha
@@ -301,14 +289,8 @@ export default function Register() {
                                 <label className="flex items-start gap-2">
                                     <input
                                         type="checkbox"
-                                        checked={formData.acceptedTerms}
-                                        onChange={(e) =>
-                                            setFormData((prev) => ({
-                                                ...prev,
-                                                acceptedTerms: e.target.checked,
-                                            }))
-                                        }
                                         className="mt-1"
+                                        {...acceptedTermsField}
                                     />
                                     <span>
                                         Li e aceito os{" "}
@@ -326,14 +308,8 @@ export default function Register() {
                                 <label className="flex items-start gap-2">
                                     <input
                                         type="checkbox"
-                                        checked={formData.acceptedPrivacy}
-                                        onChange={(e) =>
-                                            setFormData((prev) => ({
-                                                ...prev,
-                                                acceptedPrivacy: e.target.checked,
-                                            }))
-                                        }
                                         className="mt-1"
+                                        {...acceptedPrivacyField}
                                     />
                                     <span>
                                         Li e aceito a{" "}
@@ -353,18 +329,18 @@ export default function Register() {
                             <button
                                 type="submit"
                                 disabled={
-                                    loading ||
+                                    isSubmitting ||
                                     (isRecaptchaEnabled() && !captchaToken)
                                 }
                                 className={cn(
                                     "w-full rounded-md bg-primary-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors",
-                                    (loading ||
+                                    (isSubmitting ||
                                         (isRecaptchaEnabled() &&
                                             !captchaToken)) &&
                                         "opacity-70 cursor-not-allowed",
                                 )}
                             >
-                                {loading ? "Criando conta..." : "Criar conta"}
+                                {isSubmitting ? "Criando conta..." : "Criar conta"}
                             </button>
                         </form>
 
@@ -384,4 +360,3 @@ export default function Register() {
         </>
     );
 }
-

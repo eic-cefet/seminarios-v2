@@ -394,6 +394,25 @@ describe('Register', () => {
         });
     });
 
+    it('shows a Zod error when email is invalid', async () => {
+        const user = userEvent.setup();
+        render(<Register />);
+
+        await user.type(screen.getByLabelText(/nome completo/i), 'Test User');
+        await user.type(screen.getByLabelText(/e-mail/i), 'not-an-email');
+        await user.selectOptions(screen.getByLabelText(/situação/i), 'studying');
+        await user.selectOptions(screen.getByLabelText(/vínculo/i), 'Aluno');
+        await user.type(screen.getByLabelText(/^senha/i), 'password123');
+        await user.type(screen.getByLabelText(/confirmar senha/i), 'password123');
+        await user.click(screen.getByText('ReCaptcha'));
+        fireEvent.click(screen.getByLabelText(/Termos de Uso/i));
+        fireEvent.click(screen.getByLabelText(/Política de Privacidade/i));
+        await user.click(screen.getByRole('button', { name: /criar conta/i }));
+
+        expect(await screen.findByText(/e-mail inválido/i)).toBeInTheDocument();
+        expect(mockRegister).not.toHaveBeenCalled();
+    });
+
     it('disables submit when captcha expires', async () => {
         const user = userEvent.setup();
         render(<Register />);
