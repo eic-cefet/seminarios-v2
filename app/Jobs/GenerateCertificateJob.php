@@ -11,6 +11,7 @@ use App\Models\AuditLog;
 use App\Models\Registration;
 use App\Notifications\CertificateReadyNotification;
 use App\Services\CertificateService;
+use App\Services\CommunicationGate;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -40,8 +41,10 @@ class GenerateCertificateJob implements ShouldBeUnique, ShouldQueue
         public bool $sendEmail = true
     ) {}
 
-    public function handle(CertificateService $certificateService): void
+    public function handle(CertificateService $certificateService, ?CommunicationGate $gate = null): void
     {
+        $gate ??= app(CommunicationGate::class);
+
         $this->setAuditContext();
         $this->registration->load(['user', 'seminar.seminarType']);
 
@@ -62,7 +65,7 @@ class GenerateCertificateJob implements ShouldBeUnique, ShouldQueue
         }
 
         if ($this->sendEmail && ! $this->registration->certificate_sent) {
-            if ($this->registration->user->wantsCommunication(CommunicationCategory::CertificateReady)) {
+            if ($gate->canEmail($this->registration->user, CommunicationCategory::CertificateReady)) {
                 $pdfPath = $certificateService->getPdfPath($this->registration);
                 $pdfContent = Storage::disk('s3')->get($pdfPath);
 

@@ -10,6 +10,7 @@ use App\Mail\SeminarRescheduled;
 use App\Models\AuditLog;
 use App\Models\Seminar;
 use App\Notifications\SeminarRescheduledNotification;
+use App\Services\CommunicationGate;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -31,8 +32,10 @@ class ProcessSeminarRescheduleJob implements ShouldQueue
         public \DateTimeInterface $oldScheduledAt,
     ) {}
 
-    public function handle(): void
+    public function handle(?CommunicationGate $gate = null): void
     {
+        $gate ??= app(CommunicationGate::class);
+
         $this->setAuditContext();
 
         $this->seminar->loadMissing('seminarLocation');
@@ -57,7 +60,7 @@ class ProcessSeminarRescheduleJob implements ShouldQueue
                 previousStartsAt: (string) $this->oldScheduledAt,
             ));
 
-            if (! $registration->user->wantsCommunication(CommunicationCategory::SeminarRescheduled)) {
+            if (! $gate->canEmail($registration->user, CommunicationCategory::SeminarRescheduled)) {
                 continue;
             }
 
