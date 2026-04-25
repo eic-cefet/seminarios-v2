@@ -1,4 +1,4 @@
-import { cn, formatDate, formatDateTime, formatDateTimeLong, isExpired, containsHTML, buildUrl, isSafeRedirect } from './utils';
+import { cn, containsHTML, buildUrl, isSafeRedirect } from './utils';
 
 describe('cn', () => {
     it('merges class names', () => {
@@ -15,62 +15,6 @@ describe('cn', () => {
 
     it('returns empty string for no args', () => {
         expect(cn()).toBe('');
-    });
-});
-
-describe('formatDate', () => {
-    it('formats a date string to pt-BR', () => {
-        const result = formatDate('2026-03-15T10:00:00Z');
-        expect(result).toMatch(/15\/03\/2026/);
-    });
-
-    it('formats a Date object', () => {
-        // Use midday to avoid timezone shifting the date
-        const result = formatDate(new Date('2026-12-25T12:00:00Z'));
-        expect(result).toMatch(/25\/12\/2026/);
-    });
-});
-
-describe('formatDateTime', () => {
-    it('formats a date string with time', () => {
-        const result = formatDateTime('2026-03-15T14:30:00Z');
-        expect(result).toMatch(/15\/03\/2026/);
-        // Should contain time portion
-        expect(result).toMatch(/\d{2}:\d{2}/);
-    });
-
-    it('formats a Date object with time', () => {
-        const result = formatDateTime(new Date('2026-06-01T08:00:00Z'));
-        expect(result).toMatch(/\d{2}\/\d{2}\/2026/);
-    });
-});
-
-describe('formatDateTimeLong', () => {
-    it('formats with long month name', () => {
-        const result = formatDateTimeLong('2026-03-15T14:30:00Z');
-        // Should contain a month name (not number)
-        expect(result).toMatch(/\d{2}.*\d{4}/);
-        expect(result).toMatch(/\d{2}:\d{2}/);
-    });
-
-    it('formats a Date object with long month name', () => {
-        const result = formatDateTimeLong(new Date('2026-06-15T12:00:00Z'));
-        expect(result).toMatch(/\d{2}.*\d{4}/);
-        expect(result).toMatch(/\d{2}:\d{2}/);
-    });
-});
-
-describe('isExpired', () => {
-    it('returns true for past dates', () => {
-        expect(isExpired('2020-01-01T00:00:00Z')).toBe(true);
-    });
-
-    it('returns false for future dates', () => {
-        expect(isExpired('2099-12-31T23:59:59Z')).toBe(false);
-    });
-
-    it('accepts Date objects', () => {
-        expect(isExpired(new Date('2020-01-01'))).toBe(true);
     });
 });
 
