@@ -50,7 +50,8 @@ describe('GET /api/admin/registrations', function () {
         $response->assertSuccessful();
         $response->assertJsonCount(1, 'data');
         $response->assertJsonPath('data.0.id', $teacherRegistration->id);
-        $response->assertJsonMissing(['id' => $otherRegistration->id]);
+        expect(collect($response->json('data'))->pluck('id'))
+            ->not->toContain($otherRegistration->id);
     });
 
     it('filters registrations by seminar_id', function () {
