@@ -7,6 +7,7 @@ use App\Models\Course;
 use App\Models\User;
 use App\Models\UserConsent;
 use App\Models\UserStudentData;
+use App\Models\SocialIdentity;
 use Illuminate\Support\Facades\Cache;
 use Laravel\Socialite\Contracts\Factory;
 use Laravel\Socialite\Contracts\Provider;
@@ -63,6 +64,13 @@ describe('GET /auth/{provider}/callback', function () {
         expect($user->isUser())->toBeTrue()
             ->and($user->isAdmin())->toBeFalse()
             ->and($user->isTeacher())->toBeFalse();
+
+        // Bug fix: social identity must be persisted so the account is linked.
+        $this->assertDatabaseHas('social_identities', [
+            'user_id' => $user->id,
+            'provider' => 'google',
+            'provider_id' => 'google-123',
+        ]);
     });
 
     it('records terms and privacy consent on first-time oauth signup', function () {
