@@ -380,6 +380,26 @@ describe('GET /auth/{provider}/callback', function () {
         $this->get('/auth/google/callback')
             ->assertRedirect('/auth/callback?error=authentication_failed');
     });
+
+    it('redirects to error when oauth email matches a soft-deleted user', function () {
+        $user = User::factory()->create([
+            'email' => 'deleted-by-email@example.com',
+        ]);
+        $user->delete(); // soft-delete (no SocialIdentity exists)
+
+        $fakeUser = new SocialiteUser;
+        $fakeUser->id = 'google-no-identity';
+        $fakeUser->name = 'Deleted User';
+        $fakeUser->email = 'deleted-by-email@example.com';
+
+        Socialite::fake('google', $fakeUser);
+
+        $this->get('/auth/google/callback')
+            ->assertRedirect('/auth/callback?error=authentication_failed');
+
+        // No new (active) user created with that email.
+        expect(User::where('email', 'deleted-by-email@example.com')->count())->toBe(0);
+    });
 });
 
 describe('POST /api/auth/exchange', function () {

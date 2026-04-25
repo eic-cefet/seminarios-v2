@@ -14,6 +14,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Laravel\Socialite\Facades\Socialite;
 
@@ -114,22 +115,31 @@ class SocialAuthController extends Controller
             return $user;
         }
 
-        $user = User::where('email', $socialUser->getEmail())->first();
+        return DB::transaction(function () use ($socialUser, $request) {
+            $existing = User::withTrashed()
+                ->where('email', $socialUser->getEmail())
+                ->lockForUpdate()
+                ->first();
 
-        if ($user) {
+            if ($existing) {
+                if ($existing->trashed()) {
+                    throw new \RuntimeException('OAuth login attempted for a deleted account.');
+                }
+
+                return $existing;
+            }
+
+            $user = User::create([
+                'name' => $socialUser->getName() ?? $socialUser->getNickname() ?? 'User',
+                'email' => $socialUser->getEmail(),
+                'password' => bcrypt(Str::random(32)),
+                'email_verified_at' => now(),
+            ]);
+
+            $this->recordSignupConsents($user, $request);
+
             return $user;
-        }
-
-        $user = User::create([
-            'name' => $socialUser->getName() ?? $socialUser->getNickname() ?? 'User',
-            'email' => $socialUser->getEmail(),
-            'password' => bcrypt(Str::random(32)),
-            'email_verified_at' => now(),
-        ]);
-
-        $this->recordSignupConsents($user, $request);
-
-        return $user;
+        });
     }
 
     private function recordSignupConsents(User $user, Request $request): void
