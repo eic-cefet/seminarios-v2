@@ -42,8 +42,8 @@ class AdminWorkshopController extends Controller
     {
         Gate::authorize('view', $workshop);
 
-        $workshop->loadCount('seminars');
-        $workshop->load('seminars:id,name,slug,scheduled_at,workshop_id');
+        $workshop->loadCount('seminars')
+            ->load('seminars:id,name,slug,scheduled_at,workshop_id');
 
         return new AdminWorkshopResource($workshop);
     }
@@ -74,10 +74,10 @@ class AdminWorkshopController extends Controller
 
         $workshop->loadCount('seminars');
 
-        return response()->json([
-            'message' => 'Workshop criado com sucesso',
-            'data' => new AdminWorkshopResource($workshop),
-        ], 201);
+        return (new AdminWorkshopResource($workshop))
+            ->additional(['message' => 'Workshop criado com sucesso'])
+            ->response()
+            ->setStatusCode(201);
     }
 
     public function update(Request $request, Workshop $workshop): JsonResponse
@@ -113,10 +113,9 @@ class AdminWorkshopController extends Controller
 
         $workshop->loadCount('seminars');
 
-        return response()->json([
-            'message' => 'Workshop atualizado com sucesso',
-            'data' => new AdminWorkshopResource($workshop),
-        ]);
+        return (new AdminWorkshopResource($workshop))
+            ->additional(['message' => 'Workshop atualizado com sucesso'])
+            ->response();
     }
 
     public function destroy(Workshop $workshop): JsonResponse
