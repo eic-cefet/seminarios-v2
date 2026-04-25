@@ -67,6 +67,10 @@
             "@php artisan config:clear --ansi",
             "@php artisan test"
         ],
+        "test:affected": [
+            "@php artisan config:clear --ansi",
+            "@php artisan test:affected --base=origin/main"
+        ],
         "post-autoload-dump": [
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
             "@php artisan package:discover --ansi"
