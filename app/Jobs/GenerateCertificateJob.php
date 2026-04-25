@@ -9,6 +9,7 @@ use App\Enums\CommunicationCategory;
 use App\Mail\CertificateGenerated;
 use App\Models\AuditLog;
 use App\Models\Registration;
+use App\Notifications\CertificateReadyNotification;
 use App\Services\CertificateService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -66,6 +67,11 @@ class GenerateCertificateJob implements ShouldQueue
             // scheduler re-dispatches this job every hour for opted-out users.
             $this->registration->update(['certificate_sent' => true]);
         }
+
+        $this->registration->user->notify(new CertificateReadyNotification(
+            $this->registration->seminar,
+            '/certificados',
+        ));
 
         if ($jpgGenerated || $pdfGenerated) {
             AuditLog::record(AuditEvent::CertificateGenerated, AuditEventType::System, $this->registration, [

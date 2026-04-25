@@ -6,6 +6,7 @@ use App\Enums\CommunicationCategory;
 use App\Mail\EvaluationReminder;
 use App\Models\Registration;
 use App\Models\User;
+use App\Notifications\EvaluationDueNotification;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -32,10 +33,6 @@ class SendEvaluationReminderJob implements ShouldQueue
 
     public function handle(): void
     {
-        if (! $this->user->wantsCommunication(CommunicationCategory::EvaluationPrompt)) {
-            return;
-        }
-
         $registrations = Registration::whereIn('id', $this->registrationIds)
             ->with(['seminar.seminarLocation'])
             ->get();
@@ -44,13 +41,19 @@ class SendEvaluationReminderJob implements ShouldQueue
             return;
         }
 
-        $seminars = $registrations->pluck('seminar')->filter();
-
-        if ($seminars->isEmpty()) {
-            return;
+        foreach ($registrations as $registration) {
+            if ($registration->seminar) {
+                $this->user->notify(new EvaluationDueNotification($registration->seminar));
+            }
         }
 
-        Mail::to($this->user)->queue(new EvaluationReminder($this->user, $seminars));
+        if ($this->user->wantsCommunication(CommunicationCategory::EvaluationPrompt)) {
+            $seminars = $registrations->pluck('seminar')->filter();
+
+            if ($seminars->isNotEmpty()) {
+                Mail::to($this->user)->queue(new EvaluationReminder($this->user, $seminars));
+            }
+        }
 
         Registration::whereIn('id', $this->registrationIds)->update(['evaluation_sent_at' => now()]);
     }

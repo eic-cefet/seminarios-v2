@@ -8,4 +8,7 @@ return [
     'email_audit' => [
         'enabled' => env('FEATURE_EMAIL_AUDIT', true),
     ],
+    'notification_audit' => [
+        'enabled' => env('FEATURE_NOTIFICATION_AUDIT', true),
+    ],
 ];

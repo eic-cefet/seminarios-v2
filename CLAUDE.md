@@ -8,6 +8,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 > ALWAYS use `Mail::to(...)->queue(...)` — never `->send(...)` — for any application mail. Every Mailable in this app implements `ShouldQueue`; HTTP responses must not block on SMTP and queued jobs must not block their worker on a single email. The only exception is direct unit tests that exercise the underlying mail event/transport (e.g. `tests/Feature/Mail/MailAuditLogTest.php`).
 
+> NEVER run more than one full test suite at a time — backend (`php artisan test`) or frontend (`pnpm run test` / `pnpm exec vitest run`). Both processes are heavy. Always run sequentially, never in parallel; do not dispatch multiple agents that each run the suite. File-targeted runs (`php artisan test --filter=...`, `pnpm exec vitest run path/to/file`) are fine, but still only one at a time.
+
 ## Git Workflow
 
 **IMPORTANT:** When asked to push changes to GitHub, ALWAYS follow this workflow:

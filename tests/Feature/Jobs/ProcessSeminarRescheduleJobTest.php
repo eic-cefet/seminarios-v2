@@ -7,7 +7,9 @@ use App\Models\AuditLog;
 use App\Models\Registration;
 use App\Models\Seminar;
 use App\Models\User;
+use App\Notifications\SeminarRescheduledNotification;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Notification;
 
 describe('ProcessSeminarRescheduleJob', function () {
     it('sends rescheduled email to all registered users', function () {
@@ -99,5 +101,24 @@ describe('ProcessSeminarRescheduleJob', function () {
 
         expect($job->tries)->toBe(3);
         expect($job->backoff)->toBe(60);
+    });
+
+    it('dispatches SeminarRescheduledNotification to every registered user', function () {
+        Mail::fake();
+        Notification::fake();
+
+        $seminar = Seminar::factory()->create(['scheduled_at' => now()->addDays(7)]);
+        $oldDate = now()->addDay();
+
+        $user1 = User::factory()->create();
+        $user2 = User::factory()->create();
+        $user3 = User::factory()->create();
+        Registration::factory()->create(['seminar_id' => $seminar->id, 'user_id' => $user1->id]);
+        Registration::factory()->create(['seminar_id' => $seminar->id, 'user_id' => $user2->id]);
+        Registration::factory()->create(['seminar_id' => $seminar->id, 'user_id' => $user3->id]);
+
+        (new ProcessSeminarRescheduleJob($seminar, $oldDate))->handle();
+
+        Notification::assertSentTo([$user1, $user2, $user3], SeminarRescheduledNotification::class);
     });
 });

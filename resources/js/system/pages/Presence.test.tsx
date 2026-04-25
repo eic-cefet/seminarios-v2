@@ -27,6 +27,16 @@ vi.mock('@shared/api/httpUtils', () => ({
     getCsrfCookie: vi.fn().mockResolvedValue(undefined),
 }));
 
+vi.mock('@shared/hooks/useNotifications', () => ({
+    useNotifications: () => ({
+        notifications: [],
+        unreadCount: 0,
+        refresh: vi.fn(),
+        markRead: vi.fn(),
+        markAllRead: vi.fn(),
+    }),
+}));
+
 vi.mock('../components/LoginModal', () => ({
     LoginModal: ({ open }: { open: boolean }) => open ? <div data-testid="login-modal">Login Modal</div> : null,
 }));

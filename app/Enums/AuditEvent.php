@@ -49,6 +49,7 @@ enum AuditEvent: string
     case SeminarAlertDispatched = 'seminar_alert.dispatched';
     case S3FileDeleted = 's3.file_deleted';
     case EmailSent = 'email.sent';
+    case NotificationSent = 'notification.sent';
 
     // MFA
     case UserMfaEnabled = 'user.mfa_enabled';

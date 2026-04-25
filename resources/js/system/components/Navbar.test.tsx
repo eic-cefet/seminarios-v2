@@ -3,6 +3,16 @@ import { Navbar } from './Navbar';
 import { useAuth } from '@shared/contexts/AuthContext';
 import { analytics } from '@shared/lib/analytics';
 
+vi.mock('@shared/hooks/useNotifications', () => ({
+    useNotifications: () => ({
+        notifications: [],
+        unreadCount: 0,
+        refresh: vi.fn(),
+        markRead: vi.fn(),
+        markAllRead: vi.fn(),
+    }),
+}));
+
 const mockLogout = vi.fn();
 
 vi.mock('@shared/contexts/AuthContext', () => ({
@@ -345,5 +355,21 @@ describe('Navbar', () => {
         await user.click(adminLinks[adminLinks.length - 1]);
 
         // The onClick handler sets mobileMenuOpen to false
+    });
+
+    it('renders NotificationBell when a user is logged in', () => {
+        vi.mocked(useAuth).mockReturnValue({
+            user: { id: 7, name: 'Ana', email: 'ana@example.com' } as any,
+            isLoading: false, isAuthenticated: true,
+            login: vi.fn(), register: vi.fn(), logout: mockLogout, exchangeCode: vi.fn(), refreshUser: vi.fn(), completeTwoFactor: vi.fn(),
+        });
+
+        render(<Navbar />);
+        expect(screen.getByLabelText(/notification/i)).toBeInTheDocument();
+    });
+
+    it('does not render NotificationBell when logged out', () => {
+        render(<Navbar />);
+        expect(screen.queryByLabelText(/notification/i)).not.toBeInTheDocument();
     });
 });
