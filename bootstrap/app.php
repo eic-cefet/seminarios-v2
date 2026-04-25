@@ -59,7 +59,6 @@ return Application::configure(basePath: dirname(__DIR__))
             if ($request->is('api/*') || $request->is('admin/api/*')) {
                 return response()->json([
                     'message' => 'Sistema ocupado, tente novamente em instantes.',
-                    'lock_key' => $e->key,
                 ], 503);
             }
 

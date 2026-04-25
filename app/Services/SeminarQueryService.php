@@ -23,11 +23,15 @@ class SeminarQueryService
 
     public function forList(Builder $query): Builder
     {
-        return $query->with(self::LIST_RELATIONS)->withCount('registrations');
+        return $query->with(self::LIST_RELATIONS)
+            ->withCount('registrations')
+            ->withAvg('ratings', 'score');
     }
 
     public function forDetail(Builder $query): Builder
     {
-        return $query->with(self::DETAIL_RELATIONS)->withCount('registrations');
+        return $query->with(self::DETAIL_RELATIONS)
+            ->withCount('registrations')
+            ->withAvg('ratings', 'score');
     }
 }

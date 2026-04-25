@@ -63,7 +63,6 @@ class SeminarController extends Controller
     public function show(string $slug, SeminarQueryService $seminars): SeminarResource
     {
         $seminar = $seminars->forDetail(Seminar::query())
-            ->withAvg('ratings', 'score')
             ->where('slug', $slug)
             ->active()
             ->firstOrFail();
