@@ -35,7 +35,7 @@ import {
     SelectValue,
 } from "../../components/ui/select";
 import { Switch } from "../../components/ui/switch";
-import { toDatetimeLocal } from "@shared/lib/date";
+import { toDatetimeLocal } from "@shared/lib/utils";
 import {
     SEMINAR_DURATION_OPTIONS,
     seminarSchema,

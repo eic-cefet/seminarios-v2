@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { ROUTES } from "@shared/config/routes";
-import { getYear } from "@shared/lib/date";
+import { getYear } from "@shared/lib/utils";
 
 export function Footer() {
     const currentYear = getYear();

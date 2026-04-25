@@ -15,8 +15,7 @@ import { ptBR } from "date-fns/locale";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { Seminar } from "@shared/types";
 import { ROUTES } from "@shared/config/routes";
-import { cn } from "@shared/lib/utils";
-import { toSaoPaulo } from "@shared/lib/date";
+import { cn, toSaoPaulo } from "@shared/lib/utils";
 
 interface PresentationsCalendarProps {
     seminars: Seminar[];

@@ -9,7 +9,7 @@ import {
     getSemester,
     toDatetimeLocal,
     compareDateDesc,
-} from './date';
+} from './utils';
 
 describe('formatDate', () => {
     it('formats UTC date string to dd/MM/yyyy in São Paulo timezone', () => {
