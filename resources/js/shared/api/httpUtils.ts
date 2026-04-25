@@ -83,10 +83,12 @@ export interface CreateApiClientOptions {
  * - Throws a customizable error when the response is not OK.
  */
 export function createApiClient(opts: CreateApiClientOptions) {
-    const errorFactory =
-        opts.errorFactory ??
-        ((body: ApiErrorBody) => new Error(body.message));
-    const readXsrfToken = opts.readXsrfToken ?? (() => getCookie("XSRF-TOKEN"));
+    /* v8 ignore start -- @preserve defaults: callers (shared/api/client + admin/api/adminClient) always supply both */
+    const defaultErrorFactory = (body: ApiErrorBody) => new Error(body.message);
+    const defaultReadXsrfToken = () => getCookie("XSRF-TOKEN");
+    const errorFactory = opts.errorFactory ?? defaultErrorFactory;
+    const readXsrfToken = opts.readXsrfToken ?? defaultReadXsrfToken;
+    /* v8 ignore stop */
 
     return async function fetchJson<T>(
         endpoint: string,

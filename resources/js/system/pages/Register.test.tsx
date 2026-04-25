@@ -130,6 +130,32 @@ describe('Register', () => {
         expect(screen.getByRole('button', { name: /criar conta/i })).toBeInTheDocument();
     });
 
+    it('blocks submit and shows captcha error when captcha is not completed', async () => {
+        const user = userEvent.setup();
+
+        render(<Register />);
+
+        await user.type(screen.getByLabelText(/nome completo/i), 'Test User');
+        await user.type(screen.getByLabelText(/e-mail/i), 'test@example.com');
+        await user.selectOptions(screen.getByLabelText(/situação/i), 'studying');
+        await user.selectOptions(screen.getByLabelText(/vínculo/i), 'Aluno');
+        await user.type(screen.getByLabelText(/^senha/i), 'password123');
+        await user.type(screen.getByLabelText(/confirmar senha/i), 'password123');
+        fireEvent.click(screen.getByLabelText(/Termos de Uso/i));
+        fireEvent.click(screen.getByLabelText(/Política de Privacidade/i));
+
+        // The submit button is disabled until captcha is solved — so the
+        // in-handler captcha check is defensive. Submit the form directly to
+        // exercise the guard.
+        const form = screen.getByRole('button', { name: /criar conta/i }).closest('form')!;
+        fireEvent.submit(form);
+
+        await waitFor(() => {
+            expect(screen.getByText(/complete o captcha/i)).toBeInTheDocument();
+        });
+        expect(mockRegister).not.toHaveBeenCalled();
+    });
+
     it('renders course options from API', async () => {
         render(<Register />);
 

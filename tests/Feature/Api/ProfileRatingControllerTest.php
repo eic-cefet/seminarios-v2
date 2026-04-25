@@ -4,6 +4,7 @@ use App\Jobs\AnalyzeRatingSentiment;
 use App\Models\Rating;
 use App\Models\Registration;
 use App\Models\Seminar;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
@@ -170,6 +171,27 @@ describe('POST /profile/ratings/{seminar} - sentiment dispatch', function () {
         Rating::factory()->for($user)->for($seminar)->create();
 
         $this->postJson("/api/profile/ratings/{$seminar->id}", ['score' => 5, 'comment' => 'oi'])
+            ->assertConflict()
+            ->assertJsonFragment(['message' => 'Você já avaliou este seminário.']);
+    });
+
+    it('returns conflict when the unique constraint fires after the existence pre-check', function () {
+        $user = actingAsUser();
+        $seminar = Seminar::factory()->create(['scheduled_at' => now()->subDays(5)]);
+        Registration::factory()->for($user)->for($seminar)
+            ->create(['present' => true]);
+
+        // Simulate a parallel insert winning the race after our exists() check.
+        Rating::creating(function (): never {
+            throw new UniqueConstraintViolationException(
+                'sqlite',
+                'insert into ratings ...',
+                [],
+                new RuntimeException('UNIQUE constraint failed: ratings.seminar_id, ratings.user_id'),
+            );
+        });
+
+        $this->postJson("/api/profile/ratings/{$seminar->id}", ['score' => 4, 'comment' => 'race'])
             ->assertConflict()
             ->assertJsonFragment(['message' => 'Você já avaliou este seminário.']);
     });

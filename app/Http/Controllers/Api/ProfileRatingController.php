@@ -70,6 +70,8 @@ class ProfileRatingController extends Controller
                         'ai_analysis_consent' => $aiAnalysisConsent,
                     ]);
                 } catch (UniqueConstraintViolationException) {
+                    // Race fallback: another request created the rating between
+                    // our pre-check and insert despite the Mutex.
                     throw ApiException::conflict('Você já avaliou este seminário.');
                 }
             });

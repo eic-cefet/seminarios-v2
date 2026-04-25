@@ -72,7 +72,7 @@ final class Mutex
         try {
             $lock->release();
         } catch (Throwable) {
-            // @codeCoverageIgnore — lock may have already expired via TTL
+            // Lock may have already expired via TTL — nothing to release.
         }
     }
 }

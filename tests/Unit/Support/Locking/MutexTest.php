@@ -2,6 +2,7 @@
 
 use App\Support\Locking\LockTimeoutException;
 use App\Support\Locking\Mutex;
+use Illuminate\Contracts\Cache\Lock;
 use Illuminate\Support\Facades\Cache;
 
 it('runs the callback under the lock and returns its value', function () {
@@ -29,4 +30,14 @@ it('tryProtect returns null when not acquired and the value otherwise', function
 
     Cache::lock('test:try', 60)->get();
     expect(Mutex::for('test:try')->tryProtect(fn () => 'second'))->toBeNull();
+});
+
+it('swallows exceptions when releasing an already-expired lock', function () {
+    $lock = Mockery::mock(Lock::class);
+    $lock->shouldReceive('block')->once()->andReturnTrue();
+    $lock->shouldReceive('release')->once()->andThrow(new RuntimeException('lock gone'));
+
+    Cache::shouldReceive('lock')->once()->andReturn($lock);
+
+    expect(Mutex::for('test:expired')->protect(fn () => 'value'))->toBe('value');
 });
