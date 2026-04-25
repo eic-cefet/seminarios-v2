@@ -4,6 +4,7 @@ use App\Enums\ConsentType;
 use App\Enums\CourseRole;
 use App\Enums\CourseSituation;
 use App\Models\Course;
+use App\Models\SocialIdentity;
 use App\Models\User;
 use App\Models\UserConsent;
 use App\Models\UserStudentData;
@@ -63,6 +64,13 @@ describe('GET /auth/{provider}/callback', function () {
         expect($user->isUser())->toBeTrue()
             ->and($user->isAdmin())->toBeFalse()
             ->and($user->isTeacher())->toBeFalse();
+
+        // Bug fix: social identity must be persisted so the account is linked.
+        $this->assertDatabaseHas('social_identities', [
+            'user_id' => $user->id,
+            'provider' => 'google',
+            'provider_id' => 'google-123',
+        ]);
     });
 
     it('records terms and privacy consent on first-time oauth signup', function () {
@@ -214,6 +222,183 @@ describe('GET /auth/{provider}/callback', function () {
         $response = $this->get('/auth/google/callback');
 
         $response->assertRedirect('/auth/callback?error=authentication_failed');
+    });
+
+    it('links a SocialIdentity to an existing email-only user on first oauth login', function () {
+        $existingUser = User::factory()->create([
+            'email' => 'returning@example.com',
+            'name' => 'Returning User',
+        ]);
+
+        // Sanity: no identity yet.
+        expect(SocialIdentity::where('user_id', $existingUser->id)->exists())->toBeFalse();
+
+        $fakeUser = new SocialiteUser;
+        $fakeUser->id = 'google-link-1';
+        $fakeUser->name = 'Returning User';
+        $fakeUser->email = 'returning@example.com';
+        $fakeUser->token = 'access-token-xyz';
+        $fakeUser->refreshToken = 'refresh-token-xyz';
+        $fakeUser->expiresIn = 3600;
+
+        Socialite::fake('google', $fakeUser);
+
+        $this->get('/auth/google/callback')->assertRedirect();
+
+        // No duplicate user.
+        expect(User::where('email', 'returning@example.com')->count())->toBe(1);
+
+        // Identity is linked to the SAME existing user.
+        $identity = SocialIdentity::where('provider', 'google')
+            ->where('provider_id', 'google-link-1')
+            ->firstOrFail();
+
+        expect($identity->user_id)->toBe($existingUser->id)
+            ->and($identity->token)->toBe('access-token-xyz')
+            ->and($identity->refresh_token)->toBe('refresh-token-xyz')
+            ->and($identity->token_expires_at)->not->toBeNull();
+    });
+
+    it('reuses existing SocialIdentity by provider_id and refreshes tokens', function () {
+        $user = User::factory()->create([
+            'email' => 'original@example.com',
+        ]);
+
+        $existingIdentity = SocialIdentity::create([
+            'user_id' => $user->id,
+            'provider' => 'google',
+            'provider_id' => 'google-stable-id',
+            'token' => 'old-token',
+            'refresh_token' => 'old-refresh',
+            'token_expires_at' => now()->subHour(), // already expired
+        ]);
+
+        // Provider returns the same provider_id but a different email
+        // (e.g. user changed primary email at the provider). Must still log
+        // in the same user — not look them up by email.
+        $fakeUser = new SocialiteUser;
+        $fakeUser->id = 'google-stable-id';
+        $fakeUser->name = 'User';
+        $fakeUser->email = 'changed-at-provider@example.com';
+        $fakeUser->token = 'fresh-token';
+        $fakeUser->refreshToken = 'fresh-refresh';
+        $fakeUser->expiresIn = 7200;
+
+        Socialite::fake('google', $fakeUser);
+
+        $response = $this->get('/auth/google/callback');
+        $response->assertRedirect();
+
+        // No new user created from the changed email.
+        expect(User::where('email', 'changed-at-provider@example.com')->exists())->toBeFalse()
+            ->and(User::count())->toBe(1);
+
+        // Same identity row, refreshed tokens.
+        $existingIdentity->refresh();
+        expect($existingIdentity->user_id)->toBe($user->id)
+            ->and($existingIdentity->token)->toBe('fresh-token')
+            ->and($existingIdentity->refresh_token)->toBe('fresh-refresh')
+            ->and($existingIdentity->token_expires_at)->not->toBeNull()
+            ->and($existingIdentity->token_expires_at->isFuture())->toBeTrue();
+
+        // Cache code points at the original user.
+        $location = $response->headers->get('Location');
+        preg_match('/code=([^&]+)/', $location, $matches);
+        expect(Cache::get("auth_code:{$matches[1]}"))->toBe($user->id);
+    });
+
+    it('links multiple providers to the same user when emails match', function () {
+        $googleUser = new SocialiteUser;
+        $googleUser->id = 'g-1';
+        $googleUser->name = 'Multi Provider';
+        $googleUser->email = 'multi@example.com';
+
+        Socialite::fake('google', $googleUser);
+        $this->get('/auth/google/callback')->assertRedirect();
+
+        $user = User::where('email', 'multi@example.com')->firstOrFail();
+
+        $githubUser = new SocialiteUser;
+        $githubUser->id = 'gh-1';
+        $githubUser->name = 'Multi Provider';
+        $githubUser->email = 'multi@example.com';
+
+        Socialite::fake('github', $githubUser);
+        $this->get('/auth/github/callback')->assertRedirect();
+
+        expect(User::where('email', 'multi@example.com')->count())->toBe(1)
+            ->and($user->fresh()->socialIdentities()->count())->toBe(2);
+
+        $this->assertDatabaseHas('social_identities', [
+            'user_id' => $user->id, 'provider' => 'google', 'provider_id' => 'g-1',
+        ]);
+        $this->assertDatabaseHas('social_identities', [
+            'user_id' => $user->id, 'provider' => 'github', 'provider_id' => 'gh-1',
+        ]);
+    });
+
+    it('persists SocialIdentity with null tokens when provider omits them', function () {
+        $fakeUser = new SocialiteUser;
+        $fakeUser->id = 'gh-no-tokens';
+        $fakeUser->name = 'No Tokens';
+        $fakeUser->email = 'notokens@example.com';
+        // token, refreshToken, expiresIn intentionally unset.
+
+        Socialite::fake('github', $fakeUser);
+
+        $this->get('/auth/github/callback')->assertRedirect();
+
+        $identity = SocialIdentity::where('provider', 'github')
+            ->where('provider_id', 'gh-no-tokens')
+            ->firstOrFail();
+
+        expect($identity->token)->toBeNull()
+            ->and($identity->refresh_token)->toBeNull()
+            ->and($identity->token_expires_at)->toBeNull();
+    });
+
+    it('redirects to error when SocialIdentity points to a soft-deleted user', function () {
+        $user = User::factory()->create([
+            'email' => 'deleted@example.com',
+        ]);
+
+        SocialIdentity::create([
+            'user_id' => $user->id,
+            'provider' => 'google',
+            'provider_id' => 'google-orphan',
+        ]);
+
+        $user->delete(); // soft-delete
+
+        $fakeUser = new SocialiteUser;
+        $fakeUser->id = 'google-orphan';
+        $fakeUser->name = 'Deleted User';
+        $fakeUser->email = 'deleted@example.com';
+
+        Socialite::fake('google', $fakeUser);
+
+        $this->get('/auth/google/callback')
+            ->assertRedirect('/auth/callback?error=authentication_failed');
+    });
+
+    it('redirects to error when oauth email matches a soft-deleted user', function () {
+        $user = User::factory()->create([
+            'email' => 'deleted-by-email@example.com',
+        ]);
+        $user->delete(); // soft-delete (no SocialIdentity exists)
+
+        $fakeUser = new SocialiteUser;
+        $fakeUser->id = 'google-no-identity';
+        $fakeUser->name = 'Deleted User';
+        $fakeUser->email = 'deleted-by-email@example.com';
+
+        Socialite::fake('google', $fakeUser);
+
+        $this->get('/auth/google/callback')
+            ->assertRedirect('/auth/callback?error=authentication_failed');
+
+        // No new (active) user created with that email.
+        expect(User::where('email', 'deleted-by-email@example.com')->count())->toBe(0);
     });
 });
 
