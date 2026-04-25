@@ -9,19 +9,27 @@ use App\Models\AuditLog;
 use App\Models\Rating;
 use App\Services\AiService;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
 
-class AnalyzeRatingSentiment implements ShouldQueue
+class AnalyzeRatingSentiment implements ShouldBeUnique, ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels, TracksAuditContext;
 
     public int $tries = 3;
 
     public int $backoff = 60;
+
+    public int $uniqueFor = 600;
+
+    public function uniqueId(): string
+    {
+        return (string) $this->rating->id;
+    }
 
     public function __construct(
         public Rating $rating
