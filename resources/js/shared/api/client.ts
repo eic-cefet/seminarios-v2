@@ -8,7 +8,12 @@ import type {
     User,
     Workshop,
 } from "@shared/types";
-import { buildQueryString, getCookie, getCsrfCookie } from "./httpUtils";
+import {
+    buildQueryString,
+    createApiClient,
+    getCookie,
+    getCsrfCookie,
+} from "./httpUtils";
 
 export interface ApiError {
     error: string;
@@ -30,46 +35,12 @@ export class ApiRequestError extends Error {
 
 export { getCsrfCookie };
 
-export async function fetchApi<T>(
-    endpoint: string,
-    options?: RequestInit,
-): Promise<T> {
-    const headers: Record<string, string> = {
-        Accept: "application/json",
-    };
-
-    // Skip Content-Type for FormData (browser sets it with boundary automatically)
-    if (!(options?.body instanceof FormData)) {
-        headers["Content-Type"] = "application/json";
-    }
-
-    // Include XSRF token for non-GET requests
-    const xsrfToken = getCookie("XSRF-TOKEN");
-    if (xsrfToken) {
-        headers["X-XSRF-TOKEN"] = xsrfToken;
-    }
-
-    const response = await fetch(`${app.API_URL}${endpoint}`, {
-        headers,
-        credentials: "same-origin",
-        ...options,
-    });
-
-    if (!response.ok) {
-        const data: ApiError = await response.json().catch(() => ({
-            error: "unknown_error",
-            message: response.statusText,
-        }));
-        throw new ApiRequestError(
-            data.error,
-            data.message,
-            response.status,
-            data.errors,
-        );
-    }
-
-    return response.json();
-}
+export const fetchApi = createApiClient({
+    basePath: () => app.API_URL,
+    errorFactory: (body, status) =>
+        new ApiRequestError(body.error, body.message, status, body.errors),
+    readXsrfToken: () => getCookie("XSRF-TOKEN"),
+});
 
 // Seminars
 export const seminarsApi = {

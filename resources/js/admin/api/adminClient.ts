@@ -1,13 +1,10 @@
 import type { PaginatedResponse } from "@shared/types";
-import { buildQueryString, getCookie, getCsrfCookie } from "@shared/api/httpUtils";
-
-const API_BASE = () => app.API_URL + "/admin";
-
-interface ApiError {
-    error: string;
-    message: string;
-    errors?: Record<string, string[]>;
-}
+import {
+    buildQueryString,
+    createApiClient,
+    getCookie,
+    getCsrfCookie,
+} from "@shared/api/httpUtils";
 
 export class AdminApiError extends Error {
     constructor(
@@ -23,41 +20,12 @@ export class AdminApiError extends Error {
 
 export { getCsrfCookie };
 
-async function fetchAdminApi<T>(
-    endpoint: string,
-    options?: RequestInit,
-): Promise<T> {
-    const headers: Record<string, string> = {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-    };
-
-    const xsrfToken = getCookie("XSRF-TOKEN");
-    if (xsrfToken) {
-        headers["X-XSRF-TOKEN"] = xsrfToken;
-    }
-
-    const response = await fetch(`${API_BASE()}${endpoint}`, {
-        headers,
-        credentials: "same-origin",
-        ...options,
-    });
-
-    if (!response.ok) {
-        const data: ApiError = await response.json().catch(() => ({
-            error: "unknown_error",
-            message: response.statusText,
-        }));
-        throw new AdminApiError(
-            data.error,
-            data.message,
-            response.status,
-            data.errors,
-        );
-    }
-
-    return response.json();
-}
+const fetchAdminApi = createApiClient({
+    basePath: () => `${app.API_URL}/admin`,
+    errorFactory: (body, status) =>
+        new AdminApiError(body.error, body.message, status, body.errors),
+    readXsrfToken: () => getCookie("XSRF-TOKEN"),
+});
 
 // Types
 export interface AdminUser {
