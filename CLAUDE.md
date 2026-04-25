@@ -76,6 +76,39 @@ vendor/bin/pint --dirty
 
 ```
 
+## Running Affected Tests Only (PR mode)
+
+`pr-checks.yml` runs **only** the tests affected by changes vs `origin/main` and enforces **100% coverage** on the changed files. The full suite (with the 95% / 90% thresholds) still runs on `release.yml`. Use the same commands locally before pushing:
+
+```bash
+# Backend — runs Pest tests covering changed app/**/*.php files,
+# with PCOV coverage scoped to those files at min=100%.
+# Falls back to the full suite if composer.lock, config/, database/, routes/,
+# bootstrap/, phpunit.xml, or .env.example change.
+php artisan test:affected --base=origin/main
+# (or via composer:)
+composer run test:affected
+
+# Frontend — runs `vitest --changed origin/main` with v8 coverage scoped
+# to the changed resources/js/**/*.{ts,tsx} files at thresholds.100.
+# Falls back to the full suite if vitest.config.ts, package.json,
+# pnpm-lock.yaml, tsconfig.json, eslint.config.js, or
+# resources/js/test/setup.ts change.
+pnpm test:affected -- --base=origin/main
+```
+
+The full suite remains available:
+
+```bash
+php artisan test --compact                     # full backend suite
+pnpm exec vitest run                           # full frontend suite
+pnpm test:coverage                             # full FE coverage at 90%
+```
+
+> The affected-tests runners require `git fetch origin main` to be up to date locally, since they diff against `origin/main`.
+>
+> The diff uses `git diff <base>` (two-dot, working-tree form), so **uncommitted, staged, and unstaged** changes are also picked up — useful mid-development before the first commit on a branch.
+
 ## CI Coverage Requirements
 
 - Backend: 95% coverage threshold (all metrics)
