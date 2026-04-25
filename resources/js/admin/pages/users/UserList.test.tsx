@@ -1544,6 +1544,113 @@ describe('UserList', () => {
         expect(usersApi.create).not.toHaveBeenCalled();
     });
 
+    it('uses update schema (password optional) when editing existing user', async () => {
+        vi.mocked(usersApi.list).mockResolvedValue({
+            data: [
+                {
+                    id: 501,
+                    name: 'Edit Without Password',
+                    email: 'edit-nopass@test.com',
+                    roles: ['user'],
+                    created_at: '2026-01-01T00:00:00Z',
+                    updated_at: '2026-01-01T00:00:00Z',
+                },
+            ],
+            meta: { last_page: 1, current_page: 1, total: 1, from: 1, to: 1 },
+        } as any);
+        vi.mocked(usersApi.update).mockClear();
+        vi.mocked(usersApi.update).mockResolvedValue({ data: { id: 501 } } as any);
+
+        render(<UserList />);
+        const user = userEvent.setup();
+
+        await waitFor(() => {
+            expect(screen.getByText('Edit Without Password')).toBeInTheDocument();
+        });
+
+        // Open the edit dialog for an existing user
+        const row = screen.getByText('Edit Without Password').closest('tr')!;
+        const buttons = row.querySelectorAll('button');
+        await user.click(buttons[0]); // edit button
+
+        await waitFor(() => {
+            expect(screen.getByText('Editar Usuario')).toBeInTheDocument();
+        });
+
+        // Submit WITHOUT changing the password (it's pre-filled empty in edit mode).
+        // The update schema must allow this — no Zod error, mutation must be called.
+        await user.click(screen.getByRole('button', { name: 'Salvar' }));
+
+        await waitFor(() => {
+            expect(usersApi.update).toHaveBeenCalledWith(
+                501,
+                expect.objectContaining({
+                    name: 'Edit Without Password',
+                    email: 'edit-nopass@test.com',
+                    password: undefined,
+                }),
+            );
+        });
+
+        // Sanity: no password-length validation message rendered
+        expect(screen.queryByText(/8 caracteres/i)).not.toBeInTheDocument();
+    });
+
+    it('switches from edit (password optional) back to create (password required) without leaking schema', async () => {
+        vi.mocked(usersApi.list).mockResolvedValue({
+            data: [
+                {
+                    id: 601,
+                    name: 'Switch Test User',
+                    email: 'switch@test.com',
+                    roles: ['user'],
+                    created_at: '2026-01-01T00:00:00Z',
+                    updated_at: '2026-01-01T00:00:00Z',
+                },
+            ],
+            meta: { last_page: 1, current_page: 1, total: 1, from: 1, to: 1 },
+        } as any);
+        vi.mocked(usersApi.create).mockClear();
+        vi.mocked(usersApi.update).mockClear();
+
+        render(<UserList />);
+        const user = userEvent.setup();
+
+        await waitFor(() => {
+            expect(screen.getByText('Switch Test User')).toBeInTheDocument();
+        });
+
+        // 1) Open edit dialog (uses update schema — password optional)
+        const row = screen.getByText('Switch Test User').closest('tr')!;
+        const buttons = row.querySelectorAll('button');
+        await user.click(buttons[0]); // edit
+        await waitFor(() => {
+            expect(screen.getByText('Editar Usuario')).toBeInTheDocument();
+        });
+
+        // 2) Cancel and immediately open create dialog — must swap to the create schema
+        await user.click(screen.getByRole('button', { name: 'Cancelar' }));
+        await waitFor(() => {
+            expect(screen.queryByText('Editar Usuario')).not.toBeInTheDocument();
+        });
+
+        await user.click(screen.getByText('Novo Usuario'));
+        await waitFor(() => {
+            expect(screen.getByText('Preencha os dados do novo usuario')).toBeInTheDocument();
+        });
+
+        // 3) Submit the create form with empty password — create schema must reject
+        await user.type(screen.getByLabelText('Nome'), 'Brand New');
+        await user.type(screen.getByLabelText('Email'), 'brand@new.com');
+        await user.click(screen.getByRole('button', { name: 'Salvar' }));
+
+        await waitFor(() => {
+            expect(screen.getByText(/senha.*8 caracteres/i)).toBeInTheDocument();
+        });
+
+        expect(usersApi.create).not.toHaveBeenCalled();
+    });
+
     it('updates speaker description via AiTextToolbar onChange callback', async () => {
         const { aiApi } = await import('../../api/adminClient');
         vi.mocked(aiApi.transformText).mockResolvedValue({ data: { text: 'AI generated bio' } } as any);
