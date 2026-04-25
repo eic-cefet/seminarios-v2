@@ -74,26 +74,28 @@ export function NotificationBell({ userId }: Props) {
                     ) : (
                         <ul className="divide-y divide-gray-200">
                             {notifications.map((n) => (
-                                <li
-                                    key={n.id}
-                                    onClick={() =>
-                                        handleClick(n.id, n.action_url)
-                                    }
-                                    className={`p-3 cursor-pointer hover:bg-gray-50 ${
-                                        n.read_at ? "" : "bg-blue-50"
-                                    }`}
-                                >
-                                    <p className="font-medium text-sm">
-                                        {n.title}
-                                    </p>
-                                    <p className="text-sm text-gray-600">
-                                        {n.body}
-                                    </p>
-                                    <p className="mt-1 text-xs text-gray-500">
-                                        {new Date(
-                                            n.created_at,
-                                        ).toLocaleString()}
-                                    </p>
+                                <li key={n.id}>
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            handleClick(n.id, n.action_url)
+                                        }
+                                        className={`w-full text-left p-3 hover:bg-gray-50 ${
+                                            n.read_at ? "" : "bg-blue-50"
+                                        }`}
+                                    >
+                                        <p className="font-medium text-sm">
+                                            {n.title}
+                                        </p>
+                                        <p className="text-sm text-gray-600">
+                                            {n.body}
+                                        </p>
+                                        <p className="mt-1 text-xs text-gray-500">
+                                            {new Date(
+                                                n.created_at,
+                                            ).toLocaleString()}
+                                        </p>
+                                    </button>
                                 </li>
                             ))}
                         </ul>

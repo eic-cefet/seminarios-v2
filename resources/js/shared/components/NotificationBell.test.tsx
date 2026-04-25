@@ -156,7 +156,7 @@ describe("NotificationBell", () => {
         );
         renderBell();
         fireEvent.click(screen.getByRole("button", { name: /notifications/i }));
-        const item = screen.getByText("Lido").closest("li");
+        const item = screen.getByText("Lido").closest("button");
         expect(item?.className).not.toContain("bg-blue-50");
     });
 });
