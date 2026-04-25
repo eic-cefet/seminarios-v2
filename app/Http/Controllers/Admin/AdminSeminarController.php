@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Enums\Role;
 use App\Http\Controllers\Concerns\EscapesLikeWildcards;
 use App\Http\Controllers\Concerns\ResolvesSubjects;
 use App\Http\Controllers\Controller;
@@ -15,6 +14,7 @@ use App\Models\SeminarLocation;
 use App\Models\SeminarType;
 use App\Models\Workshop;
 use App\Services\SeminarQueryService;
+use App\Services\SeminarVisibilityService;
 use App\Services\SlugService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -31,16 +31,12 @@ class AdminSeminarController extends Controller
         private readonly SlugService $slugService
     ) {}
 
-    public function index(Request $request, SeminarQueryService $seminars): AnonymousResourceCollection
+    public function index(Request $request, SeminarQueryService $seminars, SeminarVisibilityService $visibility): AnonymousResourceCollection
     {
         Gate::authorize('viewAny', Seminar::class);
 
-        $user = $request->user();
         $query = $seminars->forList(Seminar::query())->with(['workshop', 'creator']);
-
-        if ($user->hasRole(Role::Teacher) && ! $user->hasRole(Role::Admin)) {
-            $query->where('created_by', $user->id);
-        }
+        $query = $visibility->visibleSeminars($query, $request->user());
 
         if ($search = $request->string('search')->trim()->toString()) {
             $escaped = $this->escapeLike($search);
