@@ -41,4 +41,19 @@ class UserPolicy
     {
         return $user->hasRole(Role::Admin) && $user->id !== $model->id;
     }
+
+    public function viewLgpdData(User $user): bool
+    {
+        return $user->hasRole(Role::Admin);
+    }
+
+    public function exportLgpdData(User $user): bool
+    {
+        return $user->hasRole(Role::Admin);
+    }
+
+    public function anonymizeUser(User $actor): bool
+    {
+        return $actor->hasRole(Role::Admin);
+    }
 }
