@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Copy, QrCode } from "lucide-react";
 import { toast } from "sonner";
-import { formatDateTime } from "@shared/lib/date";
+import { formatDateTime } from "@shared/lib/utils";
 import { presenceLinkApi } from "../api/adminClient";
 import { Button } from "./ui/button";
 import {

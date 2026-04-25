@@ -1,7 +1,11 @@
 <?php
 
 use App\Models\Seminar;
+use App\Models\Subject;
 use App\Services\SlugService;
+use App\Support\Locking\LockKey;
+use App\Support\Locking\LockTimeoutException;
+use Illuminate\Support\Facades\Cache;
 
 describe('SlugService', function () {
     beforeEach(function () {
@@ -62,5 +66,13 @@ describe('SlugService', function () {
         $slug = $this->service->generateUnique('Programação Avançada', Seminar::class);
 
         expect($slug)->toBe('programacao-avancada');
+    });
+
+    it('serialises generation through a mutex keyed by model + base slug', function () {
+        Cache::lock(LockKey::slugGeneration(Subject::class, 'Física Quântica'), 60)->get();
+
+        expect(fn () => (new SlugService)
+            ->generateUnique('Física Quântica', Subject::class))
+            ->toThrow(LockTimeoutException::class);
     });
 });

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Enums\AuditEvent;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\AdminLgpdAnonymizeRequest;
 use App\Http\Resources\Admin\AdminUserLgpdResource;
 use App\Jobs\AnonymizeUserJob;
 use App\Jobs\ExportUserDataJob;
@@ -12,12 +13,13 @@ use App\Models\DataExportRequest;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 
 class AdminLgpdController extends Controller
 {
     public function show(Request $request, User $user): JsonResponse
     {
-        abort_unless($request->user()?->isAdmin(), 403);
+        Gate::authorize('viewLgpdData', User::class);
 
         $user->load(['consents', 'dataExportRequests']);
 
@@ -28,7 +30,7 @@ class AdminLgpdController extends Controller
 
     public function export(Request $request, User $user): JsonResponse
     {
-        abort_unless($request->user()?->isAdmin(), 403);
+        Gate::authorize('exportLgpdData', User::class);
 
         $exportRequest = $user->dataExportRequests()->create([
             'status' => DataExportRequest::STATUS_QUEUED,
@@ -48,13 +50,9 @@ class AdminLgpdController extends Controller
         );
     }
 
-    public function anonymize(Request $request, User $user): JsonResponse
+    public function anonymize(AdminLgpdAnonymizeRequest $request, User $user): JsonResponse
     {
-        abort_unless($request->user()?->isAdmin(), 403);
-
-        $validated = $request->validate([
-            'reason' => ['required', 'string', 'max:500'],
-        ]);
+        $validated = $request->validated();
 
         if ($user->anonymization_requested_at === null) {
             $user->forceFill(['anonymization_requested_at' => now()])->save();

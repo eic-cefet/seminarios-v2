@@ -37,7 +37,7 @@ import {
 import { Badge } from "../../components/ui/badge";
 import { Button } from "../../components/ui/button";
 import { PageTitle } from "@shared/components/PageTitle";
-import { formatDateTime, compareDateDesc } from "@shared/lib/date";
+import { formatDateTime, compareDateDesc } from "@shared/lib/utils";
 
 export default function RegistrationList() {
     const queryClient = useQueryClient();

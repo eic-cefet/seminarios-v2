@@ -3,19 +3,16 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\Admin\PresenceLinkResource;
 use App\Models\PresenceLink;
 use App\Models\Seminar;
-use App\Services\QrCodeService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\Gate;
 
 class AdminPresenceLinkController extends Controller
 {
-    public function __construct(
-        protected QrCodeService $qrCodeService,
-    ) {}
-
-    public function show(Seminar $seminar): JsonResponse
+    public function show(Seminar $seminar): JsonResource|JsonResponse
     {
         Gate::authorize('viewAny', Seminar::class);
 
@@ -27,22 +24,7 @@ class AdminPresenceLinkController extends Controller
             ]);
         }
 
-        $url = url("/p/{$presenceLink->uuid}");
-        $qrCodeBase64 = $this->qrCodeService->toBase64($url, scale: 20);
-
-        return response()->json([
-            'data' => [
-                'id' => $presenceLink->id,
-                'uuid' => $presenceLink->uuid,
-                'active' => $presenceLink->active,
-                'expires_at' => $presenceLink->expires_at?->toISOString(),
-                'is_expired' => $presenceLink->isExpired(),
-                'is_valid' => $presenceLink->isValid(),
-                'url' => $url,
-                'png_url' => url("/p/{$presenceLink->uuid}.png"),
-                'qr_code' => $qrCodeBase64,
-            ],
-        ]);
+        return new PresenceLinkResource($presenceLink, includeQrCode: true, qrCodeScale: 20);
     }
 
     public function store(Seminar $seminar): JsonResponse
@@ -63,26 +45,13 @@ class AdminPresenceLinkController extends Controller
             'expires_at' => $expiresAt,
         ]);
 
-        $url = url("/p/{$presenceLink->uuid}");
-        $qrCodeBase64 = $this->qrCodeService->toBase64($url);
-
-        return response()->json([
-            'message' => 'Presence link created successfully',
-            'data' => [
-                'id' => $presenceLink->id,
-                'uuid' => $presenceLink->uuid,
-                'active' => $presenceLink->active,
-                'expires_at' => $presenceLink->expires_at?->toISOString(),
-                'is_expired' => $presenceLink->isExpired(),
-                'is_valid' => $presenceLink->isValid(),
-                'url' => $url,
-                'png_url' => url("/p/{$presenceLink->uuid}.png"),
-                'qr_code' => $qrCodeBase64,
-            ],
-        ], 201);
+        return (new PresenceLinkResource($presenceLink, includeQrCode: true))
+            ->additional(['message' => 'Presence link created successfully'])
+            ->response()
+            ->setStatusCode(201);
     }
 
-    public function toggle(Seminar $seminar): JsonResponse
+    public function toggle(Seminar $seminar): JsonResource|JsonResponse
     {
         Gate::authorize('update', $seminar);
 
@@ -109,16 +78,7 @@ class AdminPresenceLinkController extends Controller
             'expires_at' => $expiresAt,
         ]);
 
-        return response()->json([
-            'message' => 'Presence link status updated successfully',
-            'data' => [
-                'id' => $presenceLink->id,
-                'uuid' => $presenceLink->uuid,
-                'active' => $presenceLink->active,
-                'expires_at' => $presenceLink->expires_at?->toISOString(),
-                'is_expired' => $presenceLink->isExpired(),
-                'is_valid' => $presenceLink->isValid(),
-            ],
-        ]);
+        return (new PresenceLinkResource($presenceLink))
+            ->additional(['message' => 'Presence link status updated successfully']);
     }
 }

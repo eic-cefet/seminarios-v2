@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Enums\Role;
 use App\Http\Controllers\Concerns\EscapesLikeWildcards;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Admin\AdminRegistrationResource;
 use App\Models\Registration;
+use App\Services\SeminarVisibilityService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -16,17 +16,14 @@ class AdminRegistrationController extends Controller
 {
     use EscapesLikeWildcards;
 
-    public function index(Request $request): AnonymousResourceCollection
+    public function index(Request $request, SeminarVisibilityService $visibility): AnonymousResourceCollection
     {
         Gate::authorize('viewAny', Registration::class);
 
         $query = Registration::with(['user:id,name,email', 'seminar:id,name,slug,scheduled_at,created_by'])
             ->orderByDesc('created_at');
 
-        $user = $request->user();
-        if (! $user->hasRole(Role::Admin)) {
-            $query->whereHas('seminar', fn ($q) => $q->where('created_by', $user->id));
-        }
+        $query = $visibility->visibleRegistrations($query, $request->user());
 
         if ($request->filled('seminar_id')) {
             $query->where('seminar_id', $request->input('seminar_id'));

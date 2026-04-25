@@ -38,7 +38,10 @@ class SeminarResource extends JsonResource
             'registrationsCount' => $this->whenCounted('registrations'),
 
             // Aggregations
-            'averageRating' => $this->whenHas('ratings_avg_score', fn () => round($this->ratings_avg_score, 1)),
+            'averageRating' => $this->whenHas(
+                'ratings_avg_score',
+                fn ($value) => $value === null ? null : round((float) $value, 1),
+            ),
         ];
     }
 }

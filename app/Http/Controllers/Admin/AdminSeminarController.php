@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Enums\Role;
 use App\Http\Controllers\Concerns\EscapesLikeWildcards;
 use App\Http\Controllers\Concerns\ResolvesSubjects;
 use App\Http\Controllers\Controller;
@@ -14,6 +13,8 @@ use App\Models\Seminar;
 use App\Models\SeminarLocation;
 use App\Models\SeminarType;
 use App\Models\Workshop;
+use App\Services\SeminarQueryService;
+use App\Services\SeminarVisibilityService;
 use App\Services\SlugService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -30,23 +31,12 @@ class AdminSeminarController extends Controller
         private readonly SlugService $slugService
     ) {}
 
-    public function index(Request $request): AnonymousResourceCollection
+    public function index(Request $request, SeminarQueryService $seminars, SeminarVisibilityService $visibility): AnonymousResourceCollection
     {
         Gate::authorize('viewAny', Seminar::class);
 
-        $user = $request->user();
-        $query = Seminar::with([
-            'seminarType',
-            'seminarLocation',
-            'workshop',
-            'creator',
-            'subjects',
-            'speakers',
-        ])->withCount('registrations');
-
-        if ($user->hasRole(Role::Teacher) && ! $user->hasRole(Role::Admin)) {
-            $query->where('created_by', $user->id);
-        }
+        $query = $seminars->forList(Seminar::query())->with(['workshop', 'creator']);
+        $query = $visibility->visibleSeminars($query, $request->user());
 
         if ($search = $request->string('search')->trim()->toString()) {
             $escaped = $this->escapeLike($search);
@@ -70,14 +60,8 @@ class AdminSeminarController extends Controller
     {
         Gate::authorize('view', $seminar);
 
-        $seminar->load([
-            'seminarType',
-            'seminarLocation',
-            'workshop',
-            'creator',
-            'subjects',
-            'speakers.speakerData',
-        ])->loadCount('registrations');
+        $seminar->load([...SeminarQueryService::DETAIL_RELATIONS, 'creator'])
+            ->loadCount('registrations');
 
         return new AdminSeminarResource($seminar);
     }

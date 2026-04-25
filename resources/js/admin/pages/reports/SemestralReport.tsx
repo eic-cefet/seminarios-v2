@@ -4,7 +4,7 @@ import {
     getSemester,
     formatDateTime as formatDateTimeUtil,
     formatDurationMinutes,
-} from "@shared/lib/date";
+} from "@shared/lib/utils";
 import { PageTitle } from "@shared/components/PageTitle";
 import { Button } from "../../components/ui/button";
 import {

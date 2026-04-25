@@ -2,6 +2,7 @@
 
 use App\Jobs\AnalyzeRatingSentiment;
 use App\Models\Rating;
+use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -114,6 +115,14 @@ it('throws on AI request failure to trigger retry', function () {
     $rating->refresh();
     expect($rating->sentiment)->toBeNull();
     expect($rating->sentiment_analyzed_at)->toBeNull();
+});
+
+it('is ShouldBeUnique keyed by rating id', function () {
+    $rating = Rating::factory()->create();
+    $job = new AnalyzeRatingSentiment($rating);
+
+    expect($job)->toBeInstanceOf(ShouldBeUnique::class)
+        ->and($job->uniqueId())->toBe((string) $rating->id);
 });
 
 it('throws on empty AI response to trigger retry', function () {

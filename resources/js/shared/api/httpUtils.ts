@@ -36,3 +36,93 @@ export function buildQueryString(
     const queryString = searchParams.toString();
     return queryString ? `?${queryString}` : "";
 }
+
+/**
+ * Standard JSON error body returned by the Laravel API.
+ */
+export interface ApiErrorBody {
+    error: string;
+    message: string;
+    errors?: Record<string, string[]>;
+}
+
+/**
+ * Options for {@link createApiClient}.
+ */
+export interface CreateApiClientOptions {
+    /**
+     * Resolves the base URL for every request. A function (rather than a string)
+     * lets callers defer reading `app.API_URL`, which is set on the global at
+     * runtime by the Blade head script.
+     */
+    basePath: () => string;
+
+    /**
+     * Builds the error thrown when a response is not OK. Defaults to a generic
+     * `Error` so callers without a custom error class still get a reasonable
+     * thrown value.
+     */
+    errorFactory?: (body: ApiErrorBody, status: number) => Error;
+
+    /**
+     * Reads the XSRF token to forward as `X-XSRF-TOKEN`. Defaults to the
+     * `XSRF-TOKEN` cookie. Exposed primarily so tests can replace the
+     * cookie lookup without monkey-patching globals.
+     */
+    readXsrfToken?: () => string | null;
+}
+
+/**
+ * Create a typed `fetch` wrapper that:
+ *
+ * - Prepends a base URL.
+ * - Sets `Accept: application/json` (and `Content-Type: application/json`
+ *   except for `FormData` bodies, where the browser sets the multipart
+ *   boundary itself).
+ * - Forwards the `XSRF-TOKEN` cookie as the `X-XSRF-TOKEN` header.
+ * - Throws a customizable error when the response is not OK.
+ */
+export function createApiClient(opts: CreateApiClientOptions) {
+    /* v8 ignore start -- @preserve defaults: callers (shared/api/client + admin/api/adminClient) always supply both */
+    const defaultErrorFactory = (body: ApiErrorBody) => new Error(body.message);
+    const defaultReadXsrfToken = () => getCookie("XSRF-TOKEN");
+    const errorFactory = opts.errorFactory ?? defaultErrorFactory;
+    const readXsrfToken = opts.readXsrfToken ?? defaultReadXsrfToken;
+    /* v8 ignore stop */
+
+    return async function fetchJson<T>(
+        endpoint: string,
+        options?: RequestInit,
+    ): Promise<T> {
+        const headers: Record<string, string> = {
+            Accept: "application/json",
+        };
+
+        // Skip Content-Type for FormData (browser sets it with boundary automatically)
+        if (!(options?.body instanceof FormData)) {
+            headers["Content-Type"] = "application/json";
+        }
+
+        // Include XSRF token for non-GET requests
+        const xsrfToken = readXsrfToken();
+        if (xsrfToken) {
+            headers["X-XSRF-TOKEN"] = xsrfToken;
+        }
+
+        const response = await fetch(`${opts.basePath()}${endpoint}`, {
+            headers,
+            credentials: "same-origin",
+            ...options,
+        });
+
+        if (!response.ok) {
+            const data: ApiErrorBody = await response.json().catch(() => ({
+                error: "unknown_error",
+                message: response.statusText,
+            }));
+            throw errorFactory(data, response.status);
+        }
+
+        return response.json();
+    };
+}

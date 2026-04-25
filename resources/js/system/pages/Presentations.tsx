@@ -16,8 +16,7 @@ import { PresentationsCalendar } from "../components/PresentationsCalendar";
 import { PageTitle } from "@shared/components/PageTitle";
 import { LoadingRegion } from "@shared/components/LoadingRegion";
 import { seminarsApi, seminarTypesApi } from "@shared/api/client";
-import { toSaoPaulo } from "@shared/lib/date";
-import { cn } from "@shared/lib/utils";
+import { cn, toSaoPaulo } from "@shared/lib/utils";
 
 type TimeFilter = "all" | "upcoming" | "expired";
 type ViewMode = "list" | "calendar";

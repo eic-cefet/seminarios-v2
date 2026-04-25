@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Support\Locking\LockKey;
+use App\Support\Locking\Mutex;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
@@ -17,15 +19,18 @@ class SlugService
         string $column = 'slug',
         ?int $excludeId = null
     ): string {
-        $baseSlug = Str::slug($name);
-        $slug = $baseSlug;
-        $counter = 1;
+        return Mutex::for(LockKey::slugGeneration($modelClass, $name), ttlSeconds: 5, waitSeconds: 5)
+            ->protect(function () use ($name, $modelClass, $column, $excludeId): string {
+                $baseSlug = Str::slug($name);
+                $slug = $baseSlug;
+                $counter = 1;
 
-        while ($this->slugExists($modelClass, $column, $slug, $excludeId)) {
-            $slug = $baseSlug.'-'.$counter++;
-        }
+                while ($this->slugExists($modelClass, $column, $slug, $excludeId)) {
+                    $slug = $baseSlug.'-'.$counter++;
+                }
 
-        return $slug;
+                return $slug;
+            });
     }
 
     /**

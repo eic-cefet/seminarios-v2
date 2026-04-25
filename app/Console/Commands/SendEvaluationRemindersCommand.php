@@ -9,6 +9,7 @@ use App\Enums\AuditEventType;
 use App\Jobs\SendEvaluationReminderJob;
 use App\Models\AuditLog;
 use App\Models\Registration;
+use App\Services\RatingService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 
@@ -27,7 +28,7 @@ class SendEvaluationRemindersCommand extends Command
         $this->info('Finding users with pending evaluations...');
 
         $twoDaysAgo = now()->subDays(2)->endOfDay();
-        $thirtyDaysAgo = now()->subDays(30)->startOfDay();
+        $thirtyDaysAgo = app(RatingService::class)->windowStart();
 
         $registrations = Registration::query()
             ->select('registrations.*')

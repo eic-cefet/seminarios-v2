@@ -58,7 +58,7 @@ import { Label } from "../../components/ui/label";
 import { Switch } from "../../components/ui/switch";
 import { Badge } from "../../components/ui/badge";
 import { PageTitle } from "@shared/components/PageTitle";
-import { buildUrl, formatDateTime } from "@shared/lib/utils";
+import { buildUrl, formatDateTime, isExpired } from "@shared/lib/utils";
 
 const EXPIRY_OPTIONS = [
     { value: "7", label: "7 dias" },
@@ -71,15 +71,14 @@ const EXPIRY_OPTIONS = [
 
 function formatExpiry(expiresAt: string | null): string {
     if (!expiresAt) return "Nunca";
-    const date = new Date(expiresAt);
     /* v8 ignore next -- @preserve dead branch: isExpired() renders Badge instead */
-    if (date < new Date()) return "Expirado";
+    if (isExpired(expiresAt)) return "Expirado";
     return formatDateTime(expiresAt);
 }
 
-function isExpired(expiresAt: string | null): boolean {
+function isTokenExpired(expiresAt: string | null): boolean {
     if (!expiresAt) return false;
-    return new Date(expiresAt) < new Date();
+    return isExpired(expiresAt);
 }
 
 const RESOURCE_GROUPS = [
@@ -441,7 +440,7 @@ export default function ApiTokenList() {
                                                 )}
                                             </TableCell>
                                             <TableCell className="text-sm">
-                                                {isExpired(token.expires_at) ? (
+                                                {isTokenExpired(token.expires_at) ? (
                                                     <Badge variant="destructive">
                                                         Expirado
                                                     </Badge>

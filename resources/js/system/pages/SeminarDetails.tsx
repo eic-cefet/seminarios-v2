@@ -21,12 +21,13 @@ import { LoginModal } from "../components/LoginModal";
 import { PageTitle } from "@shared/components/PageTitle";
 import { LoadingRegion } from "@shared/components/LoadingRegion";
 import { seminarsApi, registrationApi } from "@shared/api/client";
-import { cn, containsHTML } from "@shared/lib/utils";
 import {
+    cn,
+    containsHTML,
     formatDateTime,
     formatDurationMinutes,
     isToday as isTodayDate,
-} from "@shared/lib/date";
+} from "@shared/lib/utils";
 import { ROUTES } from "@shared/config/routes";
 import { getErrorMessage } from "@shared/lib/errors";
 import { useAuth } from "@shared/contexts/AuthContext";

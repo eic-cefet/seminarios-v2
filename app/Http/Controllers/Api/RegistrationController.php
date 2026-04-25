@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Exceptions\ApiException;
 use App\Http\Controllers\Controller;
 use App\Models\Seminar;
-use Illuminate\Database\UniqueConstraintViolationException;
+use App\Services\RegistrationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -24,23 +24,9 @@ class RegistrationController extends Controller
         return $seminar;
     }
 
-    public function register(Request $request, string $slug): JsonResponse
+    public function register(Request $request, string $slug, RegistrationService $service): JsonResponse
     {
-        $user = $request->user();
-        $seminar = $this->findSeminar($slug);
-
-        if ($seminar->scheduled_at->isPast()) {
-            throw ApiException::seminarExpired();
-        }
-
-        try {
-            $registration = $seminar->registrations()->create([
-                'user_id' => $user->id,
-                'present' => false,
-            ]);
-        } catch (UniqueConstraintViolationException) {
-            throw ApiException::alreadyRegistered();
-        }
+        $registration = $service->register($request->user(), $this->findSeminar($slug));
 
         return response()->json([
             'message' => 'Inscrição realizada com sucesso',
@@ -52,28 +38,11 @@ class RegistrationController extends Controller
         ], 201);
     }
 
-    public function unregister(Request $request, string $slug): JsonResponse
+    public function unregister(Request $request, string $slug, RegistrationService $service): JsonResponse
     {
-        $user = $request->user();
-        $seminar = $this->findSeminar($slug);
+        $service->unregister($request->user(), $this->findSeminar($slug));
 
-        if ($seminar->scheduled_at->isToday() || $seminar->scheduled_at->isPast()) {
-            throw ApiException::unregisterBlocked();
-        }
-
-        $registration = $seminar->registrations()
-            ->where('user_id', $user->id)
-            ->first();
-
-        if (! $registration) {
-            throw ApiException::notRegistered();
-        }
-
-        $registration->delete();
-
-        return response()->json([
-            'message' => 'Inscrição cancelada com sucesso',
-        ]);
+        return response()->json(['message' => 'Inscrição cancelada com sucesso']);
     }
 
     public function status(Request $request, string $slug): JsonResponse

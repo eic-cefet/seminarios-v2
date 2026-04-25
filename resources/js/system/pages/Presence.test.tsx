@@ -22,10 +22,14 @@ vi.mock('@shared/api/client', async (importOriginal) => {
     };
 });
 
-vi.mock('@shared/api/httpUtils', () => ({
-    getCookie: vi.fn(() => null),
-    getCsrfCookie: vi.fn().mockResolvedValue(undefined),
-}));
+vi.mock('@shared/api/httpUtils', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@shared/api/httpUtils')>();
+    return {
+        ...actual,
+        getCookie: vi.fn(() => null),
+        getCsrfCookie: vi.fn().mockResolvedValue(undefined),
+    };
+});
 
 vi.mock('@shared/hooks/useNotifications', () => ({
     useNotifications: () => ({

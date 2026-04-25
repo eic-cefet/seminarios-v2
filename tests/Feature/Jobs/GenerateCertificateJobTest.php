@@ -6,6 +6,7 @@ use App\Models\Registration;
 use App\Models\Seminar;
 use App\Notifications\CertificateReadyNotification;
 use App\Services\CertificateService;
+use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
@@ -178,4 +179,12 @@ describe('GenerateCertificateJob', function () {
 
         Notification::assertSentTo($registration->user, CertificateReadyNotification::class);
     });
+});
+
+it('is ShouldBeUnique keyed by registration id', function () {
+    $registration = Registration::factory()->create();
+    $job = new GenerateCertificateJob($registration);
+
+    expect($job)->toBeInstanceOf(ShouldBeUnique::class)
+        ->and($job->uniqueId())->toBe((string) $registration->id);
 });

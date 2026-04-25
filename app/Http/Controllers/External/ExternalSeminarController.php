@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\External;
 
-use App\Enums\Role;
 use App\Http\Controllers\Concerns\EscapesLikeWildcards;
 use App\Http\Controllers\Concerns\ResolvesSubjects;
 use App\Http\Controllers\Controller;
@@ -11,6 +10,8 @@ use App\Http\Requests\External\ExternalSeminarUpdateRequest;
 use App\Http\Resources\External\ExternalSeminarResource;
 use App\Jobs\ProcessSeminarRescheduleJob;
 use App\Models\Seminar;
+use App\Services\SeminarQueryService;
+use App\Services\SeminarVisibilityService;
 use App\Services\SlugService;
 use Dedoc\Scramble\Attributes\BodyParameter;
 use Dedoc\Scramble\Attributes\QueryParameter;
@@ -31,22 +32,12 @@ class ExternalSeminarController extends Controller
 
     #[QueryParameter('search', description: 'Search seminars by name', type: 'string', example: 'Machine Learning')]
     #[QueryParameter('active', description: 'Filter by active status', type: 'boolean', example: true)]
-    public function index(Request $request): AnonymousResourceCollection
+    public function index(Request $request, SeminarQueryService $seminars, SeminarVisibilityService $visibility): AnonymousResourceCollection
     {
         Gate::authorize('viewAny', Seminar::class);
 
-        $query = Seminar::with([
-            'seminarType',
-            'seminarLocation',
-            'workshop',
-            'subjects',
-            'speakers.speakerData',
-        ]);
-
-        $user = $request->user();
-        if ($user->hasRole(Role::Teacher) && ! $user->hasRole(Role::Admin)) {
-            $query->where('created_by', $user->id);
-        }
+        $query = $seminars->forList(Seminar::query())->with(['workshop']);
+        $query = $visibility->visibleSeminars($query, $request->user());
 
         if ($search = $request->string('search')->trim()->toString()) {
             $escaped = $this->escapeLike($search);

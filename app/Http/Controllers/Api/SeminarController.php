@@ -6,17 +6,15 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\SeminarResource;
 use App\Models\Seminar;
 use App\Models\Subject;
+use App\Services\SeminarQueryService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class SeminarController extends Controller
 {
-    public function index(Request $request): AnonymousResourceCollection
+    public function index(Request $request, SeminarQueryService $seminars): AnonymousResourceCollection
     {
-        $query = Seminar::query()
-            ->with(['seminarType', 'subjects', 'speakers.speakerData'])
-            ->withCount('registrations')
-            ->active();
+        $query = $seminars->forList(Seminar::query())->active();
 
         if ($request->has('type')) {
             $query->whereHas('seminarType', function ($q) use ($request) {
@@ -50,26 +48,21 @@ class SeminarController extends Controller
         return SeminarResource::collection($seminars);
     }
 
-    public function upcoming(): AnonymousResourceCollection
+    public function upcoming(SeminarQueryService $seminars): AnonymousResourceCollection
     {
-        $seminars = Seminar::query()
-            ->with(['seminarType', 'subjects', 'speakers.speakerData'])
-            ->withCount('registrations')
+        $upcoming = $seminars->forList(Seminar::query())
             ->active()
             ->upcoming()
             ->orderBy('scheduled_at', 'asc')
             ->limit(6)
             ->get();
 
-        return SeminarResource::collection($seminars);
+        return SeminarResource::collection($upcoming);
     }
 
-    public function show(string $slug): SeminarResource
+    public function show(string $slug, SeminarQueryService $seminars): SeminarResource
     {
-        $seminar = Seminar::query()
-            ->with(['seminarType', 'subjects', 'speakers.speakerData', 'workshop', 'seminarLocation'])
-            ->withCount('registrations')
-            ->withAvg('ratings', 'score')
+        $seminar = $seminars->forDetail(Seminar::query())
             ->where('slug', $slug)
             ->active()
             ->firstOrFail();
