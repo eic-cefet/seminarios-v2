@@ -4,7 +4,7 @@ export const USER_ROLES = ["admin", "teacher", "user"] as const;
 
 export type UserRole = (typeof USER_ROLES)[number];
 
-export const userFormSchema = z.object({
+const baseUserFormSchema = z.object({
     name: z.string().min(1, "Nome é obrigatório").max(255),
     email: z.string().min(1, "Email é obrigatório").email("Email inválido"),
     password: z.string(),
@@ -21,7 +21,25 @@ export const userFormSchema = z.object({
     }),
 });
 
-export type UserFormData = z.infer<typeof userFormSchema>;
+export const updateUserFormSchema = baseUserFormSchema;
+
+export const createUserFormSchema = baseUserFormSchema.superRefine((data, ctx) => {
+    if (data.password.length < 8) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ["password"],
+            message: "A senha deve ter pelo menos 8 caracteres",
+        });
+    }
+});
+
+/**
+ * @deprecated Use `createUserFormSchema` or `updateUserFormSchema` based on dialog mode.
+ *             Kept as the permissive base shape for the inferred form data type.
+ */
+export const userFormSchema = baseUserFormSchema;
+
+export type UserFormData = z.infer<typeof baseUserFormSchema>;
 
 export const userFormDefaults: UserFormData = {
     name: "",

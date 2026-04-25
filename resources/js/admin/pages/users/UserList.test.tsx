@@ -1518,6 +1518,32 @@ describe('UserList', () => {
         });
     });
 
+    it('rejects empty password when creating a new user', async () => {
+        vi.mocked(usersApi.create).mockClear();
+        vi.mocked(usersApi.create).mockResolvedValue({ data: { id: 1000 } } as any);
+
+        render(<UserList />);
+        const user = userEvent.setup();
+
+        await user.click(screen.getByText('Novo Usuario'));
+
+        await waitFor(() => {
+            expect(screen.getByLabelText('Nome')).toBeInTheDocument();
+        });
+
+        await user.type(screen.getByLabelText('Nome'), 'No Password User');
+        await user.type(screen.getByLabelText('Email'), 'nopass@user.com');
+        // Intentionally leave password empty
+
+        await user.click(screen.getByRole('button', { name: 'Salvar' }));
+
+        await waitFor(() => {
+            expect(screen.getByText(/senha.*8 caracteres/i)).toBeInTheDocument();
+        });
+
+        expect(usersApi.create).not.toHaveBeenCalled();
+    });
+
     it('updates speaker description via AiTextToolbar onChange callback', async () => {
         const { aiApi } = await import('../../api/adminClient');
         vi.mocked(aiApi.transformText).mockResolvedValue({ data: { text: 'AI generated bio' } } as any);

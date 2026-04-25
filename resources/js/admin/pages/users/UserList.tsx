@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, Pencil, Trash2, RotateCcw, Archive, Search, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
@@ -10,8 +10,9 @@ import { hasRole, ROLES } from "@shared/lib/roles";
 import { usersApi, type AdminUser } from "../../api/adminClient";
 import { AiTextToolbar } from "../../components/AiTextToolbar";
 import {
+    createUserFormSchema,
+    updateUserFormSchema,
     userFormDefaults,
-    userFormSchema,
     type UserFormData,
 } from "./UserList.schema";
 import { Button } from "../../components/ui/button";
@@ -85,6 +86,11 @@ export default function UserList() {
     const [lgpdUser, setLgpdUser] = useState<AdminUser | null>(null);
     const [aiLoading, setAiLoading] = useState<boolean>(false);
 
+    const formSchema = useMemo(
+        () => (editingUser ? updateUserFormSchema : createUserFormSchema),
+        [editingUser],
+    );
+
     const {
         register,
         handleSubmit,
@@ -94,7 +100,7 @@ export default function UserList() {
         control,
         formState: { errors },
     } = useForm<UserFormData>({
-        resolver: zodResolver(userFormSchema),
+        resolver: zodResolver(formSchema),
         defaultValues: userFormDefaults,
     });
 
@@ -606,6 +612,11 @@ export default function UserList() {
                                             required={!editingUser}
                                             minLength={8}
                                         />
+                                        {errors.password && (
+                                            <p className="text-sm text-red-500">
+                                                {errors.password.message}
+                                            </p>
+                                        )}
                                     </div>
                                     <div className="space-y-2">
                                         <Label htmlFor="role">Funcao</Label>
