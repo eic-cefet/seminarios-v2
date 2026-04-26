@@ -1,6 +1,7 @@
 <?php
 
 use App\Jobs\SendSeminarReminderJob;
+use App\Mail\SeminarReminder;
 use App\Models\Registration;
 use App\Models\Seminar;
 use App\Models\User;
@@ -10,7 +11,7 @@ use Illuminate\Support\Facades\Queue;
 describe('reminders:seminars command', function () {
     it('outputs no reminders when there are none to send', function () {
         $this->artisan('reminders:seminars')
-            ->expectsOutput('Finding seminars happening tomorrow...')
+            ->expectsOutput('Finding seminars happening in 1 day(s)...')
             ->expectsOutput('No reminders to send.')
             ->assertExitCode(0);
     });
@@ -33,7 +34,7 @@ describe('reminders:seminars command', function () {
         ]);
 
         $this->artisan('reminders:seminars')
-            ->expectsOutput('Finding seminars happening tomorrow...')
+            ->expectsOutput('Finding seminars happening in 1 day(s)...')
             ->expectsOutputToContain('Found 1 users to remind.')
             ->expectsOutputToContain($user->email)
             ->expectsOutput('Dispatched 1 reminder(s).')
@@ -248,7 +249,7 @@ describe('reminders:seminars command', function () {
         Queue::assertNothingPushed();
 
         // Mail should have been queued (mailable implements ShouldQueue)
-        Mail::assertQueued(\App\Mail\SeminarReminder::class);
+        Mail::assertQueued(SeminarReminder::class);
     });
 
 });
