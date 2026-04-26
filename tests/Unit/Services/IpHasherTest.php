@@ -32,21 +32,21 @@ it('returns null for null/empty input', function () {
         ->and($hasher->hash(''))->toBeNull();
 });
 
-it('hashes user-agent strings', function () {
+it('hashes opaque strings deterministically', function () {
     $hasher = new IpHasher;
 
-    $a = $hasher->hashUserAgent('Mozilla/5.0 Foo');
+    $a = $hasher->hashOpaque('Mozilla/5.0 Foo');
     expect($a)->toHaveLength(64) // sha256 hex
-        ->and($a)->toBe($hasher->hashUserAgent('Mozilla/5.0 Foo'));
+        ->and($a)->toBe($hasher->hashOpaque('Mozilla/5.0 Foo'));
 });
 
 it('returns null when given an unparseable IP', function () {
     expect((new IpHasher)->hash('not-an-ip'))->toBeNull();
 });
 
-it('returns null when hashing an empty or null user-agent', function () {
+it('returns null when hashing an empty or null opaque value', function () {
     $hasher = new IpHasher;
 
-    expect($hasher->hashUserAgent(null))->toBeNull()
-        ->and($hasher->hashUserAgent(''))->toBeNull();
+    expect($hasher->hashOpaque(null))->toBeNull()
+        ->and($hasher->hashOpaque(''))->toBeNull();
 });

@@ -1,7 +1,7 @@
 <?php
 
 return [
-    'hash_salt' => env('AUDIT_HASH_SALT', config('app.key')),
+    'hash_salt' => env('AUDIT_HASH_SALT', env('APP_KEY')),
 
     'retention' => [
         'default' => 90,

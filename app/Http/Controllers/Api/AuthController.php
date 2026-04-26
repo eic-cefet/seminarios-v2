@@ -165,7 +165,7 @@ class AuthController extends Controller
                 'granted' => true,
                 'version' => config('lgpd.versions.'.$type->value) ?? '1.0',
                 'ip_hash' => app(IpHasher::class)->hash($request->ip()),
-                'user_agent_hash' => app(IpHasher::class)->hashUserAgent((string) $request->userAgent()),
+                'user_agent_hash' => app(IpHasher::class)->hashOpaque((string) $request->userAgent()),
                 'source' => 'registration',
             ]);
         }

@@ -38,7 +38,7 @@ class ConsentController extends Controller
             'granted' => $validated['granted'],
             'version' => $validated['version'] ?? null,
             'ip_hash' => app(IpHasher::class)->hash($request->ip()),
-            'user_agent_hash' => app(IpHasher::class)->hashUserAgent((string) $request->userAgent()),
+            'user_agent_hash' => app(IpHasher::class)->hashOpaque((string) $request->userAgent()),
             'source' => $user ? 'preference_center' : 'cookie_banner',
         ]);
 

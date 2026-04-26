@@ -27,7 +27,7 @@ return new class extends Migration
                         ->where('id', $row->id)
                         ->update([
                             'ip_hash' => $hasher->hash($row->ip_address),
-                            'user_agent_hash' => $hasher->hashUserAgent($row->user_agent),
+                            'user_agent_hash' => $hasher->hashOpaque($row->user_agent),
                         ]);
                 }
             });

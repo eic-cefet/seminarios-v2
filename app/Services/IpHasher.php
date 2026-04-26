@@ -18,13 +18,13 @@ class IpHasher
         return hash_hmac('sha256', $network, (string) config('audit.hash_salt'));
     }
 
-    public function hashUserAgent(?string $userAgent): ?string
+    public function hashOpaque(?string $value): ?string
     {
-        if ($userAgent === null || $userAgent === '') {
+        if ($value === null || $value === '') {
             return null;
         }
 
-        return hash_hmac('sha256', $userAgent, (string) config('audit.hash_salt'));
+        return hash_hmac('sha256', $value, (string) config('audit.hash_salt'));
     }
 
     private function normalizeToNetwork(string $ip): ?string

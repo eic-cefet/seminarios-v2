@@ -37,7 +37,7 @@ class AuditEmailSent
                 eventData: [
                     'mail' => $mailClassHeader?->getBodyAsString(),
                     'to' => array_map(
-                        fn (Address $address) => app(IpHasher::class)->hashUserAgent($address->getAddress()),
+                        fn (Address $address) => app(IpHasher::class)->hashOpaque($address->getAddress()),
                         $message->getTo(),
                     ),
                     'recipient_count' => count($message->getTo()),
