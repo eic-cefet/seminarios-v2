@@ -74,6 +74,23 @@ describe('SeminarRescheduleNotifier', function () {
         expect($reg2->fresh()->reminder_sent)->toBeFalse();
     });
 
+    it('resets reminder_7d_sent when a seminar is rescheduled', function () {
+        Mail::fake();
+
+        $seminar = Seminar::factory()->create(['scheduled_at' => now()->addDays(7)]);
+        $registration = Registration::factory()->create([
+            'seminar_id' => $seminar->id,
+            'reminder_sent' => true,
+            'reminder_7d_sent' => true,
+        ]);
+
+        app(SeminarRescheduleNotifier::class)->notify($seminar, $seminar->scheduled_at->copy()->subDay());
+
+        $fresh = $registration->fresh();
+        expect($fresh->reminder_sent)->toBeFalse()
+            ->and($fresh->reminder_7d_sent)->toBeFalse();
+    });
+
     it('records the SeminarRescheduled audit event with metadata', function () {
         Mail::fake();
 

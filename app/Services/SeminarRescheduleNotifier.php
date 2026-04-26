@@ -22,7 +22,7 @@ class SeminarRescheduleNotifier
         $seminar->loadMissing('seminarLocation');
 
         $registrations = DB::transaction(function () use ($seminar, $oldScheduledAt) {
-            $seminar->registrations()->update(['reminder_sent' => false]);
+            $seminar->registrations()->update(['reminder_sent' => false, 'reminder_7d_sent' => false]);
 
             $registrations = $seminar->registrations()->with('user.alertPreference')->get();
 
