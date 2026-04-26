@@ -9,7 +9,9 @@ A apresentação abaixo foi remarcada. Por favor, confirme sua disponibilidade n
 **{{ $seminar->name }}**
 
 **Data anterior:** {{ $previousStartsAt->format('d/m/Y H:i') }}<br>
+@if($seminar->scheduled_at)
 **Nova data:** {{ $seminar->scheduled_at->format('d/m/Y H:i') }} (horário de Brasília)
+@endif
 @if($seminar->seminarLocation)
 <br>**Local:** {{ $seminar->seminarLocation->name }}
 @endif
