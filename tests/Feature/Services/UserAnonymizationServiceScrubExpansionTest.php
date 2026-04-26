@@ -66,3 +66,19 @@ it('scrubs PII even when auditable_type is not User', function () {
     $log = AuditLog::where('event_name', 'some.event')->first();
     expect($log->event_data['old_values']['email'])->toBe('[scrubbed]');
 });
+
+it('leaves audit logs with non-array event_data untouched', function () {
+    $user = User::factory()->create();
+
+    AuditLog::create([
+        'user_id' => $user->id,
+        'event_name' => 'plain.event',
+        'event_type' => AuditEventType::Manual,
+        'event_data' => null,
+    ]);
+
+    app(UserAnonymizationService::class)->anonymize($user);
+
+    $log = AuditLog::where('event_name', 'plain.event')->first();
+    expect($log->event_data)->toBeNull();
+});

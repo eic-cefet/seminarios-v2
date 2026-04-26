@@ -42,6 +42,26 @@ it('keeps security events for the security retention but prunes default events a
     expect(AuditLog::where('event_name', 'subject.updated')->exists())->toBeFalse();
 });
 
+it('skips empty tier lists gracefully', function () {
+    config([
+        'audit.retention.default' => 90,
+        'audit.retention.security' => 365,
+        'audit.retention.system' => 30,
+        'audit.tiers.security' => [], // empty — should be skipped
+        'audit.tiers.system' => ['email.sent'],
+    ]);
+
+    AuditLog::factory()->create([
+        'event_name' => 'email.sent',
+        'event_type' => AuditEventType::System,
+        'created_at' => Carbon::now()->subDays(60),
+    ]);
+
+    $this->artisan('audit:prune')->assertSuccessful();
+
+    expect(AuditLog::where('event_name', 'email.sent')->exists())->toBeFalse();
+});
+
 it('still respects an explicit --days override across all tiers', function () {
     AuditLog::factory()->create([
         'event_name' => 'user.login_failed',

@@ -43,3 +43,10 @@ it('hashes user-agent strings', function () {
 it('returns null when given an unparseable IP', function () {
     expect((new IpHasher)->hash('not-an-ip'))->toBeNull();
 });
+
+it('returns null when hashing an empty or null user-agent', function () {
+    $hasher = new IpHasher;
+
+    expect($hasher->hashUserAgent(null))->toBeNull()
+        ->and($hasher->hashUserAgent(''))->toBeNull();
+});
