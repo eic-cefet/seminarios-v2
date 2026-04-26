@@ -33,9 +33,11 @@ class SendSpeakerRecapsCommand extends Command
             ->select('seminar_speaker.user_id', 'seminar_speaker.seminar_id')
             ->get();
 
+        $users = User::whereIn('id', $rows->pluck('user_id'))->get()->keyBy('id');
+
         $count = 0;
         foreach ($rows as $row) {
-            $user = User::find($row->user_id);
+            $user = $users->get($row->user_id);
             if (! $user) {
                 continue; // @codeCoverageIgnore
             }
