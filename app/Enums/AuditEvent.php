@@ -20,6 +20,7 @@ enum AuditEvent: string
     case SubjectsMerged = 'subjects.merged';
     case ReportQueued = 'report.queued';
     case ReportGenerated = 'report.generated';
+    case WorkshopAnnounced = 'admin.workshop_announced';
 
     // AI
     case AiTextTransform = 'ai.text_transform';

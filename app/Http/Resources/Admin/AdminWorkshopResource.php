@@ -26,6 +26,7 @@ class AdminWorkshopResource extends JsonResource
                     'scheduled_at' => $this->formatDate($s->scheduled_at),
                 ]);
             }),
+            'announcement_sent_at' => $this->announcement_sent_at?->toISOString(),
             'created_at' => $this->formatDate($this->created_at),
             'updated_at' => $this->formatDate($this->updated_at),
         ];

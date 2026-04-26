@@ -124,4 +124,9 @@ class ApiException extends Exception
     {
         return new self('unregister_blocked', 'Não é possível cancelar a inscrição no dia do evento', 400);
     }
+
+    public static function workshopAlreadyAnnounced(): self
+    {
+        return new self('workshop_already_announced', 'Este workshop já foi anunciado anteriormente', 409);
+    }
 }
