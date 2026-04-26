@@ -26,6 +26,11 @@ class SendSpeakerRecapJob implements ShouldQueue
 
     public function handle(): void
     {
+        $seminar = Seminar::find($this->seminarId);
+        if (! $seminar) {
+            return;
+        }
+
         $claimed = DB::table('seminar_speaker')
             ->where('seminar_id', $this->seminarId)
             ->where('user_id', $this->speaker->id)
@@ -34,11 +39,6 @@ class SendSpeakerRecapJob implements ShouldQueue
 
         if ($claimed === 0) {
             return;
-        }
-
-        $seminar = Seminar::find($this->seminarId);
-        if (! $seminar) {
-            return; // @codeCoverageIgnore
         }
 
         $count = Registration::where('seminar_id', $this->seminarId)

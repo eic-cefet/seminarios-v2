@@ -25,6 +25,11 @@ class SendSpeakerReminderJob implements ShouldQueue
 
     public function handle(): void
     {
+        $seminar = Seminar::with('seminarLocation')->find($this->seminarId);
+        if (! $seminar) {
+            return;
+        }
+
         $claimed = DB::table('seminar_speaker')
             ->where('seminar_id', $this->seminarId)
             ->where('user_id', $this->speaker->id)
@@ -33,11 +38,6 @@ class SendSpeakerReminderJob implements ShouldQueue
 
         if ($claimed === 0) {
             return;
-        }
-
-        $seminar = Seminar::with('seminarLocation')->find($this->seminarId);
-        if (! $seminar) {
-            return; // @codeCoverageIgnore
         }
 
         Mail::to($this->speaker)->queue(new SpeakerSeminarReminder($this->speaker, $seminar));

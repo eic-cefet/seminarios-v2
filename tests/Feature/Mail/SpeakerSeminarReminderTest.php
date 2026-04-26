@@ -15,3 +15,13 @@ it('renders speaker-targeted copy', function () {
     $mailable->assertSeeInHtml('você está apresentando');
     $mailable->assertHasSubject('Você apresenta amanhã: Algoritmos - '.config('mail.name'));
 });
+
+it('skips ICS attachment when scheduled_at is null', function () {
+    $speaker = User::factory()->create();
+    $seminar = new Seminar(['name' => 'Sem data', 'slug' => 'sem-data-speaker']);
+    $seminar->scheduled_at = null;
+
+    $mailable = new SpeakerSeminarReminder($speaker, $seminar);
+
+    expect($mailable->attachments())->toBe([]);
+});
