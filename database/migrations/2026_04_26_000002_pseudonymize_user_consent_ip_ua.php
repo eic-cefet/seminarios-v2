@@ -10,12 +10,15 @@ return new class extends Migration
 {
     public function up(): void
     {
+        $hasher = app(IpHasher::class);
+        // Fail before any schema change if the salt is not configured —
+        // see 2026_04_26_000001 for the same guard rationale.
+        $hasher->salt();
+
         Schema::table('user_consents', function (Blueprint $table) {
             $table->string('ip_hash', 64)->nullable()->after('version');
             $table->string('user_agent_hash', 64)->nullable()->after('ip_hash');
         });
-
-        $hasher = app(IpHasher::class);
 
         DB::table('user_consents')
             ->whereNotNull('ip_address')

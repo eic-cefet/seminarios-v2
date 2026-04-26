@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use Illuminate\Support\Str;
+
 class IpHasher
 {
     public function hash(?string $ip): ?string
@@ -27,9 +29,13 @@ class IpHasher
         return hash_hmac('sha256', $value, $this->salt());
     }
 
-    private function salt(): string
+    public function salt(): string
     {
         $salt = (string) config('audit.hash_salt');
+
+        if ($salt === '') {
+            $salt = Str::after((string) config('app.key', ''), 'base64:');
+        }
 
         if ($salt === '') {
             throw new \RuntimeException(

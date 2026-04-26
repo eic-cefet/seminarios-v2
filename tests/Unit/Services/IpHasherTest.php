@@ -51,9 +51,23 @@ it('returns null when hashing an empty or null opaque value', function () {
         ->and($hasher->hashOpaque(''))->toBeNull();
 });
 
-it('throws when the salt is empty so misconfiguration fails loud', function () {
-    config(['audit.hash_salt' => '']);
+it('throws when neither audit.hash_salt nor app.key is set', function () {
+    config(['audit.hash_salt' => '', 'app.key' => '']);
 
     expect(fn () => (new IpHasher)->hash('192.168.1.1'))
         ->toThrow(RuntimeException::class, 'audit.hash_salt is empty');
+});
+
+it('falls back to app.key with the base64 prefix stripped', function () {
+    config(['audit.hash_salt' => '', 'app.key' => 'base64:c29tZS1zZWNyZXQ=']);
+
+    $hasher = new IpHasher;
+
+    // hash_hmac with the decoded key prefix stripped should match
+    // an explicit hash using that same trailing string as salt.
+    config(['audit.hash_salt' => 'c29tZS1zZWNyZXQ=']);
+    $expected = $hasher->hash('192.168.1.10');
+
+    config(['audit.hash_salt' => '', 'app.key' => 'base64:c29tZS1zZWNyZXQ=']);
+    expect($hasher->hash('192.168.1.10'))->toBe($expected);
 });

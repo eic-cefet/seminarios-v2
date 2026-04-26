@@ -137,7 +137,7 @@ class AdminUserController extends Controller
             }
 
             if (isset($validated['role'])) {
-                $user->loadMissing('roles');
+                $user->load('roles');
                 $previousRole = $user->roles->first()?->name;
                 $user->syncRoles(
                     $validated['role'] === 'user' ? [] : [$validated['role']],
