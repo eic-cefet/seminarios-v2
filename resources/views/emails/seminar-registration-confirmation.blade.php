@@ -27,5 +27,5 @@ Ver detalhes do seminário
 Você receberá lembretes antes do evento. Caso não possa comparecer, cancele sua inscrição na página do seminário.
 
 Até logo,<br>
-{{ config('mail.name') }}
+{{ config('mail.team_name') }}
 </x-mail::message>

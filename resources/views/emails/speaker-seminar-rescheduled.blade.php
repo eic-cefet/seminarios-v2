@@ -20,5 +20,5 @@ Ver detalhes
 </x-mail::button>
 
 Em caso de conflito, entre em contato com a coordenação.<br>
-{{ config('mail.name') }}
+{{ config('mail.team_name') }}
 </x-mail::message>

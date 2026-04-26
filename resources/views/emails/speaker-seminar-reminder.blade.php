@@ -25,5 +25,5 @@ Ver detalhes
 </x-mail::button>
 
 Boa apresentação!<br>
-{{ config('mail.name') }}
+{{ config('mail.team_name') }}
 </x-mail::message>

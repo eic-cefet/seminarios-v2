@@ -23,5 +23,5 @@ Ver seminário
 </x-mail::button>
 
 Obrigado por contribuir,<br>
-{{ config('mail.name') }}
+{{ config('mail.team_name') }}
 </x-mail::message>

@@ -19,5 +19,5 @@ Conhecer o workshop
 Você está recebendo este e-mail porque optou por receber comunicados sobre novos workshops. Você pode alterar suas preferências a qualquer momento na sua conta.
 
 Até logo,<br>
-{{ config('mail.name') }}
+{{ config('mail.team_name') }}
 </x-mail::message>
