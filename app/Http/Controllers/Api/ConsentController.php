@@ -8,6 +8,7 @@ use App\Http\Requests\ConsentRequest;
 use App\Http\Resources\ConsentResource;
 use App\Models\AuditLog;
 use App\Models\UserConsent;
+use App\Services\IpHasher;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -36,8 +37,8 @@ class ConsentController extends Controller
             'type' => $validated['type'],
             'granted' => $validated['granted'],
             'version' => $validated['version'] ?? null,
-            'ip_address' => $request->ip(),
-            'user_agent' => substr((string) $request->userAgent(), 0, 500),
+            'ip_hash' => app(IpHasher::class)->hash($request->ip()),
+            'user_agent_hash' => app(IpHasher::class)->hashUserAgent((string) $request->userAgent()),
             'source' => $user ? 'preference_center' : 'cookie_banner',
         ]);
 

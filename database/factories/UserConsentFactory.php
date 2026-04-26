@@ -22,8 +22,8 @@ class UserConsentFactory extends Factory
             'type' => fake()->randomElement(ConsentType::cases()),
             'granted' => true,
             'version' => '1.0',
-            'ip_address' => fake()->ipv4(),
-            'user_agent' => fake()->userAgent(),
+            'ip_hash' => hash('sha256', fake()->ipv4()),
+            'user_agent_hash' => hash('sha256', fake()->userAgent()),
             'source' => 'test',
         ];
     }

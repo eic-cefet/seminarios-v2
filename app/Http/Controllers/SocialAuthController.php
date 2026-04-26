@@ -9,6 +9,7 @@ use App\Models\AuditLog;
 use App\Models\SocialIdentity;
 use App\Models\User;
 use App\Models\UserConsent;
+use App\Services\IpHasher;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -150,8 +151,8 @@ class SocialAuthController extends Controller
                 'type' => $type,
                 'granted' => true,
                 'version' => config('lgpd.versions.'.$type->value) ?? '1.0',
-                'ip_address' => $request->ip(),
-                'user_agent' => substr((string) $request->userAgent(), 0, 500),
+                'ip_hash' => app(IpHasher::class)->hash($request->ip()),
+                'user_agent_hash' => app(IpHasher::class)->hashUserAgent((string) $request->userAgent()),
                 'source' => 'oauth',
             ]);
         }

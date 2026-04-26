@@ -18,8 +18,8 @@ class UserConsent extends Model
         'type',
         'granted',
         'version',
-        'ip_address',
-        'user_agent',
+        'ip_hash',
+        'user_agent_hash',
         'source',
     ];
 
