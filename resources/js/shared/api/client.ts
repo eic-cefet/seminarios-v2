@@ -381,6 +381,7 @@ export interface AlertPreference {
     seminarReminder24h: boolean;
     evaluationPrompt: boolean;
     announcements: boolean;
+    workshopAnnouncements: boolean;
     certificateReady: boolean;
     seminarRescheduled: boolean;
 }
@@ -401,6 +402,7 @@ export const alertPreferencesApi = {
         seminar_reminder_24h: boolean;
         evaluation_prompt: boolean;
         announcements: boolean;
+        workshop_announcements: boolean;
         certificate_ready: boolean;
         seminar_rescheduled: boolean;
     }): Promise<AlertPreference> => {

@@ -37,6 +37,7 @@ export default function AlertPreferences() {
     const [seminarReminder24h, setSeminarReminder24h] = useState(true);
     const [evaluationPrompt, setEvaluationPrompt] = useState(true);
     const [announcements, setAnnouncements] = useState(true);
+    const [workshopAnnouncements, setWorkshopAnnouncements] = useState(true);
     const [certificateReady, setCertificateReady] = useState(true);
     const [seminarRescheduled, setSeminarRescheduled] = useState(true);
     const [success, setSuccess] = useState(false);
@@ -50,6 +51,7 @@ export default function AlertPreferences() {
             setSeminarReminder24h(preference.seminarReminder24h);
             setEvaluationPrompt(preference.evaluationPrompt);
             setAnnouncements(preference.announcements);
+            setWorkshopAnnouncements(preference.workshopAnnouncements);
             setCertificateReady(preference.certificateReady);
             setSeminarRescheduled(preference.seminarRescheduled);
         }
@@ -65,6 +67,7 @@ export default function AlertPreferences() {
                 seminar_reminder_24h: seminarReminder24h,
                 evaluation_prompt: evaluationPrompt,
                 announcements,
+                workshop_announcements: workshopAnnouncements,
                 certificate_ready: certificateReady,
                 seminar_rescheduled: seminarRescheduled,
             }),
@@ -135,6 +138,7 @@ export default function AlertPreferences() {
                                         { id: "pref-cert", label: "Certificado pronto", checked: certificateReady, set: setCertificateReady },
                                         { id: "pref-resched", label: "Seminário reagendado", checked: seminarRescheduled, set: setSeminarRescheduled },
                                         { id: "pref-announce", label: "Comunicados gerais", checked: announcements, set: setAnnouncements },
+                                        { id: "pref-workshop-ann", label: "Comunicado de novos workshops", checked: workshopAnnouncements, set: setWorkshopAnnouncements },
                                     ] as const).map((row) => (
                                         <label key={row.id} className="flex items-start gap-3 cursor-pointer select-none">
                                             <input
