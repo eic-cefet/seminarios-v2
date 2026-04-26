@@ -687,10 +687,10 @@ describe('WorkshopList', () => {
     });
 
     it('shows announce button and triggers workshopsApi.announce on confirm when not yet announced', async () => {
-        vi.mocked(workshopsApi.announce).mockResolvedValue({ message: 'ok', data: { id: 42, name: 'Unannounced WS', slug: 'unannounced-ws', description: null, announcement_sent_at: '2026-04-26T10:00:00Z', seminars_count: 0, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' } } as any);
+        vi.mocked(workshopsApi.announce).mockResolvedValue({ message: 'ok', data: { id: 42, name: 'Unannounced WS', slug: 'unannounced-ws', description: null, announcement_sent_at: '2026-04-26T10:00:00Z', seminars_count: 0, created_at: '2026-04-26T00:00:00Z', updated_at: '2026-04-26T00:00:00Z' } } as any);
         vi.mocked(workshopsApi.list).mockResolvedValue({
             data: [
-                { id: 42, name: 'Unannounced WS', slug: 'unannounced-ws', description: null, announcement_sent_at: null, seminars_count: 0, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
+                { id: 42, name: 'Unannounced WS', slug: 'unannounced-ws', description: null, announcement_sent_at: null, seminars_count: 0, created_at: '2026-04-26T00:00:00Z', updated_at: '2026-04-26T00:00:00Z' },
             ],
             meta: { last_page: 1, current_page: 1, total: 1, from: 1, to: 1 },
         } as any);
@@ -731,6 +731,24 @@ describe('WorkshopList', () => {
 
         expect(screen.queryByText('Anunciar workshop')).not.toBeInTheDocument();
         expect(screen.getByText(/Anunciado em/)).toBeInTheDocument();
+    });
+
+    it('hides announce button for workshops created before 2026-04-26', async () => {
+        vi.mocked(workshopsApi.list).mockResolvedValue({
+            data: [
+                { id: 9, name: 'Old WS', slug: 'old-ws', description: null, announcement_sent_at: null, seminars_count: 0, created_at: '2026-04-25T23:59:59Z', updated_at: '2026-04-25T23:59:59Z' },
+            ],
+            meta: { last_page: 1, current_page: 1, total: 1, from: 1, to: 1 },
+        } as any);
+
+        render(<WorkshopList />);
+
+        await waitFor(() => {
+            expect(screen.getByText('Old WS')).toBeInTheDocument();
+        });
+
+        expect(screen.queryByText('Anunciar workshop')).not.toBeInTheDocument();
+        expect(screen.queryByText(/Anunciado em/)).not.toBeInTheDocument();
     });
 
     it('deleteMutation onError with associado message shows specific error', async () => {

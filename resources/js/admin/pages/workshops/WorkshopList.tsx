@@ -54,6 +54,16 @@ import { MarkdownEditor } from "../../components/MarkdownEditor";
 import { PageTitle } from "@shared/components/PageTitle";
 import { formatDateTime } from "@shared/lib/utils";
 
+// The announcement feature shipped on 2026-04-26. Workshops created before this
+// date predate the feature and could spam users about content they may have
+// already seen — only show the announce button for workshops created on or
+// after the cutoff. Backend enforces the same rule.
+const ANNOUNCE_CUTOFF = new Date("2026-04-26T00:00:00Z");
+
+function canAnnounce(workshop: { created_at: string }): boolean {
+    return new Date(workshop.created_at) >= ANNOUNCE_CUTOFF;
+}
+
 export default function WorkshopList() {
     const queryClient = useQueryClient();
     const [page, setPage] = useState(1);
@@ -345,7 +355,7 @@ export default function WorkshopList() {
                                                                 workshop.announcement_sent_at,
                                                             )}
                                                         </Badge>
-                                                    ) : (
+                                                    ) : canAnnounce(workshop) ? (
                                                         <Button
                                                             variant="outline"
                                                             size="sm"
@@ -358,7 +368,7 @@ export default function WorkshopList() {
                                                             <Megaphone className="h-4 w-4 mr-2" />
                                                             Anunciar workshop
                                                         </Button>
-                                                    )}
+                                                    ) : null}
                                                     <Button
                                                         variant="ghost"
                                                         size="icon"

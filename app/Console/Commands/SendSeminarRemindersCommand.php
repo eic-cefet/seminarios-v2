@@ -62,6 +62,19 @@ class SendSeminarRemindersCommand extends Command
         $windowStart = now()->addDays($days)->startOfDay();
         $windowEnd = now()->addDays($days)->endOfDay();
 
+        // We deliberately do NOT add a filter like "registration.created_at <=
+        // scheduled_at - $days days" here. The cron's daily cadence already covers
+        // both stated concerns:
+        //   - "Don't 7d-remind someone who registered 4 days before the seminar":
+        //     the 7d cron picks seminars exactly 7 days out, so a registration
+        //     for a seminar 4 days out is never picked up at all.
+        //   - "Don't 24h-remind someone who registered 12h before the seminar":
+        //     today's 10:00 cron run picks tomorrow's seminars; a registration
+        //     created after the run for tomorrow simply didn't exist when the
+        //     window's cron fired and won't be picked up.
+        // Adding an explicit datetime filter on created_at would be defence in
+        // depth but is fragile against the exact time of day, so we trust the
+        // cron timing.
         $registrations = Registration::query()
             ->select('registrations.*')
             ->join('seminars', 'registrations.seminar_id', '=', 'seminars.id')

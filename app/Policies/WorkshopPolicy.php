@@ -32,4 +32,9 @@ class WorkshopPolicy
     {
         return $user->hasRole(Role::Admin);
     }
+
+    public function announce(User $user, Workshop $workshop): bool
+    {
+        return $user->hasRole(Role::Admin);
+    }
 }

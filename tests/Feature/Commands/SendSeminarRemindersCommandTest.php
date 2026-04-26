@@ -44,7 +44,11 @@ it('dispatches a 7-day reminder job for users with seminar_reminder_7d=true', fu
     $user = User::factory()->create();
     AlertPreference::factory()->for($user)->create(['seminar_reminder_7d' => true]);
     $seminar = Seminar::factory()->create(['scheduled_at' => now()->addDays(7)->setTime(10, 0), 'active' => true]);
-    Registration::factory()->create(['user_id' => $user->id, 'seminar_id' => $seminar->id, 'reminder_7d_sent' => false]);
+    Registration::factory()->create([
+        'user_id' => $user->id,
+        'seminar_id' => $seminar->id,
+        'reminder_7d_sent' => false,
+    ]);
 
     $this->artisan('reminders:seminars', ['--days' => 7])->assertOk();
 
@@ -60,7 +64,11 @@ it('skips users with seminar_reminder_7d=false', function () {
     $user = User::factory()->create();
     AlertPreference::factory()->for($user)->create(['seminar_reminder_7d' => false]);
     $seminar = Seminar::factory()->create(['scheduled_at' => now()->addDays(7), 'active' => true]);
-    Registration::factory()->create(['user_id' => $user->id, 'seminar_id' => $seminar->id, 'reminder_7d_sent' => false]);
+    Registration::factory()->create([
+        'user_id' => $user->id,
+        'seminar_id' => $seminar->id,
+        'reminder_7d_sent' => false,
+    ]);
 
     $this->artisan('reminders:seminars', ['--days' => 7])->assertOk();
 
