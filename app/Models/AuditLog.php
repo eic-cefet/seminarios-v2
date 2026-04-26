@@ -27,7 +27,7 @@ class AuditLog extends Model
         'event_data',
         'ref_id',
         'origin',
-        'ip_address',
+        'ip_hash',
     ];
 
     protected function casts(): array
@@ -100,7 +100,7 @@ class AuditLog extends Model
             }
         }
 
-        $ipAddress = Context::get('audit.ip');
+        $ipHash = Context::get('audit.ip_hash');
 
         return self::create([
             'user_id' => $userId ?? auth()->id(),
@@ -111,7 +111,7 @@ class AuditLog extends Model
             'event_data' => $eventData ?: null,
             'ref_id' => $refId,
             'origin' => $origin,
-            'ip_address' => $ipAddress,
+            'ip_hash' => $ipHash,
         ]);
     }
 

@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Services\IpHasher;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Context;
@@ -19,7 +20,7 @@ class AuditContextMiddleware
             Context::add('audit.origin', $origin);
         }
 
-        Context::add('audit.ip', $request->ip());
+        Context::add('audit.ip_hash', app(IpHasher::class)->hash($request->ip()));
 
         return $next($request);
     }

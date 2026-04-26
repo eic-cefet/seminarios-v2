@@ -20,7 +20,7 @@ class AuditLogFactory extends Factory
             'event_type' => AuditEventType::System,
             'event_data' => null,
             'origin' => 'TestFactory',
-            'ip_address' => $this->faker->ipv4(),
+            'ip_hash' => hash('sha256', $this->faker->ipv4()),
         ];
     }
 

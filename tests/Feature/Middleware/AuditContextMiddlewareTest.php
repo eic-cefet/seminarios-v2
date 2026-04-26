@@ -1,7 +1,9 @@
 <?php
 
 use App\Http\Middleware\AuditContextMiddleware;
+use App\Services\IpHasher;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Route;
 use Illuminate\Support\Facades\Context;
 
 describe('AuditContextMiddleware', function () {
@@ -9,21 +11,21 @@ describe('AuditContextMiddleware', function () {
         $middleware = new AuditContextMiddleware;
 
         $request = Request::create('/test', 'GET');
-        $route = new \Illuminate\Routing\Route('GET', '/test', []);
+        $route = new Route('GET', '/test', []);
         $route->setAction(['uses' => 'App\Http\Controllers\Admin\AdminSeminarController@index', 'controller' => 'App\Http\Controllers\Admin\AdminSeminarController@index']);
         $request->setRouteResolver(fn () => $route);
 
         $middleware->handle($request, fn () => response('ok'));
 
         expect(Context::get('audit.origin'))->toBe('AdminSeminarController@index');
-        expect(Context::get('audit.ip'))->toBe('127.0.0.1');
+        expect(Context::get('audit.ip_hash'))->toBe(app(IpHasher::class)->hash('127.0.0.1'));
     });
 
     it('sets only ip for closure routes', function () {
         $middleware = new AuditContextMiddleware;
 
         $request = Request::create('/test', 'GET');
-        $route = new \Illuminate\Routing\Route('GET', '/test', function () {
+        $route = new Route('GET', '/test', function () {
             return response('ok');
         });
         $request->setRouteResolver(fn () => $route);
@@ -31,7 +33,7 @@ describe('AuditContextMiddleware', function () {
         $middleware->handle($request, fn () => response('ok'));
 
         expect(Context::get('audit.origin'))->toBeNull();
-        expect(Context::get('audit.ip'))->toBe('127.0.0.1');
+        expect(Context::get('audit.ip_hash'))->toBe(app(IpHasher::class)->hash('127.0.0.1'));
     });
 
     it('handles request without route', function () {
@@ -42,6 +44,6 @@ describe('AuditContextMiddleware', function () {
         $middleware->handle($request, fn () => response('ok'));
 
         expect(Context::get('audit.origin'))->toBeNull();
-        expect(Context::get('audit.ip'))->toBe('127.0.0.1');
+        expect(Context::get('audit.ip_hash'))->toBe(app(IpHasher::class)->hash('127.0.0.1'));
     });
 });

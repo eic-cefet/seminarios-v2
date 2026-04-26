@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Models\UserConsent;
 use App\Models\UserStudentData;
 use App\Services\UserAnonymizationService;
+use Illuminate\Contracts\Filesystem\Filesystem;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
@@ -62,7 +63,7 @@ it('swallows and logs S3 delete failures so anonymization still succeeds', funct
         'file_path' => 'lgpd-exports/flaky.zip',
     ]);
 
-    $disk = Mockery::mock(\Illuminate\Contracts\Filesystem\Filesystem::class);
+    $disk = Mockery::mock(Filesystem::class);
     $disk->shouldReceive('delete')->once()->andThrow(new RuntimeException('S3 down'));
     Storage::shouldReceive('disk')->with('s3')->andReturn($disk);
 
@@ -110,7 +111,7 @@ it('scrubs email and name from audit log event_data', function () {
             'new_values' => ['email' => 'target@example.com', 'name' => 'U'],
         ],
         'origin' => 'test',
-        'ip_address' => '127.0.0.1',
+        'ip_hash' => hash('sha256', '127.0.0.1'),
     ]);
 
     $this->service->anonymize($user);
