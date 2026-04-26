@@ -33,6 +33,12 @@ Schedule::command('reminders:evaluations')
     ->withoutOverlapping()
     ->onOneServer();
 
+Schedule::command('reminders:speaker-recaps')
+    ->dailyAt('14:15')
+    ->timezone('America/Sao_Paulo')
+    ->withoutOverlapping()
+    ->onOneServer();
+
 // Process pending certificates every hour (generate and send for confirmed presences)
 Schedule::command('certificates:process-pending')
     ->hourly()
