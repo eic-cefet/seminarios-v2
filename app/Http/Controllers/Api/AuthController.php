@@ -38,6 +38,10 @@ class AuthController extends Controller
         $user = User::where('email', $validated['email'])->first();
 
         if (! $user) {
+            AuditLog::record(
+                event: AuditEvent::UserLoginFailed,
+                eventData: ['reason' => 'user_not_found'],
+            );
             throw ApiException::mismatchedCredentials();
         }
 
@@ -56,6 +60,12 @@ class AuthController extends Controller
         }
 
         if (! $passwordMatches) {
+            AuditLog::record(
+                event: AuditEvent::UserLoginFailed,
+                auditable: $user,
+                eventData: ['reason' => 'invalid_password'],
+                userId: $user->id,
+            );
             throw ApiException::mismatchedCredentials();
         }
 
