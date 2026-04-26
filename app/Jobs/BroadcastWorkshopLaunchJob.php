@@ -19,16 +19,10 @@ class BroadcastWorkshopLaunchJob implements ShouldQueue
 
     public function handle(): void
     {
-        User::query()
-            ->select(['id'])
-            ->chunkById(500, function ($users): void {
-                foreach ($users as $user) {
-                    $full = User::find($user->id);
-                    if (! $full) {
-                        continue; // @codeCoverageIgnore
-                    }
-                    SendWorkshopAvailableJob::dispatch($full, $this->workshopId);
-                }
-            });
+        User::query()->chunkById(500, function ($users): void {
+            foreach ($users as $user) {
+                SendWorkshopAvailableJob::dispatch($user, $this->workshopId);
+            }
+        });
     }
 }
