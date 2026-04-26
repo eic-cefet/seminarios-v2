@@ -1,7 +1,9 @@
 <?php
 
+use Illuminate\Support\Str;
+
 return [
-    'hash_salt' => env('AUDIT_HASH_SALT', env('APP_KEY')),
+    'hash_salt' => env('AUDIT_HASH_SALT') ?: Str::after((string) env('APP_KEY', ''), 'base64:'),
 
     'retention' => [
         'default' => 90,

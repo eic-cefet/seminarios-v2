@@ -15,7 +15,7 @@ class IpHasher
             return null;
         }
 
-        return hash_hmac('sha256', $network, (string) config('audit.hash_salt'));
+        return hash_hmac('sha256', $network, $this->salt());
     }
 
     public function hashOpaque(?string $value): ?string
@@ -24,7 +24,20 @@ class IpHasher
             return null;
         }
 
-        return hash_hmac('sha256', $value, (string) config('audit.hash_salt'));
+        return hash_hmac('sha256', $value, $this->salt());
+    }
+
+    private function salt(): string
+    {
+        $salt = (string) config('audit.hash_salt');
+
+        if ($salt === '') {
+            throw new \RuntimeException(
+                'audit.hash_salt is empty — set AUDIT_HASH_SALT or APP_KEY before hashing.'
+            );
+        }
+
+        return $salt;
     }
 
     private function normalizeToNetwork(string $ip): ?string

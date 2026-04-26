@@ -50,3 +50,10 @@ it('returns null when hashing an empty or null opaque value', function () {
     expect($hasher->hashOpaque(null))->toBeNull()
         ->and($hasher->hashOpaque(''))->toBeNull();
 });
+
+it('throws when the salt is empty so misconfiguration fails loud', function () {
+    config(['audit.hash_salt' => '']);
+
+    expect(fn () => (new IpHasher)->hash('192.168.1.1'))
+        ->toThrow(RuntimeException::class, 'audit.hash_salt is empty');
+});
