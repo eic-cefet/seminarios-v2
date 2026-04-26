@@ -2,6 +2,7 @@
 
 use App\Enums\AuditEvent;
 use App\Mail\SeminarRescheduled;
+use App\Mail\SpeakerSeminarRescheduled;
 use App\Models\AlertPreference;
 use App\Models\AuditLog;
 use App\Models\Registration;
@@ -129,5 +130,33 @@ describe('SeminarRescheduleNotifier', function () {
         app(SeminarRescheduleNotifier::class)->notify($seminar, $oldDate);
 
         Notification::assertSentTo($optedOut, SeminarRescheduledNotification::class);
+    });
+
+    it('queues SpeakerSeminarRescheduled to all speakers when a seminar is rescheduled', function () {
+        Mail::fake();
+        $speaker1 = User::factory()->create();
+        $speaker2 = User::factory()->create();
+        $seminar = Seminar::factory()->create();
+        $seminar->speakers()->attach([$speaker1->id, $speaker2->id]);
+        $oldAt = $seminar->scheduled_at->copy()->subDay();
+
+        app(SeminarRescheduleNotifier::class)->notify($seminar, $oldAt);
+
+        Mail::assertQueued(SpeakerSeminarRescheduled::class, 2);
+        Mail::assertQueued(SpeakerSeminarRescheduled::class, fn ($m) => $m->speaker->is($speaker1) && $m->seminar->is($seminar));
+        Mail::assertQueued(SpeakerSeminarRescheduled::class, fn ($m) => $m->speaker->is($speaker2));
+    });
+
+    it('does not gate speaker reschedule mails on alert preferences', function () {
+        Mail::fake();
+        $speaker = User::factory()->create();
+        AlertPreference::factory()->for($speaker)->create(['seminar_rescheduled' => false]);
+        $seminar = Seminar::factory()->create();
+        $seminar->speakers()->attach($speaker->id);
+        $oldAt = $seminar->scheduled_at->copy()->subDay();
+
+        app(SeminarRescheduleNotifier::class)->notify($seminar, $oldAt);
+
+        Mail::assertQueued(SpeakerSeminarRescheduled::class, fn ($m) => $m->speaker->is($speaker));
     });
 });

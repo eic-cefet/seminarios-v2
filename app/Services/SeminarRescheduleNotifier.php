@@ -6,6 +6,7 @@ use App\Enums\AuditEvent;
 use App\Enums\AuditEventType;
 use App\Enums\CommunicationCategory;
 use App\Mail\SeminarRescheduled;
+use App\Mail\SpeakerSeminarRescheduled;
 use App\Models\AuditLog;
 use App\Models\Seminar;
 use App\Notifications\SeminarRescheduledNotification;
@@ -48,6 +49,11 @@ class SeminarRescheduleNotifier
             Mail::to($registration->user)->queue(
                 new SeminarRescheduled($registration->user, $seminar, $oldScheduledAt)
             );
+        }
+
+        $speakers = $seminar->speakers()->get();
+        foreach ($speakers as $speaker) {
+            Mail::to($speaker)->queue(new SpeakerSeminarRescheduled($speaker, $seminar, $oldScheduledAt));
         }
     }
 }
