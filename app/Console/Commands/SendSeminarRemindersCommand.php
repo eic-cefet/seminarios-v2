@@ -121,6 +121,7 @@ class SendSeminarRemindersCommand extends Command
             ->get();
 
         $users = User::whereIn('id', $rows->pluck('user_id'))->get()->keyBy('id');
+        $sync = (bool) $this->option('sync');
 
         $count = 0;
         foreach ($rows as $row) {
@@ -128,7 +129,11 @@ class SendSeminarRemindersCommand extends Command
             if (! $user) {
                 continue; // @codeCoverageIgnore
             }
-            SendSpeakerReminderJob::dispatch($user, (int) $row->seminar_id);
+            if ($sync) {
+                (new SendSpeakerReminderJob($user, (int) $row->seminar_id))->handle();
+            } else {
+                SendSpeakerReminderJob::dispatch($user, (int) $row->seminar_id);
+            }
             $count++;
         }
 

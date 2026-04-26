@@ -4,11 +4,13 @@ use App\Enums\AuditEvent;
 use App\Enums\CommunicationCategory;
 use App\Jobs\SendSeminarReminderJob;
 use App\Jobs\SendSpeakerReminderJob;
+use App\Mail\SpeakerSeminarReminder;
 use App\Models\AlertPreference;
 use App\Models\AuditLog;
 use App\Models\Registration;
 use App\Models\Seminar;
 use App\Models\User;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Queue;
 
 beforeEach(function () {
@@ -114,4 +116,18 @@ it('does not dispatch speaker reminders for inactive seminars', function () {
     $this->artisan('reminders:seminars', ['--days' => 1])->assertOk();
 
     Queue::assertNotPushed(SendSpeakerReminderJob::class);
+});
+
+it('runs speaker reminders synchronously when --sync is passed', function () {
+    Queue::fake();
+    Mail::fake();
+
+    $speaker = User::factory()->create();
+    $seminar = Seminar::factory()->create(['scheduled_at' => now()->addDay()->setTime(10, 0), 'active' => true]);
+    $seminar->speakers()->attach($speaker->id);
+
+    $this->artisan('reminders:seminars', ['--days' => 1, '--sync' => true])->assertOk();
+
+    Queue::assertNotPushed(SendSpeakerReminderJob::class);
+    Mail::assertQueued(SpeakerSeminarReminder::class);
 });
