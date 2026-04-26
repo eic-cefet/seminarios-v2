@@ -25,6 +25,7 @@ function fullPayload(array $overrides = []): array
         'announcements' => true,
         'certificate_ready' => true,
         'seminar_rescheduled' => true,
+        'workshop_announcements' => true,
     ], $overrides);
 }
 
@@ -50,7 +51,8 @@ it('returns a default preference payload when none exists', function () {
         ->assertJsonPath('data.evaluationPrompt', true)
         ->assertJsonPath('data.announcements', true)
         ->assertJsonPath('data.certificateReady', true)
-        ->assertJsonPath('data.seminarRescheduled', true);
+        ->assertJsonPath('data.seminarRescheduled', true)
+        ->assertJsonPath('data.workshopAnnouncements', true);
 });
 
 it('returns existing preference with filters', function () {
@@ -175,7 +177,21 @@ it('rejects missing transactional flags', function () {
             'announcements',
             'certificate_ready',
             'seminar_rescheduled',
+            'workshop_announcements',
         ]);
+});
+
+it('persists the workshop_announcements preference', function () {
+    $user = User::factory()->create();
+
+    $this->actingAs($user)
+        ->putJson('/api/profile/alert-preferences', fullPayload([
+            'workshop_announcements' => false,
+        ]))
+        ->assertOk()
+        ->assertJsonPath('data.workshopAnnouncements', false);
+
+    expect($user->fresh()->alertPreference->workshop_announcements)->toBeFalse();
 });
 
 it('records an audit log entry on preference update', function () {

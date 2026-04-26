@@ -24,6 +24,7 @@ class AlertPreferenceResource extends JsonResource
             'seminarReminder24h' => (bool) $this->seminar_reminder_24h,
             'evaluationPrompt' => (bool) $this->evaluation_prompt,
             'announcements' => (bool) $this->announcements,
+            'workshopAnnouncements' => (bool) $this->workshop_announcements,
             'certificateReady' => (bool) $this->certificate_ready,
             'seminarRescheduled' => (bool) $this->seminar_rescheduled,
         ];

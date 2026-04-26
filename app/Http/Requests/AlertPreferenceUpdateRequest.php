@@ -28,6 +28,7 @@ class AlertPreferenceUpdateRequest extends FormRequest
             'announcements' => ['required', 'boolean'],
             'certificate_ready' => ['required', 'boolean'],
             'seminar_rescheduled' => ['required', 'boolean'],
+            'workshop_announcements' => ['required', 'boolean'],
         ];
     }
 }
