@@ -31,16 +31,10 @@ class IpHasher
 
     public function salt(): string
     {
-        $salt = (string) config('audit.hash_salt');
+        $salt = Str::after((string) config('app.key', ''), 'base64:');
 
         if ($salt === '') {
-            $salt = Str::after((string) config('app.key', ''), 'base64:');
-        }
-
-        if ($salt === '') {
-            throw new \RuntimeException(
-                'audit.hash_salt is empty — set AUDIT_HASH_SALT or APP_KEY before hashing.'
-            );
+            throw new \RuntimeException('APP_KEY is empty — cannot derive audit hash salt.');
         }
 
         return $salt;

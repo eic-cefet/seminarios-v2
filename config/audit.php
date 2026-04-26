@@ -1,8 +1,6 @@
 <?php
 
 return [
-    'hash_salt' => env('AUDIT_HASH_SALT'),
-
     'retention' => [
         'default' => 90,
         'security' => 365,

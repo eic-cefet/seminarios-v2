@@ -3,7 +3,7 @@
 use App\Services\IpHasher;
 
 beforeEach(function () {
-    config(['audit.hash_salt' => 'test-salt-2026']);
+    config(['app.key' => 'base64:dGVzdC1zYWx0LTIwMjY=']);
 });
 
 it('produces deterministic hash for the same /24 network', function () {
@@ -51,23 +51,19 @@ it('returns null when hashing an empty or null opaque value', function () {
         ->and($hasher->hashOpaque(''))->toBeNull();
 });
 
-it('throws when neither audit.hash_salt nor app.key is set', function () {
-    config(['audit.hash_salt' => '', 'app.key' => '']);
+it('throws when app.key is empty', function () {
+    config(['app.key' => '']);
 
     expect(fn () => (new IpHasher)->hash('192.168.1.1'))
-        ->toThrow(RuntimeException::class, 'audit.hash_salt is empty');
+        ->toThrow(RuntimeException::class, 'APP_KEY is empty');
 });
 
-it('falls back to app.key with the base64 prefix stripped', function () {
-    config(['audit.hash_salt' => '', 'app.key' => 'base64:c29tZS1zZWNyZXQ=']);
+it('strips the base64 prefix from app.key when deriving the salt', function () {
+    config(['app.key' => 'base64:c29tZS1zZWNyZXQ=']);
+    $withPrefix = (new IpHasher)->hash('192.168.1.10');
 
-    $hasher = new IpHasher;
+    config(['app.key' => 'c29tZS1zZWNyZXQ=']);
+    $withoutPrefix = (new IpHasher)->hash('192.168.1.10');
 
-    // hash_hmac with the decoded key prefix stripped should match
-    // an explicit hash using that same trailing string as salt.
-    config(['audit.hash_salt' => 'c29tZS1zZWNyZXQ=']);
-    $expected = $hasher->hash('192.168.1.10');
-
-    config(['audit.hash_salt' => '', 'app.key' => 'base64:c29tZS1zZWNyZXQ=']);
-    expect($hasher->hash('192.168.1.10'))->toBe($expected);
+    expect($withPrefix)->toBe($withoutPrefix);
 });
