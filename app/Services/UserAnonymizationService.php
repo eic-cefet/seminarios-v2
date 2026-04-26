@@ -83,21 +83,55 @@ class UserAnonymizationService
                     });
             })
             ->lazyById()
-            ->each(function (AuditLog $log): void {
-                $data = $log->event_data ?? [];
-                foreach (['old_values', 'new_values'] as $bucket) {
-                    if (! isset($data[$bucket]) || ! is_array($data[$bucket])) {
-                        continue;
-                    }
-                    foreach (self::SCRUB_FIELDS as $field) {
-                        if (array_key_exists($field, $data[$bucket])) {
-                            $data[$bucket][$field] = self::SCRUB_TOKEN;
-                        }
-                    }
+            ->each(function (AuditLog $log) use ($user): void {
+                $data = $log->event_data;
+                if (! is_array($data)) {
+                    return;
                 }
-                $log->event_data = $data;
-                $log->saveQuietly();
+
+                $scrubbed = $this->scrubRecursive($data, $user);
+
+                if ($scrubbed !== $data) {
+                    $log->event_data = $scrubbed;
+                    $log->saveQuietly();
+                }
             });
+    }
+
+    /**
+     * @param  array<int|string, mixed>  $data
+     * @return array<int|string, mixed>
+     */
+    private function scrubRecursive(array $data, User $user): array
+    {
+        foreach ($data as $key => $value) {
+            if (is_array($value)) {
+                $data[$key] = $this->scrubRecursive($value, $user);
+
+                continue;
+            }
+
+            if ($this->isScrubbableField($key)) {
+                $data[$key] = self::SCRUB_TOKEN;
+
+                continue;
+            }
+
+            if (is_string($value) && strcasecmp($value, $user->email) === 0) {
+                $data[$key] = self::SCRUB_TOKEN;
+            }
+        }
+
+        return $data;
+    }
+
+    private function isScrubbableField(int|string $key): bool
+    {
+        if (! is_string($key)) {
+            return false;
+        }
+
+        return in_array(strtolower($key), self::SCRUB_FIELDS, true);
     }
 
     private function deleteIdentities(User $user): void
