@@ -425,6 +425,15 @@ describe('Admin API endpoints', () => {
                 expect.objectContaining({ method: 'DELETE' }),
             );
         });
+
+        it('announce sends POST to /workshops/{id}/announce', async () => {
+            mockSuccess({ message: 'Workshop anunciado com sucesso.', data: { id: 7 } });
+            await workshopsApi.announce(7);
+            expect(fetchSpy).toHaveBeenCalledWith(
+                expect.stringContaining('/workshops/7/announce'),
+                expect.objectContaining({ method: 'POST' }),
+            );
+        });
     });
 
     describe('dashboardApi extended', () => {
