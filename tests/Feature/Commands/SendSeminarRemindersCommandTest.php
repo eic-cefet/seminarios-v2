@@ -3,6 +3,7 @@
 use App\Enums\AuditEvent;
 use App\Enums\CommunicationCategory;
 use App\Jobs\SendSeminarReminderJob;
+use App\Jobs\SendSpeakerReminderJob;
 use App\Models\AlertPreference;
 use App\Models\AuditLog;
 use App\Models\Registration;
@@ -68,4 +69,49 @@ it('rejects --days values other than 1 or 7', function () {
     $this->artisan('reminders:seminars', ['--days' => 3])
         ->expectsOutput('--days must be 1 or 7')
         ->assertFailed();
+});
+
+it('also dispatches speaker reminders for tomorrow seminars on --days=1', function () {
+    Queue::fake();
+    $speaker = User::factory()->create();
+    $seminar = Seminar::factory()->create(['scheduled_at' => now()->addDay()->setTime(10, 0), 'active' => true]);
+    $seminar->speakers()->attach($speaker->id);
+
+    $this->artisan('reminders:seminars', ['--days' => 1])->assertOk();
+
+    Queue::assertPushed(SendSpeakerReminderJob::class, fn ($job) => $job->speaker->is($speaker) && $job->seminarId === $seminar->id
+    );
+});
+
+it('does not dispatch speaker reminders on --days=7', function () {
+    Queue::fake();
+    $speaker = User::factory()->create();
+    $seminar = Seminar::factory()->create(['scheduled_at' => now()->addDays(7), 'active' => true]);
+    $seminar->speakers()->attach($speaker->id);
+
+    $this->artisan('reminders:seminars', ['--days' => 7])->assertOk();
+
+    Queue::assertNotPushed(SendSpeakerReminderJob::class);
+});
+
+it('does not dispatch speaker reminders for already-stamped pivot rows', function () {
+    Queue::fake();
+    $speaker = User::factory()->create();
+    $seminar = Seminar::factory()->create(['scheduled_at' => now()->addDay(), 'active' => true]);
+    $seminar->speakers()->attach($speaker->id, ['reminder_24h_sent_at' => now()->subHour()]);
+
+    $this->artisan('reminders:seminars', ['--days' => 1])->assertOk();
+
+    Queue::assertNotPushed(SendSpeakerReminderJob::class);
+});
+
+it('does not dispatch speaker reminders for inactive seminars', function () {
+    Queue::fake();
+    $speaker = User::factory()->create();
+    $seminar = Seminar::factory()->create(['scheduled_at' => now()->addDay(), 'active' => false]);
+    $seminar->speakers()->attach($speaker->id);
+
+    $this->artisan('reminders:seminars', ['--days' => 1])->assertOk();
+
+    Queue::assertNotPushed(SendSpeakerReminderJob::class);
 });

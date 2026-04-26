@@ -8,13 +8,16 @@ use App\Enums\AuditEvent;
 use App\Enums\AuditEventType;
 use App\Enums\CommunicationCategory;
 use App\Jobs\SendSeminarReminderJob;
+use App\Jobs\SendSpeakerReminderJob;
 use App\Mail\SeminarReminder;
 use App\Mail\SeminarReminder7d;
 use App\Models\AuditLog;
 use App\Models\Registration;
 use App\Models\User;
 use Illuminate\Console\Command;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 class SendSeminarRemindersCommand extends Command
 {
@@ -75,32 +78,58 @@ class SendSeminarRemindersCommand extends Command
 
         if ($registrations->isEmpty()) {
             $this->info('No reminders to send.');
+        } else {
+            $dispatched = $this->dispatchGroupedByUser(
+                $registrations,
+                SendSeminarReminderJob::class,
+                'users to remind',
+                fn (User $user, Collection $ids) => new SendSeminarReminderJob(
+                    user: $user,
+                    registrationIds: $ids,
+                    category: $category,
+                    reminderColumn: $reminderColumn,
+                    mailableClass: $mailableClass,
+                ),
+            );
 
-            return self::SUCCESS;
+            $this->info("Dispatched {$dispatched} reminder(s).");
+
+            if ($dispatched > 0) {
+                AuditLog::record($auditEvent, AuditEventType::System, eventData: [
+                    'dispatched' => $dispatched,
+                    'days' => $days,
+                ]);
+            }
         }
 
-        $dispatched = $this->dispatchGroupedByUser(
-            $registrations,
-            SendSeminarReminderJob::class,
-            'users to remind',
-            fn (User $user, Collection $ids) => new SendSeminarReminderJob(
-                user: $user,
-                registrationIds: $ids,
-                category: $category,
-                reminderColumn: $reminderColumn,
-                mailableClass: $mailableClass,
-            ),
-        );
-
-        $this->info("Dispatched {$dispatched} reminder(s).");
-
-        if ($dispatched > 0) {
-            AuditLog::record($auditEvent, AuditEventType::System, eventData: [
-                'dispatched' => $dispatched,
-                'days' => $days,
-            ]);
+        if ($days === 1) {
+            $speakerCount = $this->dispatchSpeakerReminders($windowStart, $windowEnd);
+            $this->info("Dispatched {$speakerCount} speaker reminder(s).");
         }
 
         return self::SUCCESS;
+    }
+
+    private function dispatchSpeakerReminders(Carbon $windowStart, Carbon $windowEnd): int
+    {
+        $rows = DB::table('seminar_speaker')
+            ->join('seminars', 'seminars.id', '=', 'seminar_speaker.seminar_id')
+            ->where('seminars.active', true)
+            ->whereBetween('seminars.scheduled_at', [$windowStart, $windowEnd])
+            ->whereNull('seminar_speaker.reminder_24h_sent_at')
+            ->select('seminar_speaker.user_id', 'seminar_speaker.seminar_id')
+            ->get();
+
+        $count = 0;
+        foreach ($rows as $row) {
+            $user = User::find($row->user_id);
+            if (! $user) {
+                continue; // @codeCoverageIgnore
+            }
+            SendSpeakerReminderJob::dispatch($user, (int) $row->seminar_id);
+            $count++;
+        }
+
+        return $count;
     }
 }
