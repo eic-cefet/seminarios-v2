@@ -189,12 +189,12 @@ class AdminUserController extends Controller
     {
         Gate::authorize('delete', $user);
 
+        $user->delete();
+
         AuditLog::record(
             event: AuditEvent::UserDeletedByAdmin,
             auditable: $user,
         );
-
-        $user->delete();
 
         return response()->json([
             'message' => 'Usuário excluído com sucesso',
