@@ -34,7 +34,8 @@ describe('MessageSent audit listener', function () {
         expect($logs)->toHaveCount(1);
         expect($logs->first()->event_data['mail'])->toBe(CertificateGenerated::class);
         expect($logs->first()->ref_id)->toBe('certificate:'.$registration->id);
-        expect($logs->first()->event_data['to'])->toBe([$user->email]);
+        expect($logs->first()->event_data['to'])->each->toMatch('/^[a-f0-9]{64}$/');
+        expect($logs->first()->event_data['recipient_count'])->toBe(1);
     });
 
     it('dedupes audits for the same logical email via the ref_id unique index', function () {
