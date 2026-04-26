@@ -10,6 +10,7 @@ use App\Models\Seminar;
 use App\Models\User;
 use App\Notifications\SeminarRescheduledNotification;
 use App\Services\SeminarRescheduleNotifier;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Notification;
 
@@ -158,5 +159,19 @@ describe('SeminarRescheduleNotifier', function () {
         app(SeminarRescheduleNotifier::class)->notify($seminar, $oldAt);
 
         Mail::assertQueued(SpeakerSeminarRescheduled::class, fn ($m) => $m->speaker->is($speaker));
+    });
+
+    it('clears reminder_24h_sent_at on every speaker so they get a fresh reminder for the new date', function () {
+        Mail::fake();
+        $speaker = User::factory()->create();
+        $seminar = Seminar::factory()->create();
+        $seminar->speakers()->attach($speaker->id, ['reminder_24h_sent_at' => now()->subHour()]);
+
+        app(SeminarRescheduleNotifier::class)->notify($seminar, $seminar->scheduled_at->copy()->subDay());
+
+        $stamp = DB::table('seminar_speaker')
+            ->where(['seminar_id' => $seminar->id, 'user_id' => $speaker->id])
+            ->value('reminder_24h_sent_at');
+        expect($stamp)->toBeNull();
     });
 });

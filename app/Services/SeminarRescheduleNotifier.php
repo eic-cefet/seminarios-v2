@@ -25,6 +25,10 @@ class SeminarRescheduleNotifier
         $registrations = DB::transaction(function () use ($seminar, $oldScheduledAt) {
             $seminar->registrations()->update(['reminder_sent' => false, 'reminder_7d_sent' => false]);
 
+            DB::table('seminar_speaker')
+                ->where('seminar_id', $seminar->id)
+                ->update(['reminder_24h_sent_at' => null]);
+
             $registrations = $seminar->registrations()->with('user.alertPreference')->get();
 
             AuditLog::record(AuditEvent::SeminarRescheduled, AuditEventType::System, $seminar, [
