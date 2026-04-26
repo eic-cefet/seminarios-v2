@@ -13,6 +13,22 @@ enum AuditEvent: string
     case UserSocialLogin = 'user.social_login';
     case UserCommunicationPreferencesUpdated = 'user.communication_preferences.updated';
 
+    // Auth (additions)
+    case UserLoginFailed = 'user.login_failed';
+    case UserPasswordChanged = 'user.password_changed';
+
+    // Account management (admin-initiated)
+    case UserPasswordResetByAdmin = 'user.password_reset_by_admin';
+    case UserRoleAssigned = 'user.role_assigned';
+    case UserRoleRevoked = 'user.role_revoked';
+    case UserViewedByAdmin = 'admin.user_viewed';
+    case UserDeletedByAdmin = 'admin.user_deleted';
+    case UserRestoredByAdmin = 'admin.user_restored';
+    case LgpdRecordViewedByAdmin = 'admin.lgpd_record_viewed';
+
+    // Security
+    case AuthorizationDenied = 'security.authorization_denied';
+
     // Presence
     case PresenceRegistered = 'presence.registered';
 
