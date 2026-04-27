@@ -44,7 +44,7 @@ it('skips when no pivot row exists', function () {
     Mail::assertNothingQueued();
 });
 
-it('reports zero when no attendees were present', function () {
+it('skips when no attendees were present, but stamps recap_sent_at to avoid retry', function () {
     Mail::fake();
     $speaker = User::factory()->create();
     $seminar = Seminar::factory()->create();
@@ -52,5 +52,8 @@ it('reports zero when no attendees were present', function () {
 
     (new SendSpeakerRecapJob($speaker, $seminar->id))->handle();
 
-    Mail::assertQueued(SpeakerSeminarRecap::class, fn ($m) => $m->attendeesPresent === 0);
+    Mail::assertNothingQueued();
+    expect(DB::table('seminar_speaker')
+        ->where(['seminar_id' => $seminar->id, 'user_id' => $speaker->id])
+        ->value('recap_sent_at'))->not->toBeNull();
 });
