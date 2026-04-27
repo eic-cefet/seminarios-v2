@@ -152,6 +152,85 @@ describe('SystemInfo page', function () {
         expect(screen.getAllByText('America/Sao_Paulo').length).toBeGreaterThan(0);
     });
 
+    it('renders edge-case formatting (no memory limit, zero bytes, empty scheduler, optional fields)', async () => {
+        vi.mocked(systemInfoApi.get).mockResolvedValue({
+            data: {
+                ...mockPayload.data,
+                memory: {
+                    limit_bytes: -1,
+                    current_bytes: 0,
+                    peak_bytes: 0,
+                },
+                database: {
+                    driver: 'mysql',
+                    database: null,
+                    host: null,
+                    version: '8.0.36',
+                },
+                scheduler: [],
+            },
+        });
+
+        render(<SystemInfo />);
+
+        await waitFor(() => {
+            expect(screen.getByText('Sem limite')).toBeInTheDocument();
+        });
+
+        // formatBytes(0) → "0 B"
+        expect(screen.getAllByText('0 B').length).toBeGreaterThan(0);
+        // empty scheduler branch
+        expect(screen.getByText(/nenhuma rotina agendada/i)).toBeInTheDocument();
+        // null host/database fall back to em-dash
+        expect(screen.getAllByText('—').length).toBeGreaterThanOrEqual(2);
+    });
+
+    it('renders scheduler tasks with missing next_run and without_overlapping=false', async () => {
+        vi.mocked(systemInfoApi.get).mockResolvedValue({
+            data: {
+                ...mockPayload.data,
+                scheduler: [
+                    {
+                        command: 'artisan one-off:task',
+                        description: null,
+                        expression: '*/5 * * * *',
+                        timezone: 'UTC',
+                        without_overlapping: false,
+                        on_one_server: false,
+                        next_run_at: null,
+                    },
+                ],
+            },
+        });
+
+        render(<SystemInfo />);
+
+        await waitFor(() => {
+            expect(screen.getByText('artisan one-off:task')).toBeInTheDocument();
+        });
+
+        expect(screen.queryByText(/sem sobreposição/i)).not.toBeInTheDocument();
+        expect(screen.queryByText(/servidor único/i)).not.toBeInTheDocument();
+    });
+
+    it('renders inverse boolean labels for debug=false and opcache_enabled=true', async () => {
+        vi.mocked(systemInfoApi.get).mockResolvedValue({
+            data: {
+                ...mockPayload.data,
+                runtime: { ...mockPayload.data.runtime, debug: false },
+                php_config: { ...mockPayload.data.php_config, opcache_enabled: true },
+            },
+        });
+
+        render(<SystemInfo />);
+
+        await waitFor(() => {
+            expect(screen.getByText('Desativado')).toBeInTheDocument();
+        });
+
+        expect(screen.getByText('Ativado')).toBeInTheDocument();
+    });
+
     it('renders an error state when the request fails', async () => {
         vi.mocked(systemInfoApi.get).mockRejectedValue(new Error('boom'));
 

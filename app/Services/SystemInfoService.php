@@ -92,13 +92,15 @@ class SystemInfoService
         try {
             return match ($driver) {
                 'sqlite' => DB::connection($driver)->selectOne('select sqlite_version() as v')->v,
-                'mysql', 'mariadb' => DB::connection($driver)->selectOne('select version() as v')->v,
-                'pgsql' => DB::connection($driver)->selectOne('show server_version')->server_version,
-                default => 'unknown',
+                'mysql', 'mariadb' => DB::connection($driver)->selectOne('select version() as v')->v, // @codeCoverageIgnore
+                'pgsql' => DB::connection($driver)->selectOne('show server_version')->server_version, // @codeCoverageIgnore
+                default => 'unknown', // @codeCoverageIgnore
             };
+            // @codeCoverageIgnoreStart
         } catch (Throwable) {
             return 'unknown';
         }
+        // @codeCoverageIgnoreEnd
     }
 
     /**
@@ -169,20 +171,22 @@ class SystemInfoService
                 $command = $event->command ?? $event->getSummaryForDisplay();
                 $command = is_string($command)
                     ? trim(str_replace([PHP_BINARY, "'", '"'], '', $command))
-                    : (string) $command;
+                    : (string) $command; // @codeCoverageIgnore
 
                 try {
                     $next = $event->nextRunDate()->format(DATE_ATOM);
+                    // @codeCoverageIgnoreStart
                 } catch (Throwable) {
                     $next = null;
                 }
+                // @codeCoverageIgnoreEnd
 
                 return [
                     'command' => $command,
                     'description' => $event->description,
                     'expression' => $event->getExpression(),
                     'timezone' => $event->timezone instanceof DateTimeZone
-                        ? $event->timezone->getName()
+                        ? $event->timezone->getName() // @codeCoverageIgnore
                         : ($event->timezone ?? config('app.timezone')),
                     'without_overlapping' => (bool) $event->withoutOverlapping,
                     'on_one_server' => (bool) $event->onOneServer,

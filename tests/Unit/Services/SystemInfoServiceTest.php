@@ -129,6 +129,56 @@ it('returns PHP config values with parsed byte sizes', function () {
     expect($info['php_config']['opcache_enabled'])->toBeBool();
 });
 
+it('parses gigabyte memory limits', function () {
+    $original = ini_get('memory_limit');
+    ini_set('memory_limit', '2G');
+
+    try {
+        $info = $this->service->collect();
+        expect($info['memory']['limit_bytes'])->toBe(2 * 1024 * 1024 * 1024);
+    } finally {
+        ini_set('memory_limit', (string) $original);
+    }
+});
+
+it('parses kilobyte memory limits', function () {
+    $original = ini_get('memory_limit');
+    // Must be above current process usage; 512000K ≈ 500MB
+    ini_set('memory_limit', '512000K');
+
+    try {
+        $info = $this->service->collect();
+        expect($info['memory']['limit_bytes'])->toBe(512000 * 1024);
+    } finally {
+        ini_set('memory_limit', (string) $original);
+    }
+});
+
+it('treats unlimited memory_limit (-1) as -1 bytes', function () {
+    $original = ini_get('memory_limit');
+    ini_set('memory_limit', '-1');
+
+    try {
+        $info = $this->service->collect();
+        expect($info['memory']['limit_bytes'])->toBe(-1);
+    } finally {
+        ini_set('memory_limit', (string) $original);
+    }
+});
+
+it('parses raw byte memory limits without unit suffix', function () {
+    $original = ini_get('memory_limit');
+    // 536870912 bytes = 512MB; above the test process's current usage
+    ini_set('memory_limit', '536870912');
+
+    try {
+        $info = $this->service->collect();
+        expect($info['memory']['limit_bytes'])->toBe(536870912);
+    } finally {
+        ini_set('memory_limit', (string) $original);
+    }
+});
+
 it('never exposes secrets like the app key or db password', function () {
     $info = $this->service->collect();
     $flat = json_encode($info);
