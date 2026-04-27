@@ -1,4 +1,4 @@
-import { AdminApiError, dashboardApi, usersApi, locationsApi, subjectsApi, workshopsApi, registrationsApi, seminarsApi, presenceLinkApi, aiApi, apiTokensApi, dropdownApi, auditLogsApi, adminLgpdApi } from './adminClient';
+import { AdminApiError, dashboardApi, usersApi, locationsApi, subjectsApi, workshopsApi, registrationsApi, seminarsApi, presenceLinkApi, aiApi, apiTokensApi, dropdownApi, auditLogsApi, adminLgpdApi, systemInfoApi } from './adminClient';
 import { getCookie } from '@shared/api/httpUtils';
 
 vi.mock('@shared/api/httpUtils', async (importOriginal) => {
@@ -957,6 +957,19 @@ describe('Admin API endpoints', () => {
                     method: 'POST',
                     body: JSON.stringify({ reason: 'ANPD #123' }),
                 }),
+            );
+        });
+    });
+
+    describe('systemInfoApi', () => {
+        it('get calls GET /system/info', async () => {
+            mockSuccess({ data: { runtime: {}, server: {}, memory: {}, database: {}, drivers: {}, storage: {}, extensions: [], php_config: {}, scheduler: [] } });
+
+            await systemInfoApi.get();
+
+            expect(fetchSpy).toHaveBeenCalledWith(
+                expect.stringContaining('/system/info'),
+                expect.any(Object),
             );
         });
     });
