@@ -45,6 +45,10 @@ class SendSpeakerRecapJob implements ShouldQueue
             ->where('present', true)
             ->count();
 
+        if ($count === 0) {
+            return;
+        }
+
         Mail::to($this->speaker)->queue(new SpeakerSeminarRecap($this->speaker, $seminar, $count));
     }
 }

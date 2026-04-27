@@ -19,6 +19,12 @@ class SendSpeakerRecapsCommand extends Command
 
     protected $description = 'Send attendance recap emails to speakers two days after their seminar';
 
+    /**
+     * Earliest scheduled_at eligible for a recap. Seminars on or before this date
+     * predate the recap feature and must not receive backfilled emails on rollout.
+     */
+    public const SCHEDULED_AFTER = '2026-04-26 23:59:59';
+
     public function handle(): int
     {
         $this->setAuditContext();
@@ -30,6 +36,7 @@ class SendSpeakerRecapsCommand extends Command
             ->whereNull('seminar_speaker.recap_sent_at')
             ->whereNotNull('seminars.scheduled_at')
             ->where('seminars.scheduled_at', '<=', $cutoff)
+            ->where('seminars.scheduled_at', '>', self::SCHEDULED_AFTER)
             ->select('seminar_speaker.user_id', 'seminar_speaker.seminar_id')
             ->get();
 
