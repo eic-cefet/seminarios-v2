@@ -38,11 +38,25 @@ class SystemInfoService
         return [
             'php_version' => PHP_VERSION,
             'laravel_version' => app()->version(),
+            'app_version' => $this->appVersion(),
             'environment' => config('app.env'),
             'debug' => (bool) config('app.debug'),
             'timezone' => config('app.timezone'),
             'locale' => config('app.locale'),
         ];
+    }
+
+    private function appVersion(): string
+    {
+        $path = base_path('VERSION');
+
+        if (! is_file($path)) {
+            return 'dev';
+        }
+
+        $content = trim((string) @file_get_contents($path));
+
+        return $content === '' ? 'dev' : $content;
     }
 
     /**
