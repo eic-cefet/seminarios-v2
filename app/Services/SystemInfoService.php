@@ -178,7 +178,12 @@ class SystemInfoService
         if (! $this->scheduleLoaded && empty($schedule->events())) {
             $consoleRoutes = base_path('routes/console.php');
             if (is_file($consoleRoutes)) {
-                require $consoleRoutes;
+                // require_once (not require) — under Octane / persistent
+                // workers, two concurrent cache misses could both pass the
+                // empty() check; require_once dedupes by absolute path so
+                // the second call is a no-op and we don't double-register
+                // every scheduled event into the shared singleton.
+                require_once $consoleRoutes;
             }
         }
         $this->scheduleLoaded = true;
