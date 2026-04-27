@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\AdminPresenceLinkController;
 use App\Http\Controllers\Admin\AdminRegistrationController;
 use App\Http\Controllers\Admin\AdminSeminarController;
 use App\Http\Controllers\Admin\AdminSubjectController;
+use App\Http\Controllers\Admin\AdminSystemInfoController;
 use App\Http\Controllers\Admin\AdminUserController;
 use App\Http\Controllers\Admin\AdminWorkshopController;
 use App\Http\Controllers\Admin\AiTextController;
@@ -70,6 +71,9 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function ()
     Route::get('/audit-logs/summary', [AdminAuditLogController::class, 'summary']);
     Route::get('/audit-logs/export', [AdminAuditLogController::class, 'export']);
     Route::get('/audit-logs/event-names', [AdminAuditLogController::class, 'eventNames']);
+
+    // System info (admin-only — see controller-level role check)
+    Route::get('/system/info', [AdminSystemInfoController::class, 'show']);
 
     // API Tokens
     Route::apiResource('api-tokens', AdminApiTokenController::class)
