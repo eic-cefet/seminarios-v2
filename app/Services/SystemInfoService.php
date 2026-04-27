@@ -5,13 +5,12 @@ namespace App\Services;
 use DateTimeZone;
 use Illuminate\Console\Scheduling\Event;
 use Illuminate\Console\Scheduling\Schedule;
-use Illuminate\Contracts\Console\Kernel as ConsoleKernel;
 use Illuminate\Support\Facades\DB;
 use Throwable;
 
 class SystemInfoService
 {
-    private static bool $consoleBooted = false;
+    private static bool $scheduleLoaded = false;
 
     /**
      * @return array<string, mixed>
@@ -164,16 +163,21 @@ class SystemInfoService
      */
     private function scheduler(): array
     {
-        // routes/console.php is only loaded by the console kernel; bootstrap it
-        // so Schedule::events() is populated during HTTP requests too.
-        // Guard against double-registration on cache miss within the same
-        // PHP-FPM worker — calling bootstrap() twice re-binds schedule events.
-        if (! self::$consoleBooted) {
-            app(ConsoleKernel::class)->bootstrap();
-            self::$consoleBooted = true;
-        }
-
         $schedule = app(Schedule::class);
+
+        // routes/console.php is only loaded by the console kernel during normal
+        // HTTP requests, so the Schedule singleton is empty here. Source the
+        // file directly into this scope — it uses the Schedule facade, which
+        // resolves the same singleton — and guard against double-registration
+        // on cache miss within the same PHP-FPM worker. Skip when the kernel
+        // has already populated the schedule (CLI / tests / queue workers).
+        if (! self::$scheduleLoaded && empty($schedule->events())) {
+            $consoleRoutes = base_path('routes/console.php');
+            if (is_file($consoleRoutes)) {
+                require $consoleRoutes;
+            }
+        }
+        self::$scheduleLoaded = true;
 
         return collect($schedule->events())
             ->map(function (Event $event): array {
