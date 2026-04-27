@@ -10,7 +10,7 @@ use Throwable;
 
 class SystemInfoService
 {
-    private static bool $scheduleLoaded = false;
+    private bool $scheduleLoaded = false;
 
     /**
      * @return array<string, mixed>
@@ -171,13 +171,17 @@ class SystemInfoService
         // resolves the same singleton — and guard against double-registration
         // on cache miss within the same PHP-FPM worker. Skip when the kernel
         // has already populated the schedule (CLI / tests / queue workers).
-        if (! self::$scheduleLoaded && empty($schedule->events())) {
+        // The empty-events check is the real idempotency guard: it stays
+        // accurate across instances because Schedule is a container singleton.
+        // The instance flag is a belt-and-braces against accidentally calling
+        // scheduler() twice on the same service instance.
+        if (! $this->scheduleLoaded && empty($schedule->events())) {
             $consoleRoutes = base_path('routes/console.php');
             if (is_file($consoleRoutes)) {
                 require $consoleRoutes;
             }
         }
-        self::$scheduleLoaded = true;
+        $this->scheduleLoaded = true;
 
         return collect($schedule->events())
             ->map(function (Event $event): array {
