@@ -51,8 +51,34 @@ describe('DropdownPortal', () => {
         );
 
         const portal = screen.getByText('Content').parentElement;
-        expect(portal?.style.position).toBe('absolute');
+        expect(portal?.style.position).toBe('fixed');
         expect(portal?.style.width).toBe('200px');
+    });
+
+    it('portals into the nearest [role="dialog"] ancestor when present', () => {
+        const dialog = document.createElement('div');
+        dialog.setAttribute('role', 'dialog');
+        document.body.appendChild(dialog);
+
+        const anchor = document.createElement('div');
+        anchor.getBoundingClientRect = vi.fn(() => ({
+            top: 0, left: 0, bottom: 0, right: 0, width: 100, height: 30, x: 0, y: 0, toJSON: () => {},
+        }));
+        dialog.appendChild(anchor);
+
+        const ref = createRef<HTMLDivElement>();
+        Object.defineProperty(ref, 'current', { value: anchor, writable: true });
+
+        render(
+            <DropdownPortal anchorRef={ref} isOpen={true}>
+                <div data-testid="dropdown-content">Inside Dialog</div>
+            </DropdownPortal>,
+        );
+
+        const content = screen.getByTestId('dropdown-content');
+        expect(dialog.contains(content)).toBe(true);
+
+        document.body.removeChild(dialog);
     });
 
     it('handles anchor becoming null during scroll/resize', () => {
@@ -76,17 +102,16 @@ describe('DropdownPortal', () => {
         expect(screen.getByText('Content')).toBeInTheDocument();
     });
 
-    it('renders nothing when anchorRef.current is null and isOpen is true', () => {
+    it('renders nothing when anchorRef.current is null', () => {
         const ref = createRef<HTMLDivElement>();
-        // ref.current is null by default
+        // ref.current is null by default — without an anchor we cannot resolve a
+        // container, so the portal stays unmounted.
         render(
             <DropdownPortal anchorRef={ref} isOpen={true}>
                 <div>Should not position</div>
             </DropdownPortal>,
         );
 
-        // The useLayoutEffect returns early when anchorRef.current is null,
-        // but the portal still renders (isOpen is true)
-        expect(screen.getByText('Should not position')).toBeInTheDocument();
+        expect(screen.queryByText('Should not position')).not.toBeInTheDocument();
     });
 });

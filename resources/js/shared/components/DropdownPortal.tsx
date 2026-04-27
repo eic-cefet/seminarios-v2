@@ -13,18 +13,30 @@ export function DropdownPortal({
     isOpen,
 }: DropdownPortalProps) {
     const [position, setPosition] = useState({ top: 0, left: 0, width: 0 });
+    const [container, setContainer] = useState<HTMLElement | null>(null);
 
     useLayoutEffect(() => {
         if (!isOpen || !anchorRef.current) return;
+
+        // When the anchor lives inside a Radix Dialog (modal), portalling to
+        // document.body lands outside the dialog's interaction zone — Radix's
+        // modal pointer-events lock and onPointerDownOutside then swallow clicks,
+        // and scrolling the dropdown is blocked. Portalling into the dialog
+        // itself keeps the dropdown inside the modal's allowed surface.
+        const dialog =
+            anchorRef.current.closest<HTMLElement>('[role="dialog"]');
+        setContainer(dialog ?? document.body);
 
         const updatePosition = () => {
             const anchor = anchorRef.current;
             if (!anchor) return;
 
+            // Viewport-fixed positioning works regardless of which container we
+            // portalled into and survives scrolling without recomputing offsets.
             const rect = anchor.getBoundingClientRect();
             setPosition({
-                top: rect.bottom + window.scrollY + 4,
-                left: rect.left + window.scrollX,
+                top: rect.bottom + 4,
+                left: rect.left,
                 width: rect.width,
             });
         };
@@ -40,12 +52,12 @@ export function DropdownPortal({
         };
     }, [isOpen, anchorRef]);
 
-    if (!isOpen) return null;
+    if (!isOpen || !container) return null;
 
     return createPortal(
         <div
             style={{
-                position: "absolute",
+                position: "fixed",
                 top: position.top,
                 left: position.left,
                 width: position.width,
@@ -54,6 +66,6 @@ export function DropdownPortal({
         >
             {children}
         </div>,
-        document.body,
+        container,
     );
 }
