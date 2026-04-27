@@ -5,6 +5,7 @@ namespace App\Services;
 use DateTimeZone;
 use Illuminate\Console\Scheduling\Event;
 use Illuminate\Console\Scheduling\Schedule;
+use Illuminate\Contracts\Console\Kernel as ConsoleKernel;
 use Illuminate\Support\Facades\DB;
 use Throwable;
 
@@ -157,6 +158,10 @@ class SystemInfoService
      */
     private function scheduler(): array
     {
+        // routes/console.php is only loaded by the console kernel; bootstrap it
+        // so Schedule::events() is populated during HTTP requests too.
+        app(ConsoleKernel::class)->bootstrap();
+
         $schedule = app(Schedule::class);
 
         return collect($schedule->events())
