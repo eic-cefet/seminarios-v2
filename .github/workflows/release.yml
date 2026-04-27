@@ -216,6 +216,8 @@ jobs:
 
       - name: Tag the VERSION-bump commit
         if: steps.detect.outputs.version_changed == 'true'
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
           if [ ! -f VERSION ]; then
             echo "VERSION file is missing despite being in the diff — aborting."
@@ -230,7 +232,26 @@ jobs:
             echo "Tag $NEW_VERSION already exists — nothing to do."
             exit 0
           fi
-          git tag -a "$NEW_VERSION" -m "Release $NEW_VERSION"
+
+          # Find the just-merged release PR for this version and pull its body
+          # so the tag annotation links back to the source PRs that triggered
+          # the bump (parsed from the "<!-- source-prs: ... -->" marker).
+          REL_PR=$(gh pr list --state merged --search "head:release/${NEW_VERSION}" --json number --jq '.[0].number' 2>/dev/null || echo "")
+          SRC_REFS=""
+          if [ -n "$REL_PR" ]; then
+              BODY=$(gh pr view "$REL_PR" --json body --jq .body 2>/dev/null || echo "")
+              SRC_REFS=$(echo "$BODY" | grep -oE '<!-- source-prs: [^>]*-->' | sed -E 's/<!-- source-prs: ([^>]*) *-->/\1/' | head -1 | sed 's/ *$//')
+          fi
+
+          TAG_MSG="Release ${NEW_VERSION}"
+          if [ -n "$REL_PR" ]; then
+              TAG_MSG="${TAG_MSG}"$'\n\n'"Release PR: #${REL_PR}"
+          fi
+          if [ -n "$SRC_REFS" ]; then
+              TAG_MSG="${TAG_MSG}"$'\n'"Source PRs: ${SRC_REFS}"
+          fi
+
+          git tag -a "$NEW_VERSION" -m "$TAG_MSG"
           git push origin "$NEW_VERSION"
 
       # ---------------------------------------------------------------
@@ -275,19 +296,36 @@ jobs:
           done
 
           CUM=$(cumulative_bump "${BUMPS[@]:-none}")
-          echo "Cumulative bump since $LATEST_TAG: $CUM (from PRs: $PR_NUMBERS)"
+          PR_LIST=$(echo "$PR_NUMBERS" | tr '\n' ' ' | sed 's/ *$//')
+          echo "Cumulative bump since $LATEST_TAG: $CUM (from PRs: $PR_LIST)"
           echo "bump=$CUM" >> $GITHUB_OUTPUT
+          echo "pr_numbers=$PR_LIST" >> $GITHUB_OUTPUT
 
       - name: Open the release PR
         if: steps.detect.outputs.version_changed != 'true' && steps.open-release-pr.outputs.open_count == '0' && steps.cumulative.outputs.bump != 'none'
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          PR_NUMBERS: ${{ steps.cumulative.outputs.pr_numbers }}
         run: |
           source .github/workflows/scripts/release-bump.sh
 
           CURRENT=$(tr -d '[:space:]' < VERSION 2>/dev/null || echo "v0.0.0")
           NEW_VERSION=$(bump_version "$CURRENT" "${{ steps.cumulative.outputs.bump }}")
           BRANCH="release/${NEW_VERSION}"
+
+          # Build a "#1 #2 #3" list and a markdown bullet list of the source PRs.
+          SRC_REFS=""
+          SRC_BULLETS=""
+          for N in $PR_NUMBERS; do
+              SRC_REFS="${SRC_REFS}#${N} "
+              TITLE=$(gh pr view "$N" --json title --jq .title 2>/dev/null || echo "")
+              SRC_BULLETS="${SRC_BULLETS}- #${N} ${TITLE}"$'\n'
+          done
+          SRC_REFS="${SRC_REFS% }"
+          if [ -z "$SRC_REFS" ]; then
+              SRC_REFS="(none)"
+              SRC_BULLETS="- (no source PRs detected)"
+          fi
 
           # If the branch already exists remotely (e.g. a previous run crashed
           # mid-way), abort — a human should investigate before we overwrite it.
@@ -302,9 +340,22 @@ jobs:
           git commit -m "chore(release): ${NEW_VERSION}"
           git push origin "$BRANCH"
 
+          # Title carries the source PR refs so it shows up in the changelog
+          # and on the resulting tag annotation. If the list is too long,
+          # gracefully truncate to keep the title under GitHub's limits.
+          TITLE_REFS="$SRC_REFS"
+          TITLE="chore(release): ${NEW_VERSION} (${TITLE_REFS})"
+          if [ ${#TITLE} -gt 240 ]; then
+              TITLE="chore(release): ${NEW_VERSION} (multiple PRs — see body)"
+          fi
+
           PR_BODY=$(cat <<EOF
           ## What Changed
           Bump VERSION from ${CURRENT} to ${NEW_VERSION}.
+
+          ## Source PRs
+          ${SRC_BULLETS}
+          <!-- source-prs: ${SRC_REFS} -->
 
           ## Why
           Auto-generated release PR. Merging this PR will create the \`${NEW_VERSION}\` git tag.
@@ -326,7 +377,7 @@ jobs:
           PR_URL=$(gh pr create \
               --base main \
               --head "$BRANCH" \
-              --title "chore(release): ${NEW_VERSION}" \
+              --title "$TITLE" \
               --body "$PR_BODY")
           echo "Opened release PR: $PR_URL"
 
