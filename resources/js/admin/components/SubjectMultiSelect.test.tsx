@@ -553,4 +553,64 @@ describe('SubjectMultiSelect', () => {
         // Should show the navigation helper text
         expect(screen.getByText(/Use ↑↓ para navegar/)).toBeInTheDocument();
     });
+
+    it('selects a suggestion when Enter is pressed on the option itself', async () => {
+        const onChange = vi.fn();
+        const { subjectsApi } = await import('../api/adminClient');
+        vi.mocked(subjectsApi.list).mockResolvedValue({
+            data: [{ id: 1, name: 'Algoritmos', seminars_count: 0, has_active_seminars: false }],
+            meta: { last_page: 1, current_page: 1, total: 1 } as any,
+            links: { first: '', last: '', prev: null, next: null },
+        } as any);
+
+        render(<SubjectMultiSelect value={[]} onChange={onChange} />);
+        const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+        await user.type(screen.getByPlaceholderText('Digite e pressione Enter...'), 'Al');
+        vi.advanceTimersByTime(350);
+
+        const option = await screen.findByRole('option', { name: /Algoritmos/i });
+        option.focus();
+        await user.keyboard('{Enter}');
+        expect(onChange).toHaveBeenCalledWith(['Algoritmos']);
+    });
+
+    it('selects a suggestion when Space is pressed on the option itself', async () => {
+        const onChange = vi.fn();
+        const { subjectsApi } = await import('../api/adminClient');
+        vi.mocked(subjectsApi.list).mockResolvedValue({
+            data: [{ id: 2, name: 'Redes', seminars_count: 0, has_active_seminars: false }],
+            meta: { last_page: 1, current_page: 1, total: 1 } as any,
+            links: { first: '', last: '', prev: null, next: null },
+        } as any);
+
+        render(<SubjectMultiSelect value={[]} onChange={onChange} />);
+        const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+        await user.type(screen.getByPlaceholderText('Digite e pressione Enter...'), 'Re');
+        vi.advanceTimersByTime(350);
+
+        const option = await screen.findByRole('option', { name: /Redes/i });
+        option.focus();
+        await user.keyboard(' ');
+        expect(onChange).toHaveBeenCalledWith(['Redes']);
+    });
+
+    it('ignores other keys pressed on the option', async () => {
+        const onChange = vi.fn();
+        const { subjectsApi } = await import('../api/adminClient');
+        vi.mocked(subjectsApi.list).mockResolvedValue({
+            data: [{ id: 3, name: 'Banco', seminars_count: 0, has_active_seminars: false }],
+            meta: { last_page: 1, current_page: 1, total: 1 } as any,
+            links: { first: '', last: '', prev: null, next: null },
+        } as any);
+
+        render(<SubjectMultiSelect value={[]} onChange={onChange} />);
+        const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+        await user.type(screen.getByPlaceholderText('Digite e pressione Enter...'), 'Ba');
+        vi.advanceTimersByTime(350);
+
+        const option = await screen.findByRole('option', { name: /Banco/i });
+        option.focus();
+        await user.keyboard('x');
+        expect(onChange).not.toHaveBeenCalled();
+    });
 });
