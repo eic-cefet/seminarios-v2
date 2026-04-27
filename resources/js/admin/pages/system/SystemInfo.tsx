@@ -123,6 +123,10 @@ export default function SystemInfo() {
                         label="Laravel"
                         value={info.runtime.laravel_version}
                     />
+                    <Field
+                        label="Versão do app"
+                        value={info.runtime.app_version}
+                    />
                     <Field label="Ambiente" value={info.runtime.environment} />
                     <Field
                         label="Debug"

@@ -231,3 +231,54 @@ it('never exposes secrets like the app key or db password', function () {
     expect($info['database'])->not->toHaveKey('username');
     expect($info)->not->toHaveKey('env');
 });
+
+it('reads app_version from the VERSION file at the project root', function () {
+    $path = base_path('VERSION');
+    $original = is_file($path) ? file_get_contents($path) : null;
+    file_put_contents($path, "v9.9.9\n");
+
+    try {
+        $info = app(\App\Services\SystemInfoService::class)->collect();
+        expect($info['runtime']['app_version'])->toBe('v9.9.9');
+    } finally {
+        if ($original === null) {
+            @unlink($path);
+        } else {
+            file_put_contents($path, $original);
+        }
+    }
+});
+
+it('falls back to "dev" when the VERSION file is missing', function () {
+    $path = base_path('VERSION');
+    $original = is_file($path) ? file_get_contents($path) : null;
+    if ($original !== null) {
+        unlink($path);
+    }
+
+    try {
+        $info = app(\App\Services\SystemInfoService::class)->collect();
+        expect($info['runtime']['app_version'])->toBe('dev');
+    } finally {
+        if ($original !== null) {
+            file_put_contents($path, $original);
+        }
+    }
+});
+
+it('falls back to "dev" when the VERSION file is empty', function () {
+    $path = base_path('VERSION');
+    $original = is_file($path) ? file_get_contents($path) : null;
+    file_put_contents($path, "   \n");
+
+    try {
+        $info = app(\App\Services\SystemInfoService::class)->collect();
+        expect($info['runtime']['app_version'])->toBe('dev');
+    } finally {
+        if ($original === null) {
+            @unlink($path);
+        } else {
+            file_put_contents($path, $original);
+        }
+    }
+});

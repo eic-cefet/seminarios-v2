@@ -5,7 +5,7 @@ on:
     branches: [main]
 
 concurrency:
-  group: release-${{ github.sha }}
+  group: release-main
   cancel-in-progress: false
 
 jobs:
@@ -159,78 +159,138 @@ jobs:
           fetch-depth: 0
           token: ${{ steps.app-token.outputs.token }}
 
-      - name: Get merged PR info
-        id: pr
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const { data: prs } = await github.rest.pulls.list({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              state: 'closed',
-              sort: 'updated',
-              direction: 'desc',
-              per_page: 5
-            });
-
-            const mergedPR = prs.find(pr => pr.merge_commit_sha === context.sha);
-            if (!mergedPR) {
-              console.log('No merged PR found for this commit - skipping version bump');
-              core.setOutput('found', 'false');
-              return;
-            }
-
-            core.setOutput('found', 'true');
-            core.setOutput('body', mergedPR.body || '');
-
-      - name: Parse version bump
-        if: steps.pr.outputs.found == 'true'
-        id: version
-        env:
-          PR_BODY: ${{ steps.pr.outputs.body }}
+      - name: Configure git identity
         run: |
-          # Match key=value format: version_bump=VALUE
-          BUMP=$(echo "$PR_BODY" | grep -oiE 'version_bump=(none|patch|minor|major)' | cut -d'=' -f2 | head -1 | tr '[:upper:]' '[:lower:]')
-          if [ -z "$BUMP" ]; then
-            BUMP="patch"
-          fi
-          echo "Detected version bump: $BUMP"
-          echo "bump=$BUMP" >> $GITHUB_OUTPUT
-
-      - name: Get latest tag and calculate new version
-        if: steps.pr.outputs.found == 'true' && steps.version.outputs.bump != 'none'
-        id: new-version
-        run: |
-          LATEST=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
-          echo "Current version: $LATEST"
-
-          # Remove 'v' prefix and split
-          VERSION=${LATEST#v}
-          IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
-
-          case "${{ steps.version.outputs.bump }}" in
-            major)
-              MAJOR=$((MAJOR + 1))
-              MINOR=0
-              PATCH=0
-              ;;
-            minor)
-              MINOR=$((MINOR + 1))
-              PATCH=0
-              ;;
-            patch)
-              PATCH=$((PATCH + 1))
-              ;;
-          esac
-
-          NEW_VERSION="v${MAJOR}.${MINOR}.${PATCH}"
-          echo "New version: $NEW_VERSION"
-          echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
-
-      - name: Create and push tag
-        if: steps.pr.outputs.found == 'true' && steps.version.outputs.bump != 'none'
-        run: |
-          git config user.name "seminarios-bot[bot]"
+          git config user.name  "seminarios-bot[bot]"
           git config user.email "seminarios-bot[bot]@users.noreply.github.com"
-          git tag -a "${{ steps.new-version.outputs.version }}" -m "Release ${{ steps.new-version.outputs.version }}"
-          git push origin "${{ steps.new-version.outputs.version }}"
+
+      # ---------------------------------------------------------------
+      # Branch A — this commit IS a VERSION bump → tag it and exit.
+      # ---------------------------------------------------------------
+      - name: Detect VERSION file change in HEAD
+        id: detect
+        run: |
+          if git diff --name-only "${{ github.event.before }}" "${{ github.sha }}" | grep -qx 'VERSION'; then
+            echo "version_changed=true" >> $GITHUB_OUTPUT
+          else
+            echo "version_changed=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Tag the VERSION-bump commit
+        if: steps.detect.outputs.version_changed == 'true'
+        run: |
+          if [ ! -f VERSION ]; then
+            echo "VERSION file is missing despite being in the diff — aborting."
+            exit 1
+          fi
+          NEW_VERSION="$(tr -d '[:space:]' < VERSION)"
+          if [ -z "$NEW_VERSION" ]; then
+            echo "VERSION file is empty — aborting."
+            exit 1
+          fi
+          if git rev-parse "$NEW_VERSION" >/dev/null 2>&1; then
+            echo "Tag $NEW_VERSION already exists — nothing to do."
+            exit 0
+          fi
+          git tag -a "$NEW_VERSION" -m "Release $NEW_VERSION"
+          git push origin "$NEW_VERSION"
+
+      # ---------------------------------------------------------------
+      # Branch B — normal commit → maybe open a release PR.
+      # ---------------------------------------------------------------
+      - name: Bail if there is already an open release PR
+        if: steps.detect.outputs.version_changed != 'true'
+        id: open-release-pr
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          COUNT=$(gh pr list --state open --json headRefName --jq '[.[] | select(.headRefName | startswith("release/v"))] | length')
+          echo "open_count=$COUNT" >> $GITHUB_OUTPUT
+          if [ "$COUNT" -gt 0 ]; then
+            echo "An open release/* PR exists — skipping. The follow-up release run will pick this commit up cumulatively after that PR merges."
+          fi
+
+      - name: Compute cumulative bump from PRs since last tag
+        if: steps.detect.outputs.version_changed != 'true' && steps.open-release-pr.outputs.open_count == '0'
+        id: cumulative
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          source .github/workflows/scripts/release-bump.sh
+
+          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          if [ -n "$LATEST_TAG" ]; then
+              RANGE="$LATEST_TAG..${{ github.sha }}"
+          else
+              RANGE="${{ github.sha }}"
+          fi
+
+          # Collect PR numbers from merge commits in the range. The merge commit
+          # subject from squash/merge PRs ends in "(#N)"; we grep that out.
+          PR_NUMBERS=$(git log --pretty=%s "$RANGE" | grep -oE '\(#[0-9]+\)$' | tr -d '(#)' | sort -u || true)
+
+          BUMPS=()
+          for N in $PR_NUMBERS; do
+              BODY=$(gh pr view "$N" --json body --jq .body 2>/dev/null || echo "")
+              MATCH=$(echo "$BODY" | grep -oiE 'version_bump=(none|patch|minor|major)' | head -1 | cut -d= -f2 | tr '[:upper:]' '[:lower:]')
+              [ -n "$MATCH" ] && BUMPS+=("$MATCH")
+          done
+
+          CUM=$(cumulative_bump "${BUMPS[@]:-none}")
+          echo "Cumulative bump since $LATEST_TAG: $CUM (from PRs: $PR_NUMBERS)"
+          echo "bump=$CUM" >> $GITHUB_OUTPUT
+
+      - name: Open the release PR
+        if: steps.detect.outputs.version_changed != 'true' && steps.open-release-pr.outputs.open_count == '0' && steps.cumulative.outputs.bump != 'none'
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          source .github/workflows/scripts/release-bump.sh
+
+          CURRENT=$(tr -d '[:space:]' < VERSION 2>/dev/null || echo "v0.0.0")
+          NEW_VERSION=$(bump_version "$CURRENT" "${{ steps.cumulative.outputs.bump }}")
+          BRANCH="release/${NEW_VERSION}"
+
+          # If the branch already exists remotely (e.g. a previous run crashed
+          # mid-way), abort — a human should investigate before we overwrite it.
+          if git ls-remote --exit-code --heads origin "$BRANCH" >/dev/null 2>&1; then
+            echo "Branch $BRANCH already exists on origin — aborting to avoid clobber."
+            exit 1
+          fi
+
+          git checkout -b "$BRANCH"
+          echo "$NEW_VERSION" > VERSION
+          git add VERSION
+          git commit -m "chore(release): ${NEW_VERSION}"
+          git push origin "$BRANCH"
+
+          PR_BODY=$(cat <<EOF
+          ## What Changed
+          Bump VERSION from ${CURRENT} to ${NEW_VERSION}.
+
+          ## Why
+          Auto-generated release PR. Merging this PR will create the \`${NEW_VERSION}\` git tag.
+
+          ## Configuration
+
+          \`\`\`
+          automerge=true
+          version_bump=none
+          \`\`\`
+
+          ## Checklist
+          - [x] I have tested my code locally
+          - [x] All tests are passing
+          - [x] New code has adequate test coverage
+          EOF
+          )
+
+          PR_URL=$(gh pr create \
+              --base main \
+              --head "$BRANCH" \
+              --title "chore(release): ${NEW_VERSION}" \
+              --body "$PR_BODY")
+          echo "Opened release PR: $PR_URL"
+
+          gh pr merge --auto --squash "$PR_URL" || \
+            echo "Auto-merge could not be enabled (perhaps disabled on the repo). The PR is open and can be merged manually."

@@ -894,6 +894,7 @@ export interface AdminSystemInfo {
     runtime: {
         php_version: string;
         laravel_version: string;
+        app_version: string;
         environment: string;
         debug: boolean;
         timezone: string;

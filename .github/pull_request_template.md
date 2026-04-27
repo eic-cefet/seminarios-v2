@@ -17,3 +17,5 @@ version_bump=patch
 - [ ] I have tested my code locally
 - [ ] All tests are passing
 - [ ] New code has adequate test coverage
+
+> **Note:** the `VERSION` file at the repo root is owned by the release workflow. Do not edit it manually — set `version_bump` above and the bot will open a follow-up `chore(release): ...` PR after this one merges.

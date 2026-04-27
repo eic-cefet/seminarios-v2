@@ -18,7 +18,6 @@ use App\Http\Controllers\Api\StatsController;
 use App\Http\Controllers\Api\SubjectController;
 use App\Http\Controllers\Api\TwoFactorChallengeController;
 use App\Http\Controllers\Api\TwoFactorController;
-use App\Http\Controllers\Api\VersionController;
 use App\Http\Controllers\Api\WorkshopController;
 use App\Http\Controllers\SocialAuthController;
 use Illuminate\Support\Facades\Route;
@@ -75,9 +74,6 @@ Route::middleware('throttle:public')->group(function () {
 
     // Stats
     Route::get('/stats', [StatsController::class, 'index']);
-
-    // Version
-    Route::get('/version', [VersionController::class, 'index']);
 
     // Presence Links (QR Code)
     Route::get('/presence/{uuid}', [PresenceController::class, 'show']);

@@ -14,7 +14,7 @@ describe('GET /admin/system/info', function () {
         $response->assertSuccessful()
             ->assertJsonStructure([
                 'data' => [
-                    'runtime' => ['php_version', 'laravel_version', 'environment', 'debug', 'timezone', 'locale'],
+                    'runtime' => ['php_version', 'laravel_version', 'app_version', 'environment', 'debug', 'timezone', 'locale'],
                     'server' => ['os_family', 'os_release', 'hostname', 'server_software', 'sapi', 'architecture'],
                     'memory' => ['limit_bytes', 'current_bytes', 'peak_bytes'],
                     'database' => ['driver', 'database', 'host', 'version'],
