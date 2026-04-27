@@ -1,6 +1,9 @@
 import '@testing-library/jest-dom/vitest';
+import { configure } from '@testing-library/react';
 import { expect } from 'vitest';
 import { toHaveNoViolations } from 'jest-axe';
+
+configure({ asyncUtilTimeout: 5000 });
 
 expect.extend(toHaveNoViolations);
 
