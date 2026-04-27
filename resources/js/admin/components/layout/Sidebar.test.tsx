@@ -285,6 +285,29 @@ describe('Sidebar', () => {
         expect(usersLink).toBeInTheDocument();
     });
 
+    it('renders the Sistema entry only for admins', () => {
+        render(<Sidebar />);
+        const systemLink = screen.getByText('Sistema').closest('a');
+        expect(systemLink).toHaveAttribute('href', '/system-info');
+    });
+
+    it('hides the Sistema entry from teachers', async () => {
+        const { useAuth } = await import('@shared/contexts/AuthContext');
+        vi.mocked(useAuth).mockReturnValue({
+            user: { id: 2, name: 'Teacher', email: 'teacher@test.com', roles: ['teacher'] } as any,
+            isLoading: false,
+            isAuthenticated: true,
+            login: vi.fn(),
+            register: vi.fn(),
+            logout: vi.fn(),
+            exchangeCode: vi.fn(),
+            refreshUser: vi.fn(), completeTwoFactor: vi.fn(),
+        });
+
+        render(<Sidebar />);
+        expect(screen.queryByText('Sistema')).not.toBeInTheDocument();
+    });
+
     it('renders child NavLinks with active style when route matches', () => {
         render(<Sidebar />, {
             routerProps: { initialEntries: ['/seminars'] },
