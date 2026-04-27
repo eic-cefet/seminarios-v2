@@ -58,5 +58,6 @@ export const ROUTES = {
         REPORTS_SEMESTRAL: "/reports/semestral",
         REPORTS_FEEDBACK: "/reports/feedback",
         REPORTS_AUDIT_LOGS: "/reports/audit-logs",
+        SYSTEM_INFO: "/system-info",
     },
 } as const;
