@@ -11,6 +11,36 @@ concurrency:
 
 jobs:
   # ============================================
+  # FAST-TRACK GATE
+  # Detects bot release PRs (head ref `release/v*` with only VERSION
+  # changed) so the heavy jobs can be skipped entirely. Runs in
+  # parallel with the checklist gate.
+  # ============================================
+  gate:
+    name: PR Fast-Track Gate
+    runs-on: ubuntu-latest
+    outputs:
+      fast_track: ${{ steps.detect.outputs.fast_track }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect bot release PR
+        id: detect
+        run: |
+          HEAD_REF="${{ github.head_ref }}"
+          git fetch origin ${{ github.base_ref }}
+          CHANGED=$(git diff --name-only origin/${{ github.base_ref }}...HEAD)
+          OTHER=$(echo "$CHANGED" | grep -vx 'VERSION' | grep -v '^$' | wc -l | tr -d ' ')
+          if [[ "$HEAD_REF" == release/v* ]] && [ "$OTHER" -eq 0 ] && echo "$CHANGED" | grep -qx 'VERSION'; then
+            echo "fast_track=true" >> $GITHUB_OUTPUT
+            echo "Release PR with VERSION-only change — heavy jobs will be skipped."
+          else
+            echo "fast_track=false" >> $GITHUB_OUTPUT
+          fi
+
+  # ============================================
   # GATE: Checklist Validation (runs first)
   # ============================================
   checklist:
@@ -73,7 +103,8 @@ jobs:
 
   tests:
     name: Tests & Coverage (95%)
-    needs: checklist
+    needs: [checklist, gate]
+    if: needs.gate.outputs.fast_track != 'true'
     runs-on: ubuntu-latest
     services:
       mysql:
@@ -190,7 +221,8 @@ jobs:
 
   frontend:
     name: Frontend Tests, Coverage (90%) & Typecheck
-    needs: checklist
+    needs: [checklist, gate]
+    if: needs.gate.outputs.fast_track != 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -263,8 +295,8 @@ jobs:
 
   claude-review:
     name: Claude Code Review
-    needs: checklist
-    if: github.event.pull_request.head.repo.full_name == github.repository
+    needs: [checklist, gate]
+    if: github.event.pull_request.head.repo.full_name == github.repository && needs.gate.outputs.fast_track != 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -272,22 +304,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Detect bot release PR (skip review)
-        id: gate
-        run: |
-          HEAD_REF="${{ github.head_ref }}"
-          git fetch origin ${{ github.base_ref }}
-          CHANGED=$(git diff --name-only origin/${{ github.base_ref }}...HEAD)
-          OTHER=$(echo "$CHANGED" | grep -vx 'VERSION' | grep -v '^$' | wc -l | tr -d ' ')
-          if [[ "$HEAD_REF" == release/v* ]] && [ "$OTHER" -eq 0 ] && echo "$CHANGED" | grep -qx 'VERSION'; then
-            echo "fast_track=true" >> $GITHUB_OUTPUT
-            echo "Release PR with VERSION-only change — skipping Claude review."
-          else
-            echo "fast_track=false" >> $GITHUB_OUTPUT
-          fi
-
       - name: Generate GitHub App Token
-        if: steps.gate.outputs.fast_track != 'true'
         id: app-token
         uses: actions/create-github-app-token@v1
         with:
@@ -295,9 +312,9 @@ jobs:
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
 
       - name: Get PR diff and context
-        if: steps.gate.outputs.fast_track != 'true'
         id: context
         run: |
+          git fetch origin ${{ github.base_ref }}
           git diff origin/${{ github.base_ref }}...HEAD > /tmp/diff.txt
           git diff origin/${{ github.base_ref }}...HEAD --name-only > /tmp/files.txt
           git diff origin/${{ github.base_ref }}...HEAD --stat > /tmp/stats.txt
@@ -306,7 +323,6 @@ jobs:
           head -c 100000 /tmp/diff.txt > /tmp/diff_truncated.txt
 
       - name: Call Claude API for review
-        if: steps.gate.outputs.fast_track != 'true'
         id: claude
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
@@ -466,7 +482,6 @@ jobs:
           PYEOF
 
       - name: Post review comment, inline comments, and apply labels
-        if: steps.gate.outputs.fast_track != 'true'
         uses: actions/github-script@v7
         with:
           github-token: ${{ steps.app-token.outputs.token }}
@@ -689,7 +704,7 @@ jobs:
 
   final-status:
     name: Final Status
-    needs: [checklist, tests, frontend, claude-review]
+    needs: [gate, checklist, tests, frontend, claude-review]
     if: always()
     runs-on: ubuntu-latest
     steps:
