@@ -59,7 +59,8 @@ it('returns the database block with driver, name and version', function () {
         'host',
         'version',
     ]);
-    expect($info['database']['driver'])->toBe(config('database.default'));
+    $defaultConnection = config('database.default');
+    expect($info['database']['driver'])->toBe(config("database.connections.{$defaultConnection}.driver"));
     expect($info['database']['version'])->toBeString()->not->toBeEmpty();
 });
 
@@ -76,14 +77,33 @@ it('returns the cache block with cache, queue, session and mail drivers', functi
     ]);
 });
 
-it('returns the storage block with free and total bytes for the storage path', function () {
+it('returns the storage block with only free and total bytes (no path)', function () {
     $info = $this->service->collect();
 
     expect($info)->toHaveKey('storage');
-    expect($info['storage'])->toHaveKeys(['path', 'free_bytes', 'total_bytes']);
-    expect($info['storage']['path'])->toBe(storage_path());
+    expect($info['storage'])->toHaveKeys(['free_bytes', 'total_bytes']);
+    expect($info['storage'])->not->toHaveKey('path');
     expect($info['storage']['total_bytes'])->toBeInt()->toBeGreaterThan(0);
     expect($info['storage']['free_bytes'])->toBeInt()->toBeLessThanOrEqual($info['storage']['total_bytes']);
+});
+
+it('does not leak the absolute storage path anywhere in the payload', function () {
+    $info = $this->service->collect();
+    $flat = json_encode($info);
+
+    expect($flat)->not->toContain(storage_path());
+});
+
+it('reads the driver from connections.*.driver, not from the default connection name', function () {
+    $defaultConnection = config('database.default');
+    $expectedDriver = config("database.connections.{$defaultConnection}.driver");
+
+    $info = $this->service->collect();
+
+    expect($info['database']['driver'])->toBe($expectedDriver);
+    // Sanity check: with our config the connection name might differ from the driver
+    // The point is we expose the driver string, never the connection name verbatim.
+    expect($info['database']['driver'])->toBeIn(['sqlite', 'mysql', 'mariadb', 'pgsql', 'sqlsrv']);
 });
 
 it('returns a sorted list of loaded PHP extensions', function () {

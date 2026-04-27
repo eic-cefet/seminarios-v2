@@ -926,7 +926,6 @@ export interface AdminSystemInfo {
         filesystem: string;
     };
     storage: {
-        path: string;
         free_bytes: number;
         total_bytes: number;
     };

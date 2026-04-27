@@ -187,7 +187,6 @@ export default function SystemInfo() {
                 </InfoCard>
 
                 <InfoCard title="Armazenamento" icon={HardDrive}>
-                    <Field label="Caminho" value={info.storage.path} />
                     <Field
                         label="Total"
                         value={formatBytes(info.storage.total_bytes)}

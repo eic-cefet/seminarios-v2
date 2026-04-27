@@ -47,7 +47,6 @@ const mockPayload = {
             filesystem: 'local',
         },
         storage: {
-            path: '/app/storage',
             free_bytes: 50 * 1024 ** 3,
             total_bytes: 200 * 1024 ** 3,
         },

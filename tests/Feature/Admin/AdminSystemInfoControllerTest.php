@@ -19,7 +19,7 @@ describe('GET /admin/system/info', function () {
                     'memory' => ['limit_bytes', 'current_bytes', 'peak_bytes'],
                     'database' => ['driver', 'database', 'host', 'version'],
                     'drivers' => ['cache', 'queue', 'session', 'mail', 'filesystem'],
-                    'storage' => ['path', 'free_bytes', 'total_bytes'],
+                    'storage' => ['free_bytes', 'total_bytes'],
                     'extensions',
                     'php_config' => ['max_execution_time', 'post_max_size', 'upload_max_filesize', 'opcache_enabled'],
                     'scheduler',

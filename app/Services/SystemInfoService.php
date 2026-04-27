@@ -11,6 +11,8 @@ use Throwable;
 
 class SystemInfoService
 {
+    private static bool $consoleBooted = false;
+
     /**
      * @return array<string, mixed>
      */
@@ -78,22 +80,23 @@ class SystemInfoService
     {
         $connectionName = config('database.default');
         $config = config("database.connections.{$connectionName}", []);
+        $driver = $config['driver'] ?? $connectionName;
 
         return [
-            'driver' => $connectionName,
+            'driver' => $driver,
             'database' => $config['database'] ?? null,
             'host' => $config['host'] ?? null,
-            'version' => $this->databaseVersion($connectionName),
+            'version' => $this->databaseVersion($connectionName, $driver),
         ];
     }
 
-    private function databaseVersion(string $driver): string
+    private function databaseVersion(string $connectionName, string $driver): string
     {
         try {
             return match ($driver) {
-                'sqlite' => DB::connection($driver)->selectOne('select sqlite_version() as v')->v,
-                'mysql', 'mariadb' => DB::connection($driver)->selectOne('select version() as v')->v, // @codeCoverageIgnore
-                'pgsql' => DB::connection($driver)->selectOne('show server_version')->server_version, // @codeCoverageIgnore
+                'sqlite' => DB::connection($connectionName)->selectOne('select sqlite_version() as v')->v,
+                'mysql', 'mariadb' => DB::connection($connectionName)->selectOne('select version() as v')->v, // @codeCoverageIgnore
+                'pgsql' => DB::connection($connectionName)->selectOne('show server_version')->server_version, // @codeCoverageIgnore
                 default => 'unknown', // @codeCoverageIgnore
             };
             // @codeCoverageIgnoreStart
@@ -122,10 +125,11 @@ class SystemInfoService
      */
     private function storage(): array
     {
+        // Don't expose the absolute filesystem path — only the byte counts are
+        // useful to admins, and the path leaks server layout to the UI.
         $path = storage_path();
 
         return [
-            'path' => $path,
             'free_bytes' => (int) @disk_free_space($path),
             'total_bytes' => (int) @disk_total_space($path),
         ];
@@ -162,7 +166,12 @@ class SystemInfoService
     {
         // routes/console.php is only loaded by the console kernel; bootstrap it
         // so Schedule::events() is populated during HTTP requests too.
-        app(ConsoleKernel::class)->bootstrap();
+        // Guard against double-registration on cache miss within the same
+        // PHP-FPM worker — calling bootstrap() twice re-binds schedule events.
+        if (! self::$consoleBooted) {
+            app(ConsoleKernel::class)->bootstrap();
+            self::$consoleBooted = true;
+        }
 
         $schedule = app(Schedule::class);
 
