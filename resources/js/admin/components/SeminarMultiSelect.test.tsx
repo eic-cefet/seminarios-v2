@@ -337,4 +337,55 @@ describe('SeminarMultiSelect', () => {
         expect(mockOnChange).toHaveBeenCalledWith([10]);
     });
 
+    it('selects a suggestion when Enter is pressed on the option itself', async () => {
+        const { workshopsApi } = await import('../api/adminClient');
+        vi.mocked(workshopsApi.searchSeminars).mockResolvedValue({
+            data: [{ id: 42, name: 'Click-or-Enter Seminar', scheduled_at: '2026-06-01T10:00:00Z' }],
+        } as any);
+
+        const mockOnChange = vi.fn();
+        const user = userEvent.setup();
+        render(<SeminarMultiSelect value={[]} onChange={mockOnChange} />);
+        await user.click(screen.getByPlaceholderText('Buscar seminários...'));
+
+        const option = await screen.findByRole('option', { name: /Click-or-Enter Seminar/i });
+        option.focus();
+        await user.keyboard('{Enter}');
+        expect(mockOnChange).toHaveBeenCalledWith([42]);
+    });
+
+    it('selects a suggestion when Space is pressed on the option itself', async () => {
+        const { workshopsApi } = await import('../api/adminClient');
+        vi.mocked(workshopsApi.searchSeminars).mockResolvedValue({
+            data: [{ id: 99, name: 'Space-Activated', scheduled_at: '2026-06-01T10:00:00Z' }],
+        } as any);
+
+        const mockOnChange = vi.fn();
+        const user = userEvent.setup();
+        render(<SeminarMultiSelect value={[]} onChange={mockOnChange} />);
+        await user.click(screen.getByPlaceholderText('Buscar seminários...'));
+
+        const option = await screen.findByRole('option', { name: /Space-Activated/i });
+        option.focus();
+        await user.keyboard(' ');
+        expect(mockOnChange).toHaveBeenCalledWith([99]);
+    });
+
+    it('ignores other keys pressed on the option', async () => {
+        const { workshopsApi } = await import('../api/adminClient');
+        vi.mocked(workshopsApi.searchSeminars).mockResolvedValue({
+            data: [{ id: 5, name: 'Ignored Key', scheduled_at: '2026-06-01T10:00:00Z' }],
+        } as any);
+
+        const mockOnChange = vi.fn();
+        const user = userEvent.setup();
+        render(<SeminarMultiSelect value={[]} onChange={mockOnChange} />);
+        await user.click(screen.getByPlaceholderText('Buscar seminários...'));
+
+        const option = await screen.findByRole('option', { name: /Ignored Key/i });
+        option.focus();
+        await user.keyboard('a');
+        expect(mockOnChange).not.toHaveBeenCalled();
+    });
+
 });

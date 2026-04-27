@@ -10,6 +10,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 > NEVER run more than one full test suite at a time — backend (`php artisan test`) or frontend (`pnpm run test` / `pnpm exec vitest run`). Both processes are heavy. Always run sequentially, never in parallel; do not dispatch multiple agents that each run the suite. File-targeted runs (`php artisan test --filter=...`, `pnpm exec vitest run path/to/file`) are fine, but still only one at a time.
 
+> When you DO run a full coverage suite (`pnpm exec vitest run --coverage` or `php artisan test --compact --coverage`), redirect the output to a tmp file in a single run, then grep/parse that file for whatever you need. Re-running the suite to extract a different slice of the same output is wasteful — the run takes minutes. Pattern: `pnpm exec vitest run --coverage > /tmp/fe-coverage.txt 2>&1` then `grep -E "..." /tmp/fe-coverage.txt`. Same for backend.
+
 ## Git Workflow
 
 **IMPORTANT:** When asked to push changes to GitHub, ALWAYS follow this workflow:
