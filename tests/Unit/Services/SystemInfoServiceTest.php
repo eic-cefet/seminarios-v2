@@ -1,6 +1,8 @@
 <?php
 
 use App\Services\SystemInfoService;
+use Illuminate\Console\Scheduling\Schedule;
+use Illuminate\Support\Facades\Schedule as ScheduleFacade;
 
 beforeEach(function () {
     $this->service = new SystemInfoService;
@@ -115,6 +117,21 @@ it('returns a sorted list of loaded PHP extensions', function () {
     $sorted = $info['extensions'];
     sort($sorted);
     expect($info['extensions'])->toBe($sorted);
+});
+
+it('loads routes/console.php when the Schedule singleton starts empty (HTTP path)', function () {
+    // Simulate the HTTP-request path: no console kernel has booted, so the
+    // Schedule singleton is empty. Re-bind a fresh Schedule and clear the
+    // facade cache so routes/console.php's Schedule:: calls hit the new one.
+    app()->forgetInstance(Schedule::class);
+    app()->singleton(Schedule::class, fn ($app) => new Schedule);
+    ScheduleFacade::clearResolvedInstance(Schedule::class);
+
+    expect(app(Schedule::class)->events())->toBeEmpty();
+
+    $info = (new SystemInfoService)->collect();
+
+    expect($info['scheduler'])->not->toBeEmpty();
 });
 
 it('returns the scheduled tasks block with command, cron, timezone and next run', function () {
