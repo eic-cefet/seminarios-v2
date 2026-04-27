@@ -29,13 +29,16 @@ class SendSeminarReminderJob implements ShouldQueue
     public function __construct(
         public User $user,
         public Collection $registrationIds,
+        public CommunicationCategory $category = CommunicationCategory::SeminarReminder24h,
+        public string $reminderColumn = 'reminder_sent',
+        public string $mailableClass = SeminarReminder::class,
     ) {}
 
     public function handle(?CommunicationGate $gate = null): void
     {
         $gate ??= app(CommunicationGate::class);
 
-        if (! $gate->canEmail($this->user, CommunicationCategory::SeminarReminder24h)) {
+        if (! $gate->canEmail($this->user, $this->category)) {
             return;
         }
 
@@ -53,8 +56,9 @@ class SendSeminarReminderJob implements ShouldQueue
             return;
         }
 
-        Mail::to($this->user)->queue(new SeminarReminder($this->user, $seminars));
+        $mailableClass = $this->mailableClass;
+        Mail::to($this->user)->queue(new $mailableClass($this->user, $seminars));
 
-        Registration::whereIn('id', $this->registrationIds)->update(['reminder_sent' => true]);
+        Registration::whereIn('id', $this->registrationIds)->update([$this->reminderColumn => true]);
     }
 }

@@ -27,6 +27,7 @@ class AlertPreferenceFactory extends Factory
             'announcements' => true,
             'certificate_ready' => true,
             'seminar_rescheduled' => true,
+            'workshop_announcements' => true,
         ];
     }
 
@@ -49,6 +50,7 @@ class AlertPreferenceFactory extends Factory
             'announcements' => false,
             'certificate_ready' => false,
             'seminar_rescheduled' => false,
+            'workshop_announcements' => false,
         ]);
     }
 

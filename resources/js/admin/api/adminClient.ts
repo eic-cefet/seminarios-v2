@@ -123,6 +123,7 @@ export interface AdminWorkshop {
     slug: string;
     description?: string;
     seminars_count?: number;
+    announcement_sent_at: string | null;
     seminars?: {
         id: number;
         name: string;
@@ -447,6 +448,14 @@ export const workshopsApi = {
         const qs = buildQueryString(params);
         return fetchAdminApi<{ data: SeminarSearchResult[] }>(
             `/workshops/search-seminars${qs}`,
+        );
+    },
+
+    announce: async (id: number) => {
+        await getCsrfCookie();
+        return fetchAdminApi<{ message: string; data: AdminWorkshop }>(
+            `/workshops/${id}/announce`,
+            { method: "POST" },
         );
     },
 };

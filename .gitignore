@@ -36,4 +36,4 @@ guide/dist/
 guide/screenshots/
 .pnpm-store/
 
-docs/superpowers/
+docs/superpowers/.claude/scheduled_tasks.lock

@@ -30,6 +30,7 @@ class ProfileAlertPreferenceController extends Controller
                     'seminarReminder24h' => true,
                     'evaluationPrompt' => true,
                     'announcements' => true,
+                    'workshopAnnouncements' => true,
                     'certificateReady' => true,
                     'seminarRescheduled' => true,
                 ],
@@ -57,6 +58,7 @@ class ProfileAlertPreferenceController extends Controller
                     'announcements' => $validated['announcements'],
                     'certificate_ready' => $validated['certificate_ready'],
                     'seminar_rescheduled' => $validated['seminar_rescheduled'],
+                    'workshop_announcements' => $validated['workshop_announcements'],
                 ],
             );
 

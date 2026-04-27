@@ -13,6 +13,7 @@ use App\Http\Controllers\Admin\AdminUserController;
 use App\Http\Controllers\Admin\AdminWorkshopController;
 use App\Http\Controllers\Admin\AiTextController;
 use App\Http\Controllers\Admin\ReportController;
+use App\Http\Controllers\Admin\WorkshopAnnouncementController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function () {
@@ -46,6 +47,8 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function ()
 
     // Workshop search must be defined before the resource route
     Route::get('/workshops/search-seminars', [AdminWorkshopController::class, 'searchSeminars']);
+    Route::post('/workshops/{workshop}/announce', [WorkshopAnnouncementController::class, 'store'])
+        ->name('admin.workshops.announce');
     Route::apiResource('workshops', AdminWorkshopController::class)
         ->parameters(['workshops' => 'workshop:slug']);
 

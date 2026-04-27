@@ -382,6 +382,7 @@ describe('fetchApi (via API namespaces)', () => {
                 seminar_reminder_24h: true,
                 evaluation_prompt: true,
                 announcements: true,
+                workshop_announcements: true,
                 certificate_ready: true,
                 seminar_rescheduled: true,
             });

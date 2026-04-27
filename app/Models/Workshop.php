@@ -11,7 +11,14 @@ class Workshop extends Model
 {
     use Auditable, HasFactory;
 
-    protected $fillable = ['name', 'slug', 'description'];
+    protected $fillable = ['name', 'slug', 'description', 'announcement_sent_at'];
+
+    protected function casts(): array
+    {
+        return [
+            'announcement_sent_at' => 'datetime',
+        ];
+    }
 
     public function seminars(): HasMany
     {
