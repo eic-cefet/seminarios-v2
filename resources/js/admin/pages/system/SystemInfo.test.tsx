@@ -15,6 +15,7 @@ const mockPayload = {
         runtime: {
             php_version: '8.3.30',
             laravel_version: '12.0.0',
+            app_version: 'v1.4.2',
             environment: 'testing',
             debug: true,
             timezone: 'UTC',
@@ -103,6 +104,16 @@ describe('SystemInfo page', function () {
         expect(screen.getByText('12.0.0')).toBeInTheDocument();
         expect(screen.getByText('testing')).toBeInTheDocument();
         expect(screen.getByText('pt_BR')).toBeInTheDocument();
+    });
+
+    it('renders the app version from the runtime payload', async () => {
+        render(<SystemInfo />);
+
+        await waitFor(() => {
+            expect(screen.getByText('v1.4.2')).toBeInTheDocument();
+        });
+
+        expect(screen.getByText(/versão do app/i)).toBeInTheDocument();
     });
 
     it('renders database driver and version', async () => {
