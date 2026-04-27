@@ -10,11 +10,42 @@ concurrency:
 
 jobs:
   # ============================================
+  # FAST-TRACK GATE
+  # Skip the heavy test jobs when the push to main is a VERSION-only
+  # commit (the bot's release PR merge). Branch A in the release job
+  # then tags it. Other pushes go through the full test suite.
+  # ============================================
+
+  gate:
+    name: Release Gate
+    runs-on: ubuntu-latest
+    outputs:
+      fast_track: ${{ steps.detect.outputs.fast_track }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Detect VERSION-only change
+        id: detect
+        run: |
+          CHANGED=$(git diff --name-only "${{ github.event.before }}" "${{ github.sha }}" 2>/dev/null || true)
+          OTHER=$(echo "$CHANGED" | grep -vx 'VERSION' | grep -v '^$' | wc -l | tr -d ' ')
+          if [ "$OTHER" -eq 0 ] && echo "$CHANGED" | grep -qx 'VERSION'; then
+            echo "fast_track=true" >> $GITHUB_OUTPUT
+            echo "VERSION-only change — skipping tests, going straight to release."
+          else
+            echo "fast_track=false" >> $GITHUB_OUTPUT
+          fi
+
+  # ============================================
   # PARALLEL TEST JOBS
   # ============================================
 
   backend-tests:
     name: Backend Tests
+    needs: gate
+    if: needs.gate.outputs.fast_track != 'true'
     runs-on: ubuntu-latest
     services:
       mysql:
@@ -98,6 +129,8 @@ jobs:
 
   frontend-tests:
     name: Frontend Tests
+    needs: gate
+    if: needs.gate.outputs.fast_track != 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -143,7 +176,12 @@ jobs:
 
   release:
     name: Release
-    needs: [backend-tests, frontend-tests]
+    needs: [gate, backend-tests, frontend-tests]
+    if: |
+      always() && (
+        needs.gate.outputs.fast_track == 'true' ||
+        (needs.backend-tests.result == 'success' && needs.frontend-tests.result == 'success')
+      )
     runs-on: ubuntu-latest
     steps:
       - name: Generate GitHub App Token
