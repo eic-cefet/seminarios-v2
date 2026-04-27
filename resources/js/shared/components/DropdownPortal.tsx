@@ -25,20 +25,35 @@ export function DropdownPortal({
         // itself keeps the dropdown inside the modal's allowed surface.
         const dialog =
             anchorRef.current.closest<HTMLElement>('[role="dialog"]');
-        setContainer(dialog ?? document.body);
+        const target = dialog ?? document.body;
+        setContainer(target);
 
         const updatePosition = () => {
             const anchor = anchorRef.current;
             if (!anchor) return;
 
-            // Viewport-fixed positioning works regardless of which container we
-            // portalled into and survives scrolling without recomputing offsets.
             const rect = anchor.getBoundingClientRect();
-            setPosition({
-                top: rect.bottom + 4,
-                left: rect.left,
-                width: rect.width,
-            });
+
+            if (target === document.body) {
+                // Page-relative coordinates for absolute positioning in the body.
+                setPosition({
+                    top: rect.bottom + window.scrollY + 4,
+                    left: rect.left + window.scrollX,
+                    width: rect.width,
+                });
+            } else {
+                // Radix Dialog uses transform: translate(...) for centering,
+                // which makes the dialog the containing block for any absolute
+                // descendant AND breaks position: fixed inside it. Compute
+                // coordinates relative to the dialog's bounding box so
+                // position: absolute lands correctly.
+                const containerRect = target.getBoundingClientRect();
+                setPosition({
+                    top: rect.bottom - containerRect.top + 4,
+                    left: rect.left - containerRect.left,
+                    width: rect.width,
+                });
+            }
         };
 
         updatePosition();
@@ -57,7 +72,7 @@ export function DropdownPortal({
     return createPortal(
         <div
             style={{
-                position: "fixed",
+                position: "absolute",
                 top: position.top,
                 left: position.left,
                 width: position.width,

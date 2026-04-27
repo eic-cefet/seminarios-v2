@@ -51,7 +51,7 @@ describe('DropdownPortal', () => {
         );
 
         const portal = screen.getByText('Content').parentElement;
-        expect(portal?.style.position).toBe('fixed');
+        expect(portal?.style.position).toBe('absolute');
         expect(portal?.style.width).toBe('200px');
     });
 
