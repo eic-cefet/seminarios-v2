@@ -182,9 +182,26 @@ export function SeminarMultiSelect({
                         {suggestions.map((seminar, index) => (
                             <div
                                 key={seminar.id}
-                                onClick={() => {
+                                role="option"
+                                aria-selected={index === highlightedIndex}
+                                tabIndex={-1}
+                                // Use onMouseDown (not onClick) so the selection lands
+                                // before any document-level pointerdown handler runs —
+                                // Radix Dialog's onPointerDownOutside otherwise swallows
+                                // the click when this dropdown is portalled outside the
+                                // dialog content. preventDefault() also keeps the input
+                                // focused so the dropdown stays open for further picks.
+                                onMouseDown={(e) => {
+                                    e.preventDefault();
                                     addSeminar(seminar);
                                     focusInput();
+                                }}
+                                onKeyDown={(e) => {
+                                    if (e.key === "Enter" || e.key === " ") {
+                                        e.preventDefault();
+                                        addSeminar(seminar);
+                                        focusInput();
+                                    }
                                 }}
                                 className={`px-3 py-2 cursor-pointer ${
                                     index === highlightedIndex
