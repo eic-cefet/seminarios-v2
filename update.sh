@@ -42,6 +42,24 @@ print_section() {
     echo ""
 }
 
+# Always disable maintenance mode on exit — guards against 503s if the script fails mid-update.
+ensure_maintenance_mode_off() {
+    local exit_code=$?
+    if [ $exit_code -ne 0 ]; then
+        echo ""
+        echo -e "${YELLOW}▸ Update failed (exit $exit_code) — restoring application availability${NC}"
+        if php artisan up; then
+            echo -e "  ${GREEN}✓${NC} Application is back online"
+        else
+            echo -e "  ${RED}✗${NC} Failed to disable maintenance mode"
+            echo -e "  ${RED}Run manually: php artisan up${NC}"
+        fi
+    else
+        php artisan up >/dev/null 2>&1 || true
+    fi
+}
+trap ensure_maintenance_mode_off EXIT
+
 #######################################
 # STEP 1: Verify Dependencies
 #######################################
@@ -196,15 +214,11 @@ print_status "Maintenance mode enabled" "ok"
 if [ "$UPDATE_TYPE" = "release" ]; then
     print_section "Updating to $TARGET_TAG"
 
-    # Check for uncommitted changes
     if ! git diff-index --quiet HEAD --; then
-        echo -e "${RED}Error: Uncommitted changes detected. Cannot update.${NC}"
-        echo "Please commit or stash your changes before running the update."
-        php artisan up
-        exit 1
+        print_status "Local changes detected — discarding to apply update" "warn"
     fi
 
-    git checkout "$TARGET_TAG"
+    git checkout -f "$TARGET_TAG"
     print_status "Checked out $TARGET_TAG" "ok"
 fi
 
