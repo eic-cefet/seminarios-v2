@@ -181,10 +181,14 @@ fi
 
 print_status "Latest release: $LATEST_TAG" "ok"
 
-if [ "$CURRENT_TAG" = "$LATEST_TAG" ]; then
+if [ "$CURRENT_TAG" = "$LATEST_TAG" ] && [ -z "$UPDATE_SH_RELOADED" ]; then
     echo ""
     echo -e "${GREEN}Already on the latest release ($LATEST_TAG). Nothing to update.${NC}"
     exit 0
+fi
+
+if [ -n "$UPDATE_SH_RELOADED" ]; then
+    print_status "Resuming update on $LATEST_TAG after script reload" "warn"
 fi
 
 echo ""
@@ -211,15 +215,34 @@ print_status "Maintenance mode enabled" "ok"
 #######################################
 # STEP 4: Checkout New Version (if release update)
 #######################################
-if [ "$UPDATE_TYPE" = "release" ]; then
+if [ "$UPDATE_TYPE" = "release" ] && [ -z "$UPDATE_SH_RELOADED" ]; then
     print_section "Updating to $TARGET_TAG"
 
     if ! git diff-index --quiet HEAD --; then
         print_status "Local changes detected — discarding to apply update" "warn"
     fi
 
+    # Capture the running script's hash before checkout so we can detect
+    # whether the new tag changed update.sh itself.
+    SCRIPT_PATH="$(cd "$(dirname "$0")" && pwd)/$(basename "$0")"
+    OLD_SCRIPT_HASH=$(git hash-object "$SCRIPT_PATH" 2>/dev/null || echo "")
+
     git checkout -f "$TARGET_TAG"
     print_status "Checked out $TARGET_TAG" "ok"
+
+    # Bash reads the script as it executes, so an in-place change to
+    # update.sh mid-run causes undefined behavior. Re-exec the new copy
+    # if it differs, using a sentinel to prevent infinite re-exec loops.
+    NEW_SCRIPT_HASH=$(git hash-object "$SCRIPT_PATH" 2>/dev/null || echo "")
+    if [ -n "$OLD_SCRIPT_HASH" ] && [ -n "$NEW_SCRIPT_HASH" ] && \
+       [ "$OLD_SCRIPT_HASH" != "$NEW_SCRIPT_HASH" ]; then
+        print_status "update.sh changed in $TARGET_TAG — reloading new script" "warn"
+        # Drop the EXIT trap so the parent doesn't run `php artisan up`
+        # immediately after handing control to the new script.
+        trap - EXIT
+        export UPDATE_SH_RELOADED=1
+        exec bash "$SCRIPT_PATH" "$@"
+    fi
 fi
 
 #######################################
