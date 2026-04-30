@@ -54,6 +54,14 @@ class ScrambleServiceProvider extends ServiceProvider
      * Attach a default response that references the ApiError schema on every
      * external operation, so integrators see the real error shape instead of
      * Scramble's generic "default response".
+     *
+     * Note on path format: Scramble's internal Path::$path is stored without
+     * a leading slash (the configured `api_path` prefix is stripped and the
+     * value is `trim('/')`-ed before storage — see
+     * vendor/dedoc/scramble/src/Generator.php). The leading "/" is only added
+     * when the OpenAPI document is serialized via OpenApi::toArray(). So at
+     * this layer we match against the un-prefixed `v1/` form; the test that
+     * inspects the rendered JSON document matches `/v1/`.
      */
     private function attachDefaultErrorResponseToExternalOperations(OpenApi $openApi): void
     {

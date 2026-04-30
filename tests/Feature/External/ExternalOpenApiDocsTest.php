@@ -75,12 +75,19 @@ describe('GET /api/external/docs.json', function () {
     it('declares ApiError as the default error response on every external operation', function () {
         $doc = $this->getJson('/api/external/docs.json')->json();
 
-        $checked = 0;
-        foreach (data_get($doc, 'paths', []) as $path => $methods) {
-            if (! str_starts_with($path, '/v1/')) {
-                continue;
-            }
+        // Pin a known operation so a future silent-skip regression (e.g. path
+        // prefix mismatch between the provider and the rendered doc) fails
+        // loudly instead of being satisfied by a vacuous "checked > 0".
+        expect(data_get($doc, 'paths./v1/seminars.get.responses.default.content.application/json.schema.$ref'))
+            ->toBe('#/components/schemas/ApiError');
 
+        $externalPaths = collect(data_get($doc, 'paths', []))
+            ->filter(fn ($methods, string $path) => str_starts_with($path, '/v1/'));
+
+        expect($externalPaths)->not->toBeEmpty('No /v1/ paths found in the external OpenAPI doc.');
+
+        $checked = 0;
+        foreach ($externalPaths as $path => $methods) {
             foreach ($methods as $method => $op) {
                 if (! is_array($op) || ! isset($op['responses'])) {
                     continue;
