@@ -23,11 +23,18 @@ class ExternalUserResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        return [
+        $payload = [
             'id' => $this->id,
             'name' => $this->name,
             'email' => $this->email,
-            'speaker_data' => $this->speakerData ? new ExternalSpeakerDataResource($this->speakerData) : null,
         ];
+
+        if ($this->resource->relationLoaded('speakerData')) {
+            $payload['speaker_data'] = $this->speakerData
+                ? new ExternalSpeakerDataResource($this->speakerData)
+                : null;
+        }
+
+        return $payload;
     }
 }
