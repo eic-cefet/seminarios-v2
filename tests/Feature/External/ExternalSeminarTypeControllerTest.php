@@ -17,6 +17,18 @@ describe('GET /api/external/v1/seminar-types', function () {
         expect($names->last())->toBe('TCC');
     });
 
+    it('returns the canonical envelope on the seminar-types index', function () {
+        actingAsAdmin();
+        SeminarType::factory()->count(2)->create();
+
+        $response = $this->getJson('/api/external/v1/seminar-types');
+
+        $response->assertSuccessful()
+            ->assertJsonStructure(['data', 'meta' => ['total']])
+            ->assertJsonMissingPath('links');
+        expect($response->json('meta.total'))->toBe(2);
+    });
+
     it('returns 401 for unauthenticated user', function () {
         $this->getJson('/api/external/v1/seminar-types')->assertUnauthorized();
     });

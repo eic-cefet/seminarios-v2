@@ -24,7 +24,8 @@ class ExternalSeminarTypeController extends Controller
         $lastModified = $types->max('updated_at') ?? now();
         $request->attributes->set('external_last_modified', $lastModified);
 
-        return ExternalSeminarTypeResource::collection($types);
+        return ExternalSeminarTypeResource::collection($types)
+            ->additional(['meta' => ['total' => $types->count()]]);
     }
 
     public function show(Request $request, SeminarType $seminarType): ExternalSeminarTypeResource

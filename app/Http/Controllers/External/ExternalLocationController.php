@@ -24,7 +24,8 @@ class ExternalLocationController extends Controller
         $lastModified = $locations->max('updated_at') ?? now();
         $request->attributes->set('external_last_modified', $lastModified);
 
-        return ExternalLocationResource::collection($locations);
+        return ExternalLocationResource::collection($locations)
+            ->additional(['meta' => ['total' => $locations->count()]]);
     }
 
     public function show(Request $request, SeminarLocation $location): ExternalLocationResource
