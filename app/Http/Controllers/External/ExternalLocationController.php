@@ -8,23 +8,29 @@ use App\Http\Requests\External\ExternalLocationUpdateRequest;
 use App\Http\Resources\External\ExternalLocationResource;
 use App\Models\SeminarLocation;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\Gate;
 
 class ExternalLocationController extends Controller
 {
-    public function index(): AnonymousResourceCollection
+    public function index(Request $request): AnonymousResourceCollection
     {
         Gate::authorize('viewAny', SeminarLocation::class);
 
-        return ExternalLocationResource::collection(
-            SeminarLocation::orderBy('name')->get()
-        );
+        $locations = SeminarLocation::orderBy('name')->get();
+
+        $lastModified = $locations->max('updated_at') ?? now();
+        $request->attributes->set('external_last_modified', $lastModified);
+
+        return ExternalLocationResource::collection($locations);
     }
 
-    public function show(SeminarLocation $location): ExternalLocationResource
+    public function show(Request $request, SeminarLocation $location): ExternalLocationResource
     {
         Gate::authorize('view', $location);
+
+        $request->attributes->set('external_last_modified', $location->updated_at);
 
         return new ExternalLocationResource($location);
     }

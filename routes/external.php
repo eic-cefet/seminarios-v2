@@ -8,7 +8,7 @@ use App\Http\Controllers\External\ExternalUserController;
 use App\Http\Controllers\External\ExternalWorkshopController;
 use Illuminate\Support\Facades\Route;
 
-Route::middleware(['auth:sanctum', 'admin'])
+Route::middleware(['auth:sanctum', 'admin', 'external.conditional'])
     ->prefix('external/v1')
     ->name('api.external.')
     ->group(function () {

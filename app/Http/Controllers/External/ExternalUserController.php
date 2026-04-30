@@ -40,14 +40,19 @@ class ExternalUserController extends Controller
 
         $users = $query->orderBy('name')->paginate(15);
 
+        $lastModified = collect($users->items())->max('updated_at') ?? now();
+        $request->attributes->set('external_last_modified', $lastModified);
+
         return ExternalUserResource::collection($users);
     }
 
-    public function show(User $user): ExternalUserResource
+    public function show(Request $request, User $user): ExternalUserResource
     {
         Gate::authorize('view', $user);
 
         $user->load('speakerData');
+
+        $request->attributes->set('external_last_modified', $user->updated_at);
 
         return new ExternalUserResource($user);
     }

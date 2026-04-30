@@ -50,10 +50,13 @@ class ExternalSeminarController extends Controller
 
         $seminars = $query->orderByDesc('scheduled_at')->paginate(15);
 
+        $lastModified = collect($seminars->items())->max('updated_at') ?? now();
+        $request->attributes->set('external_last_modified', $lastModified);
+
         return ExternalSeminarResource::collection($seminars);
     }
 
-    public function show(Seminar $seminar): ExternalSeminarResource
+    public function show(Request $request, Seminar $seminar): ExternalSeminarResource
     {
         Gate::authorize('view', $seminar);
 
@@ -64,6 +67,8 @@ class ExternalSeminarController extends Controller
             'subjects',
             'speakers.speakerData',
         ]);
+
+        $request->attributes->set('external_last_modified', $seminar->updated_at);
 
         return new ExternalSeminarResource($seminar);
     }

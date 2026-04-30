@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Models\UserSpeakerData;
 use App\Services\SlugService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class ExternalSpeakerDataController extends Controller
 {
@@ -16,8 +17,17 @@ class ExternalSpeakerDataController extends Controller
         private readonly SlugService $slugService
     ) {}
 
-    public function show(User $user): JsonResponse
+    public function show(Request $request, User $user): JsonResponse
     {
+        $userUpdated = $user->updated_at;
+        $speakerUpdated = $user->speakerData?->updated_at ?? $userUpdated;
+        $request->attributes->set(
+            'external_last_modified',
+            $userUpdated && $speakerUpdated && $userUpdated->greaterThan($speakerUpdated)
+                ? $userUpdated
+                : $speakerUpdated
+        );
+
         if (! $user->speakerData) {
             return response()->json(['data' => null]);
         }
