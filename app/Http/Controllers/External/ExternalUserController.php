@@ -4,6 +4,8 @@ namespace App\Http\Controllers\External;
 
 use App\Http\Controllers\Concerns\EscapesLikeWildcards;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\External\ExternalUserStoreRequest;
+use App\Http\Requests\External\ExternalUserUpdateRequest;
 use App\Http\Resources\External\ExternalUserResource;
 use App\Models\User;
 use Dedoc\Scramble\Attributes\QueryParameter;
@@ -45,14 +47,9 @@ class ExternalUserController extends Controller
         return new ExternalUserResource($user);
     }
 
-    public function store(Request $request): JsonResponse
+    public function store(ExternalUserStoreRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'max:255', 'unique:users,email'],
-        ]);
-
-        $user = User::create($validated);
+        $user = User::create($request->validated());
         $user->load('speakerData');
 
         return response()->json([
@@ -61,14 +58,9 @@ class ExternalUserController extends Controller
         ], 201);
     }
 
-    public function update(Request $request, User $user): JsonResponse
+    public function update(ExternalUserUpdateRequest $request, User $user): JsonResponse
     {
-        $validated = $request->validate([
-            'name' => ['sometimes', 'string', 'max:255'],
-            'email' => ['sometimes', 'email', 'max:255', 'unique:users,email,'.$user->id],
-        ]);
-
-        $user->update($validated);
+        $user->update($request->validated());
         $user->load('speakerData');
 
         return response()->json([

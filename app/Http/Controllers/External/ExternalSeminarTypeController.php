@@ -3,9 +3,10 @@
 namespace App\Http\Controllers\External;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\External\ExternalSeminarTypeStoreRequest;
+use App\Http\Requests\External\ExternalSeminarTypeUpdateRequest;
 use App\Models\SeminarType;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 
 class ExternalSeminarTypeController extends Controller
 {
@@ -31,13 +32,9 @@ class ExternalSeminarTypeController extends Controller
         ]);
     }
 
-    public function store(Request $request): JsonResponse
+    public function store(ExternalSeminarTypeStoreRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255', 'unique:seminar_types,name'],
-        ]);
-
-        $type = SeminarType::create($validated);
+        $type = SeminarType::create($request->validated());
 
         return response()->json([
             'message' => 'Seminar type created successfully.',
@@ -48,13 +45,9 @@ class ExternalSeminarTypeController extends Controller
         ], 201);
     }
 
-    public function update(Request $request, SeminarType $seminarType): JsonResponse
+    public function update(ExternalSeminarTypeUpdateRequest $request, SeminarType $seminarType): JsonResponse
     {
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255', 'unique:seminar_types,name,'.$seminarType->id],
-        ]);
-
-        $seminarType->update($validated);
+        $seminarType->update($request->validated());
 
         return response()->json([
             'message' => 'Seminar type updated successfully.',

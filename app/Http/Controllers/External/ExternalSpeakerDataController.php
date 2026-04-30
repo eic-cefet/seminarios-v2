@@ -3,12 +3,12 @@
 namespace App\Http\Controllers\External;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\External\ExternalSpeakerDataUpdateRequest;
 use App\Http\Resources\External\ExternalSpeakerDataResource;
 use App\Models\User;
 use App\Models\UserSpeakerData;
 use App\Services\SlugService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 
 class ExternalSpeakerDataController extends Controller
 {
@@ -27,12 +27,9 @@ class ExternalSpeakerDataController extends Controller
         ]);
     }
 
-    public function update(Request $request, User $user): JsonResponse
+    public function update(ExternalSpeakerDataUpdateRequest $request, User $user): JsonResponse
     {
-        $validated = $request->validate([
-            'institution' => ['nullable', 'string', 'max:255'],
-            'description' => ['nullable', 'string'],
-        ]);
+        $validated = $request->validated();
 
         $speakerData = UserSpeakerData::updateOrCreate(
             ['user_id' => $user->id],

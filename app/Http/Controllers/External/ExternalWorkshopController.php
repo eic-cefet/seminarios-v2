@@ -4,6 +4,8 @@ namespace App\Http\Controllers\External;
 
 use App\Http\Controllers\Concerns\EscapesLikeWildcards;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\External\ExternalWorkshopStoreRequest;
+use App\Http\Requests\External\ExternalWorkshopUpdateRequest;
 use App\Http\Resources\External\ExternalWorkshopResource;
 use App\Models\Workshop;
 use App\Services\SlugService;
@@ -47,14 +49,9 @@ class ExternalWorkshopController extends Controller
         return new ExternalWorkshopResource($workshop);
     }
 
-    public function store(Request $request): JsonResponse
+    public function store(ExternalWorkshopStoreRequest $request): JsonResponse
     {
-        Gate::authorize('create', Workshop::class);
-
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255', 'unique:workshops,name'],
-            'description' => ['nullable', 'string'],
-        ]);
+        $validated = $request->validated();
 
         $slug = $this->slugService->generateUnique($validated['name'], Workshop::class);
 
@@ -72,14 +69,9 @@ class ExternalWorkshopController extends Controller
         ], 201);
     }
 
-    public function update(Request $request, Workshop $workshop): JsonResponse
+    public function update(ExternalWorkshopUpdateRequest $request, Workshop $workshop): JsonResponse
     {
-        Gate::authorize('update', $workshop);
-
-        $validated = $request->validate([
-            'name' => ['sometimes', 'string', 'max:255', 'unique:workshops,name,'.$workshop->id],
-            'description' => ['nullable', 'string'],
-        ]);
+        $validated = $request->validated();
 
         if (isset($validated['name'])) {
             $validated['slug'] = $this->slugService->generateUnique(
