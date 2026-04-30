@@ -65,6 +65,40 @@ describe('GET /api/external/v1/workshops', function () {
     });
 });
 
+describe('GET /api/external/v1/workshops filters & sort', function () {
+    it('rejects an invalid sort column', function () {
+        actingAsAdmin();
+        $this->getJson('/api/external/v1/workshops?sort=password')
+            ->assertStatus(422);
+    });
+
+    it('rejects malformed updated_since', function () {
+        actingAsAdmin();
+        $this->getJson('/api/external/v1/workshops?updated_since=not-a-date')
+            ->assertStatus(422);
+    });
+
+    it('sorts by name descending with leading dash', function () {
+        actingAsAdmin();
+        Workshop::factory()->create(['name' => 'Workshop A']);
+        Workshop::factory()->create(['name' => 'Workshop B']);
+
+        $names = collect($this->getJson('/api/external/v1/workshops?sort=-name')->json('data'))->pluck('name');
+        expect($names->first())->toBe('Workshop B');
+    });
+
+    it('filters by updated_since', function () {
+        actingAsAdmin();
+        $stale = Workshop::factory()->create();
+        $stale->updated_at = now()->subDays(7);
+        $stale->saveQuietly();
+        $fresh = Workshop::factory()->create();
+
+        $ids = collect($this->getJson('/api/external/v1/workshops?updated_since='.now()->subDay()->toIso8601String())->json('data'))->pluck('id');
+        expect($ids)->toContain($fresh->id)->and($ids)->not->toContain($stale->id);
+    });
+});
+
 describe('GET /api/external/v1/workshops/{workshop}', function () {
     it('returns a single workshop', function () {
         actingAsAdmin();
