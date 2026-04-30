@@ -112,6 +112,19 @@ describe('GET /api/external/docs.json', function () {
         expect($response->getContent())->toContain('Seating capacity');
     });
 
+    it('Stoplight info.description includes the Getting Started content', function () {
+        $response = $this->getJson('/api/external/docs.json');
+        $response->assertSuccessful();
+        $description = data_get($response->json(), 'info.description', '');
+        expect($description)->toContain('Getting Started')
+            ->and($description)->toContain('Authentication')
+            ->and($description)->toContain('Pagination')
+            ->and($description)->toContain('Sparse Fieldsets')
+            ->and($description)->toContain('Conditional Requests')
+            ->and($description)->toContain('ETag')
+            ->and($description)->toContain('Errors');
+    });
+
     it('strips external prefix from operation IDs', function () {
         $response = $this->getJson('/api/external/docs.json');
 
