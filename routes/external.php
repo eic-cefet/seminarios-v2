@@ -34,6 +34,9 @@ Route::middleware(['auth:sanctum', 'admin', 'external.conditional'])
             Route::post('seminar-types', [ExternalSeminarTypeController::class, 'store'])->name('seminar-types.store');
             Route::match(['put', 'patch'], 'seminar-types/{seminar_type}', [ExternalSeminarTypeController::class, 'update'])->name('seminar-types.update');
         });
+        Route::middleware('ability:seminar-types:delete')->group(function () {
+            Route::delete('seminar-types/{seminar_type}', [ExternalSeminarTypeController::class, 'destroy'])->name('seminar-types.destroy');
+        });
 
         // Locations
         Route::middleware('ability:locations:read')->group(function () {
