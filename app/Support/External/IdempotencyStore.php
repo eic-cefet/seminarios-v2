@@ -24,6 +24,6 @@ class IdempotencyStore
 
     private function cacheKey(string $tokenScope, string $key): string
     {
-        return 'external_api:idempotency:'.$tokenScope.':'.$key;
+        return 'external_api:idempotency:'.$tokenScope.':'.hash('sha256', $key);
     }
 }

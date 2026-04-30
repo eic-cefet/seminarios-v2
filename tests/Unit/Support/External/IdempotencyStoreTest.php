@@ -12,3 +12,12 @@ it('stores and retrieves a record', function () {
 it('returns null for unknown key', function () {
     expect((new IdempotencyStore)->get('tok-x', 'key-x'))->toBeNull();
 });
+
+it('does not collide when key contains the scope separator', function () {
+    $store = new IdempotencyStore;
+    $store->put('1', '2:foo', ['request_hash' => 'a', 'status' => 201, 'body' => '{"a":1}', 'headers' => []]);
+    $store->put('1:2', 'foo', ['request_hash' => 'b', 'status' => 201, 'body' => '{"b":2}', 'headers' => []]);
+
+    expect($store->get('1', '2:foo')['body'])->toBe('{"a":1}');
+    expect($store->get('1:2', 'foo')['body'])->toBe('{"b":2}');
+});
