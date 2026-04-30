@@ -4,8 +4,12 @@ on:
   push:
     branches: [main]
 
+# Normal pushes to main share the "release-main" group so the cumulative
+# "open release PR" logic stays serialized. Merges of release/vX.Y.Z PRs
+# (the bot's "chore(release): ..." commits) use a separate "release-tag"
+# group so tagging never queues behind a non-release run on main.
 concurrency:
-  group: release-main
+  group: ${{ startsWith(github.event.head_commit.message, 'chore(release):') && 'release-tag' || 'release-main' }}
   cancel-in-progress: false
 
 jobs:
