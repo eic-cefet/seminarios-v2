@@ -58,6 +58,12 @@ it('keeps only requested fields', function () {
     expect($this->fixture->call(['a' => 1, 'b' => 2], $req, ['a', 'b']))->toBe(['a' => 1]);
 });
 
+it('returns the original payload when ?fields contains only commas', function () {
+    $req = Request::create('/x?fields=,,');
+    $payload = ['a' => 1, 'b' => 2];
+    expect($this->fixture->call($payload, $req, ['a', 'b']))->toBe($payload);
+});
+
 it('trims whitespace and skips empty entries between commas', function () {
     $req = Request::create('/x?fields=a,%20,b');
     expect($this->fixture->call(['a' => 1, 'b' => 2, 'c' => 3], $req, ['a', 'b', 'c']))
