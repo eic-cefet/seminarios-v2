@@ -5,38 +5,28 @@ namespace App\Http\Controllers\External;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\External\ExternalLocationStoreRequest;
 use App\Http\Requests\External\ExternalLocationUpdateRequest;
+use App\Http\Resources\External\ExternalLocationResource;
 use App\Models\SeminarLocation;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\Gate;
 
 class ExternalLocationController extends Controller
 {
-    public function index(): JsonResponse
+    public function index(): AnonymousResourceCollection
     {
         Gate::authorize('viewAny', SeminarLocation::class);
 
-        $locations = SeminarLocation::orderBy('name')
-            ->get()
-            ->map(fn (SeminarLocation $location) => [
-                'id' => $location->id,
-                'name' => $location->name,
-                'max_vacancies' => $location->max_vacancies,
-            ]);
-
-        return response()->json(['data' => $locations]);
+        return ExternalLocationResource::collection(
+            SeminarLocation::orderBy('name')->get()
+        );
     }
 
-    public function show(SeminarLocation $location): JsonResponse
+    public function show(SeminarLocation $location): ExternalLocationResource
     {
         Gate::authorize('view', $location);
 
-        return response()->json([
-            'data' => [
-                'id' => $location->id,
-                'name' => $location->name,
-                'max_vacancies' => $location->max_vacancies,
-            ],
-        ]);
+        return new ExternalLocationResource($location);
     }
 
     public function store(ExternalLocationStoreRequest $request): JsonResponse
@@ -45,11 +35,7 @@ class ExternalLocationController extends Controller
 
         return response()->json([
             'message' => 'Location created successfully.',
-            'data' => [
-                'id' => $location->id,
-                'name' => $location->name,
-                'max_vacancies' => $location->max_vacancies,
-            ],
+            'data' => (new ExternalLocationResource($location))->resolve($request),
         ], 201);
     }
 
@@ -59,11 +45,7 @@ class ExternalLocationController extends Controller
 
         return response()->json([
             'message' => 'Location updated successfully.',
-            'data' => [
-                'id' => $location->id,
-                'name' => $location->name,
-                'max_vacancies' => $location->max_vacancies,
-            ],
+            'data' => (new ExternalLocationResource($location))->resolve($request),
         ]);
     }
 }
