@@ -25,3 +25,15 @@ it('emits the canonical {data, meta} envelope without links', function () {
         'to' => 18,
     ]);
 });
+
+it('omits the meta envelope when the resource is not a paginator', function () {
+    $items = SeminarLocation::factory()->count(2)->make();
+
+    $payload = (new ExternalResourceCollection($items, ExternalLocationResource::class))
+        ->response(new Request)
+        ->getData(true);
+
+    expect($payload)->toHaveKey('data');
+    expect($payload)->not->toHaveKey('meta');
+    expect($payload)->not->toHaveKey('links');
+});
