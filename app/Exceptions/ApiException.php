@@ -139,4 +139,9 @@ class ApiException extends Exception
     {
         return new self('idempotency_key_conflict', 'Idempotency-Key reused with a different request body', 409);
     }
+
+    public static function idempotencyConcurrentRequest(): self
+    {
+        return new self('idempotency_concurrent_request', 'Another request with the same Idempotency-Key is still in flight', 409);
+    }
 }

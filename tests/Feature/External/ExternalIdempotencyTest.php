@@ -79,7 +79,7 @@ it('acquires and releases a cache lock around the idempotent handler', function 
 
     Cache::shouldReceive('lock')
         ->once()
-        ->withArgs(fn (string $key, int $sec) => str_starts_with($key, 'lock:external_api:idempotency:') && $sec === 10)
+        ->withArgs(fn (string $key, int $sec) => str_starts_with($key, 'lock:external_api:idempotency:') && $sec === 60)
         ->andReturn($lock);
     Cache::shouldReceive('get')->andReturn(null);
     Cache::shouldReceive('put')->andReturnTrue();
@@ -92,14 +92,14 @@ it('acquires and releases a cache lock around the idempotent handler', function 
     )->assertCreated();
 });
 
-it('returns 409 when the lock cannot be acquired', function () {
+it('returns 409 idempotency_concurrent_request when the lock cannot be acquired', function () {
     $lock = Mockery::mock(Lock::class);
     $lock->shouldReceive('block')->once()->with(5)->andThrow(new LockTimeoutException);
     $lock->shouldNotReceive('release');
 
     Cache::shouldReceive('lock')
         ->once()
-        ->withArgs(fn (string $key, int $sec) => str_starts_with($key, 'lock:external_api:idempotency:') && $sec === 10)
+        ->withArgs(fn (string $key, int $sec) => str_starts_with($key, 'lock:external_api:idempotency:') && $sec === 60)
         ->andReturn($lock);
 
     [, $token] = makeAdminWithToken();
@@ -109,7 +109,7 @@ it('returns 409 when the lock cannot be acquired', function () {
         ['Idempotency-Key' => 'lk-2']
     )
         ->assertStatus(409)
-        ->assertJsonPath('error', 'idempotency_key_conflict');
+        ->assertJsonPath('error', 'idempotency_concurrent_request');
 });
 
 it('releases the lock even when the handler throws', function () {
@@ -119,7 +119,7 @@ it('releases the lock even when the handler throws', function () {
 
     Cache::shouldReceive('lock')
         ->once()
-        ->withArgs(fn (string $key, int $sec) => str_starts_with($key, 'lock:external_api:idempotency:') && $sec === 10)
+        ->withArgs(fn (string $key, int $sec) => str_starts_with($key, 'lock:external_api:idempotency:') && $sec === 60)
         ->andReturn($lock);
     Cache::shouldReceive('get')->andReturn(null);
 
@@ -167,3 +167,35 @@ it('throws unauthenticated when the request has no token', function () {
 
     $middleware->handle($request, fn () => response('ok'));
 })->throws(ApiException::class, 'Não autenticado');
+
+it('preserves whitelisted response headers across replay', function () {
+    [$admin] = makeAdminWithToken();
+    $admin->withAccessToken($admin->tokens()->latest('id')->first());
+
+    $store = app(IdempotencyStore::class);
+    $middleware = new EnforceIdempotency($store);
+
+    $request = Request::create('/api/external/v1/locations', 'POST', [], [], [], [], json_encode(['x' => 1]));
+    $request->headers->set('Idempotency-Key', 'hdr-1');
+    $request->setUserResolver(fn () => $admin);
+
+    $first = $middleware->handle($request, fn () => response('{"ok":true}', 201, [
+        'Content-Type' => 'application/json',
+        'Location' => '/api/external/v1/locations/42',
+        'ETag' => '"abc"',
+        'Cache-Control' => 'no-store',
+        'Set-Cookie' => 'session=abc',
+    ]));
+    expect($first->getStatusCode())->toBe(201);
+
+    $replay = $middleware->handle($request, function () {
+        throw new RuntimeException('handler should not be called on replay');
+    });
+    expect($replay->getStatusCode())->toBe(201);
+    expect($replay->headers->get('Location'))->toBe('/api/external/v1/locations/42');
+    expect($replay->headers->get('ETag'))->toBe('"abc"');
+    expect($replay->headers->get('Cache-Control'))->toContain('no-store');
+    expect($replay->headers->get('Idempotent-Replayed'))->toBe('true');
+    // Set-Cookie is intentionally not replayed.
+    expect($replay->headers->get('Set-Cookie'))->toBeNull();
+});

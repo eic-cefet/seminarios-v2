@@ -11,11 +11,33 @@ use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
+/**
+ * Stripe-style Idempotency-Key enforcement on external POST endpoints.
+ *
+ * The body hash is computed over the raw request bytes, so logically-equal
+ * payloads with different key ordering or whitespace will be treated as
+ * different bodies and rejected with 409. This matches Stripe's behavior:
+ * clients must send byte-identical retries.
+ */
 class EnforceIdempotency
 {
-    private const LOCK_TTL_SECONDS = 10;
+    private const LOCK_TTL_SECONDS = 60;
 
     private const LOCK_BLOCK_SECONDS = 5;
+
+    /**
+     * Response headers that are safe and useful to preserve when replaying
+     * a cached response. Set-Cookie and any auth-bearing headers are
+     * intentionally excluded.
+     */
+    private const REPLAYABLE_HEADERS = [
+        'Content-Type',
+        'Content-Language',
+        'Cache-Control',
+        'Location',
+        'ETag',
+        'Last-Modified',
+    ];
 
     public function __construct(private readonly IdempotencyStore $store) {}
 
@@ -30,7 +52,7 @@ class EnforceIdempotency
             return $next($request);
         }
 
-        if (strlen($key) > 200 || ! preg_match('/^[A-Za-z0-9._:\-]+$/', $key)) {
+        if (strlen($key) > 200 || ! preg_match('/^[A-Za-z0-9._:-]+$/', $key)) {
             throw ApiException::validation(['Idempotency-Key' => 'Invalid format']);
         }
 
@@ -53,7 +75,7 @@ class EnforceIdempotency
         try {
             return $mutex->protect(fn (): Response => $this->processInsideLock($request, $next, $tokenScope, $key, $hash));
         } catch (LockTimeoutException) {
-            throw ApiException::idempotencyKeyConflict();
+            throw ApiException::idempotencyConcurrentRequest();
         }
     }
 
@@ -81,10 +103,29 @@ class EnforceIdempotency
                 'request_hash' => $hash,
                 'status' => $response->getStatusCode(),
                 'body' => (string) $response->getContent(),
-                'headers' => ['Content-Type' => $response->headers->get('Content-Type', 'application/json')],
+                'headers' => $this->extractReplayableHeaders($response),
             ]);
         }
 
         return $response;
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function extractReplayableHeaders(Response $response): array
+    {
+        $headers = [];
+        foreach (self::REPLAYABLE_HEADERS as $name) {
+            $value = $response->headers->get($name);
+            if ($value !== null) {
+                $headers[$name] = $value;
+            }
+        }
+        if (! isset($headers['Content-Type'])) {
+            $headers['Content-Type'] = 'application/json';
+        }
+
+        return $headers;
     }
 }
