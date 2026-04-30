@@ -69,6 +69,15 @@ function formatDurationOption(
     return "4 horas";
 }
 
+function parseSelectId(value: string): number | undefined {
+    if (value === "" || value === "none") {
+        return undefined;
+    }
+    const parsed = Number(value);
+    /* v8 ignore next -- @preserve defensive guard: Radix never emits non-positive ids from its option list */
+    return parsed > 0 ? parsed : undefined;
+}
+
 export default function SeminarForm() {
     const { id } = useParams();
     const navigate = useNavigate();
@@ -391,12 +400,16 @@ export default function SeminarForm() {
                                                 "seminar_location_id",
                                             )?.toString() || ""
                                         }
-                                        onValueChange={(value) =>
-                                            setValue(
-                                                "seminar_location_id",
-                                                Number(value),
-                                            )
-                                        }
+                                        onValueChange={(value) => {
+                                            const id = parseSelectId(value);
+                                            if (id !== undefined) {
+                                                setValue(
+                                                    "seminar_location_id",
+                                                    id,
+                                                    { shouldValidate: true },
+                                                );
+                                            }
+                                        }}
                                     >
                                         <SelectTrigger>
                                             <SelectValue placeholder="Selecione um local" />
@@ -423,19 +436,22 @@ export default function SeminarForm() {
                                 <div className="space-y-2">
                                     <Label htmlFor="type">Tipo</Label>
                                     <Select
-                                        value={
-                                            watch(
-                                                "seminar_type_id",
-                                            )?.toString() || "none"
-                                        }
-                                        onValueChange={(value) =>
+                                        value={(() => {
+                                            const current =
+                                                watch("seminar_type_id");
+                                            return current && current > 0
+                                                ? current.toString()
+                                                : "none";
+                                        })()}
+                                        onValueChange={(value) => {
+                                            if (value === "") {
+                                                return;
+                                            }
                                             setValue(
                                                 "seminar_type_id",
-                                                value === "none"
-                                                    ? undefined
-                                                    : Number(value),
-                                            )
-                                        }
+                                                parseSelectId(value),
+                                            );
+                                        }}
                                     >
                                         <SelectTrigger>
                                             <SelectValue placeholder="Nenhum tipo" />
@@ -459,18 +475,21 @@ export default function SeminarForm() {
                                 <div className="space-y-2">
                                     <Label htmlFor="workshop">Workshop</Label>
                                     <Select
-                                        value={
-                                            watch("workshop_id")?.toString() ||
-                                            "none"
-                                        }
-                                        onValueChange={(value) =>
+                                        value={(() => {
+                                            const current = watch("workshop_id");
+                                            return current && current > 0
+                                                ? current.toString()
+                                                : "none";
+                                        })()}
+                                        onValueChange={(value) => {
+                                            if (value === "") {
+                                                return;
+                                            }
                                             setValue(
                                                 "workshop_id",
-                                                value === "none"
-                                                    ? undefined
-                                                    : Number(value),
-                                            )
-                                        }
+                                                parseSelectId(value),
+                                            );
+                                        }}
                                     >
                                         <SelectTrigger>
                                             <SelectValue placeholder="Nenhum workshop" />
