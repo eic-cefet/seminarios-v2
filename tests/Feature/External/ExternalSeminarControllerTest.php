@@ -68,12 +68,12 @@ describe('GET /api/external/v1/seminars', function () {
     });
 });
 
-describe('GET /api/external/v1/seminars/{id}', function () {
+describe('GET /api/external/v1/seminars/{slug}', function () {
     it('returns seminar details with speakers and subjects', function () {
         actingAsAdmin();
         $seminar = Seminar::factory()->withSpeakers(2)->withSubjects(3)->create();
 
-        $response = $this->getJson("/api/external/v1/seminars/{$seminar->id}");
+        $response = $this->getJson("/api/external/v1/seminars/{$seminar->slug}");
 
         $response->assertSuccessful()
             ->assertJsonStructure([
@@ -92,7 +92,17 @@ describe('GET /api/external/v1/seminars/{id}', function () {
         actingAsTeacher();
         $seminar = Seminar::factory()->create();
 
-        $this->getJson("/api/external/v1/seminars/{$seminar->id}")->assertForbidden();
+        $this->getJson("/api/external/v1/seminars/{$seminar->slug}")->assertForbidden();
+    });
+
+    it('resolves a seminar by slug, not id', function () {
+        actingAsAdmin();
+        $seminar = Seminar::factory()->create(['name' => 'Distributed Systems Seminar']);
+
+        $this->getJson("/api/external/v1/seminars/{$seminar->slug}")
+            ->assertSuccessful()
+            ->assertJsonPath('data.id', $seminar->id)
+            ->assertJsonPath('data.slug', $seminar->slug);
     });
 });
 
@@ -225,13 +235,13 @@ describe('POST /api/external/v1/seminars', function () {
     });
 });
 
-describe('PUT /api/external/v1/seminars/{id}', function () {
+describe('PUT /api/external/v1/seminars/{slug}', function () {
     it('updates seminar name and regenerates slug', function () {
         $admin = actingAsAdmin();
         $seminar = Seminar::factory()->withSpeakers()->withSubjects()
             ->create(['created_by' => $admin->id]);
 
-        $response = $this->putJson("/api/external/v1/seminars/{$seminar->id}", [
+        $response = $this->putJson("/api/external/v1/seminars/{$seminar->slug}", [
             'name' => 'Updated Seminar Name',
         ]);
 
@@ -246,7 +256,7 @@ describe('PUT /api/external/v1/seminars/{id}', function () {
             ->create(['created_by' => $admin->id]);
         $newSpeaker = User::factory()->speaker()->create();
 
-        $response = $this->putJson("/api/external/v1/seminars/{$seminar->id}", [
+        $response = $this->putJson("/api/external/v1/seminars/{$seminar->slug}", [
             'speaker_ids' => [$newSpeaker->id],
         ]);
 
@@ -259,7 +269,7 @@ describe('PUT /api/external/v1/seminars/{id}', function () {
         $seminar = Seminar::factory()->withSubjects()
             ->create(['created_by' => $admin->id]);
 
-        $response = $this->putJson("/api/external/v1/seminars/{$seminar->id}", [
+        $response = $this->putJson("/api/external/v1/seminars/{$seminar->slug}", [
             'subjects' => ['New Subject A', 'New Subject B'],
         ]);
 
@@ -272,7 +282,7 @@ describe('PUT /api/external/v1/seminars/{id}', function () {
         $seminar = Seminar::factory()->create(['created_by' => $admin->id]);
         $newLocation = SeminarLocation::factory()->create(['name' => 'New Room', 'max_vacancies' => 100]);
 
-        $response = $this->putJson("/api/external/v1/seminars/{$seminar->id}", [
+        $response = $this->putJson("/api/external/v1/seminars/{$seminar->slug}", [
             'seminar_location_id' => $newLocation->id,
         ]);
 
@@ -284,7 +294,7 @@ describe('PUT /api/external/v1/seminars/{id}', function () {
         actingAsTeacher();
         $seminar = Seminar::factory()->create();
 
-        $this->putJson("/api/external/v1/seminars/{$seminar->id}", [
+        $this->putJson("/api/external/v1/seminars/{$seminar->slug}", [
             'name' => 'Unauthorized',
         ])->assertForbidden();
     });
@@ -294,7 +304,7 @@ describe('PUT /api/external/v1/seminars/{id}', function () {
         $type = SeminarType::factory()->create(['name' => 'TCC']);
         $seminar = Seminar::factory()->create(['created_by' => $admin->id, 'seminar_type_id' => null]);
 
-        $response = $this->putJson("/api/external/v1/seminars/{$seminar->id}", [
+        $response = $this->putJson("/api/external/v1/seminars/{$seminar->slug}", [
             'seminar_type_id' => $type->id,
         ]);
 
@@ -306,7 +316,7 @@ describe('PUT /api/external/v1/seminars/{id}', function () {
         $type = SeminarType::factory()->create();
         $seminar = Seminar::factory()->create(['created_by' => $admin->id, 'seminar_type_id' => $type->id]);
 
-        $response = $this->putJson("/api/external/v1/seminars/{$seminar->id}", [
+        $response = $this->putJson("/api/external/v1/seminars/{$seminar->slug}", [
             'seminar_type_id' => null,
         ]);
 
@@ -318,7 +328,7 @@ describe('PUT /api/external/v1/seminars/{id}', function () {
         $admin = actingAsAdmin();
         $seminar = Seminar::factory()->create(['created_by' => $admin->id, 'scheduled_at' => '2026-06-15 14:00:00']);
 
-        $this->putJson("/api/external/v1/seminars/{$seminar->id}", [
+        $this->putJson("/api/external/v1/seminars/{$seminar->slug}", [
             'scheduled_at' => '2026-06-20 14:00:00',
         ]);
 
@@ -329,7 +339,7 @@ describe('PUT /api/external/v1/seminars/{id}', function () {
         $admin = actingAsAdmin();
         $seminar = Seminar::factory()->create(['created_by' => $admin->id, 'name' => 'Original', 'active' => true]);
 
-        $response = $this->putJson("/api/external/v1/seminars/{$seminar->id}", [
+        $response = $this->putJson("/api/external/v1/seminars/{$seminar->slug}", [
             'active' => false,
         ]);
 

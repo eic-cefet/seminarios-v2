@@ -81,6 +81,16 @@ describe('GET /api/external/v1/workshops/{workshop}', function () {
         actingAsAdmin();
         $this->getJson('/api/external/v1/workshops/non-existent-slug')->assertNotFound();
     });
+
+    it('resolves a workshop by slug, not id', function () {
+        actingAsAdmin();
+        $workshop = Workshop::factory()->create(['name' => 'Distributed Systems']);
+
+        $this->getJson("/api/external/v1/workshops/{$workshop->slug}")
+            ->assertSuccessful()
+            ->assertJsonPath('data.id', $workshop->id)
+            ->assertJsonPath('data.slug', $workshop->slug);
+    });
 });
 
 describe('POST /api/external/v1/workshops', function () {

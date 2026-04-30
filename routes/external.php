@@ -15,11 +15,11 @@ Route::middleware(['auth:sanctum', 'admin'])
         // Seminars
         Route::middleware('ability:seminars:read')->group(function () {
             Route::get('seminars', [ExternalSeminarController::class, 'index'])->name('seminars.index');
-            Route::get('seminars/{seminar}', [ExternalSeminarController::class, 'show'])->name('seminars.show');
+            Route::get('seminars/{seminar:slug}', [ExternalSeminarController::class, 'show'])->name('seminars.show');
         });
         Route::middleware('ability:seminars:write')->group(function () {
             Route::post('seminars', [ExternalSeminarController::class, 'store'])->name('seminars.store');
-            Route::match(['put', 'patch'], 'seminars/{seminar}', [ExternalSeminarController::class, 'update'])->name('seminars.update');
+            Route::match(['put', 'patch'], 'seminars/{seminar:slug}', [ExternalSeminarController::class, 'update'])->name('seminars.update');
         });
 
         // Seminar Types
