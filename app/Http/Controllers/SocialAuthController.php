@@ -145,14 +145,18 @@ class SocialAuthController extends Controller
 
     private function recordSignupConsents(User $user, Request $request): void
     {
+        $hasher = app(IpHasher::class);
+        $ipHash = $hasher->hash($request->ip());
+        $uaHash = $hasher->hashOpaque((string) $request->userAgent());
+
         foreach ([ConsentType::TermsOfService, ConsentType::PrivacyPolicy] as $type) {
             UserConsent::create([
                 'user_id' => $user->id,
                 'type' => $type,
                 'granted' => true,
                 'version' => config('lgpd.versions.'.$type->value) ?? '1.0',
-                'ip_hash' => app(IpHasher::class)->hash($request->ip()),
-                'user_agent_hash' => app(IpHasher::class)->hashOpaque((string) $request->userAgent()),
+                'ip_hash' => $ipHash,
+                'user_agent_hash' => $uaHash,
                 'source' => 'oauth',
             ]);
         }

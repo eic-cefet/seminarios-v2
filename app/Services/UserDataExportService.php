@@ -17,6 +17,7 @@ class UserDataExportService
     public function collect(User $user): array
     {
         $user->loadMissing([
+            'roles:id,name',
             'studentData.course',
             'speakerData',
             'registrations.seminar:id,slug,name,scheduled_at',

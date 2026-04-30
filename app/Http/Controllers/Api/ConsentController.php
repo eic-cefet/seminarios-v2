@@ -30,6 +30,7 @@ class ConsentController extends Controller
     {
         $validated = $request->validated();
         $user = $request->user();
+        $hasher = app(IpHasher::class);
 
         $consent = UserConsent::create([
             'user_id' => $user?->id,
@@ -37,8 +38,8 @@ class ConsentController extends Controller
             'type' => $validated['type'],
             'granted' => $validated['granted'],
             'version' => $validated['version'] ?? null,
-            'ip_hash' => app(IpHasher::class)->hash($request->ip()),
-            'user_agent_hash' => app(IpHasher::class)->hashOpaque((string) $request->userAgent()),
+            'ip_hash' => $hasher->hash($request->ip()),
+            'user_agent_hash' => $hasher->hashOpaque((string) $request->userAgent()),
             'source' => $user ? 'preference_center' : 'cookie_banner',
         ]);
 

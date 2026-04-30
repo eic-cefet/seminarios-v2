@@ -29,6 +29,7 @@ class AuditEmailSent
         }
 
         $mailClassHeader = $headers->get('X-Mail-Class');
+        $hasher = app(IpHasher::class);
 
         try {
             AuditLog::record(
@@ -37,7 +38,7 @@ class AuditEmailSent
                 eventData: [
                     'mail' => $mailClassHeader?->getBodyAsString(),
                     'to' => array_map(
-                        fn (Address $address) => app(IpHasher::class)->hashOpaque($address->getAddress()),
+                        fn (Address $address) => $hasher->hashOpaque($address->getAddress()),
                         $message->getTo(),
                     ),
                     'recipient_count' => count($message->getTo()),
