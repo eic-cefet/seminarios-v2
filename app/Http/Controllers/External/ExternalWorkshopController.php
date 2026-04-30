@@ -40,11 +40,13 @@ class ExternalWorkshopController extends Controller
         return ExternalWorkshopResource::collection($workshops);
     }
 
-    public function show(Workshop $workshop): ExternalWorkshopResource
+    public function show(Request $request, Workshop $workshop): ExternalWorkshopResource
     {
         Gate::authorize('view', $workshop);
 
         $workshop->loadCount('seminars');
+
+        $request->attributes->set('external_last_modified', $workshop->updated_at);
 
         return new ExternalWorkshopResource($workshop);
     }

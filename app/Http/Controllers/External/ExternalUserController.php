@@ -43,11 +43,13 @@ class ExternalUserController extends Controller
         return ExternalUserResource::collection($users);
     }
 
-    public function show(User $user): ExternalUserResource
+    public function show(Request $request, User $user): ExternalUserResource
     {
         Gate::authorize('view', $user);
 
         $user->load('speakerData');
+
+        $request->attributes->set('external_last_modified', $user->updated_at);
 
         return new ExternalUserResource($user);
     }

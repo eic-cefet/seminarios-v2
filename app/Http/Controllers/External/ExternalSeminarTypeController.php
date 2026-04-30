@@ -8,6 +8,7 @@ use App\Http\Requests\External\ExternalSeminarTypeUpdateRequest;
 use App\Http\Resources\External\ExternalSeminarTypeResource;
 use App\Models\SeminarType;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\Gate;
 
@@ -22,9 +23,11 @@ class ExternalSeminarTypeController extends Controller
         );
     }
 
-    public function show(SeminarType $seminarType): ExternalSeminarTypeResource
+    public function show(Request $request, SeminarType $seminarType): ExternalSeminarTypeResource
     {
         Gate::authorize('view', $seminarType);
+
+        $request->attributes->set('external_last_modified', $seminarType->updated_at);
 
         return new ExternalSeminarTypeResource($seminarType);
     }

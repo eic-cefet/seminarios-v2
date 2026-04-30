@@ -23,7 +23,9 @@ class HandleConditionalRequests
 
         $lastModified = $request->attributes->get('external_last_modified');
         if ($lastModified instanceof \DateTimeInterface) {
-            $response->headers->set('Last-Modified', $lastModified->format(\DateTimeInterface::RFC7231));
+            $lastModifiedUtc = \DateTimeImmutable::createFromInterface($lastModified)
+                ->setTimezone(new \DateTimeZone('GMT'));
+            $response->headers->set('Last-Modified', $lastModifiedUtc->format(\DateTimeInterface::RFC7231));
         }
 
         $ifNoneMatch = $request->headers->get('If-None-Match');
