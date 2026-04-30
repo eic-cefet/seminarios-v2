@@ -122,9 +122,6 @@ class EnforceIdempotency
                 $headers[$name] = $value;
             }
         }
-        if (! isset($headers['Content-Type'])) {
-            $headers['Content-Type'] = 'application/json';
-        }
 
         return $headers;
     }
