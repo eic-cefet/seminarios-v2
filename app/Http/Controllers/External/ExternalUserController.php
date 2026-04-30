@@ -12,6 +12,7 @@ use Dedoc\Scramble\Attributes\QueryParameter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Facades\Gate;
 
 class ExternalUserController extends Controller
 {
@@ -21,6 +22,8 @@ class ExternalUserController extends Controller
     #[QueryParameter('email', description: 'Filter by exact email address', type: 'string', example: 'joao@cefet-rj.br')]
     public function index(Request $request): AnonymousResourceCollection
     {
+        Gate::authorize('viewAny', User::class);
+
         $query = User::with('speakerData');
 
         if ($search = $request->string('search')->trim()->toString()) {
@@ -42,6 +45,8 @@ class ExternalUserController extends Controller
 
     public function show(User $user): ExternalUserResource
     {
+        Gate::authorize('view', $user);
+
         $user->load('speakerData');
 
         return new ExternalUserResource($user);
