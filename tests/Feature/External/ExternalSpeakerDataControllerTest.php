@@ -85,3 +85,24 @@ describe('PUT /api/external/v1/users/{id}/speaker-data', function () {
         expect($response->json('data.slug'))->toContain('joao-silva');
     });
 });
+
+describe('GET /api/external/v1/users/{id}/speaker-data sparse fieldsets', function () {
+    it('returns only requested fields with ?fields on show', function () {
+        actingAsAdmin();
+        $user = User::factory()->speaker()->create();
+
+        $payload = $this->getJson("/api/external/v1/users/{$user->id}/speaker-data?fields=id")
+            ->assertSuccessful()
+            ->json('data');
+
+        expect(array_keys($payload))->toBe(['id']);
+    });
+
+    it('returns 422 on unknown field name', function () {
+        actingAsAdmin();
+        $user = User::factory()->speaker()->create();
+
+        $this->getJson("/api/external/v1/users/{$user->id}/speaker-data?fields=password")
+            ->assertStatus(422);
+    });
+});

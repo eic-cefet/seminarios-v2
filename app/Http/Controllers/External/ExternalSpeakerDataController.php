@@ -8,6 +8,7 @@ use App\Http\Resources\External\ExternalSpeakerDataResource;
 use App\Models\User;
 use App\Models\UserSpeakerData;
 use App\Services\SlugService;
+use Dedoc\Scramble\Attributes\BodyParameter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -37,6 +38,8 @@ class ExternalSpeakerDataController extends Controller
         ]);
     }
 
+    #[BodyParameter('institution', description: 'Speaker institution or affiliation', type: 'string', example: 'CEFET-RJ')]
+    #[BodyParameter('description', description: 'Speaker biography (Markdown supported)', type: 'string', example: 'Professor of distributed systems with 10+ years of research experience.')]
     public function update(ExternalSpeakerDataUpdateRequest $request, User $user): JsonResponse
     {
         $validated = $request->validated();

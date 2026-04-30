@@ -18,6 +18,18 @@ describe('GET /api/external/v1/workshops', function () {
         expect($names->last())->toBe('Workshop B');
     });
 
+    it('returns the canonical envelope on the workshops index', function () {
+        actingAsAdmin();
+        Workshop::factory()->count(2)->create();
+
+        $response = $this->getJson('/api/external/v1/workshops');
+
+        $response->assertSuccessful()
+            ->assertJsonStructure(['data', 'meta' => ['current_page', 'last_page', 'per_page', 'total', 'from', 'to']])
+            ->assertJsonMissingPath('links')
+            ->assertJsonMissingPath('meta.links');
+    });
+
     it('paginates results', function () {
         actingAsAdmin();
 
@@ -62,6 +74,40 @@ describe('GET /api/external/v1/workshops', function () {
     it('returns 403 for non-admin user', function () {
         actingAsUser();
         $this->getJson('/api/external/v1/workshops')->assertForbidden();
+    });
+});
+
+describe('GET /api/external/v1/workshops filters & sort', function () {
+    it('rejects an invalid sort column', function () {
+        actingAsAdmin();
+        $this->getJson('/api/external/v1/workshops?sort=password')
+            ->assertStatus(422);
+    });
+
+    it('rejects malformed updated_since', function () {
+        actingAsAdmin();
+        $this->getJson('/api/external/v1/workshops?updated_since=not-a-date')
+            ->assertStatus(422);
+    });
+
+    it('sorts by name descending with leading dash', function () {
+        actingAsAdmin();
+        Workshop::factory()->create(['name' => 'Workshop A']);
+        Workshop::factory()->create(['name' => 'Workshop B']);
+
+        $names = collect($this->getJson('/api/external/v1/workshops?sort=-name')->json('data'))->pluck('name');
+        expect($names->first())->toBe('Workshop B');
+    });
+
+    it('filters by updated_since', function () {
+        actingAsAdmin();
+        $stale = Workshop::factory()->create();
+        $stale->updated_at = now()->subDays(7);
+        $stale->saveQuietly();
+        $fresh = Workshop::factory()->create();
+
+        $ids = collect($this->getJson('/api/external/v1/workshops?updated_since='.now()->subDay()->toIso8601String())->json('data'))->pluck('id');
+        expect($ids)->toContain($fresh->id)->and($ids)->not->toContain($stale->id);
     });
 });
 
@@ -196,5 +242,26 @@ describe('PUT /api/external/v1/workshops/{workshop}', function () {
         $this->putJson('/api/external/v1/workshops/non-existent-slug', [
             'name' => 'Test',
         ])->assertNotFound();
+    });
+});
+
+describe('GET /api/external/v1/workshops sparse fieldsets', function () {
+    it('returns only requested fields with ?fields on show', function () {
+        actingAsAdmin();
+        $workshop = Workshop::factory()->create();
+
+        $payload = $this->getJson("/api/external/v1/workshops/{$workshop->slug}?fields=id")
+            ->assertSuccessful()
+            ->json('data');
+
+        expect(array_keys($payload))->toBe(['id']);
+    });
+
+    it('returns 422 on unknown field name', function () {
+        actingAsAdmin();
+        $workshop = Workshop::factory()->create();
+
+        $this->getJson("/api/external/v1/workshops/{$workshop->slug}?fields=password")
+            ->assertStatus(422);
     });
 });

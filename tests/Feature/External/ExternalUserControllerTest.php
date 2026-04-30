@@ -3,16 +3,44 @@
 use App\Models\User;
 
 describe('GET /api/external/v1/users', function () {
-    it('returns paginated list of users with speaker data', function () {
+    it('returns paginated list of users with speaker data when included', function () {
         actingAsAdmin();
         User::factory()->speaker()->count(3)->create();
 
-        $response = $this->getJson('/api/external/v1/users');
+        $response = $this->getJson('/api/external/v1/users?include=speaker_data');
 
         $response->assertSuccessful()
             ->assertJsonStructure([
                 'data' => [['id', 'name', 'email', 'speaker_data']],
             ]);
+    });
+
+    it('returns the canonical envelope on the users index', function () {
+        actingAsAdmin();
+        User::factory()->count(2)->create();
+
+        $response = $this->getJson('/api/external/v1/users');
+
+        $response->assertSuccessful()
+            ->assertJsonStructure(['data', 'meta' => ['current_page', 'last_page', 'per_page', 'total', 'from', 'to']])
+            ->assertJsonMissingPath('links')
+            ->assertJsonMissingPath('meta.links');
+    });
+
+    it('omits speaker_data on index when not requested', function () {
+        actingAsAdmin();
+        User::factory()->speaker()->create();
+
+        $payload = $this->getJson('/api/external/v1/users')->json('data.0');
+
+        expect($payload)->not->toHaveKey('speaker_data');
+    });
+
+    it('rejects unknown include key with 422', function () {
+        actingAsAdmin();
+        User::factory()->create();
+
+        $this->getJson('/api/external/v1/users?include=mystery')->assertStatus(422);
     });
 
     it('searches by name', function () {
@@ -57,14 +85,45 @@ describe('GET /api/external/v1/users', function () {
         actingAsUser();
         $this->getJson('/api/external/v1/users')->assertForbidden();
     });
+
+    it('cursor pagination round-trip', function () {
+        actingAsAdmin();
+        User::factory()->count(40)->create();
+
+        $first = $this->getJson('/api/external/v1/users?paginate=cursor');
+        $first->assertSuccessful()->assertJsonStructure(['data', 'meta' => ['per_page', 'next_cursor', 'prev_cursor', 'has_more']]);
+
+        $cursor = $first->json('meta.next_cursor');
+        expect($cursor)->not->toBeNull();
+        expect($first->json('meta.has_more'))->toBeTrue();
+
+        $second = $this->getJson('/api/external/v1/users?paginate=cursor&cursor='.$cursor);
+        $second->assertSuccessful();
+        expect($second->json('data.0.id'))->not->toBe($first->json('data.0.id'));
+    });
+
+    it('rejects an unknown paginate mode with 422', function () {
+        actingAsAdmin();
+        $this->getJson('/api/external/v1/users?paginate=mystery')->assertStatus(422);
+    });
+
+    it('defaults to page-based pagination when paginate is omitted', function () {
+        actingAsAdmin();
+        User::factory()->count(2)->create();
+
+        $response = $this->getJson('/api/external/v1/users');
+
+        $response->assertSuccessful()
+            ->assertJsonStructure(['data', 'meta' => ['current_page', 'last_page', 'per_page', 'total', 'from', 'to']]);
+    });
 });
 
 describe('GET /api/external/v1/users/{id}', function () {
-    it('returns user with speaker data', function () {
+    it('returns user with speaker data when included', function () {
         actingAsAdmin();
         $user = User::factory()->speaker()->create();
 
-        $response = $this->getJson("/api/external/v1/users/{$user->id}");
+        $response = $this->getJson("/api/external/v1/users/{$user->id}?include=speaker_data");
 
         $response->assertSuccessful()
             ->assertJsonStructure([
@@ -72,14 +131,23 @@ describe('GET /api/external/v1/users/{id}', function () {
             ]);
     });
 
-    it('returns null speaker_data when user has none', function () {
+    it('returns null speaker_data when user has none and include is requested', function () {
         actingAsAdmin();
         $user = User::factory()->create();
 
-        $response = $this->getJson("/api/external/v1/users/{$user->id}");
+        $response = $this->getJson("/api/external/v1/users/{$user->id}?include=speaker_data");
 
         $response->assertSuccessful();
         expect($response->json('data.speaker_data'))->toBeNull();
+    });
+
+    it('omits speaker_data when not requested', function () {
+        actingAsAdmin();
+        $user = User::factory()->speaker()->create();
+
+        $payload = $this->getJson("/api/external/v1/users/{$user->id}")->json('data');
+
+        expect($payload)->not->toHaveKey('speaker_data');
     });
 
     it('returns 404 for non-existent user', function () {
@@ -101,6 +169,19 @@ describe('POST /api/external/v1/users', function () {
             ->assertJsonPath('data.name', 'New User')
             ->assertJsonPath('data.email', 'new@test.com')
             ->assertJsonPath('data.speaker_data', null);
+    });
+
+    it('store response includes speaker_data without ?include=', function () {
+        actingAsAdmin();
+
+        $response = $this->postJson('/api/external/v1/users', [
+            'name' => 'Plain User',
+            'email' => 'plain@test.com',
+        ]);
+
+        $response->assertCreated();
+        expect($response->json('data'))->toHaveKey('speaker_data');
+        expect($response->json('data.speaker_data'))->toBeNull();
     });
 
     it('does not accept password field', function () {
@@ -144,6 +225,21 @@ describe('PUT /api/external/v1/users/{id}', function () {
 
         $response->assertSuccessful();
         expect($response->json('data.name'))->toBe('Updated Name');
+        $response->assertJsonPath('data.speaker_data', null);
+    });
+
+    it('update response includes speaker_data without ?include=', function () {
+        actingAsAdmin();
+        $user = User::factory()->speaker()->create();
+
+        $response = $this->putJson("/api/external/v1/users/{$user->id}", [
+            'name' => 'Renamed Speaker',
+        ]);
+
+        $response->assertSuccessful();
+        expect($response->json('data'))->toHaveKey('speaker_data');
+        expect($response->json('data.speaker_data'))->not->toBeNull();
+        expect($response->json('data.speaker_data.id'))->toBe($user->speakerData->id);
     });
 
     it('rejects duplicate email on update', function () {
@@ -159,11 +255,32 @@ describe('PUT /api/external/v1/users/{id}', function () {
 
 describe('policy enforcement', function () {
     it('denies a teacher from listing users via external API', function () {
-        $teacher = \App\Models\User::factory()->teacher()->create();
+        $teacher = User::factory()->teacher()->create();
         $token = $teacher->createToken('t', ['users:read'])->plainTextToken;
 
         $this->withHeader('Authorization', "Bearer {$token}")
             ->getJson('/api/external/v1/users')
             ->assertForbidden();
+    });
+});
+
+describe('GET /api/external/v1/users sparse fieldsets', function () {
+    it('returns only requested fields with ?fields on show', function () {
+        actingAsAdmin();
+        $user = User::factory()->create();
+
+        $payload = $this->getJson("/api/external/v1/users/{$user->id}?fields=id")
+            ->assertSuccessful()
+            ->json('data');
+
+        expect(array_keys($payload))->toBe(['id']);
+    });
+
+    it('returns 422 on unknown field name', function () {
+        actingAsAdmin();
+        $user = User::factory()->create();
+
+        $this->getJson("/api/external/v1/users/{$user->id}?fields=password")
+            ->assertStatus(422);
     });
 });

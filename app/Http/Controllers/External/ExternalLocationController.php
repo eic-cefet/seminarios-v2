@@ -7,6 +7,7 @@ use App\Http\Requests\External\ExternalLocationStoreRequest;
 use App\Http\Requests\External\ExternalLocationUpdateRequest;
 use App\Http\Resources\External\ExternalLocationResource;
 use App\Models\SeminarLocation;
+use Dedoc\Scramble\Attributes\BodyParameter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -23,7 +24,8 @@ class ExternalLocationController extends Controller
         $lastModified = $locations->max('updated_at') ?? now();
         $request->attributes->set('external_last_modified', $lastModified);
 
-        return ExternalLocationResource::collection($locations);
+        return ExternalLocationResource::collection($locations)
+            ->additional(['meta' => ['total' => $locations->count()]]);
     }
 
     public function show(Request $request, SeminarLocation $location): ExternalLocationResource
@@ -35,6 +37,8 @@ class ExternalLocationController extends Controller
         return new ExternalLocationResource($location);
     }
 
+    #[BodyParameter('name', description: 'Display name (must be unique)', type: 'string', example: 'Auditório Principal')]
+    #[BodyParameter('max_vacancies', description: 'Seating capacity', type: 'integer', example: 200)]
     public function store(ExternalLocationStoreRequest $request): JsonResponse
     {
         $location = SeminarLocation::create($request->validated());
@@ -45,6 +49,8 @@ class ExternalLocationController extends Controller
         ], 201);
     }
 
+    #[BodyParameter('name', description: 'Display name (must be unique)', type: 'string', example: 'Auditório Principal')]
+    #[BodyParameter('max_vacancies', description: 'Seating capacity', type: 'integer', example: 200)]
     public function update(ExternalLocationUpdateRequest $request, SeminarLocation $location): JsonResponse
     {
         $location->update($request->validated());

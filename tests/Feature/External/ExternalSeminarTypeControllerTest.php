@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\SeminarType;
+use App\Models\User;
 
 describe('GET /api/external/v1/seminar-types', function () {
     it('returns all seminar types ordered by name', function () {
@@ -15,6 +16,18 @@ describe('GET /api/external/v1/seminar-types', function () {
         $names = collect($response->json('data'))->pluck('name');
         expect($names->first())->toBe('Dissertação');
         expect($names->last())->toBe('TCC');
+    });
+
+    it('returns the canonical envelope on the seminar-types index', function () {
+        actingAsAdmin();
+        SeminarType::factory()->count(2)->create();
+
+        $response = $this->getJson('/api/external/v1/seminar-types');
+
+        $response->assertSuccessful()
+            ->assertJsonStructure(['data', 'meta' => ['total']])
+            ->assertJsonMissingPath('links');
+        expect($response->json('meta.total'))->toBe(2);
     });
 
     it('returns 401 for unauthenticated user', function () {
@@ -114,11 +127,32 @@ describe('PUT /api/external/v1/seminar-types/{id}', function () {
 
 describe('policy enforcement', function () {
     it('denies a teacher from listing seminar types', function () {
-        $teacher = \App\Models\User::factory()->teacher()->create();
+        $teacher = User::factory()->teacher()->create();
         $token = $teacher->createToken('t', ['seminar-types:read'])->plainTextToken;
 
         $this->withHeader('Authorization', "Bearer {$token}")
             ->getJson('/api/external/v1/seminar-types')
             ->assertForbidden();
+    });
+});
+
+describe('GET /api/external/v1/seminar-types sparse fieldsets', function () {
+    it('returns only requested fields with ?fields on show', function () {
+        actingAsAdmin();
+        $type = SeminarType::factory()->create();
+
+        $payload = $this->getJson("/api/external/v1/seminar-types/{$type->id}?fields=id")
+            ->assertSuccessful()
+            ->json('data');
+
+        expect(array_keys($payload))->toBe(['id']);
+    });
+
+    it('returns 422 on unknown field name', function () {
+        actingAsAdmin();
+        $type = SeminarType::factory()->create();
+
+        $this->getJson("/api/external/v1/seminar-types/{$type->id}?fields=password")
+            ->assertStatus(422);
     });
 });
