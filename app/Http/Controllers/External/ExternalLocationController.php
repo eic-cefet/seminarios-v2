@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers\External;
 
+use App\Exceptions\ApiException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\External\ExternalLocationStoreRequest;
 use App\Http\Requests\External\ExternalLocationUpdateRequest;
 use App\Http\Resources\External\ExternalLocationResource;
+use App\Models\Seminar;
 use App\Models\SeminarLocation;
 use Dedoc\Scramble\Attributes\BodyParameter;
 use Illuminate\Http\JsonResponse;
@@ -59,5 +61,18 @@ class ExternalLocationController extends Controller
             'message' => 'Location updated successfully.',
             'data' => (new ExternalLocationResource($location))->resolve($request),
         ]);
+    }
+
+    public function destroy(SeminarLocation $location): JsonResponse
+    {
+        Gate::authorize('delete', $location);
+
+        if (Seminar::where('seminar_location_id', $location->id)->exists()) {
+            throw ApiException::locationInUse();
+        }
+
+        $location->delete();
+
+        return response()->json(['message' => 'Location deleted successfully.']);
     }
 }

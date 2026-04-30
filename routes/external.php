@@ -44,6 +44,9 @@ Route::middleware(['auth:sanctum', 'admin', 'external.conditional'])
             Route::post('locations', [ExternalLocationController::class, 'store'])->name('locations.store');
             Route::match(['put', 'patch'], 'locations/{location}', [ExternalLocationController::class, 'update'])->name('locations.update');
         });
+        Route::middleware('ability:locations:delete')->group(function () {
+            Route::delete('locations/{location}', [ExternalLocationController::class, 'destroy'])->name('locations.destroy');
+        });
 
         // Users
         Route::middleware('ability:users:read')->group(function () {
