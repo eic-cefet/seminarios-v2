@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\External;
 
+use App\Exceptions\ApiException;
 use App\Http\Controllers\Concerns\EscapesLikeWildcards;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\External\ExternalWorkshopIndexRequest;
@@ -112,5 +113,18 @@ class ExternalWorkshopController extends Controller
             'message' => 'Workshop updated successfully.',
             'data' => new ExternalWorkshopResource($workshop),
         ]);
+    }
+
+    public function destroy(Workshop $workshop): JsonResponse
+    {
+        Gate::authorize('delete', $workshop);
+
+        if ($workshop->seminars()->exists()) {
+            throw ApiException::workshopInUse();
+        }
+
+        $workshop->delete();
+
+        return response()->json(['message' => 'Workshop deleted successfully.']);
     }
 }

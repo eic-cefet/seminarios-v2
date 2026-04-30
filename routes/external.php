@@ -61,6 +61,9 @@ Route::middleware(['auth:sanctum', 'admin', 'external.conditional'])
             Route::post('workshops', [ExternalWorkshopController::class, 'store'])->name('workshops.store');
             Route::match(['put', 'patch'], 'workshops/{workshop:slug}', [ExternalWorkshopController::class, 'update'])->name('workshops.update');
         });
+        Route::middleware('ability:workshops:delete')->group(function () {
+            Route::delete('workshops/{workshop:slug}', [ExternalWorkshopController::class, 'destroy'])->name('workshops.destroy');
+        });
 
         // Speaker Data
         Route::get('users/{user}/speaker-data', [ExternalSpeakerDataController::class, 'show'])
