@@ -313,7 +313,12 @@ jobs:
         run: |
           source .github/workflows/scripts/release-bump.sh
 
-          CURRENT=$(tr -d '[:space:]' < VERSION 2>/dev/null || echo "v0.0.0")
+          # Always read VERSION from origin/main, not the local checkout — the
+          # checkout SHA can lag behind main if a release-tag run pushed a tag
+          # against a newer VERSION while this run was queued.
+          git fetch origin main --quiet
+          CURRENT=$(git show origin/main:VERSION 2>/dev/null | tr -d '[:space:]')
+          [ -z "$CURRENT" ] && CURRENT="v0.0.0"
           NEW_VERSION=$(bump_version "$CURRENT" "${{ steps.cumulative.outputs.bump }}")
           BRANCH="release/${NEW_VERSION}"
 
