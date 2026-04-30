@@ -1,6 +1,7 @@
 <?php
 
 use App\Jobs\ProcessSeminarRescheduleJob;
+use App\Models\Registration;
 use App\Models\Seminar;
 use App\Models\SeminarLocation;
 use App\Models\SeminarType;
@@ -8,6 +9,7 @@ use App\Models\Subject;
 use App\Models\User;
 use App\Models\Workshop;
 use Illuminate\Support\Facades\Bus;
+use Illuminate\Support\Facades\DB;
 
 describe('GET /api/external/v1/seminars', function () {
     it('returns paginated list of seminars for admin', function () {
@@ -613,5 +615,81 @@ describe('PUT /api/external/v1/seminars/{slug}', function () {
         $response->assertSuccessful();
         $data = $response->json('data');
         expect($data)->toHaveKeys(['workshop', 'seminar_type', 'location', 'subjects', 'speakers']);
+    });
+});
+
+describe('DELETE /api/external/v1/seminars/{slug}', function () {
+    it('deletes a seminar', function () {
+        actingAsAdmin();
+        $seminar = Seminar::factory()->create();
+
+        $this->deleteJson("/api/external/v1/seminars/{$seminar->slug}")
+            ->assertSuccessful()
+            ->assertJsonPath('message', 'Seminar deleted successfully.');
+
+        expect(Seminar::find($seminar->id))->toBeNull();
+    });
+
+    it('detaches subjects and speakers when deleting', function () {
+        actingAsAdmin();
+        $seminar = Seminar::factory()->create();
+        $subject = Subject::factory()->create();
+        $speaker = User::factory()->create();
+        $seminar->subjects()->attach($subject);
+        $seminar->speakers()->attach($speaker);
+
+        $this->deleteJson("/api/external/v1/seminars/{$seminar->slug}")
+            ->assertSuccessful();
+
+        expect(DB::table('seminar_subject')->where('seminar_id', $seminar->id)->count())->toBe(0);
+        expect(DB::table('seminar_speaker')->where('seminar_id', $seminar->id)->count())->toBe(0);
+    });
+
+    it('returns 409 when seminar has registrations', function () {
+        actingAsAdmin();
+        $seminar = Seminar::factory()->create();
+        Registration::factory()->for($seminar)->create();
+
+        $this->deleteJson("/api/external/v1/seminars/{$seminar->slug}")
+            ->assertStatus(409)
+            ->assertJsonPath('error', 'seminar_has_registrations');
+
+        expect(Seminar::find($seminar->id))->not->toBeNull();
+    });
+
+    it('returns 404 for non-existent seminar', function () {
+        actingAsAdmin();
+        $this->deleteJson('/api/external/v1/seminars/non-existent-slug')->assertNotFound();
+    });
+
+    it('returns 401 for unauthenticated user', function () {
+        $seminar = Seminar::factory()->create();
+        $this->deleteJson("/api/external/v1/seminars/{$seminar->slug}")->assertUnauthorized();
+    });
+
+    it('returns 403 for non-admin user', function () {
+        actingAsUser();
+        $seminar = Seminar::factory()->create();
+        $this->deleteJson("/api/external/v1/seminars/{$seminar->slug}")->assertForbidden();
+    });
+
+    it('requires seminars:delete ability', function () {
+        $admin = User::factory()->admin()->create();
+        $token = $admin->createToken('t', ['seminars:read'])->plainTextToken;
+        $seminar = Seminar::factory()->create();
+
+        $this->withHeader('Authorization', "Bearer {$token}")
+            ->deleteJson("/api/external/v1/seminars/{$seminar->slug}")
+            ->assertForbidden();
+    });
+
+    it('allows token with seminars:delete ability', function () {
+        $admin = User::factory()->admin()->create();
+        $token = $admin->createToken('t', ['seminars:delete'])->plainTextToken;
+        $seminar = Seminar::factory()->create();
+
+        $this->withHeader('Authorization', "Bearer {$token}")
+            ->deleteJson("/api/external/v1/seminars/{$seminar->slug}")
+            ->assertSuccessful();
     });
 });

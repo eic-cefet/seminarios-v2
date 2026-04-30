@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Seminar;
+use App\Models\User;
 use App\Models\Workshop;
 
 describe('GET /api/external/v1/workshops', function () {
@@ -242,6 +243,67 @@ describe('PUT /api/external/v1/workshops/{workshop}', function () {
         $this->putJson('/api/external/v1/workshops/non-existent-slug', [
             'name' => 'Test',
         ])->assertNotFound();
+    });
+});
+
+describe('DELETE /api/external/v1/workshops/{workshop}', function () {
+    it('deletes a workshop', function () {
+        actingAsAdmin();
+        $workshop = Workshop::factory()->create();
+
+        $this->deleteJson("/api/external/v1/workshops/{$workshop->slug}")
+            ->assertSuccessful()
+            ->assertJsonPath('message', 'Workshop deleted successfully.');
+
+        expect(Workshop::find($workshop->id))->toBeNull();
+    });
+
+    it('returns 409 when workshop has seminars', function () {
+        actingAsAdmin();
+        $workshop = Workshop::factory()->create();
+        Seminar::factory()->for($workshop, 'workshop')->create();
+
+        $this->deleteJson("/api/external/v1/workshops/{$workshop->slug}")
+            ->assertStatus(409)
+            ->assertJsonPath('error', 'workshop_in_use');
+
+        expect(Workshop::find($workshop->id))->not->toBeNull();
+    });
+
+    it('returns 404 for non-existent workshop', function () {
+        actingAsAdmin();
+        $this->deleteJson('/api/external/v1/workshops/non-existent-slug')->assertNotFound();
+    });
+
+    it('returns 401 for unauthenticated user', function () {
+        $workshop = Workshop::factory()->create();
+        $this->deleteJson("/api/external/v1/workshops/{$workshop->slug}")->assertUnauthorized();
+    });
+
+    it('returns 403 for non-admin user', function () {
+        actingAsUser();
+        $workshop = Workshop::factory()->create();
+        $this->deleteJson("/api/external/v1/workshops/{$workshop->slug}")->assertForbidden();
+    });
+
+    it('requires workshops:delete ability', function () {
+        $admin = User::factory()->admin()->create();
+        $token = $admin->createToken('t', ['workshops:read'])->plainTextToken;
+        $workshop = Workshop::factory()->create();
+
+        $this->withHeader('Authorization', "Bearer {$token}")
+            ->deleteJson("/api/external/v1/workshops/{$workshop->slug}")
+            ->assertForbidden();
+    });
+
+    it('allows token with workshops:delete ability', function () {
+        $admin = User::factory()->admin()->create();
+        $token = $admin->createToken('t', ['workshops:delete'])->plainTextToken;
+        $workshop = Workshop::factory()->create();
+
+        $this->withHeader('Authorization', "Bearer {$token}")
+            ->deleteJson("/api/external/v1/workshops/{$workshop->slug}")
+            ->assertSuccessful();
     });
 });
 

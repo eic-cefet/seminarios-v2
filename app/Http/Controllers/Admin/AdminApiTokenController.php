@@ -17,16 +17,20 @@ class AdminApiTokenController extends Controller
     public const AVAILABLE_ABILITIES = [
         'seminars:read',
         'seminars:write',
+        'seminars:delete',
         'seminar-types:read',
         'seminar-types:write',
+        'seminar-types:delete',
         'locations:read',
         'locations:write',
+        'locations:delete',
         'users:read',
         'users:write',
         'speaker-data:read',
         'speaker-data:write',
         'workshops:read',
         'workshops:write',
+        'workshops:delete',
     ];
 
     public function index(Request $request): JsonResponse

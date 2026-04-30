@@ -13,6 +13,7 @@ it('allows admins to manage seminar types', function () {
     expect($policy->view($admin, $type))->toBeTrue();
     expect($policy->create($admin))->toBeTrue();
     expect($policy->update($admin, $type))->toBeTrue();
+    expect($policy->delete($admin, $type))->toBeTrue();
 });
 
 it('denies non-admins from managing seminar types', function () {
@@ -24,4 +25,5 @@ it('denies non-admins from managing seminar types', function () {
     expect($policy->view($user, $type))->toBeFalse();
     expect($policy->create($user))->toBeFalse();
     expect($policy->update($user, $type))->toBeFalse();
+    expect($policy->delete($user, $type))->toBeFalse();
 });

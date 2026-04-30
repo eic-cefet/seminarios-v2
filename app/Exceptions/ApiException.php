@@ -110,6 +110,21 @@ class ApiException extends Exception
         return new self('workshop_in_use', 'Este workshop possui seminários associados e não pode ser excluído', 409);
     }
 
+    public static function locationInUse(): self
+    {
+        return new self('location_in_use', 'Esta localização está associada a seminários e não pode ser excluída', 409);
+    }
+
+    public static function seminarTypeInUse(): self
+    {
+        return new self('seminar_type_in_use', 'Este tipo de seminário está associado a seminários e não pode ser excluído', 409);
+    }
+
+    public static function seminarHasRegistrations(): self
+    {
+        return new self('seminar_has_registrations', 'Este seminário possui inscrições e não pode ser excluído', 409);
+    }
+
     public static function cannotDeleteSelf(): self
     {
         return new self('cannot_delete_self', 'Você não pode excluir sua própria conta', 400);

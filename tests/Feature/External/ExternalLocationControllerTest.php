@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Seminar;
 use App\Models\SeminarLocation;
 use App\Models\User;
 
@@ -161,6 +162,67 @@ describe('PUT /api/external/v1/locations/{id}', function () {
         ]);
 
         $response->assertSuccessful();
+    });
+});
+
+describe('DELETE /api/external/v1/locations/{id}', function () {
+    it('deletes a location', function () {
+        actingAsAdmin();
+        $location = SeminarLocation::factory()->create();
+
+        $this->deleteJson("/api/external/v1/locations/{$location->id}")
+            ->assertSuccessful()
+            ->assertJsonPath('message', 'Location deleted successfully.');
+
+        expect(SeminarLocation::find($location->id))->toBeNull();
+    });
+
+    it('returns 409 when location is in use by a seminar', function () {
+        actingAsAdmin();
+        $location = SeminarLocation::factory()->create();
+        Seminar::factory()->create(['seminar_location_id' => $location->id]);
+
+        $this->deleteJson("/api/external/v1/locations/{$location->id}")
+            ->assertStatus(409)
+            ->assertJsonPath('error', 'location_in_use');
+
+        expect(SeminarLocation::find($location->id))->not->toBeNull();
+    });
+
+    it('returns 404 for non-existent location', function () {
+        actingAsAdmin();
+        $this->deleteJson('/api/external/v1/locations/999999')->assertNotFound();
+    });
+
+    it('returns 401 for unauthenticated user', function () {
+        $location = SeminarLocation::factory()->create();
+        $this->deleteJson("/api/external/v1/locations/{$location->id}")->assertUnauthorized();
+    });
+
+    it('returns 403 for non-admin user', function () {
+        actingAsUser();
+        $location = SeminarLocation::factory()->create();
+        $this->deleteJson("/api/external/v1/locations/{$location->id}")->assertForbidden();
+    });
+
+    it('requires locations:delete ability', function () {
+        $admin = User::factory()->admin()->create();
+        $token = $admin->createToken('t', ['locations:read'])->plainTextToken;
+        $location = SeminarLocation::factory()->create();
+
+        $this->withHeader('Authorization', "Bearer {$token}")
+            ->deleteJson("/api/external/v1/locations/{$location->id}")
+            ->assertForbidden();
+    });
+
+    it('allows token with locations:delete ability', function () {
+        $admin = User::factory()->admin()->create();
+        $token = $admin->createToken('t', ['locations:delete'])->plainTextToken;
+        $location = SeminarLocation::factory()->create();
+
+        $this->withHeader('Authorization', "Bearer {$token}")
+            ->deleteJson("/api/external/v1/locations/{$location->id}")
+            ->assertSuccessful();
     });
 });
 
