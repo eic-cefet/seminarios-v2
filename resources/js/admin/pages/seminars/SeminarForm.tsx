@@ -443,12 +443,15 @@ export default function SeminarForm() {
                                                 ? current.toString()
                                                 : "none";
                                         })()}
-                                        onValueChange={(value) =>
+                                        onValueChange={(value) => {
+                                            if (value === "") {
+                                                return;
+                                            }
                                             setValue(
                                                 "seminar_type_id",
                                                 parseSelectId(value),
-                                            )
-                                        }
+                                            );
+                                        }}
                                     >
                                         <SelectTrigger>
                                             <SelectValue placeholder="Nenhum tipo" />
@@ -478,12 +481,15 @@ export default function SeminarForm() {
                                                 ? current.toString()
                                                 : "none";
                                         })()}
-                                        onValueChange={(value) =>
+                                        onValueChange={(value) => {
+                                            if (value === "") {
+                                                return;
+                                            }
                                             setValue(
                                                 "workshop_id",
                                                 parseSelectId(value),
-                                            )
-                                        }
+                                            );
+                                        }}
                                     >
                                         <SelectTrigger>
                                             <SelectValue placeholder="Nenhum workshop" />

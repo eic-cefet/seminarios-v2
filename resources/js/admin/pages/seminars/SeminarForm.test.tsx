@@ -1553,7 +1553,7 @@ describe('SeminarForm', () => {
         });
     });
 
-    it('does not send seminar_type_id=0 or workshop_id=0 when Radix Select emits an empty value', async () => {
+    it('does not send seminar_type_id=0 or workshop_id=0 when Radix Select emits an empty value (preserves loaded ids)', async () => {
         const { useParams, useNavigate } = await import('react-router-dom');
         vi.mocked(useParams).mockReturnValue({ id: '42' });
         vi.mocked(useNavigate).mockReturnValue(vi.fn());
@@ -1622,8 +1622,167 @@ describe('SeminarForm', () => {
         const payload = updateSpy.mock.calls[0][1];
         expect(payload.seminar_type_id).not.toBe(0);
         expect(payload.workshop_id).not.toBe(0);
-        expect(payload.seminar_type_id).toBeUndefined();
-        expect(payload.workshop_id).toBeUndefined();
+        expect(payload.seminar_type_id).toBe(7);
+        expect(payload.workshop_id).toBe(9);
         expect(payload.seminar_location_id).toBe(5);
+    });
+
+    it('loads the seminar_type Select with the saved id when editing', async () => {
+        const { useParams, useNavigate } = await import('react-router-dom');
+        vi.mocked(useParams).mockReturnValue({ id: '42' });
+        vi.mocked(useNavigate).mockReturnValue(vi.fn());
+
+        const { seminarsApi, dropdownApi } = await import(
+            '../../api/adminClient'
+        );
+        vi.mocked(seminarsApi.get).mockResolvedValue({
+            data: {
+                id: 42,
+                name: 'Has Type',
+                description: null,
+                scheduled_at: '2026-06-01T10:00:00-03:00',
+                duration_minutes: 60,
+                room_link: null,
+                active: true,
+                location: { id: 5, name: 'Sala A', max_vacancies: 30 },
+                seminar_type: { id: 7, name: 'Palestra' },
+                workshop: { id: 9, name: 'WS' },
+                subjects: [{ id: 1, name: 'Redes' }],
+                speakers: [{ id: 18, name: 'Alice' }],
+            },
+        } as any);
+        vi.mocked(dropdownApi.locations).mockResolvedValue({
+            data: [{ id: 5, name: 'Sala A', max_vacancies: 30 }],
+        } as any);
+        vi.mocked(dropdownApi.seminarTypes).mockResolvedValue({
+            data: [{ id: 7, name: 'Palestra' }],
+        } as any);
+        vi.mocked(dropdownApi.workshops).mockResolvedValue({
+            data: [{ id: 9, name: 'WS' }],
+        } as any);
+
+        render(<SeminarForm />);
+
+        await waitFor(() => {
+            expect(screen.getByLabelText('Nome *')).toHaveValue('Has Type');
+        });
+
+        const nativeSelects = document.querySelectorAll(
+            'select[data-testid="mock-native-select"]',
+        );
+        // [0] duration, [1] location, [2] type, [3] workshop
+        expect((nativeSelects[2] as HTMLSelectElement).value).toBe('7');
+        expect((nativeSelects[3] as HTMLSelectElement).value).toBe('9');
+    });
+
+    it('preserves seminar_type_id and workshop_id through a load-then-submit round-trip', async () => {
+        const { useParams, useNavigate } = await import('react-router-dom');
+        vi.mocked(useParams).mockReturnValue({ id: '42' });
+        vi.mocked(useNavigate).mockReturnValue(vi.fn());
+
+        const { seminarsApi, dropdownApi } = await import(
+            '../../api/adminClient'
+        );
+        vi.mocked(seminarsApi.get).mockResolvedValue({
+            data: {
+                id: 42,
+                name: 'Has Type',
+                description: null,
+                scheduled_at: '2026-06-01T10:00:00-03:00',
+                duration_minutes: 60,
+                room_link: null,
+                active: true,
+                location: { id: 5, name: 'Sala A', max_vacancies: 30 },
+                seminar_type: { id: 7, name: 'Palestra' },
+                workshop: { id: 9, name: 'WS' },
+                subjects: [{ id: 1, name: 'Redes' }],
+                speakers: [{ id: 18, name: 'Alice' }],
+            },
+        } as any);
+        vi.mocked(dropdownApi.locations).mockResolvedValue({
+            data: [{ id: 5, name: 'Sala A', max_vacancies: 30 }],
+        } as any);
+        vi.mocked(dropdownApi.seminarTypes).mockResolvedValue({
+            data: [{ id: 7, name: 'Palestra' }],
+        } as any);
+        vi.mocked(dropdownApi.workshops).mockResolvedValue({
+            data: [{ id: 9, name: 'WS' }],
+        } as any);
+        const updateSpy = vi.fn().mockResolvedValue({ data: {} });
+        vi.mocked(seminarsApi.update).mockImplementation(updateSpy as any);
+
+        render(<SeminarForm />);
+
+        await waitFor(() => {
+            expect(screen.getByLabelText('Nome *')).toHaveValue('Has Type');
+        });
+
+        // No user interaction with selects — submit straight after load
+        fireEvent.click(screen.getByText('Atualizar Seminário'));
+
+        await waitFor(() => {
+            expect(updateSpy).toHaveBeenCalled();
+        });
+
+        const payload = updateSpy.mock.calls[0][1];
+        expect(payload.seminar_type_id).toBe(7);
+        expect(payload.workshop_id).toBe(9);
+        expect(payload.seminar_location_id).toBe(5);
+    });
+
+    it('does not clear seminar_type_id when Radix Select transiently emits an empty value', async () => {
+        const { useParams, useNavigate } = await import('react-router-dom');
+        vi.mocked(useParams).mockReturnValue({ id: '42' });
+        vi.mocked(useNavigate).mockReturnValue(vi.fn());
+
+        const { seminarsApi, dropdownApi } = await import(
+            '../../api/adminClient'
+        );
+        vi.mocked(seminarsApi.get).mockResolvedValue({
+            data: {
+                id: 42,
+                name: 'Has Type',
+                description: null,
+                scheduled_at: '2026-06-01T10:00:00-03:00',
+                duration_minutes: 60,
+                room_link: null,
+                active: true,
+                location: { id: 5, name: 'Sala A', max_vacancies: 30 },
+                seminar_type: { id: 7, name: 'Palestra' },
+                workshop: { id: 9, name: 'WS' },
+                subjects: [{ id: 1, name: 'Redes' }],
+                speakers: [{ id: 18, name: 'Alice' }],
+            },
+        } as any);
+        vi.mocked(dropdownApi.locations).mockResolvedValue({
+            data: [{ id: 5, name: 'Sala A', max_vacancies: 30 }],
+        } as any);
+        vi.mocked(dropdownApi.seminarTypes).mockResolvedValue({
+            data: [{ id: 7, name: 'Palestra' }],
+        } as any);
+        vi.mocked(dropdownApi.workshops).mockResolvedValue({
+            data: [{ id: 9, name: 'WS' }],
+        } as any);
+
+        render(<SeminarForm />);
+
+        await waitFor(() => {
+            expect(screen.getByLabelText('Nome *')).toHaveValue('Has Type');
+        });
+
+        const nativeSelects = document.querySelectorAll(
+            'select[data-testid="mock-native-select"]',
+        );
+
+        // Simulate Radix Select transiently emitting onValueChange("") on
+        // type and workshop AFTER the form loaded with their values set.
+        // The user's loaded selection must survive — selecting "Nenhum tipo"
+        // explicitly (value="none") is the only way to clear an optional id.
+        fireEvent.change(nativeSelects[2], { target: { value: '' } });
+        fireEvent.change(nativeSelects[3], { target: { value: '' } });
+
+        // The displayed Select value must still reflect the loaded ids
+        expect((nativeSelects[2] as HTMLSelectElement).value).toBe('7');
+        expect((nativeSelects[3] as HTMLSelectElement).value).toBe('9');
     });
 });
