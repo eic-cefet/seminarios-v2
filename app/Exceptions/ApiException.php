@@ -149,4 +149,14 @@ class ApiException extends Exception
     {
         return new self('workshop_too_old_to_announce', 'Este workshop é anterior ao lançamento do recurso de anúncios', 422);
     }
+
+    public static function idempotencyKeyConflict(): self
+    {
+        return new self('idempotency_key_conflict', 'Idempotency-Key reused with a different request body', 409);
+    }
+
+    public static function idempotencyConcurrentRequest(): self
+    {
+        return new self('idempotency_concurrent_request', 'Another request with the same Idempotency-Key is still in flight', 409);
+    }
 }

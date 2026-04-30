@@ -39,4 +39,9 @@ final class LockKey
     {
         return self::PREFIX.':sentiment:rating:'.$ratingId;
     }
+
+    public static function externalIdempotency(string $tokenScope, string $idempotencyKey): string
+    {
+        return self::PREFIX.':external_api:idempotency:'.$tokenScope.':'.hash('sha256', $idempotencyKey);
+    }
 }

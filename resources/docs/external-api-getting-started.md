@@ -105,6 +105,31 @@ If-Modified-Since: Wed, 01 Apr 2026 12:00:00 GMT
 
 A match returns `304 Not Modified` with no body, preserving the original `ETag` (and `Last-Modified` when present).
 
+## Idempotency
+
+`POST` endpoints accept an optional `Idempotency-Key` header so retries after a network failure don't create duplicate resources:
+
+```
+POST /api/external/v1/locations
+Idempotency-Key: 7f3a9b1c-2e44-4d8a-9b1c-2e444d8a9b1c
+Content-Type: application/json
+
+{ "name": "Sala 101", "max_vacancies": 50 }
+```
+
+Behavior:
+
+- The key is scoped to the **token that issued the request**, so two integrations may safely use the same key value.
+- The original response body, status, and a whitelist of headers (`Content-Type`, `Content-Language`, `Cache-Control`, `Location`, `ETag`, `Last-Modified`) are cached for **24 hours** on the first 2xx response.
+- A retry within that window with **the same byte-for-byte body** replays the cached response and adds `Idempotent-Replayed: true`.
+- A retry with **a different body** returns `409 idempotency_key_conflict`.
+- A retry that arrives while the original is still in flight returns `409 idempotency_concurrent_request` — wait and try again.
+- Non-2xx responses are not cached. A request that 4xx'd with a given key may be retried with the same or different body.
+
+Key format: up to 200 characters, charset `[A-Za-z0-9._:-]`. Anything else returns `422 validation_error`. UUIDs are recommended.
+
+The header is ignored on `GET`/`HEAD`/`PUT`/`PATCH`/`DELETE`. `PUT` and `DELETE` are already idempotent at the protocol level.
+
 ## Errors
 
 All error responses share the same envelope:
@@ -125,7 +150,7 @@ All error responses share the same envelope:
 | 401  | `unauthenticated` |
 | 403  | `forbidden` |
 | 404  | `not_found` |
-| 409  | `conflict`, `workshop_in_use`, `subject_in_use`, `already_registered`, `not_registered`, `seminar_full`, `seminar_expired` |
+| 409  | `conflict`, `workshop_in_use`, `subject_in_use`, `already_registered`, `not_registered`, `seminar_full`, `seminar_expired`, `idempotency_key_conflict`, `idempotency_concurrent_request` |
 | 422  | `validation_error` |
 | 429  | `rate_limited` |
 | 500  | `server_error` |
