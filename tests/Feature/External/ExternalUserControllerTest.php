@@ -156,3 +156,14 @@ describe('PUT /api/external/v1/users/{id}', function () {
         ])->assertStatus(422);
     });
 });
+
+describe('policy enforcement', function () {
+    it('denies a teacher from listing users via external API', function () {
+        $teacher = \App\Models\User::factory()->teacher()->create();
+        $token = $teacher->createToken('t', ['users:read'])->plainTextToken;
+
+        $this->withHeader('Authorization', "Bearer {$token}")
+            ->getJson('/api/external/v1/users')
+            ->assertForbidden();
+    });
+});
