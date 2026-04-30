@@ -12,9 +12,9 @@ use App\Http\Resources\External\ExternalResourceCollection;
 use App\Http\Resources\External\ExternalSeminarResource;
 use App\Jobs\ProcessSeminarRescheduleJob;
 use App\Models\Seminar;
-use App\Services\SeminarQueryService;
 use App\Services\SeminarVisibilityService;
 use App\Services\SlugService;
+use App\Support\External\IncludesParser;
 use Dedoc\Scramble\Attributes\BodyParameter;
 use Dedoc\Scramble\Attributes\QueryParameter;
 use Illuminate\Http\JsonResponse;
@@ -22,10 +22,24 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\ValidationException;
 
 class ExternalSeminarController extends Controller
 {
     use EscapesLikeWildcards, ResolvesSubjects;
+
+    /**
+     * Whitelist mapping client include keys to eager-load paths.
+     *
+     * @var array<string, string>
+     */
+    private const INCLUDE_MAP = [
+        'workshop' => 'workshop',
+        'seminar_type' => 'seminarType',
+        'location' => 'seminarLocation',
+        'subjects' => 'subjects',
+        'speakers' => 'speakers.speakerData',
+    ];
 
     public function __construct(
         private readonly SlugService $slugService
@@ -36,12 +50,17 @@ class ExternalSeminarController extends Controller
     #[QueryParameter('upcoming', description: 'Shortcut for scheduled_from=now()', type: 'boolean', example: true)]
     #[QueryParameter('updated_since', description: 'Only return seminars updated on or after this date (ISO 8601)', type: 'string', example: '2026-04-01T00:00:00Z')]
     #[QueryParameter('sort', description: 'Comma-separated sort columns. Prefix with `-` for descending. Allowed: scheduled_at, name, updated_at', type: 'string', example: '-scheduled_at,name')]
-    public function index(ExternalSeminarIndexRequest $request, SeminarQueryService $seminars, SeminarVisibilityService $visibility): ExternalResourceCollection
+    #[QueryParameter('include', description: 'Comma-separated relations to eager-load. Allowed: workshop, seminar_type, location, subjects, speakers.', type: 'string', example: 'workshop,subjects')]
+    public function index(ExternalSeminarIndexRequest $request, SeminarVisibilityService $visibility): ExternalResourceCollection
     {
         $validated = $request->validated();
 
-        $query = $seminars->forList(Seminar::query())->with(['workshop']);
-        $query = $visibility->visibleSeminars($query, $request->user());
+        $query = $visibility->visibleSeminars(Seminar::query(), $request->user());
+
+        $includes = $this->resolveIncludes($request);
+        if ($includes !== []) {
+            $query->with($includes);
+        }
 
         if ($search = trim((string) ($validated['search'] ?? ''))) {
             $escaped = $this->escapeLike($search);
@@ -85,17 +104,15 @@ class ExternalSeminarController extends Controller
         return new ExternalResourceCollection($seminars, ExternalSeminarResource::class);
     }
 
+    #[QueryParameter('include', description: 'Comma-separated relations to eager-load. Allowed: workshop, seminar_type, location, subjects, speakers.', type: 'string', example: 'workshop,subjects')]
     public function show(Request $request, Seminar $seminar): ExternalSeminarResource
     {
         Gate::authorize('view', $seminar);
 
-        $seminar->load([
-            'seminarType',
-            'seminarLocation',
-            'workshop',
-            'subjects',
-            'speakers.speakerData',
-        ]);
+        $includes = $this->resolveIncludes($request);
+        if ($includes !== []) {
+            $seminar->load($includes);
+        }
 
         $request->attributes->set('external_last_modified', $seminar->updated_at);
 
@@ -208,5 +225,19 @@ class ExternalSeminarController extends Controller
             'message' => 'Seminar updated successfully.',
             'data' => new ExternalSeminarResource($seminar),
         ]);
+    }
+
+    /**
+     * Resolve the `include` query parameter into eager-load paths.
+     *
+     * @return list<string>
+     */
+    private function resolveIncludes(Request $request): array
+    {
+        try {
+            return IncludesParser::resolve($request->query('include'), self::INCLUDE_MAP);
+        } catch (\InvalidArgumentException $e) {
+            throw ValidationException::withMessages(['include' => $e->getMessage()]);
+        }
     }
 }
