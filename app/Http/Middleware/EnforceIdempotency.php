@@ -34,7 +34,14 @@ class EnforceIdempotency
             throw ApiException::validation(['Idempotency-Key' => 'Invalid format']);
         }
 
-        $tokenScope = (string) ($request->user()?->currentAccessToken()?->id ?? 'session');
+        $user = $request->user();
+        $tokenId = $user?->currentAccessToken()?->id;
+
+        if ($user === null || $tokenId === null) {
+            throw ApiException::unauthenticated();
+        }
+
+        $tokenScope = $user->id.':'.$tokenId;
         $hash = hash('sha256', $request->getContent() ?: '');
 
         $mutex = Mutex::for(
