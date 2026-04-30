@@ -29,24 +29,34 @@ class HandleConditionalRequests
         }
 
         $ifNoneMatch = $request->headers->get('If-None-Match');
-        if ($ifNoneMatch && trim($ifNoneMatch) === $etag) {
-            return response('', 304, [
-                'ETag' => $etag,
-                'Last-Modified' => $response->headers->get('Last-Modified'),
-            ]);
+        if ($ifNoneMatch !== null && $ifNoneMatch !== '') {
+            $tags = array_map('trim', explode(',', $ifNoneMatch));
+            if (in_array($etag, $tags, true) || in_array('*', $tags, true)) {
+                return $this->notModified($etag, $response->headers->get('Last-Modified'));
+            }
         }
 
         $ifModifiedSince = $request->headers->get('If-Modified-Since');
         if ($lastModified instanceof \DateTimeInterface && $ifModifiedSince) {
             $clientTs = strtotime($ifModifiedSince);
             if ($clientTs !== false && $clientTs >= $lastModified->getTimestamp()) {
-                return response('', 304, [
-                    'ETag' => $etag,
-                    'Last-Modified' => $response->headers->get('Last-Modified'),
-                ]);
+                return $this->notModified($etag, $response->headers->get('Last-Modified'));
             }
         }
 
         return $response;
+    }
+
+    /**
+     * Build a 304 Not Modified response, omitting Last-Modified when unset.
+     */
+    private function notModified(string $etag, ?string $lastModified): Response
+    {
+        $headers = ['ETag' => $etag];
+        if ($lastModified !== null) {
+            $headers['Last-Modified'] = $lastModified;
+        }
+
+        return response('', 304, $headers);
     }
 }

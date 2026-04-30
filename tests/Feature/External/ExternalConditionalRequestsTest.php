@@ -26,7 +26,7 @@ it('returns 304 when If-None-Match matches', function () {
 
 it('returns Last-Modified on show endpoints', function () {
     actingAsAdmin();
-    $loc = \App\Models\SeminarLocation::factory()->create();
+    $loc = SeminarLocation::factory()->create();
 
     $response = $this->getJson("/api/external/v1/locations/{$loc->id}");
     expect($response->headers->get('Last-Modified'))->not->toBeNull();
@@ -34,7 +34,7 @@ it('returns Last-Modified on show endpoints', function () {
 
 it('returns 304 to If-Modified-Since on show', function () {
     actingAsAdmin();
-    $loc = \App\Models\SeminarLocation::factory()->create();
+    $loc = SeminarLocation::factory()->create();
 
     $first = $this->getJson("/api/external/v1/locations/{$loc->id}");
     $lm = $first->headers->get('Last-Modified');
@@ -46,8 +46,29 @@ it('returns 304 to If-Modified-Since on show', function () {
 
 it('returns Last-Modified on index endpoints', function () {
     actingAsAdmin();
-    \App\Models\SeminarLocation::factory()->count(2)->create();
+    SeminarLocation::factory()->count(2)->create();
 
     $response = $this->getJson('/api/external/v1/locations');
     expect($response->headers->get('Last-Modified'))->not->toBeNull();
+});
+
+it('returns 304 when If-None-Match contains the matching ETag in a comma-separated list', function () {
+    actingAsAdmin();
+    SeminarLocation::factory()->create();
+
+    $first = $this->getJson('/api/external/v1/locations');
+    $etag = $first->headers->get('ETag');
+
+    $this->withHeader('If-None-Match', 'W/"otherEtag", '.$etag)
+        ->getJson('/api/external/v1/locations')
+        ->assertStatus(304);
+});
+
+it('returns 304 when If-None-Match is a wildcard', function () {
+    actingAsAdmin();
+    SeminarLocation::factory()->create();
+
+    $this->withHeader('If-None-Match', '*')
+        ->getJson('/api/external/v1/locations')
+        ->assertStatus(304);
 });
