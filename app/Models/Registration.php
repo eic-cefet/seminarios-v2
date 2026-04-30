@@ -16,6 +16,7 @@ class Registration extends Model
         'user_id',
         'present',
         'reminder_sent',
+        'reminder_7d_sent',
         'certificate_code',
         'certificate_sent',
         'evaluation_sent_at',
@@ -26,6 +27,7 @@ class Registration extends Model
         return [
             'present' => 'boolean',
             'reminder_sent' => 'boolean',
+            'reminder_7d_sent' => 'boolean',
             'certificate_sent' => 'boolean',
             'evaluation_sent_at' => 'datetime',
         ];

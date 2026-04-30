@@ -23,6 +23,7 @@ class AlertPreference extends Model
         'announcements',
         'certificate_ready',
         'seminar_rescheduled',
+        'workshop_announcements',
     ];
 
     protected function casts(): array
@@ -35,6 +36,7 @@ class AlertPreference extends Model
             'announcements' => 'boolean',
             'certificate_ready' => 'boolean',
             'seminar_rescheduled' => 'boolean',
+            'workshop_announcements' => 'boolean',
         ];
     }
 

@@ -3,6 +3,7 @@
 use App\Exceptions\ApiException;
 use App\Http\Middleware\AuditContextMiddleware;
 use App\Http\Middleware\CheckTokenAbility;
+use App\Http\Middleware\EnforceIdempotency;
 use App\Http\Middleware\EnsureUserIsAdmin;
 use App\Http\Middleware\LogRequestMiddleware;
 use App\Support\Locking\LockTimeoutException;
@@ -38,6 +39,8 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'admin' => EnsureUserIsAdmin::class,
             'ability' => CheckTokenAbility::class,
+            'external.conditional' => \App\Http\Middleware\HandleConditionalRequests::class,
+            'external.idempotency' => EnforceIdempotency::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

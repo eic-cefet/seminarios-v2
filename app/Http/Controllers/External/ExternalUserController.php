@@ -4,22 +4,56 @@ namespace App\Http\Controllers\External;
 
 use App\Http\Controllers\Concerns\EscapesLikeWildcards;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\External\ExternalUserStoreRequest;
+use App\Http\Requests\External\ExternalUserUpdateRequest;
+use App\Http\Resources\External\ExternalCursorResourceCollection;
+use App\Http\Resources\External\ExternalResourceCollection;
 use App\Http\Resources\External\ExternalUserResource;
 use App\Models\User;
+use App\Support\External\IncludesParser;
+use App\Support\External\PaginationMode;
+use Dedoc\Scramble\Attributes\BodyParameter;
 use Dedoc\Scramble\Attributes\QueryParameter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\ValidationException;
+use InvalidArgumentException;
 
 class ExternalUserController extends Controller
 {
     use EscapesLikeWildcards;
 
+    /**
+     * Whitelist mapping client include keys to eager-load paths.
+     *
+     * @var array<string, string>
+     */
+    private const INCLUDE_MAP = [
+        'speaker_data' => 'speakerData',
+    ];
+
     #[QueryParameter('search', description: 'Search by name or email', type: 'string', example: 'joao')]
     #[QueryParameter('email', description: 'Filter by exact email address', type: 'string', example: 'joao@cefet-rj.br')]
-    public function index(Request $request): AnonymousResourceCollection
+    #[QueryParameter('include', description: 'Comma-separated relations to eager-load. Allowed: speaker_data.', type: 'string', example: 'speaker_data')]
+    #[QueryParameter('paginate', description: 'Pagination strategy: `page` (default, length-aware) or `cursor` (opaque cursor for stable iteration over large sets)', type: 'string', example: 'cursor')]
+    #[QueryParameter('cursor', description: 'Opaque cursor token returned by a previous `paginate=cursor` response (`meta.next_cursor` / `meta.prev_cursor`)', type: 'string', example: 'eyJpZCI6MTAwLCJfcG9pbnRzVG9OZXh0SXRlbXMiOnRydWV9')]
+    public function index(Request $request): ExternalResourceCollection|ExternalCursorResourceCollection
     {
-        $query = User::with('speakerData');
+        Gate::authorize('viewAny', User::class);
+
+        try {
+            $mode = PaginationMode::fromQuery($request->query('paginate'));
+        } catch (InvalidArgumentException $e) {
+            throw ValidationException::withMessages(['paginate' => $e->getMessage()]);
+        }
+
+        $query = User::query();
+
+        $includes = $this->resolveIncludes($request);
+        if ($includes !== []) {
+            $query->with($includes);
+        }
 
         if ($search = $request->string('search')->trim()->toString()) {
             $escaped = $this->escapeLike($search);
@@ -33,26 +67,40 @@ class ExternalUserController extends Controller
             $query->where('email', $email);
         }
 
-        $users = $query->orderBy('name')->paginate(15);
+        $query->orderBy('name')->orderBy('id');
 
-        return ExternalUserResource::collection($users);
+        $users = $mode === PaginationMode::Cursor
+            ? $query->cursorPaginate(15)
+            : $query->paginate(15);
+
+        $lastModified = collect($users->items())->max('updated_at') ?? now();
+        $request->attributes->set('external_last_modified', $lastModified);
+
+        return $mode === PaginationMode::Cursor
+            ? new ExternalCursorResourceCollection($users, ExternalUserResource::class)
+            : new ExternalResourceCollection($users, ExternalUserResource::class);
     }
 
-    public function show(User $user): ExternalUserResource
+    #[QueryParameter('include', description: 'Comma-separated relations to eager-load. Allowed: speaker_data.', type: 'string', example: 'speaker_data')]
+    public function show(Request $request, User $user): ExternalUserResource
     {
-        $user->load('speakerData');
+        Gate::authorize('view', $user);
+
+        $includes = $this->resolveIncludes($request);
+        if ($includes !== []) {
+            $user->load($includes);
+        }
+
+        $request->attributes->set('external_last_modified', $user->updated_at);
 
         return new ExternalUserResource($user);
     }
 
-    public function store(Request $request): JsonResponse
+    #[BodyParameter('name', description: 'Full name', type: 'string', example: 'João Silva')]
+    #[BodyParameter('email', description: 'Email address (must be unique across all users)', type: 'string', example: 'joao@cefet-rj.br')]
+    public function store(ExternalUserStoreRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'max:255', 'unique:users,email'],
-        ]);
-
-        $user = User::create($validated);
+        $user = User::create($request->validated());
         $user->load('speakerData');
 
         return response()->json([
@@ -61,19 +109,30 @@ class ExternalUserController extends Controller
         ], 201);
     }
 
-    public function update(Request $request, User $user): JsonResponse
+    #[BodyParameter('name', description: 'Full name', type: 'string', example: 'João Silva')]
+    #[BodyParameter('email', description: 'Email address (must be unique across all users, excluding the current record)', type: 'string', example: 'joao@cefet-rj.br')]
+    public function update(ExternalUserUpdateRequest $request, User $user): JsonResponse
     {
-        $validated = $request->validate([
-            'name' => ['sometimes', 'string', 'max:255'],
-            'email' => ['sometimes', 'email', 'max:255', 'unique:users,email,'.$user->id],
-        ]);
-
-        $user->update($validated);
+        $user->update($request->validated());
         $user->load('speakerData');
 
         return response()->json([
             'message' => 'User updated successfully.',
             'data' => new ExternalUserResource($user),
         ]);
+    }
+
+    /**
+     * Resolve the `include` query parameter into eager-load paths.
+     *
+     * @return list<string>
+     */
+    private function resolveIncludes(Request $request): array
+    {
+        try {
+            return IncludesParser::resolve($request->query('include'), self::INCLUDE_MAP);
+        } catch (\InvalidArgumentException $e) {
+            throw ValidationException::withMessages(['include' => $e->getMessage()]);
+        }
     }
 }

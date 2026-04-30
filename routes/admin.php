@@ -9,10 +9,12 @@ use App\Http\Controllers\Admin\AdminPresenceLinkController;
 use App\Http\Controllers\Admin\AdminRegistrationController;
 use App\Http\Controllers\Admin\AdminSeminarController;
 use App\Http\Controllers\Admin\AdminSubjectController;
+use App\Http\Controllers\Admin\AdminSystemInfoController;
 use App\Http\Controllers\Admin\AdminUserController;
 use App\Http\Controllers\Admin\AdminWorkshopController;
 use App\Http\Controllers\Admin\AiTextController;
 use App\Http\Controllers\Admin\ReportController;
+use App\Http\Controllers\Admin\WorkshopAnnouncementController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function () {
@@ -46,6 +48,8 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function ()
 
     // Workshop search must be defined before the resource route
     Route::get('/workshops/search-seminars', [AdminWorkshopController::class, 'searchSeminars']);
+    Route::post('/workshops/{workshop}/announce', [WorkshopAnnouncementController::class, 'store'])
+        ->name('admin.workshops.announce');
     Route::apiResource('workshops', AdminWorkshopController::class)
         ->parameters(['workshops' => 'workshop:slug']);
 
@@ -67,6 +71,9 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function ()
     Route::get('/audit-logs/summary', [AdminAuditLogController::class, 'summary']);
     Route::get('/audit-logs/export', [AdminAuditLogController::class, 'export']);
     Route::get('/audit-logs/event-names', [AdminAuditLogController::class, 'eventNames']);
+
+    // System info (admin-only — see controller-level role check)
+    Route::get('/system/info', [AdminSystemInfoController::class, 'show']);
 
     // API Tokens
     Route::apiResource('api-tokens', AdminApiTokenController::class)

@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands\Concerns;
 
+use Closure;
 use Illuminate\Support\Collection;
 
 trait DispatchesGroupedJobs
@@ -11,9 +12,10 @@ trait DispatchesGroupedJobs
      *
      * @param  Collection  $registrations  Registrations with 'user' relationship loaded
      * @param  class-string  $jobClass  Job class that accepts (User, Collection<int>) constructor
+     * @param  Closure|null  $jobFactory  Optional factory invoked as fn(User, Collection<int>) => job instance
      * @return int Number of jobs dispatched
      */
-    protected function dispatchGroupedByUser(Collection $registrations, string $jobClass, string $userLabel = 'users'): int
+    protected function dispatchGroupedByUser(Collection $registrations, string $jobClass, string $userLabel = 'users', ?Closure $jobFactory = null): int
     {
         $grouped = $registrations->groupBy('user_id');
 
@@ -30,10 +32,14 @@ trait DispatchesGroupedJobs
 
             $registrationIds = $userRegistrations->pluck('id');
 
+            $job = $jobFactory !== null
+                ? $jobFactory($user, $registrationIds)
+                : new $jobClass($user, $registrationIds);
+
             if ($this->option('sync')) {
-                (new $jobClass($user, $registrationIds))->handle();
+                $job->handle();
             } else {
-                $jobClass::dispatch($user, $registrationIds);
+                dispatch($job);
             }
 
             $dispatched++;

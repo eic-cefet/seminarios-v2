@@ -31,6 +31,8 @@ pest()->extend(TestCase::class)->in('Unit/Config');
 
 pest()->extend(TestCase::class)->in('Unit/Support');
 
+pest()->extend(TestCase::class)->in('Unit/Http');
+
 pest()->extend(TestCase::class)
     ->use(RefreshDatabase::class)
     ->beforeEach(function () {
@@ -48,6 +50,15 @@ pest()->extend(TestCase::class)
         Role::findOrCreate('teacher');
     })
     ->in('Unit/Services');
+
+pest()->extend(TestCase::class)
+    ->use(RefreshDatabase::class)
+    ->beforeEach(function () {
+        app()[PermissionRegistrar::class]->forgetCachedPermissions();
+        Role::findOrCreate('admin');
+        Role::findOrCreate('teacher');
+    })
+    ->in('Unit/Policies');
 
 /*
 |--------------------------------------------------------------------------

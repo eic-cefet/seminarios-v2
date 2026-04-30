@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Seminar;
+use App\Models\User;
 use App\Models\Workshop;
 
 describe('GET /api/external/v1/workshops', function () {
@@ -16,6 +17,18 @@ describe('GET /api/external/v1/workshops', function () {
         $names = collect($response->json('data'))->pluck('name');
         expect($names->first())->toBe('Workshop A');
         expect($names->last())->toBe('Workshop B');
+    });
+
+    it('returns the canonical envelope on the workshops index', function () {
+        actingAsAdmin();
+        Workshop::factory()->count(2)->create();
+
+        $response = $this->getJson('/api/external/v1/workshops');
+
+        $response->assertSuccessful()
+            ->assertJsonStructure(['data', 'meta' => ['current_page', 'last_page', 'per_page', 'total', 'from', 'to']])
+            ->assertJsonMissingPath('links')
+            ->assertJsonMissingPath('meta.links');
     });
 
     it('paginates results', function () {
@@ -65,6 +78,40 @@ describe('GET /api/external/v1/workshops', function () {
     });
 });
 
+describe('GET /api/external/v1/workshops filters & sort', function () {
+    it('rejects an invalid sort column', function () {
+        actingAsAdmin();
+        $this->getJson('/api/external/v1/workshops?sort=password')
+            ->assertStatus(422);
+    });
+
+    it('rejects malformed updated_since', function () {
+        actingAsAdmin();
+        $this->getJson('/api/external/v1/workshops?updated_since=not-a-date')
+            ->assertStatus(422);
+    });
+
+    it('sorts by name descending with leading dash', function () {
+        actingAsAdmin();
+        Workshop::factory()->create(['name' => 'Workshop A']);
+        Workshop::factory()->create(['name' => 'Workshop B']);
+
+        $names = collect($this->getJson('/api/external/v1/workshops?sort=-name')->json('data'))->pluck('name');
+        expect($names->first())->toBe('Workshop B');
+    });
+
+    it('filters by updated_since', function () {
+        actingAsAdmin();
+        $stale = Workshop::factory()->create();
+        $stale->updated_at = now()->subDays(7);
+        $stale->saveQuietly();
+        $fresh = Workshop::factory()->create();
+
+        $ids = collect($this->getJson('/api/external/v1/workshops?updated_since='.now()->subDay()->toIso8601String())->json('data'))->pluck('id');
+        expect($ids)->toContain($fresh->id)->and($ids)->not->toContain($stale->id);
+    });
+});
+
 describe('GET /api/external/v1/workshops/{workshop}', function () {
     it('returns a single workshop', function () {
         actingAsAdmin();
@@ -80,6 +127,16 @@ describe('GET /api/external/v1/workshops/{workshop}', function () {
     it('returns 404 for non-existent workshop', function () {
         actingAsAdmin();
         $this->getJson('/api/external/v1/workshops/non-existent-slug')->assertNotFound();
+    });
+
+    it('resolves a workshop by slug, not id', function () {
+        actingAsAdmin();
+        $workshop = Workshop::factory()->create(['name' => 'Distributed Systems']);
+
+        $this->getJson("/api/external/v1/workshops/{$workshop->slug}")
+            ->assertSuccessful()
+            ->assertJsonPath('data.id', $workshop->id)
+            ->assertJsonPath('data.slug', $workshop->slug);
     });
 });
 
@@ -186,5 +243,87 @@ describe('PUT /api/external/v1/workshops/{workshop}', function () {
         $this->putJson('/api/external/v1/workshops/non-existent-slug', [
             'name' => 'Test',
         ])->assertNotFound();
+    });
+});
+
+describe('DELETE /api/external/v1/workshops/{workshop}', function () {
+    it('deletes a workshop', function () {
+        actingAsAdmin();
+        $workshop = Workshop::factory()->create();
+
+        $this->deleteJson("/api/external/v1/workshops/{$workshop->slug}")
+            ->assertSuccessful()
+            ->assertJsonPath('message', 'Workshop deleted successfully.');
+
+        expect(Workshop::find($workshop->id))->toBeNull();
+    });
+
+    it('returns 409 when workshop has seminars', function () {
+        actingAsAdmin();
+        $workshop = Workshop::factory()->create();
+        Seminar::factory()->for($workshop, 'workshop')->create();
+
+        $this->deleteJson("/api/external/v1/workshops/{$workshop->slug}")
+            ->assertStatus(409)
+            ->assertJsonPath('error', 'workshop_in_use');
+
+        expect(Workshop::find($workshop->id))->not->toBeNull();
+    });
+
+    it('returns 404 for non-existent workshop', function () {
+        actingAsAdmin();
+        $this->deleteJson('/api/external/v1/workshops/non-existent-slug')->assertNotFound();
+    });
+
+    it('returns 401 for unauthenticated user', function () {
+        $workshop = Workshop::factory()->create();
+        $this->deleteJson("/api/external/v1/workshops/{$workshop->slug}")->assertUnauthorized();
+    });
+
+    it('returns 403 for non-admin user', function () {
+        actingAsUser();
+        $workshop = Workshop::factory()->create();
+        $this->deleteJson("/api/external/v1/workshops/{$workshop->slug}")->assertForbidden();
+    });
+
+    it('requires workshops:delete ability', function () {
+        $admin = User::factory()->admin()->create();
+        $token = $admin->createToken('t', ['workshops:read'])->plainTextToken;
+        $workshop = Workshop::factory()->create();
+
+        $this->withHeader('Authorization', "Bearer {$token}")
+            ->deleteJson("/api/external/v1/workshops/{$workshop->slug}")
+            ->assertForbidden();
+    });
+
+    it('allows token with workshops:delete ability', function () {
+        $admin = User::factory()->admin()->create();
+        $token = $admin->createToken('t', ['workshops:delete'])->plainTextToken;
+        $workshop = Workshop::factory()->create();
+
+        $this->withHeader('Authorization', "Bearer {$token}")
+            ->deleteJson("/api/external/v1/workshops/{$workshop->slug}")
+            ->assertSuccessful();
+    });
+});
+
+describe('GET /api/external/v1/workshops sparse fieldsets', function () {
+    it('returns only requested fields with ?fields on show', function () {
+        actingAsAdmin();
+        $workshop = Workshop::factory()->create();
+
+        $payload = $this->getJson("/api/external/v1/workshops/{$workshop->slug}?fields=id")
+            ->assertSuccessful()
+            ->json('data');
+
+        expect(array_keys($payload))->toBe(['id']);
+    });
+
+    it('returns 422 on unknown field name', function () {
+        actingAsAdmin();
+        $workshop = Workshop::factory()->create();
+
+        $this->getJson("/api/external/v1/workshops/{$workshop->slug}?fields=password")
+            ->assertStatus(422);
     });
 });

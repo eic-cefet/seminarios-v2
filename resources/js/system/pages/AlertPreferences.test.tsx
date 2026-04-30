@@ -39,6 +39,7 @@ const prefs = (overrides: Partial<AlertPreference> = {}): AlertPreference => ({
     seminarReminder24h: true,
     evaluationPrompt: true,
     announcements: true,
+    workshopAnnouncements: true,
     certificateReady: true,
     seminarRescheduled: true,
     ...overrides,
@@ -60,6 +61,7 @@ describe('AlertPreferences', () => {
             seminarReminder24h: payload.seminar_reminder_24h,
             evaluationPrompt: payload.evaluation_prompt,
             announcements: payload.announcements,
+            workshopAnnouncements: payload.workshop_announcements,
             certificateReady: payload.certificate_ready,
             seminarRescheduled: payload.seminar_rescheduled,
         }));
@@ -239,6 +241,25 @@ describe('AlertPreferences', () => {
                 certificate_ready: true,
                 seminar_rescheduled: true,
                 announcements: true,
+            }));
+        });
+    });
+
+    it('renders and persists the workshop announcements toggle', async () => {
+        vi.mocked(useAuth).mockReturnValue(authedUser());
+        const user = userEvent.setup();
+
+        render(<AlertPreferences />);
+
+        const checkbox = await screen.findByLabelText(/comunicado de novos workshops/i);
+        expect(checkbox).toBeChecked();
+
+        await user.click(checkbox);
+        await user.click(screen.getByRole('button', { name: /salvar preferências/i }));
+
+        await waitFor(() => {
+            expect(alertPreferencesApi.update).toHaveBeenCalledWith(expect.objectContaining({
+                workshop_announcements: false,
             }));
         });
     });

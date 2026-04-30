@@ -66,7 +66,7 @@ export function CookieConsentBanner() {
                                 onClick={() => handleAll(false)}
                                 disabled={saving}
                                 className={cn(
-                                    "whitespace-nowrap rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50",
+                                    "cursor-pointer whitespace-nowrap rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed",
                                     /* v8 ignore next — cosmetic saving state styling */
                                     saving && "opacity-60",
                                 )}
@@ -78,7 +78,7 @@ export function CookieConsentBanner() {
                                 onClick={() => setMode("customize")}
                                 disabled={saving}
                                 className={cn(
-                                    "whitespace-nowrap rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50",
+                                    "cursor-pointer whitespace-nowrap rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed",
                                     /* v8 ignore next — cosmetic saving state styling */
                                     saving && "opacity-60",
                                 )}
@@ -90,7 +90,7 @@ export function CookieConsentBanner() {
                                 onClick={() => handleAll(true)}
                                 disabled={saving}
                                 className={cn(
-                                    "whitespace-nowrap rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700",
+                                    "cursor-pointer whitespace-nowrap rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700 disabled:cursor-not-allowed",
                                     /* v8 ignore next — cosmetic saving state styling */
                                     saving && "opacity-60",
                                 )}
@@ -109,7 +109,7 @@ export function CookieConsentBanner() {
                                 type="button"
                                 onClick={close}
                                 aria-label="Fechar"
-                                className="text-gray-500 hover:text-gray-700"
+                                className="cursor-pointer text-gray-500 hover:text-gray-700"
                             >
                                 ✕
                             </button>
@@ -165,7 +165,7 @@ export function CookieConsentBanner() {
                             <button
                                 type="button"
                                 onClick={() => setMode("summary")}
-                                className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                                className="cursor-pointer rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
                             >
                                 Voltar
                             </button>
@@ -174,7 +174,7 @@ export function CookieConsentBanner() {
                                 onClick={handleCustom}
                                 disabled={saving}
                                 className={cn(
-                                    "rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700",
+                                    "cursor-pointer rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700 disabled:cursor-not-allowed",
                                     /* v8 ignore next — cosmetic saving state styling */
                                     saving && "opacity-60",
                                 )}

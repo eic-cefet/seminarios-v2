@@ -2,72 +2,79 @@
 
 namespace App\Http\Controllers\External;
 
+use App\Exceptions\ApiException;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\External\ExternalLocationStoreRequest;
+use App\Http\Requests\External\ExternalLocationUpdateRequest;
+use App\Http\Resources\External\ExternalLocationResource;
 use App\Models\SeminarLocation;
+use Dedoc\Scramble\Attributes\BodyParameter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 
 class ExternalLocationController extends Controller
 {
-    public function index(): JsonResponse
+    public function index(Request $request): AnonymousResourceCollection
     {
-        $locations = SeminarLocation::orderBy('name')
-            ->get()
-            ->map(fn (SeminarLocation $location) => [
-                'id' => $location->id,
-                'name' => $location->name,
-                'max_vacancies' => $location->max_vacancies,
-            ]);
+        Gate::authorize('viewAny', SeminarLocation::class);
 
-        return response()->json(['data' => $locations]);
+        $locations = SeminarLocation::orderBy('name')->get();
+
+        $lastModified = $locations->max('updated_at') ?? now();
+        $request->attributes->set('external_last_modified', $lastModified);
+
+        return ExternalLocationResource::collection($locations)
+            ->additional(['meta' => ['total' => $locations->count()]]);
     }
 
-    public function show(SeminarLocation $location): JsonResponse
+    public function show(Request $request, SeminarLocation $location): ExternalLocationResource
     {
-        return response()->json([
-            'data' => [
-                'id' => $location->id,
-                'name' => $location->name,
-                'max_vacancies' => $location->max_vacancies,
-            ],
-        ]);
+        Gate::authorize('view', $location);
+
+        $request->attributes->set('external_last_modified', $location->updated_at);
+
+        return new ExternalLocationResource($location);
     }
 
-    public function store(Request $request): JsonResponse
+    #[BodyParameter('name', description: 'Display name (must be unique)', type: 'string', example: 'Auditório Principal')]
+    #[BodyParameter('max_vacancies', description: 'Seating capacity', type: 'integer', example: 200)]
+    public function store(ExternalLocationStoreRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255', 'unique:seminar_locations,name'],
-            'max_vacancies' => ['required', 'integer', 'min:1'],
-        ]);
-
-        $location = SeminarLocation::create($validated);
+        $location = SeminarLocation::create($request->validated());
 
         return response()->json([
             'message' => 'Location created successfully.',
-            'data' => [
-                'id' => $location->id,
-                'name' => $location->name,
-                'max_vacancies' => $location->max_vacancies,
-            ],
+            'data' => (new ExternalLocationResource($location))->resolve($request),
         ], 201);
     }
 
-    public function update(Request $request, SeminarLocation $location): JsonResponse
+    #[BodyParameter('name', description: 'Display name (must be unique)', type: 'string', example: 'Auditório Principal')]
+    #[BodyParameter('max_vacancies', description: 'Seating capacity', type: 'integer', example: 200)]
+    public function update(ExternalLocationUpdateRequest $request, SeminarLocation $location): JsonResponse
     {
-        $validated = $request->validate([
-            'name' => ['sometimes', 'string', 'max:255', 'unique:seminar_locations,name,'.$location->id],
-            'max_vacancies' => ['sometimes', 'integer', 'min:1'],
-        ]);
-
-        $location->update($validated);
+        $location->update($request->validated());
 
         return response()->json([
             'message' => 'Location updated successfully.',
-            'data' => [
-                'id' => $location->id,
-                'name' => $location->name,
-                'max_vacancies' => $location->max_vacancies,
-            ],
+            'data' => (new ExternalLocationResource($location))->resolve($request),
         ]);
+    }
+
+    public function destroy(SeminarLocation $location): JsonResponse
+    {
+        Gate::authorize('delete', $location);
+
+        DB::transaction(function () use ($location) {
+            if ($location->seminars()->lockForUpdate()->exists()) {
+                throw ApiException::locationInUse();
+            }
+
+            $location->delete();
+        });
+
+        return response()->json(['message' => 'Location deleted successfully.']);
     }
 }

@@ -3,12 +3,14 @@
 namespace App\Services;
 
 use App\Exceptions\ApiException;
+use App\Mail\SeminarRegistrationConfirmation;
 use App\Models\Registration;
 use App\Models\Seminar;
 use App\Models\User;
 use App\Support\Locking\LockKey;
 use App\Support\Locking\Mutex;
 use Illuminate\Database\UniqueConstraintViolationException;
+use Illuminate\Support\Facades\Mail;
 
 class RegistrationService
 {
@@ -18,7 +20,7 @@ class RegistrationService
             throw ApiException::seminarExpired();
         }
 
-        return Mutex::for(LockKey::seminarRegistration($seminar->id), ttlSeconds: 5, waitSeconds: 5)
+        $registration = Mutex::for(LockKey::seminarRegistration($seminar->id), ttlSeconds: 5, waitSeconds: 5)
             ->protect(function () use ($user, $seminar): Registration {
                 try {
                     return $seminar->registrations()->create([
@@ -29,6 +31,10 @@ class RegistrationService
                     throw ApiException::alreadyRegistered();
                 }
             });
+
+        Mail::to($user)->queue(new SeminarRegistrationConfirmation($user, $seminar));
+
+        return $registration;
     }
 
     public function unregister(User $user, Seminar $seminar): void

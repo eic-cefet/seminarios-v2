@@ -10,6 +10,7 @@ vi.mock('../../api/adminClient', () => ({
         create: vi.fn(),
         update: vi.fn(),
         delete: vi.fn(),
+        announce: vi.fn(),
         searchSeminars: vi.fn().mockResolvedValue({ data: [] }),
     },
     AdminApiError: class extends Error {},
@@ -19,6 +20,7 @@ vi.mock('../../api/adminClient', () => ({
 let capturedDeleteMutationOptions: any = null;
 let capturedCreateMutationOptions: any = null;
 let capturedUpdateMutationOptions: any = null;
+let capturedAnnounceMutationOptions: any = null;
 let wsMutationCallCount = 0;
 
 vi.mock('@tanstack/react-query', async () => {
@@ -27,11 +29,12 @@ vi.mock('@tanstack/react-query', async () => {
         ...actual,
         useMutation: (options: any) => {
             wsMutationCallCount++;
-            // Order: createMutation (1), updateMutation (2), deleteMutation (3)
-            const idx = ((wsMutationCallCount - 1) % 3) + 1;
+            // Order: createMutation (1), updateMutation (2), deleteMutation (3), announceMutation (4)
+            const idx = ((wsMutationCallCount - 1) % 4) + 1;
             if (idx === 1) capturedCreateMutationOptions = options;
             else if (idx === 2) capturedUpdateMutationOptions = options;
-            else capturedDeleteMutationOptions = options;
+            else if (idx === 3) capturedDeleteMutationOptions = options;
+            else capturedAnnounceMutationOptions = options;
             return (actual as any).useMutation(options);
         },
     };
@@ -50,6 +53,7 @@ describe('WorkshopList', () => {
         capturedDeleteMutationOptions = null;
         capturedCreateMutationOptions = null;
         capturedUpdateMutationOptions = null;
+        capturedAnnounceMutationOptions = null;
         wsMutationCallCount = 0;
     });
 
@@ -674,11 +678,77 @@ describe('WorkshopList', () => {
         });
     });
 
-    it('captures all three mutation options', () => {
+    it('captures all four mutation options', () => {
         render(<WorkshopList />);
         expect(capturedCreateMutationOptions).not.toBeNull();
         expect(capturedUpdateMutationOptions).not.toBeNull();
         expect(capturedDeleteMutationOptions).not.toBeNull();
+        expect(capturedAnnounceMutationOptions).not.toBeNull();
+    });
+
+    it('shows announce button and triggers workshopsApi.announce on confirm when not yet announced', async () => {
+        vi.mocked(workshopsApi.announce).mockResolvedValue({ message: 'ok', data: { id: 42, name: 'Unannounced WS', slug: 'unannounced-ws', description: null, announcement_sent_at: '2026-04-26T10:00:00Z', seminars_count: 0, created_at: '2026-04-26T00:00:00Z', updated_at: '2026-04-26T00:00:00Z' } } as any);
+        vi.mocked(workshopsApi.list).mockResolvedValue({
+            data: [
+                { id: 42, name: 'Unannounced WS', slug: 'unannounced-ws', description: null, announcement_sent_at: null, seminars_count: 0, created_at: '2026-04-26T00:00:00Z', updated_at: '2026-04-26T00:00:00Z' },
+            ],
+            meta: { last_page: 1, current_page: 1, total: 1, from: 1, to: 1 },
+        } as any);
+
+        render(<WorkshopList />);
+        const user = userEvent.setup();
+
+        await waitFor(() => {
+            expect(screen.getByText('Unannounced WS')).toBeInTheDocument();
+        });
+
+        await user.click(screen.getByText('Anunciar workshop'));
+
+        await waitFor(() => {
+            expect(screen.getByText('Anunciar workshop?')).toBeInTheDocument();
+        });
+
+        await user.click(screen.getByRole('button', { name: 'Anunciar' }));
+
+        await waitFor(() => {
+            expect(workshopsApi.announce).toHaveBeenCalledWith(42);
+        });
+    });
+
+    it('shows announced badge and no announce button when announcement_sent_at is set', async () => {
+        vi.mocked(workshopsApi.list).mockResolvedValue({
+            data: [
+                { id: 7, name: 'Announced WS', slug: 'announced-ws', description: null, announcement_sent_at: '2026-04-20T10:00:00Z', seminars_count: 0, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
+            ],
+            meta: { last_page: 1, current_page: 1, total: 1, from: 1, to: 1 },
+        } as any);
+
+        render(<WorkshopList />);
+
+        await waitFor(() => {
+            expect(screen.getByText('Announced WS')).toBeInTheDocument();
+        });
+
+        expect(screen.queryByText('Anunciar workshop')).not.toBeInTheDocument();
+        expect(screen.getByText(/Anunciado em/)).toBeInTheDocument();
+    });
+
+    it('hides announce button for workshops created before 2026-04-26', async () => {
+        vi.mocked(workshopsApi.list).mockResolvedValue({
+            data: [
+                { id: 9, name: 'Old WS', slug: 'old-ws', description: null, announcement_sent_at: null, seminars_count: 0, created_at: '2026-04-25T23:59:59Z', updated_at: '2026-04-25T23:59:59Z' },
+            ],
+            meta: { last_page: 1, current_page: 1, total: 1, from: 1, to: 1 },
+        } as any);
+
+        render(<WorkshopList />);
+
+        await waitFor(() => {
+            expect(screen.getByText('Old WS')).toBeInTheDocument();
+        });
+
+        expect(screen.queryByText('Anunciar workshop')).not.toBeInTheDocument();
+        expect(screen.queryByText(/Anunciado em/)).not.toBeInTheDocument();
     });
 
     it('deleteMutation onError with associado message shows specific error', async () => {
@@ -801,6 +871,26 @@ describe('WorkshopList', () => {
 
         await act(() => {
             capturedUpdateMutationOptions.onError(new Error('Update failed'));
+        });
+
+        expect(screen.getByText('Workshops')).toBeInTheDocument();
+    });
+
+    it('announceMutation onSuccess does not crash', async () => {
+        render(<WorkshopList />);
+
+        await act(() => {
+            capturedAnnounceMutationOptions.onSuccess();
+        });
+
+        expect(screen.getByText('Workshops')).toBeInTheDocument();
+    });
+
+    it('announceMutation onError does not crash', async () => {
+        render(<WorkshopList />);
+
+        await act(() => {
+            capturedAnnounceMutationOptions.onError(new Error('Announce failed'));
         });
 
         expect(screen.getByText('Workshops')).toBeInTheDocument();

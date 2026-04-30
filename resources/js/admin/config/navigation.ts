@@ -4,6 +4,7 @@ import {
     KeyRound,
     LayoutDashboard,
     Presentation,
+    Server,
     Users,
 } from "lucide-react";
 
@@ -68,6 +69,12 @@ export const adminNavigation: NavItem[] = [
                 adminOnly: true,
             },
         ],
+    },
+    {
+        label: "Sistema",
+        href: "/system-info",
+        icon: Server,
+        adminOnly: true,
     },
 ];
 

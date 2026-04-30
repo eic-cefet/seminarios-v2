@@ -52,7 +52,7 @@ export function Sidebar() {
                                 open={openMenus.includes(item.label)}
                                 onOpenChange={() => toggleMenu(item.label)}
                             >
-                                <Collapsible.Trigger className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground">
+                                <Collapsible.Trigger className="flex w-full cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground">
                                     <span className="flex items-center gap-3">
                                         <item.icon className="h-5 w-5" />
                                         {item.label}

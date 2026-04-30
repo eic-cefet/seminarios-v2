@@ -26,8 +26,12 @@ return [
 
         /*
          * Description rendered on the home page of the API documentation (`/docs/api`).
+         * Loaded from a markdown file so the Stoplight landing page can carry a full
+         * "Getting Started" guide without bloating this config.
          */
-        'description' => 'External API for programmatic access to the CEFET-RJ Seminários system. Authenticate using a Bearer token (`sk-...`) provided by an administrator.',
+        'description' => is_file(resource_path('docs/external-api-getting-started.md'))
+            ? file_get_contents(resource_path('docs/external-api-getting-started.md'))
+            : 'External API for programmatic access to the CEFET-RJ Seminários system. Authenticate using a Bearer token (`sk-...`) provided by an administrator.',
     ],
 
     /*

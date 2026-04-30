@@ -2,66 +2,77 @@
 
 namespace App\Http\Controllers\External;
 
+use App\Exceptions\ApiException;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\External\ExternalSeminarTypeStoreRequest;
+use App\Http\Requests\External\ExternalSeminarTypeUpdateRequest;
+use App\Http\Resources\External\ExternalSeminarTypeResource;
 use App\Models\SeminarType;
+use Dedoc\Scramble\Attributes\BodyParameter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 
 class ExternalSeminarTypeController extends Controller
 {
-    public function index(): JsonResponse
+    public function index(Request $request): AnonymousResourceCollection
     {
-        $types = SeminarType::orderBy('name')
-            ->get()
-            ->map(fn (SeminarType $type) => [
-                'id' => $type->id,
-                'name' => $type->name,
-            ]);
+        Gate::authorize('viewAny', SeminarType::class);
 
-        return response()->json(['data' => $types]);
+        $types = SeminarType::orderBy('name')->get();
+
+        $lastModified = $types->max('updated_at') ?? now();
+        $request->attributes->set('external_last_modified', $lastModified);
+
+        return ExternalSeminarTypeResource::collection($types)
+            ->additional(['meta' => ['total' => $types->count()]]);
     }
 
-    public function show(SeminarType $seminarType): JsonResponse
+    public function show(Request $request, SeminarType $seminarType): ExternalSeminarTypeResource
     {
-        return response()->json([
-            'data' => [
-                'id' => $seminarType->id,
-                'name' => $seminarType->name,
-            ],
-        ]);
+        Gate::authorize('view', $seminarType);
+
+        $request->attributes->set('external_last_modified', $seminarType->updated_at);
+
+        return new ExternalSeminarTypeResource($seminarType);
     }
 
-    public function store(Request $request): JsonResponse
+    #[BodyParameter('name', description: 'Seminar type display name (must be unique)', type: 'string', example: 'Qualificação')]
+    public function store(ExternalSeminarTypeStoreRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255', 'unique:seminar_types,name'],
-        ]);
-
-        $type = SeminarType::create($validated);
+        $type = SeminarType::create($request->validated());
 
         return response()->json([
             'message' => 'Seminar type created successfully.',
-            'data' => [
-                'id' => $type->id,
-                'name' => $type->name,
-            ],
+            'data' => (new ExternalSeminarTypeResource($type))->resolve($request),
         ], 201);
     }
 
-    public function update(Request $request, SeminarType $seminarType): JsonResponse
+    #[BodyParameter('name', description: 'Seminar type display name (must be unique, excluding the current record)', type: 'string', example: 'Qualificação')]
+    public function update(ExternalSeminarTypeUpdateRequest $request, SeminarType $seminarType): JsonResponse
     {
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255', 'unique:seminar_types,name,'.$seminarType->id],
-        ]);
-
-        $seminarType->update($validated);
+        $seminarType->update($request->validated());
 
         return response()->json([
             'message' => 'Seminar type updated successfully.',
-            'data' => [
-                'id' => $seminarType->id,
-                'name' => $seminarType->name,
-            ],
+            'data' => (new ExternalSeminarTypeResource($seminarType))->resolve($request),
         ]);
+    }
+
+    public function destroy(SeminarType $seminarType): JsonResponse
+    {
+        Gate::authorize('delete', $seminarType);
+
+        DB::transaction(function () use ($seminarType) {
+            if ($seminarType->seminars()->lockForUpdate()->exists()) {
+                throw ApiException::seminarTypeInUse();
+            }
+
+            $seminarType->delete();
+        });
+
+        return response()->json(['message' => 'Seminar type deleted successfully.']);
     }
 }

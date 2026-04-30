@@ -1,6 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Megaphone } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -52,6 +52,17 @@ import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
 import { MarkdownEditor } from "../../components/MarkdownEditor";
 import { PageTitle } from "@shared/components/PageTitle";
+import { formatDateTime } from "@shared/lib/utils";
+
+// The announcement feature shipped on 2026-04-26. Workshops created before this
+// date predate the feature and could spam users about content they may have
+// already seen — only show the announce button for workshops created on or
+// after the cutoff. Backend enforces the same rule.
+const ANNOUNCE_CUTOFF = new Date("2026-04-26T00:00:00Z");
+
+function canAnnounce(workshop: { created_at: string }): boolean {
+    return new Date(workshop.created_at) >= ANNOUNCE_CUTOFF;
+}
 
 export default function WorkshopList() {
     const queryClient = useQueryClient();
@@ -98,6 +109,20 @@ export default function WorkshopList() {
             seminar_ids: [],
         }),
     });
+
+    const [isAnnounceDialogOpen, setIsAnnounceDialogOpen] = useState(false);
+    const [announcingWorkshop, setAnnouncingWorkshop] =
+        useState<AdminWorkshop | null>(null);
+
+    const openAnnounceDialog = (workshop: AdminWorkshop) => {
+        setAnnouncingWorkshop(workshop);
+        setIsAnnounceDialogOpen(true);
+    };
+
+    const closeAnnounceDialog = () => {
+        setIsAnnounceDialogOpen(false);
+        setAnnouncingWorkshop(null);
+    };
 
     const openCreateDialog = () => {
         reset(workshopFormDefaults);
@@ -192,6 +217,18 @@ export default function WorkshopList() {
             } else {
                 toast.error("Erro ao excluir workshop");
             }
+        },
+    });
+
+    const announceMutation = useMutation({
+        mutationFn: (id: number) => workshopsApi.announce(id),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["admin-workshops"] });
+            toast.success("Workshop anunciado com sucesso");
+            closeAnnounceDialog();
+        },
+        onError: () => {
+            toast.error("Erro ao anunciar workshop");
         },
     });
 
@@ -311,6 +348,27 @@ export default function WorkshopList() {
                                                     >
                                                         <Pencil className="h-4 w-4" />
                                                     </Button>
+                                                    {workshop.announcement_sent_at ? (
+                                                        <Badge variant="secondary">
+                                                            Anunciado em{" "}
+                                                            {formatDateTime(
+                                                                workshop.announcement_sent_at,
+                                                            )}
+                                                        </Badge>
+                                                    ) : canAnnounce(workshop) ? (
+                                                        <Button
+                                                            variant="outline"
+                                                            size="sm"
+                                                            onClick={() =>
+                                                                openAnnounceDialog(
+                                                                    workshop,
+                                                                )
+                                                            }
+                                                        >
+                                                            <Megaphone className="h-4 w-4 mr-2" />
+                                                            Anunciar workshop
+                                                        </Button>
+                                                    ) : null}
                                                     <Button
                                                         variant="ghost"
                                                         size="icon"
@@ -479,6 +537,39 @@ export default function WorkshopList() {
                             {deleteMutation.isPending
                                 ? "Excluindo..."
                                 : "Excluir"}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+            {/* Announce Confirmation Dialog */}
+            <AlertDialog
+                open={isAnnounceDialogOpen}
+                onOpenChange={setIsAnnounceDialogOpen}
+            >
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Anunciar workshop?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Tem certeza que deseja anunciar o workshop "
+                            {announcingWorkshop?.name}"? Todos os usuarios serao
+                            notificados por e-mail. Esta acao so pode ser feita
+                            uma vez.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel onClick={closeAnnounceDialog}>
+                            Cancelar
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={() =>
+                                announcingWorkshop &&
+                                announceMutation.mutate(announcingWorkshop.id)
+                            }
+                            disabled={announceMutation.isPending}
+                        >
+                            {announceMutation.isPending
+                                ? "Anunciando..."
+                                : "Anunciar"}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

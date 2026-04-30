@@ -1,7 +1,10 @@
 <?php
 
+use App\Mail\SeminarRegistrationConfirmation;
 use App\Models\Registration;
 use App\Models\Seminar;
+use App\Models\SeminarLocation;
+use Illuminate\Support\Facades\Mail;
 
 describe('POST /api/seminars/{slug}/register', function () {
     it('registers authenticated user for a seminar', function () {
@@ -68,9 +71,24 @@ describe('POST /api/seminars/{slug}/register', function () {
         $response->assertStatus(404);
     });
 
+    it('queues a registration confirmation email after a successful registration', function () {
+        Mail::fake();
+
+        $user = actingAsUser();
+        $seminar = Seminar::factory()->upcoming()->create(['active' => true]);
+
+        $this->postJson("/api/seminars/{$seminar->slug}/register")
+            ->assertCreated();
+
+        Mail::assertQueued(
+            SeminarRegistrationConfirmation::class,
+            fn ($mail) => $mail->hasTo($user->email) && $mail->seminar->is($seminar),
+        );
+    });
+
     it('allows overbooking when seminar capacity is exceeded', function () {
         $user = actingAsUser();
-        $location = \App\Models\SeminarLocation::factory()->create(['max_vacancies' => 1]);
+        $location = SeminarLocation::factory()->create(['max_vacancies' => 1]);
         $seminar = Seminar::factory()->upcoming()->create([
             'active' => true,
             'seminar_location_id' => $location->id,

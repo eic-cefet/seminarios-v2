@@ -60,6 +60,71 @@ describe('GET /api/external/docs.json', function () {
         expect($schemas)->toContain('ExternalSeminarUpdateRequest');
     });
 
+    it('declares an ApiError component schema', function () {
+        $response = $this->getJson('/api/external/docs.json');
+        $response->assertSuccessful();
+
+        $schema = data_get($response->json(), 'components.schemas.ApiError');
+
+        expect($schema)->not->toBeNull();
+        expect($schema['type'])->toBe('object');
+        expect($schema['properties'])->toHaveKeys(['error', 'message', 'errors']);
+        expect($schema['required'])->toEqual(['error', 'message']);
+    });
+
+    it('declares ApiError as the default error response on every external operation', function () {
+        $doc = $this->getJson('/api/external/docs.json')->json();
+
+        // Pin a known operation so a future silent-skip regression (e.g. path
+        // prefix mismatch between the provider and the rendered doc) fails
+        // loudly instead of being satisfied by a vacuous "checked > 0".
+        expect(data_get($doc, 'paths./v1/seminars.get.responses.default.content.application/json.schema.$ref'))
+            ->toBe('#/components/schemas/ApiError');
+
+        $externalPaths = collect(data_get($doc, 'paths', []))
+            ->filter(fn ($methods, string $path) => str_starts_with($path, '/v1/'));
+
+        expect($externalPaths)->not->toBeEmpty('No /v1/ paths found in the external OpenAPI doc.');
+
+        $checked = 0;
+        foreach ($externalPaths as $path => $methods) {
+            foreach ($methods as $method => $op) {
+                if (! is_array($op) || ! isset($op['responses'])) {
+                    continue;
+                }
+
+                $schemaRef = data_get($op, 'responses.default.content.application/json.schema.$ref');
+
+                expect($schemaRef)
+                    ->toBe('#/components/schemas/ApiError', "{$method} {$path} missing default ApiError response");
+
+                $checked++;
+            }
+        }
+
+        expect($checked)->toBeGreaterThan(0);
+    });
+
+    it('OpenAPI document mentions seating capacity for max_vacancies', function () {
+        $response = $this->getJson('/api/external/docs.json');
+
+        $response->assertSuccessful();
+        expect($response->getContent())->toContain('Seating capacity');
+    });
+
+    it('Stoplight info.description includes the Getting Started content', function () {
+        $response = $this->getJson('/api/external/docs.json');
+        $response->assertSuccessful();
+        $description = data_get($response->json(), 'info.description', '');
+        expect($description)->toContain('Getting Started')
+            ->and($description)->toContain('Authentication')
+            ->and($description)->toContain('Pagination')
+            ->and($description)->toContain('Sparse Fieldsets')
+            ->and($description)->toContain('Conditional Requests')
+            ->and($description)->toContain('ETag')
+            ->and($description)->toContain('Errors');
+    });
+
     it('strips external prefix from operation IDs', function () {
         $response = $this->getJson('/api/external/docs.json');
 

@@ -8,7 +8,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 > ALWAYS use `Mail::to(...)->queue(...)` — never `->send(...)` — for any application mail. Every Mailable in this app implements `ShouldQueue`; HTTP responses must not block on SMTP and queued jobs must not block their worker on a single email. The only exception is direct unit tests that exercise the underlying mail event/transport (e.g. `tests/Feature/Mail/MailAuditLogTest.php`).
 
+> NEVER edit the `VERSION` file at the repo root by hand — it is owned by the release workflow. Set `version_bump` in your PR body and the bot will open a follow-up `chore(release): vX.Y.Z` PR after yours merges.
+
 > NEVER run more than one full test suite at a time — backend (`php artisan test`) or frontend (`pnpm run test` / `pnpm exec vitest run`). Both processes are heavy. Always run sequentially, never in parallel; do not dispatch multiple agents that each run the suite. File-targeted runs (`php artisan test --filter=...`, `pnpm exec vitest run path/to/file`) are fine, but still only one at a time.
+
+> When you DO run a full coverage suite (`pnpm exec vitest run --coverage` or `php artisan test --compact --coverage`), redirect the output to a tmp file in a single run, then grep/parse that file for whatever you need. Re-running the suite to extract a different slice of the same output is wasteful — the run takes minutes. Pattern: `pnpm exec vitest run --coverage > /tmp/fe-coverage.txt 2>&1` then `grep -E "..." /tmp/fe-coverage.txt`. Same for backend.
 
 ## Git Workflow
 

@@ -1,6 +1,8 @@
 <?php
 
+use App\Models\Seminar;
 use App\Models\SeminarType;
+use App\Models\User;
 
 describe('GET /api/external/v1/seminar-types', function () {
     it('returns all seminar types ordered by name', function () {
@@ -15,6 +17,18 @@ describe('GET /api/external/v1/seminar-types', function () {
         $names = collect($response->json('data'))->pluck('name');
         expect($names->first())->toBe('Dissertação');
         expect($names->last())->toBe('TCC');
+    });
+
+    it('returns the canonical envelope on the seminar-types index', function () {
+        actingAsAdmin();
+        SeminarType::factory()->count(2)->create();
+
+        $response = $this->getJson('/api/external/v1/seminar-types');
+
+        $response->assertSuccessful()
+            ->assertJsonStructure(['data', 'meta' => ['total']])
+            ->assertJsonMissingPath('links');
+        expect($response->json('meta.total'))->toBe(2);
     });
 
     it('returns 401 for unauthenticated user', function () {
@@ -109,5 +123,98 @@ describe('PUT /api/external/v1/seminar-types/{id}', function () {
         ]);
 
         $response->assertSuccessful();
+    });
+});
+
+describe('DELETE /api/external/v1/seminar-types/{id}', function () {
+    it('deletes a seminar type', function () {
+        actingAsAdmin();
+        $type = SeminarType::factory()->create();
+
+        $this->deleteJson("/api/external/v1/seminar-types/{$type->id}")
+            ->assertSuccessful()
+            ->assertJsonPath('message', 'Seminar type deleted successfully.');
+
+        expect(SeminarType::find($type->id))->toBeNull();
+    });
+
+    it('returns 409 when seminar type is in use by a seminar', function () {
+        actingAsAdmin();
+        $type = SeminarType::factory()->create();
+        Seminar::factory()->create(['seminar_type_id' => $type->id]);
+
+        $this->deleteJson("/api/external/v1/seminar-types/{$type->id}")
+            ->assertStatus(409)
+            ->assertJsonPath('error', 'seminar_type_in_use');
+
+        expect(SeminarType::find($type->id))->not->toBeNull();
+    });
+
+    it('returns 404 for non-existent seminar type', function () {
+        actingAsAdmin();
+        $this->deleteJson('/api/external/v1/seminar-types/999999')->assertNotFound();
+    });
+
+    it('returns 401 for unauthenticated user', function () {
+        $type = SeminarType::factory()->create();
+        $this->deleteJson("/api/external/v1/seminar-types/{$type->id}")->assertUnauthorized();
+    });
+
+    it('returns 403 for non-admin user', function () {
+        actingAsUser();
+        $type = SeminarType::factory()->create();
+        $this->deleteJson("/api/external/v1/seminar-types/{$type->id}")->assertForbidden();
+    });
+
+    it('requires seminar-types:delete ability', function () {
+        $admin = User::factory()->admin()->create();
+        $token = $admin->createToken('t', ['seminar-types:read'])->plainTextToken;
+        $type = SeminarType::factory()->create();
+
+        $this->withHeader('Authorization', "Bearer {$token}")
+            ->deleteJson("/api/external/v1/seminar-types/{$type->id}")
+            ->assertForbidden();
+    });
+
+    it('allows token with seminar-types:delete ability', function () {
+        $admin = User::factory()->admin()->create();
+        $token = $admin->createToken('t', ['seminar-types:delete'])->plainTextToken;
+        $type = SeminarType::factory()->create();
+
+        $this->withHeader('Authorization', "Bearer {$token}")
+            ->deleteJson("/api/external/v1/seminar-types/{$type->id}")
+            ->assertSuccessful();
+    });
+});
+
+describe('policy enforcement', function () {
+    it('denies a teacher from listing seminar types', function () {
+        $teacher = User::factory()->teacher()->create();
+        $token = $teacher->createToken('t', ['seminar-types:read'])->plainTextToken;
+
+        $this->withHeader('Authorization', "Bearer {$token}")
+            ->getJson('/api/external/v1/seminar-types')
+            ->assertForbidden();
+    });
+});
+
+describe('GET /api/external/v1/seminar-types sparse fieldsets', function () {
+    it('returns only requested fields with ?fields on show', function () {
+        actingAsAdmin();
+        $type = SeminarType::factory()->create();
+
+        $payload = $this->getJson("/api/external/v1/seminar-types/{$type->id}?fields=id")
+            ->assertSuccessful()
+            ->json('data');
+
+        expect(array_keys($payload))->toBe(['id']);
+    });
+
+    it('returns 422 on unknown field name', function () {
+        actingAsAdmin();
+        $type = SeminarType::factory()->create();
+
+        $this->getJson("/api/external/v1/seminar-types/{$type->id}?fields=password")
+            ->assertStatus(422);
     });
 });

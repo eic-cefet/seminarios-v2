@@ -29,7 +29,7 @@ export default defineConfig({
                 'resources/js/test/**',
                 'resources/js/admin/app.tsx',
                 'resources/js/system/app.tsx',
-                'resources/js/shared/types/index.ts',
+                'resources/js/shared/types/**',
                 'resources/js/admin/pages/seminars/index.tsx',
                 'resources/js/admin/pages/workshops/index.tsx',
             ],

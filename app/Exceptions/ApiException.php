@@ -110,6 +110,21 @@ class ApiException extends Exception
         return new self('workshop_in_use', 'Este workshop possui seminários associados e não pode ser excluído', 409);
     }
 
+    public static function locationInUse(): self
+    {
+        return new self('location_in_use', 'Esta localização está associada a seminários e não pode ser excluída', 409);
+    }
+
+    public static function seminarTypeInUse(): self
+    {
+        return new self('seminar_type_in_use', 'Este tipo de seminário está associado a seminários e não pode ser excluído', 409);
+    }
+
+    public static function seminarHasRegistrations(): self
+    {
+        return new self('seminar_has_registrations', 'Este seminário possui inscrições e não pode ser excluído', 409);
+    }
+
     public static function cannotDeleteSelf(): self
     {
         return new self('cannot_delete_self', 'Você não pode excluir sua própria conta', 400);
@@ -123,5 +138,25 @@ class ApiException extends Exception
     public static function unregisterBlocked(): self
     {
         return new self('unregister_blocked', 'Não é possível cancelar a inscrição no dia do evento', 400);
+    }
+
+    public static function workshopAlreadyAnnounced(): self
+    {
+        return new self('workshop_already_announced', 'Este workshop já foi anunciado anteriormente', 409);
+    }
+
+    public static function workshopTooOldToAnnounce(): self
+    {
+        return new self('workshop_too_old_to_announce', 'Este workshop é anterior ao lançamento do recurso de anúncios', 422);
+    }
+
+    public static function idempotencyKeyConflict(): self
+    {
+        return new self('idempotency_key_conflict', 'Idempotency-Key reused with a different request body', 409);
+    }
+
+    public static function idempotencyConcurrentRequest(): self
+    {
+        return new self('idempotency_concurrent_request', 'Another request with the same Idempotency-Key is still in flight', 409);
     }
 }

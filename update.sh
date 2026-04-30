@@ -42,6 +42,24 @@ print_section() {
     echo ""
 }
 
+# Always disable maintenance mode on exit — guards against 503s if the script fails mid-update.
+ensure_maintenance_mode_off() {
+    local exit_code=$?
+    if [ $exit_code -ne 0 ]; then
+        echo ""
+        echo -e "${YELLOW}▸ Update failed (exit $exit_code) — restoring application availability${NC}"
+        if php artisan up; then
+            echo -e "  ${GREEN}✓${NC} Application is back online"
+        else
+            echo -e "  ${RED}✗${NC} Failed to disable maintenance mode"
+            echo -e "  ${RED}Run manually: php artisan up${NC}"
+        fi
+    else
+        php artisan up >/dev/null 2>&1 || true
+    fi
+}
+trap ensure_maintenance_mode_off EXIT
+
 #######################################
 # STEP 1: Verify Dependencies
 #######################################
@@ -163,10 +181,14 @@ fi
 
 print_status "Latest release: $LATEST_TAG" "ok"
 
-if [ "$CURRENT_TAG" = "$LATEST_TAG" ]; then
+if [ "$CURRENT_TAG" = "$LATEST_TAG" ] && [ -z "$UPDATE_SH_RELOADED" ]; then
     echo ""
     echo -e "${GREEN}Already on the latest release ($LATEST_TAG). Nothing to update.${NC}"
     exit 0
+fi
+
+if [ -n "$UPDATE_SH_RELOADED" ]; then
+    print_status "Resuming update on $LATEST_TAG after script reload" "warn"
 fi
 
 echo ""
@@ -193,19 +215,34 @@ print_status "Maintenance mode enabled" "ok"
 #######################################
 # STEP 4: Checkout New Version (if release update)
 #######################################
-if [ "$UPDATE_TYPE" = "release" ]; then
+if [ "$UPDATE_TYPE" = "release" ] && [ -z "$UPDATE_SH_RELOADED" ]; then
     print_section "Updating to $TARGET_TAG"
 
-    # Check for uncommitted changes
     if ! git diff-index --quiet HEAD --; then
-        echo -e "${RED}Error: Uncommitted changes detected. Cannot update.${NC}"
-        echo "Please commit or stash your changes before running the update."
-        php artisan up
-        exit 1
+        print_status "Local changes detected — discarding to apply update" "warn"
     fi
 
-    git checkout "$TARGET_TAG"
+    # Capture the running script's hash before checkout so we can detect
+    # whether the new tag changed update.sh itself.
+    SCRIPT_PATH="$(cd "$(dirname "$0")" && pwd)/$(basename "$0")"
+    OLD_SCRIPT_HASH=$(git hash-object "$SCRIPT_PATH" 2>/dev/null || echo "")
+
+    git checkout -f "$TARGET_TAG"
     print_status "Checked out $TARGET_TAG" "ok"
+
+    # Bash reads the script as it executes, so an in-place change to
+    # update.sh mid-run causes undefined behavior. Re-exec the new copy
+    # if it differs, using a sentinel to prevent infinite re-exec loops.
+    NEW_SCRIPT_HASH=$(git hash-object "$SCRIPT_PATH" 2>/dev/null || echo "")
+    if [ -n "$OLD_SCRIPT_HASH" ] && [ -n "$NEW_SCRIPT_HASH" ] && \
+       [ "$OLD_SCRIPT_HASH" != "$NEW_SCRIPT_HASH" ]; then
+        print_status "update.sh changed in $TARGET_TAG — reloading new script" "warn"
+        # Drop the EXIT trap so the parent doesn't run `php artisan up`
+        # immediately after handing control to the new script.
+        trap - EXIT
+        export UPDATE_SH_RELOADED=1
+        exec bash "$SCRIPT_PATH" "$@"
+    fi
 fi
 
 #######################################
@@ -263,13 +300,16 @@ php artisan queue:restart
 print_status "Queue restart signal sent" "ok"
 
 #######################################
-# STEP 9.1: Store Version in Cache
+# STEP 9.1: Verify VERSION file
 #######################################
 print_section "Recording application version"
 
-APP_VERSION=$(git describe --tags --always)
-php artisan version:set "$APP_VERSION"
-print_status "Version recorded: $APP_VERSION" "ok"
+if [ -f VERSION ]; then
+    APP_VERSION=$(cat VERSION)
+    print_status "Version recorded: $APP_VERSION" "ok"
+else
+    print_status "VERSION file missing — defaulting to 'dev'" "warn"
+fi
 
 #######################################
 # STEP 10: Disable Maintenance Mode

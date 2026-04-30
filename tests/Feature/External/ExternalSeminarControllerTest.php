@@ -1,6 +1,7 @@
 <?php
 
 use App\Jobs\ProcessSeminarRescheduleJob;
+use App\Models\Registration;
 use App\Models\Seminar;
 use App\Models\SeminarLocation;
 use App\Models\SeminarType;
@@ -8,13 +9,14 @@ use App\Models\Subject;
 use App\Models\User;
 use App\Models\Workshop;
 use Illuminate\Support\Facades\Bus;
+use Illuminate\Support\Facades\DB;
 
 describe('GET /api/external/v1/seminars', function () {
     it('returns paginated list of seminars for admin', function () {
         actingAsAdmin();
         Seminar::factory()->count(3)->create();
 
-        $response = $this->getJson('/api/external/v1/seminars');
+        $response = $this->getJson('/api/external/v1/seminars?include=location,subjects,speakers');
 
         $response->assertSuccessful()
             ->assertJsonCount(3, 'data')
@@ -23,6 +25,18 @@ describe('GET /api/external/v1/seminars', function () {
                     '*' => ['id', 'name', 'slug', 'scheduled_at', 'active', 'location', 'subjects', 'speakers'],
                 ],
             ]);
+    });
+
+    it('returns the canonical envelope on the seminars index', function () {
+        actingAsAdmin();
+        Seminar::factory()->count(2)->create();
+
+        $response = $this->getJson('/api/external/v1/seminars');
+
+        $response->assertSuccessful()
+            ->assertJsonStructure(['data', 'meta' => ['current_page', 'last_page', 'per_page', 'total', 'from', 'to']])
+            ->assertJsonMissingPath('links')
+            ->assertJsonMissingPath('meta.links');
     });
 
     it('returns 401 for unauthenticated user', function () {
@@ -66,14 +80,127 @@ describe('GET /api/external/v1/seminars', function () {
         expect($response->json('data'))->toHaveCount(1);
         expect($response->json('data.0.name'))->toBe('TCC Machine Learning');
     });
+
+    it('cursor pagination round-trip', function () {
+        actingAsAdmin();
+        Seminar::factory()->count(40)->create();
+
+        $first = $this->getJson('/api/external/v1/seminars?paginate=cursor');
+        $first->assertSuccessful()->assertJsonStructure(['data', 'meta' => ['per_page', 'next_cursor', 'prev_cursor', 'has_more']]);
+
+        $cursor = $first->json('meta.next_cursor');
+        expect($cursor)->not->toBeNull();
+        expect($first->json('meta.has_more'))->toBeTrue();
+
+        $second = $this->getJson('/api/external/v1/seminars?paginate=cursor&cursor='.$cursor);
+        $second->assertSuccessful();
+        expect($second->json('data.0.id'))->not->toBe($first->json('data.0.id'));
+    });
+
+    it('rejects an unknown paginate mode with 422', function () {
+        actingAsAdmin();
+        $this->getJson('/api/external/v1/seminars?paginate=mystery')->assertStatus(422);
+    });
+
+    it('defaults to page-based pagination when paginate is omitted', function () {
+        actingAsAdmin();
+        Seminar::factory()->count(2)->create();
+
+        $response = $this->getJson('/api/external/v1/seminars');
+
+        $response->assertSuccessful()
+            ->assertJsonStructure(['data', 'meta' => ['current_page', 'last_page', 'per_page', 'total', 'from', 'to']]);
+    });
 });
 
-describe('GET /api/external/v1/seminars/{id}', function () {
+describe('GET /api/external/v1/seminars filters & sort', function () {
+    it('rejects an invalid sort column', function () {
+        actingAsAdmin();
+        $this->getJson('/api/external/v1/seminars?sort=password')
+            ->assertStatus(422);
+    });
+
+    it('rejects malformed scheduled_from', function () {
+        actingAsAdmin();
+        $this->getJson('/api/external/v1/seminars?scheduled_from=not-a-date')
+            ->assertStatus(422);
+    });
+
+    it('rejects scheduled_to before scheduled_from', function () {
+        actingAsAdmin();
+        $this->getJson('/api/external/v1/seminars?scheduled_from='.now()->toIso8601String().'&scheduled_to='.now()->subDay()->toIso8601String())
+            ->assertStatus(422);
+    });
+
+    it('filters by scheduled_from and scheduled_to', function () {
+        actingAsAdmin();
+        Seminar::factory()->create(['name' => 'Old', 'scheduled_at' => now()->subDays(10)]);
+        Seminar::factory()->create(['name' => 'Mid', 'scheduled_at' => now()->subDays(2)]);
+        Seminar::factory()->create(['name' => 'New', 'scheduled_at' => now()->addDays(2)]);
+
+        $names = collect($this->getJson('/api/external/v1/seminars?scheduled_from='.now()->subDays(5)->toIso8601String().'&scheduled_to='.now()->subDay()->toIso8601String())->json('data'))
+            ->pluck('name');
+
+        expect($names)->toContain('Mid')
+            ->and($names)->not->toContain('Old')
+            ->and($names)->not->toContain('New');
+    });
+
+    it('upcoming=true returns only seminars from now onward', function () {
+        actingAsAdmin();
+        Seminar::factory()->create(['name' => 'Past', 'scheduled_at' => now()->subDay()]);
+        Seminar::factory()->create(['name' => 'Future', 'scheduled_at' => now()->addDay()]);
+
+        $names = collect($this->getJson('/api/external/v1/seminars?upcoming=true')->json('data'))->pluck('name');
+        expect($names)->toContain('Future')->and($names)->not->toContain('Past');
+    });
+
+    it('updated_since filters by updated_at', function () {
+        actingAsAdmin();
+        $stale = Seminar::factory()->create();
+        $stale->updated_at = now()->subDays(7);
+        $stale->saveQuietly();
+        $fresh = Seminar::factory()->create();
+
+        $ids = collect($this->getJson('/api/external/v1/seminars?updated_since='.now()->subDay()->toIso8601String())->json('data'))->pluck('id');
+        expect($ids)->toContain($fresh->id)->and($ids)->not->toContain($stale->id);
+    });
+
+    it('sorts by name ascending', function () {
+        actingAsAdmin();
+        Seminar::factory()->create(['name' => 'Bravo']);
+        Seminar::factory()->create(['name' => 'Alpha']);
+
+        $names = collect($this->getJson('/api/external/v1/seminars?sort=name')->json('data'))->pluck('name');
+        expect($names->first())->toBe('Alpha');
+    });
+
+    it('sorts by name descending with leading dash', function () {
+        actingAsAdmin();
+        Seminar::factory()->create(['name' => 'Alpha']);
+        Seminar::factory()->create(['name' => 'Bravo']);
+
+        $names = collect($this->getJson('/api/external/v1/seminars?sort=-name')->json('data'))->pluck('name');
+        expect($names->first())->toBe('Bravo');
+    });
+
+    it('supports comma-separated multi-column sort', function () {
+        actingAsAdmin();
+        Seminar::factory()->create(['name' => 'A', 'scheduled_at' => now()->addDay()]);
+        Seminar::factory()->create(['name' => 'A', 'scheduled_at' => now()->addDays(2)]);
+        Seminar::factory()->create(['name' => 'B', 'scheduled_at' => now()->addDay()]);
+
+        $rows = collect($this->getJson('/api/external/v1/seminars?sort=name,-scheduled_at')->json('data'));
+        expect($rows->first()['name'])->toBe('A');
+    });
+});
+
+describe('GET /api/external/v1/seminars/{slug}', function () {
     it('returns seminar details with speakers and subjects', function () {
         actingAsAdmin();
         $seminar = Seminar::factory()->withSpeakers(2)->withSubjects(3)->create();
 
-        $response = $this->getJson("/api/external/v1/seminars/{$seminar->id}");
+        $response = $this->getJson("/api/external/v1/seminars/{$seminar->slug}?include=location,subjects,speakers");
 
         $response->assertSuccessful()
             ->assertJsonStructure([
@@ -92,7 +219,74 @@ describe('GET /api/external/v1/seminars/{id}', function () {
         actingAsTeacher();
         $seminar = Seminar::factory()->create();
 
-        $this->getJson("/api/external/v1/seminars/{$seminar->id}")->assertForbidden();
+        $this->getJson("/api/external/v1/seminars/{$seminar->slug}")->assertForbidden();
+    });
+
+    it('resolves a seminar by slug, not id', function () {
+        actingAsAdmin();
+        $seminar = Seminar::factory()->create(['name' => 'Distributed Systems Seminar']);
+
+        $this->getJson("/api/external/v1/seminars/{$seminar->slug}")
+            ->assertSuccessful()
+            ->assertJsonPath('data.id', $seminar->id)
+            ->assertJsonPath('data.slug', $seminar->slug);
+    });
+});
+
+describe('GET /api/external/v1/seminars include support', function () {
+    it('omits non-included relations on show', function () {
+        actingAsAdmin();
+        $s = Seminar::factory()->create();
+
+        $payload = $this->getJson("/api/external/v1/seminars/{$s->slug}")->json('data');
+
+        expect($payload)->not->toHaveKey('workshop')
+            ->and($payload)->not->toHaveKey('subjects')
+            ->and($payload)->not->toHaveKey('speakers')
+            ->and($payload)->not->toHaveKey('seminar_type')
+            ->and($payload)->not->toHaveKey('location');
+    });
+
+    it('includes only what was requested on show', function () {
+        actingAsAdmin();
+        $s = Seminar::factory()->create();
+
+        $payload = $this->getJson("/api/external/v1/seminars/{$s->slug}?include=workshop,seminar_type")->json('data');
+
+        expect($payload)->toHaveKeys(['workshop', 'seminar_type'])
+            ->and($payload)->not->toHaveKey('subjects')
+            ->and($payload)->not->toHaveKey('speakers')
+            ->and($payload)->not->toHaveKey('location');
+    });
+
+    it('omits non-included relations on index', function () {
+        actingAsAdmin();
+        Seminar::factory()->create();
+
+        $payload = $this->getJson('/api/external/v1/seminars')->json('data.0');
+
+        expect($payload)->not->toHaveKey('workshop')
+            ->and($payload)->not->toHaveKey('subjects')
+            ->and($payload)->not->toHaveKey('speakers')
+            ->and($payload)->not->toHaveKey('seminar_type')
+            ->and($payload)->not->toHaveKey('location');
+    });
+
+    it('includes requested relations on index', function () {
+        actingAsAdmin();
+        Seminar::factory()->withSubjects(2)->create();
+
+        $payload = $this->getJson('/api/external/v1/seminars?include=subjects,location')->json('data.0');
+
+        expect($payload)->toHaveKeys(['subjects', 'location'])
+            ->and($payload)->not->toHaveKey('workshop');
+    });
+
+    it('rejects unknown include key with 422', function () {
+        actingAsAdmin();
+        Seminar::factory()->create();
+
+        $this->getJson('/api/external/v1/seminars?include=mystery')->assertStatus(422);
     });
 });
 
@@ -223,15 +417,79 @@ describe('POST /api/external/v1/seminars', function () {
 
         expect($response->json('data.workshop.id'))->toBe($workshop->id);
     });
+
+    it('store response includes all relations without ?include=', function () {
+        actingAsAdmin();
+        $location = SeminarLocation::factory()->create();
+        $type = SeminarType::factory()->create(['name' => 'TCC']);
+        $workshop = Workshop::factory()->create();
+        $speaker = User::factory()->speaker()->create();
+
+        $response = $this->postJson('/api/external/v1/seminars', [
+            'name' => 'Full Relations Seminar',
+            'scheduled_at' => '2026-06-15 14:00:00',
+            'seminar_location_id' => $location->id,
+            'seminar_type_id' => $type->id,
+            'workshop_id' => $workshop->id,
+            'subjects' => ['Subject A'],
+            'speaker_ids' => [$speaker->id],
+        ]);
+
+        $response->assertCreated();
+        $data = $response->json('data');
+        expect($data)->toHaveKeys(['workshop', 'seminar_type', 'location', 'subjects', 'speakers']);
+    });
 });
 
-describe('PUT /api/external/v1/seminars/{id}', function () {
+describe('GET /api/external/v1/seminars sparse fieldsets', function () {
+    it('returns only requested fields with ?fields on show', function () {
+        actingAsAdmin();
+        $seminar = Seminar::factory()->create();
+
+        $payload = $this->getJson("/api/external/v1/seminars/{$seminar->slug}?fields=id,name")
+            ->assertSuccessful()
+            ->json('data');
+
+        expect(array_keys($payload))->toBe(['id', 'name']);
+    });
+
+    it('returns only requested fields with ?fields on index', function () {
+        actingAsAdmin();
+        Seminar::factory()->count(2)->create();
+
+        $items = $this->getJson('/api/external/v1/seminars?fields=id,name')
+            ->assertSuccessful()
+            ->json('data');
+
+        foreach ($items as $item) {
+            expect(array_keys($item))->toBe(['id', 'name']);
+        }
+    });
+
+    it('returns 422 on unknown field name on show', function () {
+        actingAsAdmin();
+        $seminar = Seminar::factory()->create();
+
+        $this->getJson("/api/external/v1/seminars/{$seminar->slug}?fields=password")
+            ->assertStatus(422);
+    });
+
+    it('returns 422 on unknown field name on index', function () {
+        actingAsAdmin();
+        Seminar::factory()->create();
+
+        $this->getJson('/api/external/v1/seminars?fields=password')
+            ->assertStatus(422);
+    });
+});
+
+describe('PUT /api/external/v1/seminars/{slug}', function () {
     it('updates seminar name and regenerates slug', function () {
         $admin = actingAsAdmin();
         $seminar = Seminar::factory()->withSpeakers()->withSubjects()
             ->create(['created_by' => $admin->id]);
 
-        $response = $this->putJson("/api/external/v1/seminars/{$seminar->id}", [
+        $response = $this->putJson("/api/external/v1/seminars/{$seminar->slug}", [
             'name' => 'Updated Seminar Name',
         ]);
 
@@ -246,7 +504,7 @@ describe('PUT /api/external/v1/seminars/{id}', function () {
             ->create(['created_by' => $admin->id]);
         $newSpeaker = User::factory()->speaker()->create();
 
-        $response = $this->putJson("/api/external/v1/seminars/{$seminar->id}", [
+        $response = $this->putJson("/api/external/v1/seminars/{$seminar->slug}", [
             'speaker_ids' => [$newSpeaker->id],
         ]);
 
@@ -259,7 +517,7 @@ describe('PUT /api/external/v1/seminars/{id}', function () {
         $seminar = Seminar::factory()->withSubjects()
             ->create(['created_by' => $admin->id]);
 
-        $response = $this->putJson("/api/external/v1/seminars/{$seminar->id}", [
+        $response = $this->putJson("/api/external/v1/seminars/{$seminar->slug}", [
             'subjects' => ['New Subject A', 'New Subject B'],
         ]);
 
@@ -272,7 +530,7 @@ describe('PUT /api/external/v1/seminars/{id}', function () {
         $seminar = Seminar::factory()->create(['created_by' => $admin->id]);
         $newLocation = SeminarLocation::factory()->create(['name' => 'New Room', 'max_vacancies' => 100]);
 
-        $response = $this->putJson("/api/external/v1/seminars/{$seminar->id}", [
+        $response = $this->putJson("/api/external/v1/seminars/{$seminar->slug}", [
             'seminar_location_id' => $newLocation->id,
         ]);
 
@@ -284,7 +542,7 @@ describe('PUT /api/external/v1/seminars/{id}', function () {
         actingAsTeacher();
         $seminar = Seminar::factory()->create();
 
-        $this->putJson("/api/external/v1/seminars/{$seminar->id}", [
+        $this->putJson("/api/external/v1/seminars/{$seminar->slug}", [
             'name' => 'Unauthorized',
         ])->assertForbidden();
     });
@@ -294,7 +552,7 @@ describe('PUT /api/external/v1/seminars/{id}', function () {
         $type = SeminarType::factory()->create(['name' => 'TCC']);
         $seminar = Seminar::factory()->create(['created_by' => $admin->id, 'seminar_type_id' => null]);
 
-        $response = $this->putJson("/api/external/v1/seminars/{$seminar->id}", [
+        $response = $this->putJson("/api/external/v1/seminars/{$seminar->slug}", [
             'seminar_type_id' => $type->id,
         ]);
 
@@ -306,7 +564,7 @@ describe('PUT /api/external/v1/seminars/{id}', function () {
         $type = SeminarType::factory()->create();
         $seminar = Seminar::factory()->create(['created_by' => $admin->id, 'seminar_type_id' => $type->id]);
 
-        $response = $this->putJson("/api/external/v1/seminars/{$seminar->id}", [
+        $response = $this->putJson("/api/external/v1/seminars/{$seminar->slug}", [
             'seminar_type_id' => null,
         ]);
 
@@ -318,7 +576,7 @@ describe('PUT /api/external/v1/seminars/{id}', function () {
         $admin = actingAsAdmin();
         $seminar = Seminar::factory()->create(['created_by' => $admin->id, 'scheduled_at' => '2026-06-15 14:00:00']);
 
-        $this->putJson("/api/external/v1/seminars/{$seminar->id}", [
+        $this->putJson("/api/external/v1/seminars/{$seminar->slug}", [
             'scheduled_at' => '2026-06-20 14:00:00',
         ]);
 
@@ -329,11 +587,109 @@ describe('PUT /api/external/v1/seminars/{id}', function () {
         $admin = actingAsAdmin();
         $seminar = Seminar::factory()->create(['created_by' => $admin->id, 'name' => 'Original', 'active' => true]);
 
-        $response = $this->putJson("/api/external/v1/seminars/{$seminar->id}", [
+        $response = $this->putJson("/api/external/v1/seminars/{$seminar->slug}", [
             'active' => false,
         ]);
 
         expect($response->json('data.active'))->toBeFalse();
         expect($response->json('data.name'))->toBe('Original');
+    });
+
+    it('update response includes all relations without ?include=', function () {
+        $admin = actingAsAdmin();
+        $type = SeminarType::factory()->create();
+        $workshop = Workshop::factory()->create();
+        $seminar = Seminar::factory()
+            ->withSpeakers()
+            ->withSubjects()
+            ->create([
+                'created_by' => $admin->id,
+                'seminar_type_id' => $type->id,
+                'workshop_id' => $workshop->id,
+            ]);
+
+        $response = $this->putJson("/api/external/v1/seminars/{$seminar->slug}", [
+            'name' => 'Touched Name',
+        ]);
+
+        $response->assertSuccessful();
+        $data = $response->json('data');
+        expect($data)->toHaveKeys(['workshop', 'seminar_type', 'location', 'subjects', 'speakers']);
+    });
+});
+
+describe('DELETE /api/external/v1/seminars/{slug}', function () {
+    it('deletes a seminar', function () {
+        actingAsAdmin();
+        $seminar = Seminar::factory()->create();
+
+        $this->deleteJson("/api/external/v1/seminars/{$seminar->slug}")
+            ->assertSuccessful()
+            ->assertJsonPath('message', 'Seminar deleted successfully.');
+
+        expect(Seminar::find($seminar->id))->toBeNull();
+    });
+
+    it('detaches subjects and speakers when deleting', function () {
+        actingAsAdmin();
+        $seminar = Seminar::factory()->create();
+        $subject = Subject::factory()->create();
+        $speaker = User::factory()->create();
+        $seminar->subjects()->attach($subject);
+        $seminar->speakers()->attach($speaker);
+
+        $this->deleteJson("/api/external/v1/seminars/{$seminar->slug}")
+            ->assertSuccessful();
+
+        expect(DB::table('seminar_subject')->where('seminar_id', $seminar->id)->count())->toBe(0);
+        expect(DB::table('seminar_speaker')->where('seminar_id', $seminar->id)->count())->toBe(0);
+    });
+
+    it('returns 409 when seminar has registrations', function () {
+        actingAsAdmin();
+        $seminar = Seminar::factory()->create();
+        Registration::factory()->for($seminar)->create();
+
+        $this->deleteJson("/api/external/v1/seminars/{$seminar->slug}")
+            ->assertStatus(409)
+            ->assertJsonPath('error', 'seminar_has_registrations');
+
+        expect(Seminar::find($seminar->id))->not->toBeNull();
+    });
+
+    it('returns 404 for non-existent seminar', function () {
+        actingAsAdmin();
+        $this->deleteJson('/api/external/v1/seminars/non-existent-slug')->assertNotFound();
+    });
+
+    it('returns 401 for unauthenticated user', function () {
+        $seminar = Seminar::factory()->create();
+        $this->deleteJson("/api/external/v1/seminars/{$seminar->slug}")->assertUnauthorized();
+    });
+
+    it('returns 403 for non-admin user', function () {
+        actingAsUser();
+        $seminar = Seminar::factory()->create();
+        $this->deleteJson("/api/external/v1/seminars/{$seminar->slug}")->assertForbidden();
+    });
+
+    it('requires seminars:delete ability', function () {
+        $admin = User::factory()->admin()->create();
+        $token = $admin->createToken('t', ['seminars:read'])->plainTextToken;
+        $seminar = Seminar::factory()->create();
+
+        $this->withHeader('Authorization', "Bearer {$token}")
+            ->deleteJson("/api/external/v1/seminars/{$seminar->slug}")
+            ->assertForbidden();
+    });
+
+    it('allows token with seminars:delete ability', function () {
+        $admin = User::factory()->admin()->create();
+        $token = $admin->createToken('t', ['seminars:delete'])->plainTextToken;
+        $seminar = Seminar::factory()->create();
+
+        $this->withHeader('Authorization', "Bearer {$token}")
+            ->deleteJson("/api/external/v1/seminars/{$seminar->slug}")
+            ->assertSuccessful();
     });
 });

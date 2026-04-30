@@ -12,9 +12,16 @@ use Illuminate\Support\Facades\Schedule;
 |
 */
 
-// Send seminar reminders daily at 10:00 AM (for seminars happening the next day)
-Schedule::command('reminders:seminars')
+// Send 24h seminar reminders daily at 10:00 AM (for seminars happening the next day)
+Schedule::command('reminders:seminars --days=1')
     ->dailyAt('10:00')
+    ->timezone('America/Sao_Paulo')
+    ->withoutOverlapping()
+    ->onOneServer();
+
+// Send 7-day seminar reminders daily at 10:30 AM (for seminars happening in a week)
+Schedule::command('reminders:seminars --days=7')
+    ->dailyAt('10:30')
     ->timezone('America/Sao_Paulo')
     ->withoutOverlapping()
     ->onOneServer();
@@ -22,6 +29,12 @@ Schedule::command('reminders:seminars')
 // Send evaluation reminders daily at 14:00 (for seminars that ended 2+ days ago)
 Schedule::command('reminders:evaluations')
     ->dailyAt('14:00')
+    ->timezone('America/Sao_Paulo')
+    ->withoutOverlapping()
+    ->onOneServer();
+
+Schedule::command('reminders:speaker-recaps')
+    ->dailyAt('14:15')
     ->timezone('America/Sao_Paulo')
     ->withoutOverlapping()
     ->onOneServer();

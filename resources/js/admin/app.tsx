@@ -19,6 +19,7 @@ import AuditLogReport from "./pages/reports/AuditLogReport";
 import FeedbackInsights from "./pages/reports/FeedbackInsights";
 import SemestralReport from "./pages/reports/SemestralReport";
 import ApiTokenList from "./pages/api-tokens/ApiTokenList";
+import SystemInfo from "./pages/system/SystemInfo";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -49,6 +50,7 @@ export function AppRoutes() {
                 <Route path={ROUTES.ADMIN.REPORTS_SEMESTRAL} element={<SemestralReport />} />
                 <Route path={ROUTES.ADMIN.REPORTS_FEEDBACK} element={<FeedbackInsights />} />
                 <Route path={ROUTES.ADMIN.REPORTS_AUDIT_LOGS} element={<AuditLogReport />} />
+                <Route path={ROUTES.ADMIN.SYSTEM_INFO} element={<SystemInfo />} />
                 <Route path="*" element={<NotFound />} />
             </Route>
         </Routes>

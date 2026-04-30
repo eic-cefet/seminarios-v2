@@ -1,7 +1,9 @@
 <?php
 
+use App\Enums\CommunicationCategory;
 use App\Jobs\SendSeminarReminderJob;
 use App\Mail\SeminarReminder;
+use App\Mail\SeminarReminder7d;
 use App\Models\Registration;
 use App\Models\Seminar;
 use App\Models\User;
@@ -88,5 +90,27 @@ describe('SendSeminarReminderJob', function () {
 
         expect($registration1->fresh()->reminder_sent)->toBeTrue();
         expect($registration2->fresh()->reminder_sent)->toBeTrue();
+    });
+
+    it('queues SeminarReminder7d and marks reminder_7d_sent when category=7d', function () {
+        Mail::fake();
+        $user = User::factory()->create();
+        $seminar = Seminar::factory()->create(['scheduled_at' => now()->addDays(7)]);
+        $registration = Registration::factory()->create([
+            'user_id' => $user->id,
+            'seminar_id' => $seminar->id,
+            'reminder_7d_sent' => false,
+        ]);
+
+        (new SendSeminarReminderJob(
+            user: $user,
+            registrationIds: collect([$registration->id]),
+            category: CommunicationCategory::SeminarReminder7d,
+            reminderColumn: 'reminder_7d_sent',
+            mailableClass: SeminarReminder7d::class,
+        ))->handle();
+
+        Mail::assertQueued(SeminarReminder7d::class);
+        expect($registration->fresh()->reminder_7d_sent)->toBeTrue();
     });
 });

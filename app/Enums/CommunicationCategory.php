@@ -10,6 +10,7 @@ enum CommunicationCategory: string
     case CertificateReady = 'certificate_ready';
     case SeminarRescheduled = 'seminar_rescheduled';
     case Announcements = 'announcements';
+    case WorkshopAnnouncements = 'workshop_announcements';
     case NewSeminarAlert = 'new_seminar_alert';
 
     public function isTransactional(): bool
