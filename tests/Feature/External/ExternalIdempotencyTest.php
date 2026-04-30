@@ -1,6 +1,10 @@
 <?php
 
 use App\Models\SeminarLocation;
+use App\Support\External\IdempotencyStore;
+use Illuminate\Contracts\Cache\Lock;
+use Illuminate\Contracts\Cache\LockTimeoutException;
+use Illuminate\Support\Facades\Cache;
 
 it('replays the original response on a retry with the same key and body', function () {
     actingAsAdmin();
@@ -29,4 +33,76 @@ it('rejects malformed Idempotency-Key', function () {
     $this->postJson('/api/external/v1/locations', [], ['Idempotency-Key' => str_repeat('x', 300)])
         ->assertStatus(422)
         ->assertJsonPath('error', 'validation_error');
+});
+
+it('scopes the cache key and lock key with the same hash', function () {
+    $tokenScope = 'abc';
+    $key = 'shared-key';
+
+    $cacheKey = IdempotencyStore::cacheKey($tokenScope, $key);
+    $lockKey = IdempotencyStore::lockKey($tokenScope, $key);
+    $hash = hash('sha256', $key);
+
+    expect($cacheKey)->toBe('external_api:idempotency:'.$tokenScope.':'.$hash);
+    expect($lockKey)->toBe('external_api:idempotency_lock:'.$tokenScope.':'.$hash);
+});
+
+it('acquires and releases a cache lock around the idempotent handler', function () {
+    $lock = Mockery::mock(Lock::class);
+    $lock->shouldReceive('block')->once()->with(5)->andReturnTrue();
+    $lock->shouldReceive('release')->once()->andReturnTrue();
+
+    Cache::shouldReceive('lock')
+        ->once()
+        ->withArgs(fn (string $key, int $sec) => str_starts_with($key, 'external_api:idempotency_lock:') && $sec === 10)
+        ->andReturn($lock);
+    Cache::shouldReceive('get')->andReturn(null);
+    Cache::shouldReceive('put')->andReturnTrue();
+
+    actingAsAdmin();
+    $this->postJson(
+        '/api/external/v1/locations',
+        ['name' => 'Lock Test', 'max_vacancies' => 10],
+        ['Idempotency-Key' => 'lk-1']
+    )->assertCreated();
+});
+
+it('returns 409 when the lock cannot be acquired', function () {
+    $lock = Mockery::mock(Lock::class);
+    $lock->shouldReceive('block')->once()->with(5)->andThrow(new LockTimeoutException);
+    $lock->shouldNotReceive('release');
+
+    Cache::shouldReceive('lock')
+        ->once()
+        ->withArgs(fn (string $key, int $sec) => str_starts_with($key, 'external_api:idempotency_lock:') && $sec === 10)
+        ->andReturn($lock);
+
+    actingAsAdmin();
+    $this->postJson(
+        '/api/external/v1/locations',
+        ['name' => 'Lock Timeout', 'max_vacancies' => 10],
+        ['Idempotency-Key' => 'lk-2']
+    )
+        ->assertStatus(409)
+        ->assertJsonPath('error', 'idempotency_key_conflict');
+});
+
+it('releases the lock even when the handler throws', function () {
+    $lock = Mockery::mock(Lock::class);
+    $lock->shouldReceive('block')->once()->with(5)->andReturnTrue();
+    $lock->shouldReceive('release')->once()->andReturnTrue();
+
+    Cache::shouldReceive('lock')
+        ->once()
+        ->withArgs(fn (string $key, int $sec) => str_starts_with($key, 'external_api:idempotency_lock:') && $sec === 10)
+        ->andReturn($lock);
+    Cache::shouldReceive('get')->andReturn(null);
+
+    actingAsAdmin();
+    // Missing required fields to force a validation error inside the handler.
+    $this->postJson(
+        '/api/external/v1/locations',
+        [],
+        ['Idempotency-Key' => 'lk-3']
+    )->assertStatus(422);
 });
