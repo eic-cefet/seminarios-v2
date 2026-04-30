@@ -15,11 +15,11 @@ Route::middleware(['auth:sanctum', 'admin'])
         // Seminars
         Route::middleware('ability:seminars:read')->group(function () {
             Route::get('seminars', [ExternalSeminarController::class, 'index'])->name('seminars.index');
-            Route::get('seminars/{seminar}', [ExternalSeminarController::class, 'show'])->name('seminars.show');
+            Route::get('seminars/{seminar:slug}', [ExternalSeminarController::class, 'show'])->name('seminars.show');
         });
         Route::middleware('ability:seminars:write')->group(function () {
             Route::post('seminars', [ExternalSeminarController::class, 'store'])->name('seminars.store');
-            Route::match(['put', 'patch'], 'seminars/{seminar}', [ExternalSeminarController::class, 'update'])->name('seminars.update');
+            Route::match(['put', 'patch'], 'seminars/{seminar:slug}', [ExternalSeminarController::class, 'update'])->name('seminars.update');
         });
 
         // Seminar Types
@@ -55,11 +55,11 @@ Route::middleware(['auth:sanctum', 'admin'])
         // Workshops
         Route::middleware('ability:workshops:read')->group(function () {
             Route::get('workshops', [ExternalWorkshopController::class, 'index'])->name('workshops.index');
-            Route::get('workshops/{workshop}', [ExternalWorkshopController::class, 'show'])->name('workshops.show');
+            Route::get('workshops/{workshop:slug}', [ExternalWorkshopController::class, 'show'])->name('workshops.show');
         });
         Route::middleware('ability:workshops:write')->group(function () {
             Route::post('workshops', [ExternalWorkshopController::class, 'store'])->name('workshops.store');
-            Route::match(['put', 'patch'], 'workshops/{workshop}', [ExternalWorkshopController::class, 'update'])->name('workshops.update');
+            Route::match(['put', 'patch'], 'workshops/{workshop:slug}', [ExternalWorkshopController::class, 'update'])->name('workshops.update');
         });
 
         // Speaker Data

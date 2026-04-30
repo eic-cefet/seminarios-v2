@@ -70,7 +70,7 @@ describe('GET /api/external/v1/workshops/{workshop}', function () {
         actingAsAdmin();
         $workshop = Workshop::factory()->create(['name' => 'Deep Learning']);
 
-        $response = $this->getJson("/api/external/v1/workshops/{$workshop->id}");
+        $response = $this->getJson("/api/external/v1/workshops/{$workshop->slug}");
 
         $response->assertSuccessful()
             ->assertJsonPath('data.id', $workshop->id)
@@ -79,16 +79,17 @@ describe('GET /api/external/v1/workshops/{workshop}', function () {
 
     it('returns 404 for non-existent workshop', function () {
         actingAsAdmin();
-        $this->getJson('/api/external/v1/workshops/999999')->assertNotFound();
+        $this->getJson('/api/external/v1/workshops/non-existent-slug')->assertNotFound();
     });
 
-    it('resolves a workshop by id, not slug', function () {
+    it('resolves a workshop by slug, not id', function () {
         actingAsAdmin();
         $workshop = Workshop::factory()->create(['name' => 'Distributed Systems']);
 
-        $this->getJson("/api/external/v1/workshops/{$workshop->id}")
+        $this->getJson("/api/external/v1/workshops/{$workshop->slug}")
             ->assertSuccessful()
-            ->assertJsonPath('data.id', $workshop->id);
+            ->assertJsonPath('data.id', $workshop->id)
+            ->assertJsonPath('data.slug', $workshop->slug);
     });
 });
 
@@ -145,7 +146,7 @@ describe('PUT /api/external/v1/workshops/{workshop}', function () {
         actingAsAdmin();
         $workshop = Workshop::factory()->create(['name' => 'Old Name']);
 
-        $response = $this->putJson("/api/external/v1/workshops/{$workshop->id}", [
+        $response = $this->putJson("/api/external/v1/workshops/{$workshop->slug}", [
             'name' => 'New Name',
         ]);
 
@@ -158,7 +159,7 @@ describe('PUT /api/external/v1/workshops/{workshop}', function () {
         actingAsAdmin();
         $workshop = Workshop::factory()->create(['name' => 'Workshop']);
 
-        $response = $this->putJson("/api/external/v1/workshops/{$workshop->id}", [
+        $response = $this->putJson("/api/external/v1/workshops/{$workshop->slug}", [
             'description' => 'Updated description',
         ]);
 
@@ -172,7 +173,7 @@ describe('PUT /api/external/v1/workshops/{workshop}', function () {
         Workshop::factory()->create(['name' => 'Existing']);
         $workshop = Workshop::factory()->create(['name' => 'Other']);
 
-        $response = $this->putJson("/api/external/v1/workshops/{$workshop->id}", [
+        $response = $this->putJson("/api/external/v1/workshops/{$workshop->slug}", [
             'name' => 'Existing',
         ]);
 
@@ -183,7 +184,7 @@ describe('PUT /api/external/v1/workshops/{workshop}', function () {
         actingAsAdmin();
         $workshop = Workshop::factory()->create(['name' => 'Workshop A']);
 
-        $response = $this->putJson("/api/external/v1/workshops/{$workshop->id}", [
+        $response = $this->putJson("/api/external/v1/workshops/{$workshop->slug}", [
             'name' => 'Workshop A',
         ]);
 
@@ -192,7 +193,7 @@ describe('PUT /api/external/v1/workshops/{workshop}', function () {
 
     it('returns 404 for non-existent workshop', function () {
         actingAsAdmin();
-        $this->putJson('/api/external/v1/workshops/999999', [
+        $this->putJson('/api/external/v1/workshops/non-existent-slug', [
             'name' => 'Test',
         ])->assertNotFound();
     });
