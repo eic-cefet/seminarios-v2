@@ -163,4 +163,25 @@ describe('ApiException', function () {
         expect($exception->errorCode)->toBe('seminar_full');
         expect($exception->statusCode)->toBe(409);
     });
+
+    it('creates location in use exception', function () {
+        $exception = ApiException::locationInUse();
+
+        expect($exception->errorCode)->toBe('location_in_use');
+        expect($exception->statusCode)->toBe(409);
+    });
+
+    it('creates seminar type in use exception', function () {
+        $exception = ApiException::seminarTypeInUse();
+
+        expect($exception->errorCode)->toBe('seminar_type_in_use');
+        expect($exception->statusCode)->toBe(409);
+    });
+
+    it('creates seminar has registrations exception', function () {
+        $exception = ApiException::seminarHasRegistrations();
+
+        expect($exception->errorCode)->toBe('seminar_has_registrations');
+        expect($exception->statusCode)->toBe(409);
+    });
 });
