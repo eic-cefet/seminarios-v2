@@ -1605,7 +1605,10 @@ describe('SeminarForm', () => {
         expect(nativeSelects).toHaveLength(4);
 
         // Simulate Radix Select transiently emitting onValueChange("") on
-        // the type and workshop selects during the post-edit unmount/remount.
+        // every Select during the post-edit unmount/remount. The required
+        // location must keep its value (5); the optional type/workshop must
+        // not leak 0 into the payload.
+        fireEvent.change(nativeSelects[1], { target: { value: '' } });
         fireEvent.change(nativeSelects[2], { target: { value: '' } });
         fireEvent.change(nativeSelects[3], { target: { value: '' } });
 

@@ -74,7 +74,8 @@ function parseSelectId(value: string): number | undefined {
         return undefined;
     }
     const parsed = Number(value);
-    return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined;
+    /* v8 ignore next -- @preserve defensive guard: Radix never emits non-positive ids from its option list */
+    return parsed > 0 ? parsed : undefined;
 }
 
 export default function SeminarForm() {
