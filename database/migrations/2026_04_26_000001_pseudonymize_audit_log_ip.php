@@ -14,7 +14,7 @@ return new class extends Migration
         // Fail before any schema change if the salt is not configured —
         // otherwise we'd add ip_hash, throw mid-backfill, and leave the
         // table in a half-migrated state with both columns present.
-        $hasher->salt();
+        $hasher->assertConfigured();
 
         Schema::table('audit_logs', function (Blueprint $table) {
             $table->string('ip_hash', 64)->nullable()->after('origin');

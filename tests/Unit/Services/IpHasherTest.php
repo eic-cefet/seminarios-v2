@@ -58,6 +58,17 @@ it('throws when app.key is empty', function () {
         ->toThrow(RuntimeException::class, 'APP_KEY is empty');
 });
 
+it('assertConfigured throws when app.key is empty', function () {
+    config(['app.key' => '']);
+
+    expect(fn () => (new IpHasher)->assertConfigured())
+        ->toThrow(RuntimeException::class, 'APP_KEY is empty');
+});
+
+it('assertConfigured returns silently when app.key is set', function () {
+    expect((new IpHasher)->assertConfigured())->toBeNull();
+});
+
 it('strips the base64 prefix from app.key when deriving the salt', function () {
     config(['app.key' => 'base64:c29tZS1zZWNyZXQ=']);
     $withPrefix = (new IpHasher)->hash('192.168.1.10');

@@ -13,7 +13,7 @@ return new class extends Migration
         $hasher = app(IpHasher::class);
         // Fail before any schema change if the salt is not configured —
         // see 2026_04_26_000001 for the same guard rationale.
-        $hasher->salt();
+        $hasher->assertConfigured();
 
         Schema::table('user_consents', function (Blueprint $table) {
             $table->string('ip_hash', 64)->nullable()->after('version');
@@ -21,8 +21,10 @@ return new class extends Migration
         });
 
         DB::table('user_consents')
-            ->whereNotNull('ip_address')
-            ->orWhereNotNull('user_agent')
+            // Group the OR so chunkById's `id > ?` cursor is appended
+            // alongside (not at the same level as) the row filter — otherwise
+            // pagination collapses and rows get reprocessed.
+            ->where(fn ($q) => $q->whereNotNull('ip_address')->orWhereNotNull('user_agent'))
             ->orderBy('id')
             ->chunkById(1000, function ($rows) use ($hasher): void {
                 foreach ($rows as $row) {

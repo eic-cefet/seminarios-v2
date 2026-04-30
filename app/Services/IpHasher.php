@@ -29,7 +29,19 @@ class IpHasher
         return hash_hmac('sha256', $value, $this->salt());
     }
 
-    public function salt(): string
+    /**
+     * Verify the hash salt is configured. Use as a pre-flight check before
+     * destructive backfills so migrations fail fast without leaving the
+     * schema in a half-migrated state.
+     *
+     * @throws \RuntimeException
+     */
+    public function assertConfigured(): void
+    {
+        $this->salt();
+    }
+
+    private function salt(): string
     {
         $salt = Str::after((string) config('app.key', ''), 'base64:');
 
