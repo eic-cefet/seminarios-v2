@@ -60,6 +60,18 @@ describe('GET /api/external/docs.json', function () {
         expect($schemas)->toContain('ExternalSeminarUpdateRequest');
     });
 
+    it('declares an ApiError component schema', function () {
+        $response = $this->getJson('/api/external/docs.json');
+        $response->assertSuccessful();
+
+        $schema = data_get($response->json(), 'components.schemas.ApiError');
+
+        expect($schema)->not->toBeNull();
+        expect($schema['type'])->toBe('object');
+        expect($schema['properties'])->toHaveKeys(['error', 'message', 'errors']);
+        expect($schema['required'])->toEqual(['error', 'message']);
+    });
+
     it('strips external prefix from operation IDs', function () {
         $response = $this->getJson('/api/external/docs.json');
 
