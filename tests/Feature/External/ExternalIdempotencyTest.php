@@ -199,3 +199,28 @@ it('preserves whitelisted response headers across replay', function () {
     // Set-Cookie is intentionally not replayed.
     expect($replay->headers->get('Set-Cookie'))->toBeNull();
 });
+
+it('falls back to application/json Content-Type on replay when the original response had none', function () {
+    [$admin] = makeAdminWithToken();
+    $admin->withAccessToken($admin->tokens()->latest('id')->first());
+
+    $store = app(IdempotencyStore::class);
+    $middleware = new EnforceIdempotency($store);
+
+    $request = Request::create('/api/external/v1/locations', 'POST', [], [], [], [], json_encode(['x' => 1]));
+    $request->headers->set('Idempotency-Key', 'no-ct');
+    $request->setUserResolver(fn () => $admin);
+
+    $middleware->handle($request, function () {
+        $response = response('{"ok":true}', 200);
+        $response->headers->remove('Content-Type');
+
+        return $response;
+    });
+
+    $replay = $middleware->handle($request, function () {
+        throw new RuntimeException('handler should not be called on replay');
+    });
+
+    expect($replay->headers->get('Content-Type'))->toBe('application/json');
+});

@@ -30,6 +30,19 @@ describe('GET /api/external/v1/users/{id}/speaker-data', function () {
         $user = User::factory()->create();
         $this->getJson("/api/external/v1/users/{$user->id}/speaker-data")->assertUnauthorized();
     });
+
+    it('uses user.updated_at for Last-Modified when newer than speaker data', function () {
+        actingAsAdmin();
+        $user = User::factory()->speaker()->create();
+        $user->speakerData->forceFill(['updated_at' => now()->subDay()])->save();
+        $user->forceFill(['updated_at' => now()])->save();
+        $expected = $user->fresh()->updated_at;
+
+        $response = $this->getJson("/api/external/v1/users/{$user->id}/speaker-data");
+
+        $response->assertSuccessful();
+        expect($response->headers->get('Last-Modified'))->toBe($expected->toRfc7231String());
+    });
 });
 
 describe('PUT /api/external/v1/users/{id}/speaker-data', function () {

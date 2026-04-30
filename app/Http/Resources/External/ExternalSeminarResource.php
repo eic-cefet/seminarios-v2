@@ -41,11 +41,11 @@ class ExternalSeminarResource extends JsonResource
         ];
 
         if ($this->resource->relationLoaded('seminarLocation')) {
-            $payload['location'] = $this->seminarLocation ? [
+            $payload['location'] = [
                 'id' => $this->seminarLocation->id,
                 'name' => $this->seminarLocation->name,
                 'max_vacancies' => (int) $this->seminarLocation->max_vacancies,
-            ] : null;
+            ];
         }
 
         if ($this->resource->relationLoaded('seminarType')) {
