@@ -28,7 +28,7 @@ class ExternalSeminarResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $payload = [
+        return [
             'id' => $this->id,
             'name' => $this->name,
             'slug' => $this->slug,
@@ -52,7 +52,5 @@ class ExternalSeminarResource extends JsonResource
             'created_at' => $this->formatDate($this->created_at),
             'updated_at' => $this->formatDate($this->updated_at),
         ];
-
-        return $this->applyFieldset($payload, $request, $this->availableFields());
     }
 }
