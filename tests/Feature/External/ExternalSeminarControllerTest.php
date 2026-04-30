@@ -14,7 +14,7 @@ describe('GET /api/external/v1/seminars', function () {
         actingAsAdmin();
         Seminar::factory()->count(3)->create();
 
-        $response = $this->getJson('/api/external/v1/seminars');
+        $response = $this->getJson('/api/external/v1/seminars?include=location,subjects,speakers');
 
         $response->assertSuccessful()
             ->assertJsonCount(3, 'data')
@@ -167,7 +167,7 @@ describe('GET /api/external/v1/seminars/{slug}', function () {
         actingAsAdmin();
         $seminar = Seminar::factory()->withSpeakers(2)->withSubjects(3)->create();
 
-        $response = $this->getJson("/api/external/v1/seminars/{$seminar->slug}");
+        $response = $this->getJson("/api/external/v1/seminars/{$seminar->slug}?include=location,subjects,speakers");
 
         $response->assertSuccessful()
             ->assertJsonStructure([
@@ -197,6 +197,63 @@ describe('GET /api/external/v1/seminars/{slug}', function () {
             ->assertSuccessful()
             ->assertJsonPath('data.id', $seminar->id)
             ->assertJsonPath('data.slug', $seminar->slug);
+    });
+});
+
+describe('GET /api/external/v1/seminars include support', function () {
+    it('omits non-included relations on show', function () {
+        actingAsAdmin();
+        $s = Seminar::factory()->create();
+
+        $payload = $this->getJson("/api/external/v1/seminars/{$s->slug}")->json('data');
+
+        expect($payload)->not->toHaveKey('workshop')
+            ->and($payload)->not->toHaveKey('subjects')
+            ->and($payload)->not->toHaveKey('speakers')
+            ->and($payload)->not->toHaveKey('seminar_type')
+            ->and($payload)->not->toHaveKey('location');
+    });
+
+    it('includes only what was requested on show', function () {
+        actingAsAdmin();
+        $s = Seminar::factory()->create();
+
+        $payload = $this->getJson("/api/external/v1/seminars/{$s->slug}?include=workshop,seminar_type")->json('data');
+
+        expect($payload)->toHaveKeys(['workshop', 'seminar_type'])
+            ->and($payload)->not->toHaveKey('subjects')
+            ->and($payload)->not->toHaveKey('speakers')
+            ->and($payload)->not->toHaveKey('location');
+    });
+
+    it('omits non-included relations on index', function () {
+        actingAsAdmin();
+        Seminar::factory()->create();
+
+        $payload = $this->getJson('/api/external/v1/seminars')->json('data.0');
+
+        expect($payload)->not->toHaveKey('workshop')
+            ->and($payload)->not->toHaveKey('subjects')
+            ->and($payload)->not->toHaveKey('speakers')
+            ->and($payload)->not->toHaveKey('seminar_type')
+            ->and($payload)->not->toHaveKey('location');
+    });
+
+    it('includes requested relations on index', function () {
+        actingAsAdmin();
+        Seminar::factory()->withSubjects(2)->create();
+
+        $payload = $this->getJson('/api/external/v1/seminars?include=subjects,location')->json('data.0');
+
+        expect($payload)->toHaveKeys(['subjects', 'location'])
+            ->and($payload)->not->toHaveKey('workshop');
+    });
+
+    it('rejects unknown include key with 422', function () {
+        actingAsAdmin();
+        Seminar::factory()->create();
+
+        $this->getJson('/api/external/v1/seminars?include=mystery')->assertStatus(422);
     });
 });
 

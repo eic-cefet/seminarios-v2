@@ -28,7 +28,7 @@ class ExternalSeminarResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        return [
+        $payload = [
             'id' => $this->id,
             'name' => $this->name,
             'slug' => $this->slug,
@@ -36,21 +36,39 @@ class ExternalSeminarResource extends JsonResource
             'scheduled_at' => $this->formatDate($this->scheduled_at),
             'room_link' => $this->room_link,
             'active' => $this->active,
-            'location' => $this->seminarLocation ? [
-                'id' => $this->seminarLocation->id,
-                'name' => $this->seminarLocation->name,
-                'max_vacancies' => (int) $this->seminarLocation->max_vacancies,
-            ] : null,
-            'seminar_type' => $this->seminarType?->name,
-            'workshop' => $this->workshop ? [
-                'id' => $this->workshop->id,
-                'name' => $this->workshop->name,
-            ] : null,
-            /** @var list<string> */
-            'subjects' => $this->subjects->pluck('name')->values()->all(),
-            'speakers' => ExternalSpeakerResource::collection($this->speakers),
             'created_at' => $this->formatDate($this->created_at),
             'updated_at' => $this->formatDate($this->updated_at),
         ];
+
+        if ($this->resource->relationLoaded('seminarLocation')) {
+            $payload['location'] = $this->seminarLocation ? [
+                'id' => $this->seminarLocation->id,
+                'name' => $this->seminarLocation->name,
+                'max_vacancies' => (int) $this->seminarLocation->max_vacancies,
+            ] : null;
+        }
+
+        if ($this->resource->relationLoaded('seminarType')) {
+            $payload['seminar_type'] = $this->seminarType?->name;
+        }
+
+        if ($this->resource->relationLoaded('workshop')) {
+            $payload['workshop'] = $this->workshop ? [
+                'id' => $this->workshop->id,
+                'name' => $this->workshop->name,
+            ] : null;
+        }
+
+        if ($this->resource->relationLoaded('subjects')) {
+            /** @var list<string> $subjects */
+            $subjects = $this->subjects->pluck('name')->values()->all();
+            $payload['subjects'] = $subjects;
+        }
+
+        if ($this->resource->relationLoaded('speakers')) {
+            $payload['speakers'] = ExternalSpeakerResource::collection($this->speakers);
+        }
+
+        return $payload;
     }
 }
