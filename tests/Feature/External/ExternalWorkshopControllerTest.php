@@ -18,6 +18,18 @@ describe('GET /api/external/v1/workshops', function () {
         expect($names->last())->toBe('Workshop B');
     });
 
+    it('returns the canonical envelope on the workshops index', function () {
+        actingAsAdmin();
+        Workshop::factory()->count(2)->create();
+
+        $response = $this->getJson('/api/external/v1/workshops');
+
+        $response->assertSuccessful()
+            ->assertJsonStructure(['data', 'meta' => ['current_page', 'last_page', 'per_page', 'total', 'from', 'to']])
+            ->assertJsonMissingPath('links')
+            ->assertJsonMissingPath('meta.links');
+    });
+
     it('paginates results', function () {
         actingAsAdmin();
 
