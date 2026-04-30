@@ -38,6 +38,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'admin' => EnsureUserIsAdmin::class,
             'ability' => CheckTokenAbility::class,
+            'external.conditional' => \App\Http\Middleware\HandleConditionalRequests::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
