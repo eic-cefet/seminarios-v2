@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\SeminarType;
+use App\Models\User;
 
 describe('GET /api/external/v1/seminar-types', function () {
     it('returns all seminar types ordered by name', function () {
@@ -126,11 +127,32 @@ describe('PUT /api/external/v1/seminar-types/{id}', function () {
 
 describe('policy enforcement', function () {
     it('denies a teacher from listing seminar types', function () {
-        $teacher = \App\Models\User::factory()->teacher()->create();
+        $teacher = User::factory()->teacher()->create();
         $token = $teacher->createToken('t', ['seminar-types:read'])->plainTextToken;
 
         $this->withHeader('Authorization', "Bearer {$token}")
             ->getJson('/api/external/v1/seminar-types')
             ->assertForbidden();
+    });
+});
+
+describe('GET /api/external/v1/seminar-types sparse fieldsets', function () {
+    it('returns only requested fields with ?fields on show', function () {
+        actingAsAdmin();
+        $type = SeminarType::factory()->create();
+
+        $payload = $this->getJson("/api/external/v1/seminar-types/{$type->id}?fields=id")
+            ->assertSuccessful()
+            ->json('data');
+
+        expect(array_keys($payload))->toBe(['id']);
+    });
+
+    it('returns 422 on unknown field name', function () {
+        actingAsAdmin();
+        $type = SeminarType::factory()->create();
+
+        $this->getJson("/api/external/v1/seminar-types/{$type->id}?fields=password")
+            ->assertStatus(422);
     });
 });

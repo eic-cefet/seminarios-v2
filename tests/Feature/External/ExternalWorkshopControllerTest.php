@@ -244,3 +244,24 @@ describe('PUT /api/external/v1/workshops/{workshop}', function () {
         ])->assertNotFound();
     });
 });
+
+describe('GET /api/external/v1/workshops sparse fieldsets', function () {
+    it('returns only requested fields with ?fields on show', function () {
+        actingAsAdmin();
+        $workshop = Workshop::factory()->create();
+
+        $payload = $this->getJson("/api/external/v1/workshops/{$workshop->slug}?fields=id")
+            ->assertSuccessful()
+            ->json('data');
+
+        expect(array_keys($payload))->toBe(['id']);
+    });
+
+    it('returns 422 on unknown field name', function () {
+        actingAsAdmin();
+        $workshop = Workshop::factory()->create();
+
+        $this->getJson("/api/external/v1/workshops/{$workshop->slug}?fields=password")
+            ->assertStatus(422);
+    });
+});

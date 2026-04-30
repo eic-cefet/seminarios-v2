@@ -329,6 +329,48 @@ describe('POST /api/external/v1/seminars', function () {
     });
 });
 
+describe('GET /api/external/v1/seminars sparse fieldsets', function () {
+    it('returns only requested fields with ?fields on show', function () {
+        actingAsAdmin();
+        $seminar = Seminar::factory()->create();
+
+        $payload = $this->getJson("/api/external/v1/seminars/{$seminar->slug}?fields=id,name")
+            ->assertSuccessful()
+            ->json('data');
+
+        expect(array_keys($payload))->toBe(['id', 'name']);
+    });
+
+    it('returns only requested fields with ?fields on index', function () {
+        actingAsAdmin();
+        Seminar::factory()->count(2)->create();
+
+        $items = $this->getJson('/api/external/v1/seminars?fields=id,name')
+            ->assertSuccessful()
+            ->json('data');
+
+        foreach ($items as $item) {
+            expect(array_keys($item))->toBe(['id', 'name']);
+        }
+    });
+
+    it('returns 422 on unknown field name on show', function () {
+        actingAsAdmin();
+        $seminar = Seminar::factory()->create();
+
+        $this->getJson("/api/external/v1/seminars/{$seminar->slug}?fields=password")
+            ->assertStatus(422);
+    });
+
+    it('returns 422 on unknown field name on index', function () {
+        actingAsAdmin();
+        Seminar::factory()->create();
+
+        $this->getJson('/api/external/v1/seminars?fields=password')
+            ->assertStatus(422);
+    });
+});
+
 describe('PUT /api/external/v1/seminars/{slug}', function () {
     it('updates seminar name and regenerates slug', function () {
         $admin = actingAsAdmin();

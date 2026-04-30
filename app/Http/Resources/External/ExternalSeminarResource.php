@@ -3,6 +3,7 @@
 namespace App\Http\Resources\External;
 
 use App\Http\Resources\Concerns\FormatsDates;
+use App\Http\Resources\External\Concerns\SparseFieldset;
 use App\Models\Seminar;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -10,8 +11,21 @@ use Illuminate\Http\Resources\Json\JsonResource;
 /** @mixin Seminar */
 class ExternalSeminarResource extends JsonResource
 {
-    use FormatsDates;
+    use FormatsDates, SparseFieldset;
 
+    /** @return list<string> */
+    public function availableFields(): array
+    {
+        return [
+            'id', 'name', 'slug', 'description', 'scheduled_at', 'room_link', 'active',
+            'location', 'seminar_type', 'workshop', 'subjects', 'speakers',
+            'created_at', 'updated_at',
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
     public function toArray(Request $request): array
     {
         return [

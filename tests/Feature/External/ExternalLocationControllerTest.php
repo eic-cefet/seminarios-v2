@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\SeminarLocation;
+use App\Models\User;
 
 describe('GET /api/external/v1/locations', function () {
     it('returns all locations ordered by name', function () {
@@ -165,11 +166,32 @@ describe('PUT /api/external/v1/locations/{id}', function () {
 
 describe('policy enforcement', function () {
     it('denies a teacher from listing locations even with the right ability', function () {
-        $teacher = \App\Models\User::factory()->teacher()->create();
+        $teacher = User::factory()->teacher()->create();
         $token = $teacher->createToken('t', ['locations:read'])->plainTextToken;
 
         $this->withHeader('Authorization', "Bearer {$token}")
             ->getJson('/api/external/v1/locations')
             ->assertForbidden();
+    });
+});
+
+describe('GET /api/external/v1/locations sparse fieldsets', function () {
+    it('returns only requested fields with ?fields on show', function () {
+        actingAsAdmin();
+        $location = SeminarLocation::factory()->create();
+
+        $payload = $this->getJson("/api/external/v1/locations/{$location->id}?fields=id")
+            ->assertSuccessful()
+            ->json('data');
+
+        expect(array_keys($payload))->toBe(['id']);
+    });
+
+    it('returns 422 on unknown field name', function () {
+        actingAsAdmin();
+        $location = SeminarLocation::factory()->create();
+
+        $this->getJson("/api/external/v1/locations/{$location->id}?fields=password")
+            ->assertStatus(422);
     });
 });
