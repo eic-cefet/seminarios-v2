@@ -5,6 +5,7 @@ namespace App\Http\Controllers\External;
 use App\Http\Controllers\Concerns\EscapesLikeWildcards;
 use App\Http\Controllers\Concerns\ResolvesSubjects;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\External\ExternalSeminarIndexRequest;
 use App\Http\Requests\External\ExternalSeminarStoreRequest;
 use App\Http\Requests\External\ExternalSeminarUpdateRequest;
 use App\Http\Resources\External\ExternalSeminarResource;
@@ -32,23 +33,53 @@ class ExternalSeminarController extends Controller
 
     #[QueryParameter('search', description: 'Search seminars by name', type: 'string', example: 'Machine Learning')]
     #[QueryParameter('active', description: 'Filter by active status', type: 'boolean', example: true)]
-    public function index(Request $request, SeminarQueryService $seminars, SeminarVisibilityService $visibility): AnonymousResourceCollection
+    #[QueryParameter('scheduled_from', description: 'Filter seminars scheduled on or after this date (ISO 8601)', type: 'string', example: '2026-01-01T00:00:00Z')]
+    #[QueryParameter('scheduled_to', description: 'Filter seminars scheduled on or before this date (ISO 8601)', type: 'string', example: '2026-12-31T23:59:59Z')]
+    #[QueryParameter('upcoming', description: 'Shortcut for scheduled_from=now()', type: 'boolean', example: true)]
+    #[QueryParameter('updated_since', description: 'Only return seminars updated on or after this date (ISO 8601)', type: 'string', example: '2026-04-01T00:00:00Z')]
+    #[QueryParameter('sort', description: 'Comma-separated sort columns. Prefix with `-` for descending. Allowed: scheduled_at, name, updated_at', type: 'string', example: '-scheduled_at,name')]
+    public function index(ExternalSeminarIndexRequest $request, SeminarQueryService $seminars, SeminarVisibilityService $visibility): AnonymousResourceCollection
     {
-        Gate::authorize('viewAny', Seminar::class);
+        $validated = $request->validated();
 
         $query = $seminars->forList(Seminar::query())->with(['workshop']);
         $query = $visibility->visibleSeminars($query, $request->user());
 
-        if ($search = $request->string('search')->trim()->toString()) {
+        if ($search = trim((string) ($validated['search'] ?? ''))) {
             $escaped = $this->escapeLike($search);
             $query->where('name', 'like', "%{$escaped}%");
         }
 
-        if ($request->has('active')) {
-            $query->where('active', $request->boolean('active'));
+        if (array_key_exists('active', $validated)) {
+            $query->where('active', (bool) $validated['active']);
         }
 
-        $seminars = $query->orderByDesc('scheduled_at')->paginate(15);
+        if (! empty($validated['scheduled_from'])) {
+            $query->where('scheduled_at', '>=', $validated['scheduled_from']);
+        }
+
+        if (! empty($validated['scheduled_to'])) {
+            $query->where('scheduled_at', '<=', $validated['scheduled_to']);
+        }
+
+        if (! empty($validated['upcoming'])) {
+            $query->where('scheduled_at', '>=', now());
+        }
+
+        if (! empty($validated['updated_since'])) {
+            $query->where('updated_at', '>=', $validated['updated_since']);
+        }
+
+        $pairs = $request->sortPairs();
+        if ($pairs === []) {
+            $query->orderByDesc('scheduled_at');
+        } else {
+            foreach ($pairs as [$column, $direction]) {
+                $query->orderBy($column, $direction);
+            }
+        }
+
+        $seminars = $query->paginate(15);
 
         $lastModified = collect($seminars->items())->max('updated_at') ?? now();
         $request->attributes->set('external_last_modified', $lastModified);
