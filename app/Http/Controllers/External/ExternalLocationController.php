@@ -7,11 +7,14 @@ use App\Http\Requests\External\ExternalLocationStoreRequest;
 use App\Http\Requests\External\ExternalLocationUpdateRequest;
 use App\Models\SeminarLocation;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Gate;
 
 class ExternalLocationController extends Controller
 {
     public function index(): JsonResponse
     {
+        Gate::authorize('viewAny', SeminarLocation::class);
+
         $locations = SeminarLocation::orderBy('name')
             ->get()
             ->map(fn (SeminarLocation $location) => [
@@ -25,6 +28,8 @@ class ExternalLocationController extends Controller
 
     public function show(SeminarLocation $location): JsonResponse
     {
+        Gate::authorize('view', $location);
+
         return response()->json([
             'data' => [
                 'id' => $location->id,
