@@ -25,6 +25,18 @@ describe('GET /api/external/v1/seminars', function () {
             ]);
     });
 
+    it('returns the canonical envelope on the seminars index', function () {
+        actingAsAdmin();
+        Seminar::factory()->count(2)->create();
+
+        $response = $this->getJson('/api/external/v1/seminars');
+
+        $response->assertSuccessful()
+            ->assertJsonStructure(['data', 'meta' => ['current_page', 'last_page', 'per_page', 'total', 'from', 'to']])
+            ->assertJsonMissingPath('links')
+            ->assertJsonMissingPath('meta.links');
+    });
+
     it('returns 401 for unauthenticated user', function () {
         $this->getJson('/api/external/v1/seminars')->assertUnauthorized();
     });

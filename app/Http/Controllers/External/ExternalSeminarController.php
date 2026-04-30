@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\External\ExternalSeminarIndexRequest;
 use App\Http\Requests\External\ExternalSeminarStoreRequest;
 use App\Http\Requests\External\ExternalSeminarUpdateRequest;
+use App\Http\Resources\External\ExternalResourceCollection;
 use App\Http\Resources\External\ExternalSeminarResource;
 use App\Jobs\ProcessSeminarRescheduleJob;
 use App\Models\Seminar;
@@ -18,7 +19,6 @@ use Dedoc\Scramble\Attributes\BodyParameter;
 use Dedoc\Scramble\Attributes\QueryParameter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -31,14 +31,12 @@ class ExternalSeminarController extends Controller
         private readonly SlugService $slugService
     ) {}
 
-    #[QueryParameter('search', description: 'Search seminars by name', type: 'string', example: 'Machine Learning')]
-    #[QueryParameter('active', description: 'Filter by active status', type: 'boolean', example: true)]
     #[QueryParameter('scheduled_from', description: 'Filter seminars scheduled on or after this date (ISO 8601)', type: 'string', example: '2026-01-01T00:00:00Z')]
     #[QueryParameter('scheduled_to', description: 'Filter seminars scheduled on or before this date (ISO 8601)', type: 'string', example: '2026-12-31T23:59:59Z')]
     #[QueryParameter('upcoming', description: 'Shortcut for scheduled_from=now()', type: 'boolean', example: true)]
     #[QueryParameter('updated_since', description: 'Only return seminars updated on or after this date (ISO 8601)', type: 'string', example: '2026-04-01T00:00:00Z')]
     #[QueryParameter('sort', description: 'Comma-separated sort columns. Prefix with `-` for descending. Allowed: scheduled_at, name, updated_at', type: 'string', example: '-scheduled_at,name')]
-    public function index(ExternalSeminarIndexRequest $request, SeminarQueryService $seminars, SeminarVisibilityService $visibility): AnonymousResourceCollection
+    public function index(ExternalSeminarIndexRequest $request, SeminarQueryService $seminars, SeminarVisibilityService $visibility): ExternalResourceCollection
     {
         $validated = $request->validated();
 
@@ -84,7 +82,7 @@ class ExternalSeminarController extends Controller
         $lastModified = collect($seminars->items())->max('updated_at') ?? now();
         $request->attributes->set('external_last_modified', $lastModified);
 
-        return ExternalSeminarResource::collection($seminars);
+        return new ExternalResourceCollection($seminars, ExternalSeminarResource::class);
     }
 
     public function show(Request $request, Seminar $seminar): ExternalSeminarResource
