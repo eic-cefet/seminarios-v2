@@ -8,6 +8,7 @@ use App\Http\Requests\External\ExternalUserStoreRequest;
 use App\Http\Requests\External\ExternalUserUpdateRequest;
 use App\Http\Resources\External\ExternalUserResource;
 use App\Models\User;
+use Dedoc\Scramble\Attributes\BodyParameter;
 use Dedoc\Scramble\Attributes\QueryParameter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -57,6 +58,8 @@ class ExternalUserController extends Controller
         return new ExternalUserResource($user);
     }
 
+    #[BodyParameter('name', description: 'Full name', type: 'string', example: 'João Silva')]
+    #[BodyParameter('email', description: 'Email address (must be unique across all users)', type: 'string', example: 'joao@cefet-rj.br')]
     public function store(ExternalUserStoreRequest $request): JsonResponse
     {
         $user = User::create($request->validated());
@@ -68,6 +71,8 @@ class ExternalUserController extends Controller
         ], 201);
     }
 
+    #[BodyParameter('name', description: 'Full name', type: 'string', example: 'João Silva')]
+    #[BodyParameter('email', description: 'Email address (must be unique across all users, excluding the current record)', type: 'string', example: 'joao@cefet-rj.br')]
     public function update(ExternalUserUpdateRequest $request, User $user): JsonResponse
     {
         $user->update($request->validated());

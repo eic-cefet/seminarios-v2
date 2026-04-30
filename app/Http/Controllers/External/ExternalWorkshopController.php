@@ -9,6 +9,7 @@ use App\Http\Requests\External\ExternalWorkshopUpdateRequest;
 use App\Http\Resources\External\ExternalWorkshopResource;
 use App\Models\Workshop;
 use App\Services\SlugService;
+use Dedoc\Scramble\Attributes\BodyParameter;
 use Dedoc\Scramble\Attributes\QueryParameter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -54,6 +55,8 @@ class ExternalWorkshopController extends Controller
         return new ExternalWorkshopResource($workshop);
     }
 
+    #[BodyParameter('name', description: 'Workshop name (must be unique; the slug is derived from this value)', type: 'string', example: 'Distributed Systems Lab')]
+    #[BodyParameter('description', description: 'Markdown description of the workshop', type: 'string', example: 'Lab focused on distributed systems research and applications.')]
     public function store(ExternalWorkshopStoreRequest $request): JsonResponse
     {
         $validated = $request->validated();
@@ -74,6 +77,8 @@ class ExternalWorkshopController extends Controller
         ], 201);
     }
 
+    #[BodyParameter('name', description: 'Workshop name (must be unique excluding the current record; the slug is regenerated when this changes)', type: 'string', example: 'Distributed Systems Lab')]
+    #[BodyParameter('description', description: 'Markdown description of the workshop', type: 'string', example: 'Lab focused on distributed systems research and applications.')]
     public function update(ExternalWorkshopUpdateRequest $request, Workshop $workshop): JsonResponse
     {
         $validated = $request->validated();

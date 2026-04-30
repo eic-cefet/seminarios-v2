@@ -105,6 +105,13 @@ describe('GET /api/external/docs.json', function () {
         expect($checked)->toBeGreaterThan(0);
     });
 
+    it('OpenAPI document mentions seating capacity for max_vacancies', function () {
+        $response = $this->getJson('/api/external/docs.json');
+
+        $response->assertSuccessful();
+        expect($response->getContent())->toContain('Seating capacity');
+    });
+
     it('strips external prefix from operation IDs', function () {
         $response = $this->getJson('/api/external/docs.json');
 

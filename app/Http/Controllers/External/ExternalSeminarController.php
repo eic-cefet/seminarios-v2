@@ -73,7 +73,16 @@ class ExternalSeminarController extends Controller
         return new ExternalSeminarResource($seminar);
     }
 
-    #[BodyParameter('seminar_type_id', description: 'ID of the seminar type. Available: 1=Seminário, 2=Qualificação, 3=Dissertação, 4=TCC, 5=Aula inaugural, 6=Painel, 7=Doutorado', example: 4)]
+    #[BodyParameter('name', description: 'Seminar title (the slug is derived from this value)', type: 'string', example: 'Defesa de TCC — Sistemas Distribuídos')]
+    #[BodyParameter('description', description: 'Seminar description (Markdown supported)', type: 'string', example: 'Apresentação sobre arquiteturas event-driven aplicadas a microserviços.')]
+    #[BodyParameter('scheduled_at', description: 'ISO-8601 datetime when the seminar will take place', type: 'string', example: '2026-06-15T14:00:00Z')]
+    #[BodyParameter('room_link', description: 'Optional URL to the virtual meeting room', type: 'string', example: 'https://meet.google.com/abc-defg-hij')]
+    #[BodyParameter('active', description: 'Whether the seminar is published/visible (defaults to true)', type: 'boolean', example: true)]
+    #[BodyParameter('seminar_location_id', description: 'ID of the physical/virtual seminar location', type: 'integer', example: 1)]
+    #[BodyParameter('seminar_type_id', description: 'ID of the seminar type. Available: 1=Seminário, 2=Qualificação, 3=Dissertação, 4=TCC, 5=Aula inaugural, 6=Painel, 7=Doutorado', type: 'integer', example: 4)]
+    #[BodyParameter('workshop_id', description: 'Optional ID of the workshop this seminar belongs to', type: 'integer', example: 2)]
+    #[BodyParameter('subjects', description: 'List of subject names; existing subjects are reused, new ones are created on the fly', type: 'array', example: ['Sistemas Distribuídos', 'Microserviços'])]
+    #[BodyParameter('speaker_ids', description: 'List of user IDs to assign as speakers (must exist in users table)', type: 'array', example: [12, 34])]
     public function store(ExternalSeminarStoreRequest $request): JsonResponse
     {
         $validated = $request->validated();
@@ -114,7 +123,16 @@ class ExternalSeminarController extends Controller
         ], 201);
     }
 
-    #[BodyParameter('seminar_type_id', description: 'ID of the seminar type. Available: 1=Seminário, 2=Qualificação, 3=Dissertação, 4=TCC, 5=Aula inaugural, 6=Painel, 7=Doutorado', example: 4)]
+    #[BodyParameter('name', description: 'Seminar title (the slug is regenerated when this changes)', type: 'string', example: 'Defesa de TCC — Sistemas Distribuídos')]
+    #[BodyParameter('description', description: 'Seminar description (Markdown supported)', type: 'string', example: 'Apresentação sobre arquiteturas event-driven aplicadas a microserviços.')]
+    #[BodyParameter('scheduled_at', description: 'ISO-8601 datetime when the seminar will take place; changing this dispatches reschedule notifications', type: 'string', example: '2026-06-15T14:00:00Z')]
+    #[BodyParameter('room_link', description: 'Optional URL to the virtual meeting room', type: 'string', example: 'https://meet.google.com/abc-defg-hij')]
+    #[BodyParameter('active', description: 'Whether the seminar is published/visible', type: 'boolean', example: true)]
+    #[BodyParameter('seminar_location_id', description: 'ID of the physical/virtual seminar location', type: 'integer', example: 1)]
+    #[BodyParameter('seminar_type_id', description: 'ID of the seminar type. Available: 1=Seminário, 2=Qualificação, 3=Dissertação, 4=TCC, 5=Aula inaugural, 6=Painel, 7=Doutorado', type: 'integer', example: 4)]
+    #[BodyParameter('workshop_id', description: 'Optional ID of the workshop this seminar belongs to', type: 'integer', example: 2)]
+    #[BodyParameter('subjects', description: 'List of subject names to fully replace the seminar subject set; existing subjects are reused, new ones are created on the fly', type: 'array', example: ['Sistemas Distribuídos', 'Microserviços'])]
+    #[BodyParameter('speaker_ids', description: 'List of user IDs to fully replace the seminar speaker set (must exist in users table)', type: 'array', example: [12, 34])]
     public function update(ExternalSeminarUpdateRequest $request, Seminar $seminar): JsonResponse
     {
         $validated = $request->validated();
