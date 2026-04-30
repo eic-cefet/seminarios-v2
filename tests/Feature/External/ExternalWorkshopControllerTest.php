@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Seminar;
+use App\Models\User;
 use App\Models\Workshop;
 
 describe('GET /api/external/v1/workshops', function () {
@@ -286,7 +287,7 @@ describe('DELETE /api/external/v1/workshops/{workshop}', function () {
     });
 
     it('requires workshops:delete ability', function () {
-        $admin = \App\Models\User::factory()->admin()->create();
+        $admin = User::factory()->admin()->create();
         $token = $admin->createToken('t', ['workshops:read'])->plainTextToken;
         $workshop = Workshop::factory()->create();
 
@@ -296,7 +297,7 @@ describe('DELETE /api/external/v1/workshops/{workshop}', function () {
     });
 
     it('allows token with workshops:delete ability', function () {
-        $admin = \App\Models\User::factory()->admin()->create();
+        $admin = User::factory()->admin()->create();
         $token = $admin->createToken('t', ['workshops:delete'])->plainTextToken;
         $workshop = Workshop::factory()->create();
 

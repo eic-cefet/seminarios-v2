@@ -232,11 +232,11 @@ class ExternalSeminarController extends Controller
     {
         Gate::authorize('delete', $seminar);
 
-        if ($seminar->registrations()->exists()) {
-            throw ApiException::seminarHasRegistrations();
-        }
-
         DB::transaction(function () use ($seminar) {
+            if ($seminar->registrations()->lockForUpdate()->exists()) {
+                throw ApiException::seminarHasRegistrations();
+            }
+
             $seminar->subjects()->detach();
             $seminar->speakers()->detach();
             $seminar->delete();

@@ -7,12 +7,12 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\External\ExternalLocationStoreRequest;
 use App\Http\Requests\External\ExternalLocationUpdateRequest;
 use App\Http\Resources\External\ExternalLocationResource;
-use App\Models\Seminar;
 use App\Models\SeminarLocation;
 use Dedoc\Scramble\Attributes\BodyParameter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 
 class ExternalLocationController extends Controller
@@ -67,11 +67,13 @@ class ExternalLocationController extends Controller
     {
         Gate::authorize('delete', $location);
 
-        if (Seminar::where('seminar_location_id', $location->id)->exists()) {
-            throw ApiException::locationInUse();
-        }
+        DB::transaction(function () use ($location) {
+            if ($location->seminars()->lockForUpdate()->exists()) {
+                throw ApiException::locationInUse();
+            }
 
-        $location->delete();
+            $location->delete();
+        });
 
         return response()->json(['message' => 'Location deleted successfully.']);
     }

@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Seminar;
 use App\Models\SeminarLocation;
 use App\Models\User;
 
@@ -179,7 +180,7 @@ describe('DELETE /api/external/v1/locations/{id}', function () {
     it('returns 409 when location is in use by a seminar', function () {
         actingAsAdmin();
         $location = SeminarLocation::factory()->create();
-        \App\Models\Seminar::factory()->create(['seminar_location_id' => $location->id]);
+        Seminar::factory()->create(['seminar_location_id' => $location->id]);
 
         $this->deleteJson("/api/external/v1/locations/{$location->id}")
             ->assertStatus(409)

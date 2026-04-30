@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Seminar;
 use App\Models\SeminarType;
 use App\Models\User;
 
@@ -140,7 +141,7 @@ describe('DELETE /api/external/v1/seminar-types/{id}', function () {
     it('returns 409 when seminar type is in use by a seminar', function () {
         actingAsAdmin();
         $type = SeminarType::factory()->create();
-        \App\Models\Seminar::factory()->create(['seminar_type_id' => $type->id]);
+        Seminar::factory()->create(['seminar_type_id' => $type->id]);
 
         $this->deleteJson("/api/external/v1/seminar-types/{$type->id}")
             ->assertStatus(409)

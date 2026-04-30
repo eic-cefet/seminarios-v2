@@ -7,12 +7,12 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\External\ExternalSeminarTypeStoreRequest;
 use App\Http\Requests\External\ExternalSeminarTypeUpdateRequest;
 use App\Http\Resources\External\ExternalSeminarTypeResource;
-use App\Models\Seminar;
 use App\Models\SeminarType;
 use Dedoc\Scramble\Attributes\BodyParameter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 
 class ExternalSeminarTypeController extends Controller
@@ -65,11 +65,13 @@ class ExternalSeminarTypeController extends Controller
     {
         Gate::authorize('delete', $seminarType);
 
-        if (Seminar::where('seminar_type_id', $seminarType->id)->exists()) {
-            throw ApiException::seminarTypeInUse();
-        }
+        DB::transaction(function () use ($seminarType) {
+            if ($seminarType->seminars()->lockForUpdate()->exists()) {
+                throw ApiException::seminarTypeInUse();
+            }
 
-        $seminarType->delete();
+            $seminarType->delete();
+        });
 
         return response()->json(['message' => 'Seminar type deleted successfully.']);
     }

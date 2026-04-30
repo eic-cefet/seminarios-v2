@@ -16,6 +16,7 @@ use Dedoc\Scramble\Attributes\BodyParameter;
 use Dedoc\Scramble\Attributes\QueryParameter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 
 class ExternalWorkshopController extends Controller
@@ -119,11 +120,13 @@ class ExternalWorkshopController extends Controller
     {
         Gate::authorize('delete', $workshop);
 
-        if ($workshop->seminars()->exists()) {
-            throw ApiException::workshopInUse();
-        }
+        DB::transaction(function () use ($workshop) {
+            if ($workshop->seminars()->lockForUpdate()->exists()) {
+                throw ApiException::workshopInUse();
+            }
 
-        $workshop->delete();
+            $workshop->delete();
+        });
 
         return response()->json(['message' => 'Workshop deleted successfully.']);
     }

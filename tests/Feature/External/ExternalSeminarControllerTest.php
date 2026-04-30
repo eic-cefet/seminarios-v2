@@ -1,6 +1,7 @@
 <?php
 
 use App\Jobs\ProcessSeminarRescheduleJob;
+use App\Models\Registration;
 use App\Models\Seminar;
 use App\Models\SeminarLocation;
 use App\Models\SeminarType;
@@ -8,6 +9,7 @@ use App\Models\Subject;
 use App\Models\User;
 use App\Models\Workshop;
 use Illuminate\Support\Facades\Bus;
+use Illuminate\Support\Facades\DB;
 
 describe('GET /api/external/v1/seminars', function () {
     it('returns paginated list of seminars for admin', function () {
@@ -608,14 +610,14 @@ describe('DELETE /api/external/v1/seminars/{slug}', function () {
         $this->deleteJson("/api/external/v1/seminars/{$seminar->slug}")
             ->assertSuccessful();
 
-        expect(\Illuminate\Support\Facades\DB::table('seminar_subject')->where('seminar_id', $seminar->id)->count())->toBe(0);
-        expect(\Illuminate\Support\Facades\DB::table('seminar_speaker')->where('seminar_id', $seminar->id)->count())->toBe(0);
+        expect(DB::table('seminar_subject')->where('seminar_id', $seminar->id)->count())->toBe(0);
+        expect(DB::table('seminar_speaker')->where('seminar_id', $seminar->id)->count())->toBe(0);
     });
 
     it('returns 409 when seminar has registrations', function () {
         actingAsAdmin();
         $seminar = Seminar::factory()->create();
-        \App\Models\Registration::factory()->for($seminar)->create();
+        Registration::factory()->for($seminar)->create();
 
         $this->deleteJson("/api/external/v1/seminars/{$seminar->slug}")
             ->assertStatus(409)

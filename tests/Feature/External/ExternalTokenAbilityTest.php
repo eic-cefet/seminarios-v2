@@ -130,16 +130,15 @@ describe('Token abilities enforcement', function () {
         $response->assertSuccessful();
         expect($response->json('data'))->toContain('seminars:read');
         expect($response->json('data'))->toContain('seminars:write');
+        expect($response->json('data'))->toContain('seminars:delete');
         expect($response->json('data'))->toContain('users:read');
         expect($response->json('data'))->toContain('speaker-data:write');
         expect($response->json('data'))->toContain('workshops:read');
         expect($response->json('data'))->toContain('workshops:write');
+        expect($response->json('data'))->toContain('workshops:delete');
+        expect($response->json('data'))->toContain('locations:delete');
+        expect($response->json('data'))->toContain('seminar-types:delete');
         expect($response->json('data'))->toHaveCount(16);
-    });
-
-    it('lists the four delete abilities', function () {
-        expect(\App\Http\Controllers\Admin\AdminApiTokenController::AVAILABLE_ABILITIES)
-            ->toContain('seminars:delete', 'workshops:delete', 'locations:delete', 'seminar-types:delete');
     });
 
     it('creates token with specific abilities', function () {
