@@ -7,6 +7,7 @@ use App\Http\Requests\External\ExternalSeminarTypeStoreRequest;
 use App\Http\Requests\External\ExternalSeminarTypeUpdateRequest;
 use App\Http\Resources\External\ExternalSeminarTypeResource;
 use App\Models\SeminarType;
+use Dedoc\Scramble\Attributes\BodyParameter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -35,6 +36,7 @@ class ExternalSeminarTypeController extends Controller
         return new ExternalSeminarTypeResource($seminarType);
     }
 
+    #[BodyParameter('name', description: 'Seminar type display name (must be unique)', type: 'string', example: 'Qualificação')]
     public function store(ExternalSeminarTypeStoreRequest $request): JsonResponse
     {
         $type = SeminarType::create($request->validated());
@@ -45,6 +47,7 @@ class ExternalSeminarTypeController extends Controller
         ], 201);
     }
 
+    #[BodyParameter('name', description: 'Seminar type display name (must be unique, excluding the current record)', type: 'string', example: 'Qualificação')]
     public function update(ExternalSeminarTypeUpdateRequest $request, SeminarType $seminarType): JsonResponse
     {
         $seminarType->update($request->validated());
