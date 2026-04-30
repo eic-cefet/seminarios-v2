@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\External\ExternalSeminarIndexRequest;
 use App\Http\Requests\External\ExternalSeminarStoreRequest;
 use App\Http\Requests\External\ExternalSeminarUpdateRequest;
+use App\Http\Resources\External\ExternalCursorResourceCollection;
 use App\Http\Resources\External\ExternalResourceCollection;
 use App\Http\Resources\External\ExternalSeminarResource;
 use App\Jobs\ProcessSeminarRescheduleJob;
@@ -15,6 +16,7 @@ use App\Models\Seminar;
 use App\Services\SeminarVisibilityService;
 use App\Services\SlugService;
 use App\Support\External\IncludesParser;
+use App\Support\External\PaginationMode;
 use Dedoc\Scramble\Attributes\BodyParameter;
 use Dedoc\Scramble\Attributes\QueryParameter;
 use Illuminate\Http\JsonResponse;
@@ -51,7 +53,9 @@ class ExternalSeminarController extends Controller
     #[QueryParameter('updated_since', description: 'Only return seminars updated on or after this date (ISO 8601)', type: 'string', example: '2026-04-01T00:00:00Z')]
     #[QueryParameter('sort', description: 'Comma-separated sort columns. Prefix with `-` for descending. Allowed: scheduled_at, name, updated_at', type: 'string', example: '-scheduled_at,name')]
     #[QueryParameter('include', description: 'Comma-separated relations to eager-load. Allowed: workshop, seminar_type, location, subjects, speakers.', type: 'string', example: 'workshop,subjects')]
-    public function index(ExternalSeminarIndexRequest $request, SeminarVisibilityService $visibility): ExternalResourceCollection
+    #[QueryParameter('paginate', description: 'Pagination strategy: `page` (default, length-aware) or `cursor` (opaque cursor for stable iteration over large sets)', type: 'string', example: 'cursor')]
+    #[QueryParameter('cursor', description: 'Opaque cursor token returned by a previous `paginate=cursor` response (`meta.next_cursor` / `meta.prev_cursor`)', type: 'string', example: 'eyJpZCI6MTAwLCJfcG9pbnRzVG9OZXh0SXRlbXMiOnRydWV9')]
+    public function index(ExternalSeminarIndexRequest $request, SeminarVisibilityService $visibility): ExternalResourceCollection|ExternalCursorResourceCollection
     {
         $validated = $request->validated();
 
@@ -96,12 +100,17 @@ class ExternalSeminarController extends Controller
             }
         }
 
-        $seminars = $query->paginate(15);
+        $mode = PaginationMode::fromQuery($request->validated()['paginate'] ?? null);
+        $seminars = $mode === PaginationMode::Cursor
+            ? $query->cursorPaginate(15)
+            : $query->paginate(15);
 
         $lastModified = collect($seminars->items())->max('updated_at') ?? now();
         $request->attributes->set('external_last_modified', $lastModified);
 
-        return new ExternalResourceCollection($seminars, ExternalSeminarResource::class);
+        return $mode === PaginationMode::Cursor
+            ? new ExternalCursorResourceCollection($seminars, ExternalSeminarResource::class)
+            : new ExternalResourceCollection($seminars, ExternalSeminarResource::class);
     }
 
     #[QueryParameter('include', description: 'Comma-separated relations to eager-load. Allowed: workshop, seminar_type, location, subjects, speakers.', type: 'string', example: 'workshop,subjects')]

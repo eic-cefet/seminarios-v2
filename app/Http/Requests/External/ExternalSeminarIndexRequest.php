@@ -55,6 +55,7 @@ class ExternalSeminarIndexRequest extends FormRequest
             'upcoming' => ['sometimes', 'boolean'],
             'updated_since' => ['sometimes', 'date'],
             'sort' => ['sometimes', 'string', 'max:255'],
+            'paginate' => ['sometimes', 'in:page,cursor'],
         ];
     }
 

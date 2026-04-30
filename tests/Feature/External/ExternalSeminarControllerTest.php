@@ -78,6 +78,37 @@ describe('GET /api/external/v1/seminars', function () {
         expect($response->json('data'))->toHaveCount(1);
         expect($response->json('data.0.name'))->toBe('TCC Machine Learning');
     });
+
+    it('cursor pagination round-trip', function () {
+        actingAsAdmin();
+        Seminar::factory()->count(40)->create();
+
+        $first = $this->getJson('/api/external/v1/seminars?paginate=cursor');
+        $first->assertSuccessful()->assertJsonStructure(['data', 'meta' => ['per_page', 'next_cursor', 'prev_cursor', 'has_more']]);
+
+        $cursor = $first->json('meta.next_cursor');
+        expect($cursor)->not->toBeNull();
+        expect($first->json('meta.has_more'))->toBeTrue();
+
+        $second = $this->getJson('/api/external/v1/seminars?paginate=cursor&cursor='.$cursor);
+        $second->assertSuccessful();
+        expect($second->json('data.0.id'))->not->toBe($first->json('data.0.id'));
+    });
+
+    it('rejects an unknown paginate mode with 422', function () {
+        actingAsAdmin();
+        $this->getJson('/api/external/v1/seminars?paginate=mystery')->assertStatus(422);
+    });
+
+    it('defaults to page-based pagination when paginate is omitted', function () {
+        actingAsAdmin();
+        Seminar::factory()->count(2)->create();
+
+        $response = $this->getJson('/api/external/v1/seminars');
+
+        $response->assertSuccessful()
+            ->assertJsonStructure(['data', 'meta' => ['current_page', 'last_page', 'per_page', 'total', 'from', 'to']]);
+    });
 });
 
 describe('GET /api/external/v1/seminars filters & sort', function () {
