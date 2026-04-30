@@ -27,6 +27,18 @@ describe('GET /api/external/v1/locations', function () {
         expect($response->json('data.0.max_vacancies'))->toBe(200);
     });
 
+    it('returns the canonical envelope on the locations index', function () {
+        actingAsAdmin();
+        SeminarLocation::factory()->count(2)->create();
+
+        $response = $this->getJson('/api/external/v1/locations');
+
+        $response->assertSuccessful()
+            ->assertJsonStructure(['data', 'meta' => ['total']])
+            ->assertJsonMissingPath('links');
+        expect($response->json('meta.total'))->toBe(2);
+    });
+
     it('returns 401 for unauthenticated user', function () {
         $this->getJson('/api/external/v1/locations')->assertUnauthorized();
     });

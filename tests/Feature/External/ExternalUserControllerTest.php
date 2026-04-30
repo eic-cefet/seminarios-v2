@@ -15,6 +15,18 @@ describe('GET /api/external/v1/users', function () {
             ]);
     });
 
+    it('returns the canonical envelope on the users index', function () {
+        actingAsAdmin();
+        User::factory()->count(2)->create();
+
+        $response = $this->getJson('/api/external/v1/users');
+
+        $response->assertSuccessful()
+            ->assertJsonStructure(['data', 'meta' => ['current_page', 'last_page', 'per_page', 'total', 'from', 'to']])
+            ->assertJsonMissingPath('links')
+            ->assertJsonMissingPath('meta.links');
+    });
+
     it('searches by name', function () {
         actingAsAdmin();
         User::factory()->create(['name' => 'João Silva']);

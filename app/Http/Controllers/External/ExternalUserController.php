@@ -6,13 +6,13 @@ use App\Http\Controllers\Concerns\EscapesLikeWildcards;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\External\ExternalUserStoreRequest;
 use App\Http\Requests\External\ExternalUserUpdateRequest;
+use App\Http\Resources\External\ExternalResourceCollection;
 use App\Http\Resources\External\ExternalUserResource;
 use App\Models\User;
 use Dedoc\Scramble\Attributes\BodyParameter;
 use Dedoc\Scramble\Attributes\QueryParameter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\Gate;
 
 class ExternalUserController extends Controller
@@ -21,7 +21,7 @@ class ExternalUserController extends Controller
 
     #[QueryParameter('search', description: 'Search by name or email', type: 'string', example: 'joao')]
     #[QueryParameter('email', description: 'Filter by exact email address', type: 'string', example: 'joao@cefet-rj.br')]
-    public function index(Request $request): AnonymousResourceCollection
+    public function index(Request $request): ExternalResourceCollection
     {
         Gate::authorize('viewAny', User::class);
 
@@ -44,7 +44,7 @@ class ExternalUserController extends Controller
         $lastModified = collect($users->items())->max('updated_at') ?? now();
         $request->attributes->set('external_last_modified', $lastModified);
 
-        return ExternalUserResource::collection($users);
+        return new ExternalResourceCollection($users, ExternalUserResource::class);
     }
 
     public function show(Request $request, User $user): ExternalUserResource

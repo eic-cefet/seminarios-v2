@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\External\ExternalWorkshopIndexRequest;
 use App\Http\Requests\External\ExternalWorkshopStoreRequest;
 use App\Http\Requests\External\ExternalWorkshopUpdateRequest;
+use App\Http\Resources\External\ExternalResourceCollection;
 use App\Http\Resources\External\ExternalWorkshopResource;
 use App\Models\Workshop;
 use App\Services\SlugService;
@@ -14,7 +15,6 @@ use Dedoc\Scramble\Attributes\BodyParameter;
 use Dedoc\Scramble\Attributes\QueryParameter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\Gate;
 
 class ExternalWorkshopController extends Controller
@@ -28,7 +28,7 @@ class ExternalWorkshopController extends Controller
     #[QueryParameter('search', description: 'Search workshops by name', type: 'string', example: 'Machine Learning')]
     #[QueryParameter('updated_since', description: 'Only return workshops updated on or after this date (ISO 8601)', type: 'string', example: '2026-04-01T00:00:00Z')]
     #[QueryParameter('sort', description: 'Comma-separated sort columns. Prefix with `-` for descending. Allowed: name, updated_at', type: 'string', example: '-name')]
-    public function index(ExternalWorkshopIndexRequest $request): AnonymousResourceCollection
+    public function index(ExternalWorkshopIndexRequest $request): ExternalResourceCollection
     {
         $validated = $request->validated();
 
@@ -57,7 +57,7 @@ class ExternalWorkshopController extends Controller
         $lastModified = collect($workshops->items())->max('updated_at') ?? now();
         $request->attributes->set('external_last_modified', $lastModified);
 
-        return ExternalWorkshopResource::collection($workshops);
+        return new ExternalResourceCollection($workshops, ExternalWorkshopResource::class);
     }
 
     public function show(Request $request, Workshop $workshop): ExternalWorkshopResource
