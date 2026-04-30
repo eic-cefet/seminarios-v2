@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use Dedoc\Scramble\Scramble;
 use Dedoc\Scramble\Support\Generator\OpenApi;
+use Dedoc\Scramble\Support\Generator\Response;
 use Dedoc\Scramble\Support\Generator\Schema;
 use Dedoc\Scramble\Support\Generator\Types\ObjectType;
 use Dedoc\Scramble\Support\Generator\Types\StringType;
@@ -18,6 +19,7 @@ class ScrambleServiceProvider extends ServiceProvider
     {
         Scramble::afterOpenApiGenerated(function (OpenApi $openApi): void {
             $this->registerApiErrorSchema($openApi);
+            $this->attachDefaultErrorResponseToExternalOperations($openApi);
         });
     }
 
@@ -46,5 +48,49 @@ class ScrambleServiceProvider extends ServiceProvider
             ->setRequired(['error', 'message']);
 
         $openApi->components->addSchema('ApiError', Schema::fromType($apiError));
+    }
+
+    /**
+     * Attach a default response that references the ApiError schema on every
+     * external operation, so integrators see the real error shape instead of
+     * Scramble's generic "default response".
+     */
+    private function attachDefaultErrorResponseToExternalOperations(OpenApi $openApi): void
+    {
+        $reference = $openApi->components->getSchemaReference('ApiError');
+
+        foreach ($openApi->paths as $path) {
+            if (! str_starts_with($path->path, 'v1/')) {
+                continue;
+            }
+
+            foreach ($path->operations as $operation) {
+                if ($this->operationAlreadyDeclaresDefaultResponse($operation->responses)) {
+                    continue;
+                }
+
+                $operation->responses[] = Response::make('default')
+                    ->setDescription('Error response. See `ApiError` schema for the envelope.')
+                    ->setContent('application/json', Schema::fromType($reference));
+            }
+        }
+    }
+
+    /**
+     * @param  array<int, mixed>|null  $responses
+     */
+    private function operationAlreadyDeclaresDefaultResponse(?array $responses): bool
+    {
+        if ($responses === null) {
+            return false;
+        }
+
+        foreach ($responses as $response) {
+            if ($response instanceof Response && ($response->code === 'default' || $response->code === null)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

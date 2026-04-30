@@ -72,6 +72,32 @@ describe('GET /api/external/docs.json', function () {
         expect($schema['required'])->toEqual(['error', 'message']);
     });
 
+    it('declares ApiError as the default error response on every external operation', function () {
+        $doc = $this->getJson('/api/external/docs.json')->json();
+
+        $checked = 0;
+        foreach (data_get($doc, 'paths', []) as $path => $methods) {
+            if (! str_starts_with($path, '/v1/')) {
+                continue;
+            }
+
+            foreach ($methods as $method => $op) {
+                if (! is_array($op) || ! isset($op['responses'])) {
+                    continue;
+                }
+
+                $schemaRef = data_get($op, 'responses.default.content.application/json.schema.$ref');
+
+                expect($schemaRef)
+                    ->toBe('#/components/schemas/ApiError', "{$method} {$path} missing default ApiError response");
+
+                $checked++;
+            }
+        }
+
+        expect($checked)->toBeGreaterThan(0);
+    });
+
     it('strips external prefix from operation IDs', function () {
         $response = $this->getJson('/api/external/docs.json');
 
