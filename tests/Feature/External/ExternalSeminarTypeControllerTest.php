@@ -111,3 +111,14 @@ describe('PUT /api/external/v1/seminar-types/{id}', function () {
         $response->assertSuccessful();
     });
 });
+
+describe('policy enforcement', function () {
+    it('denies a teacher from listing seminar types', function () {
+        $teacher = \App\Models\User::factory()->teacher()->create();
+        $token = $teacher->createToken('t', ['seminar-types:read'])->plainTextToken;
+
+        $this->withHeader('Authorization', "Bearer {$token}")
+            ->getJson('/api/external/v1/seminar-types')
+            ->assertForbidden();
+    });
+});

@@ -7,11 +7,14 @@ use App\Http\Requests\External\ExternalSeminarTypeStoreRequest;
 use App\Http\Requests\External\ExternalSeminarTypeUpdateRequest;
 use App\Models\SeminarType;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Gate;
 
 class ExternalSeminarTypeController extends Controller
 {
     public function index(): JsonResponse
     {
+        Gate::authorize('viewAny', SeminarType::class);
+
         $types = SeminarType::orderBy('name')
             ->get()
             ->map(fn (SeminarType $type) => [
@@ -24,6 +27,8 @@ class ExternalSeminarTypeController extends Controller
 
     public function show(SeminarType $seminarType): JsonResponse
     {
+        Gate::authorize('view', $seminarType);
+
         return response()->json([
             'data' => [
                 'id' => $seminarType->id,
