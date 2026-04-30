@@ -84,6 +84,7 @@ class ExternalUserController extends Controller
     public function store(ExternalUserStoreRequest $request): JsonResponse
     {
         $user = User::create($request->validated());
+        $user->load('speakerData');
 
         return response()->json([
             'message' => 'User created successfully.',
@@ -96,6 +97,7 @@ class ExternalUserController extends Controller
     public function update(ExternalUserUpdateRequest $request, User $user): JsonResponse
     {
         $user->update($request->validated());
+        $user->load('speakerData');
 
         return response()->json([
             'message' => 'User updated successfully.',

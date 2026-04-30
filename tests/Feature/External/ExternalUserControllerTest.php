@@ -136,9 +136,21 @@ describe('POST /api/external/v1/users', function () {
 
         $response->assertCreated()
             ->assertJsonPath('data.name', 'New User')
-            ->assertJsonPath('data.email', 'new@test.com');
+            ->assertJsonPath('data.email', 'new@test.com')
+            ->assertJsonPath('data.speaker_data', null);
+    });
 
-        expect($response->json('data'))->not->toHaveKey('speaker_data');
+    it('store response includes speaker_data without ?include=', function () {
+        actingAsAdmin();
+
+        $response = $this->postJson('/api/external/v1/users', [
+            'name' => 'Plain User',
+            'email' => 'plain@test.com',
+        ]);
+
+        $response->assertCreated();
+        expect($response->json('data'))->toHaveKey('speaker_data');
+        expect($response->json('data.speaker_data'))->toBeNull();
     });
 
     it('does not accept password field', function () {
@@ -182,6 +194,21 @@ describe('PUT /api/external/v1/users/{id}', function () {
 
         $response->assertSuccessful();
         expect($response->json('data.name'))->toBe('Updated Name');
+        $response->assertJsonPath('data.speaker_data', null);
+    });
+
+    it('update response includes speaker_data without ?include=', function () {
+        actingAsAdmin();
+        $user = User::factory()->speaker()->create();
+
+        $response = $this->putJson("/api/external/v1/users/{$user->id}", [
+            'name' => 'Renamed Speaker',
+        ]);
+
+        $response->assertSuccessful();
+        expect($response->json('data'))->toHaveKey('speaker_data');
+        expect($response->json('data.speaker_data'))->not->toBeNull();
+        expect($response->json('data.speaker_data.id'))->toBe($user->speakerData->id);
     });
 
     it('rejects duplicate email on update', function () {

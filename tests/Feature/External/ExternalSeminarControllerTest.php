@@ -384,6 +384,28 @@ describe('POST /api/external/v1/seminars', function () {
 
         expect($response->json('data.workshop.id'))->toBe($workshop->id);
     });
+
+    it('store response includes all relations without ?include=', function () {
+        actingAsAdmin();
+        $location = SeminarLocation::factory()->create();
+        $type = SeminarType::factory()->create(['name' => 'TCC']);
+        $workshop = Workshop::factory()->create();
+        $speaker = User::factory()->speaker()->create();
+
+        $response = $this->postJson('/api/external/v1/seminars', [
+            'name' => 'Full Relations Seminar',
+            'scheduled_at' => '2026-06-15 14:00:00',
+            'seminar_location_id' => $location->id,
+            'seminar_type_id' => $type->id,
+            'workshop_id' => $workshop->id,
+            'subjects' => ['Subject A'],
+            'speaker_ids' => [$speaker->id],
+        ]);
+
+        $response->assertCreated();
+        $data = $response->json('data');
+        expect($data)->toHaveKeys(['workshop', 'seminar_type', 'location', 'subjects', 'speakers']);
+    });
 });
 
 describe('GET /api/external/v1/seminars sparse fieldsets', function () {
@@ -538,5 +560,27 @@ describe('PUT /api/external/v1/seminars/{slug}', function () {
 
         expect($response->json('data.active'))->toBeFalse();
         expect($response->json('data.name'))->toBe('Original');
+    });
+
+    it('update response includes all relations without ?include=', function () {
+        $admin = actingAsAdmin();
+        $type = SeminarType::factory()->create();
+        $workshop = Workshop::factory()->create();
+        $seminar = Seminar::factory()
+            ->withSpeakers()
+            ->withSubjects()
+            ->create([
+                'created_by' => $admin->id,
+                'seminar_type_id' => $type->id,
+                'workshop_id' => $workshop->id,
+            ]);
+
+        $response = $this->putJson("/api/external/v1/seminars/{$seminar->slug}", [
+            'name' => 'Touched Name',
+        ]);
+
+        $response->assertSuccessful();
+        $data = $response->json('data');
+        expect($data)->toHaveKeys(['workshop', 'seminar_type', 'location', 'subjects', 'speakers']);
     });
 });
