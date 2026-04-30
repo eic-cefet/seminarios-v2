@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\External;
 
+use App\Exceptions\ApiException;
 use App\Http\Controllers\Concerns\EscapesLikeWildcards;
 use App\Http\Controllers\Concerns\ResolvesSubjects;
 use App\Http\Controllers\Controller;
@@ -225,6 +226,23 @@ class ExternalSeminarController extends Controller
             'message' => 'Seminar updated successfully.',
             'data' => new ExternalSeminarResource($seminar),
         ]);
+    }
+
+    public function destroy(Seminar $seminar): JsonResponse
+    {
+        Gate::authorize('delete', $seminar);
+
+        if ($seminar->registrations()->exists()) {
+            throw ApiException::seminarHasRegistrations();
+        }
+
+        DB::transaction(function () use ($seminar) {
+            $seminar->subjects()->detach();
+            $seminar->speakers()->detach();
+            $seminar->delete();
+        });
+
+        return response()->json(['message' => 'Seminar deleted successfully.']);
     }
 
     /**
