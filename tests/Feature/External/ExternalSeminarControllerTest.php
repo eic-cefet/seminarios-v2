@@ -68,6 +68,88 @@ describe('GET /api/external/v1/seminars', function () {
     });
 });
 
+describe('GET /api/external/v1/seminars filters & sort', function () {
+    it('rejects an invalid sort column', function () {
+        actingAsAdmin();
+        $this->getJson('/api/external/v1/seminars?sort=password')
+            ->assertStatus(422);
+    });
+
+    it('rejects malformed scheduled_from', function () {
+        actingAsAdmin();
+        $this->getJson('/api/external/v1/seminars?scheduled_from=not-a-date')
+            ->assertStatus(422);
+    });
+
+    it('rejects scheduled_to before scheduled_from', function () {
+        actingAsAdmin();
+        $this->getJson('/api/external/v1/seminars?scheduled_from='.now()->toIso8601String().'&scheduled_to='.now()->subDay()->toIso8601String())
+            ->assertStatus(422);
+    });
+
+    it('filters by scheduled_from and scheduled_to', function () {
+        actingAsAdmin();
+        Seminar::factory()->create(['name' => 'Old', 'scheduled_at' => now()->subDays(10)]);
+        Seminar::factory()->create(['name' => 'Mid', 'scheduled_at' => now()->subDays(2)]);
+        Seminar::factory()->create(['name' => 'New', 'scheduled_at' => now()->addDays(2)]);
+
+        $names = collect($this->getJson('/api/external/v1/seminars?scheduled_from='.now()->subDays(5)->toIso8601String().'&scheduled_to='.now()->subDay()->toIso8601String())->json('data'))
+            ->pluck('name');
+
+        expect($names)->toContain('Mid')
+            ->and($names)->not->toContain('Old')
+            ->and($names)->not->toContain('New');
+    });
+
+    it('upcoming=true returns only seminars from now onward', function () {
+        actingAsAdmin();
+        Seminar::factory()->create(['name' => 'Past', 'scheduled_at' => now()->subDay()]);
+        Seminar::factory()->create(['name' => 'Future', 'scheduled_at' => now()->addDay()]);
+
+        $names = collect($this->getJson('/api/external/v1/seminars?upcoming=true')->json('data'))->pluck('name');
+        expect($names)->toContain('Future')->and($names)->not->toContain('Past');
+    });
+
+    it('updated_since filters by updated_at', function () {
+        actingAsAdmin();
+        $stale = Seminar::factory()->create();
+        $stale->updated_at = now()->subDays(7);
+        $stale->saveQuietly();
+        $fresh = Seminar::factory()->create();
+
+        $ids = collect($this->getJson('/api/external/v1/seminars?updated_since='.now()->subDay()->toIso8601String())->json('data'))->pluck('id');
+        expect($ids)->toContain($fresh->id)->and($ids)->not->toContain($stale->id);
+    });
+
+    it('sorts by name ascending', function () {
+        actingAsAdmin();
+        Seminar::factory()->create(['name' => 'Bravo']);
+        Seminar::factory()->create(['name' => 'Alpha']);
+
+        $names = collect($this->getJson('/api/external/v1/seminars?sort=name')->json('data'))->pluck('name');
+        expect($names->first())->toBe('Alpha');
+    });
+
+    it('sorts by name descending with leading dash', function () {
+        actingAsAdmin();
+        Seminar::factory()->create(['name' => 'Alpha']);
+        Seminar::factory()->create(['name' => 'Bravo']);
+
+        $names = collect($this->getJson('/api/external/v1/seminars?sort=-name')->json('data'))->pluck('name');
+        expect($names->first())->toBe('Bravo');
+    });
+
+    it('supports comma-separated multi-column sort', function () {
+        actingAsAdmin();
+        Seminar::factory()->create(['name' => 'A', 'scheduled_at' => now()->addDay()]);
+        Seminar::factory()->create(['name' => 'A', 'scheduled_at' => now()->addDays(2)]);
+        Seminar::factory()->create(['name' => 'B', 'scheduled_at' => now()->addDay()]);
+
+        $rows = collect($this->getJson('/api/external/v1/seminars?sort=name,-scheduled_at')->json('data'));
+        expect($rows->first()['name'])->toBe('A');
+    });
+});
+
 describe('GET /api/external/v1/seminars/{slug}', function () {
     it('returns seminar details with speakers and subjects', function () {
         actingAsAdmin();
