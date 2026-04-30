@@ -2,6 +2,7 @@
 
 use App\Models\SeminarLocation;
 use App\Support\External\IdempotencyStore;
+use App\Support\Locking\LockKey;
 use Illuminate\Contracts\Cache\Lock;
 use Illuminate\Contracts\Cache\LockTimeoutException;
 use Illuminate\Support\Facades\Cache;
@@ -40,11 +41,11 @@ it('scopes the cache key and lock key with the same hash', function () {
     $key = 'shared-key';
 
     $cacheKey = IdempotencyStore::cacheKey($tokenScope, $key);
-    $lockKey = IdempotencyStore::lockKey($tokenScope, $key);
+    $lockKey = LockKey::externalIdempotency($tokenScope, $key);
     $hash = hash('sha256', $key);
 
     expect($cacheKey)->toBe('external_api:idempotency:'.$tokenScope.':'.$hash);
-    expect($lockKey)->toBe('external_api:idempotency_lock:'.$tokenScope.':'.$hash);
+    expect($lockKey)->toBe('lock:external_api:idempotency:'.$tokenScope.':'.$hash);
 });
 
 it('acquires and releases a cache lock around the idempotent handler', function () {
@@ -54,7 +55,7 @@ it('acquires and releases a cache lock around the idempotent handler', function 
 
     Cache::shouldReceive('lock')
         ->once()
-        ->withArgs(fn (string $key, int $sec) => str_starts_with($key, 'external_api:idempotency_lock:') && $sec === 10)
+        ->withArgs(fn (string $key, int $sec) => str_starts_with($key, 'lock:external_api:idempotency:') && $sec === 10)
         ->andReturn($lock);
     Cache::shouldReceive('get')->andReturn(null);
     Cache::shouldReceive('put')->andReturnTrue();
@@ -74,7 +75,7 @@ it('returns 409 when the lock cannot be acquired', function () {
 
     Cache::shouldReceive('lock')
         ->once()
-        ->withArgs(fn (string $key, int $sec) => str_starts_with($key, 'external_api:idempotency_lock:') && $sec === 10)
+        ->withArgs(fn (string $key, int $sec) => str_starts_with($key, 'lock:external_api:idempotency:') && $sec === 10)
         ->andReturn($lock);
 
     actingAsAdmin();
@@ -94,7 +95,7 @@ it('releases the lock even when the handler throws', function () {
 
     Cache::shouldReceive('lock')
         ->once()
-        ->withArgs(fn (string $key, int $sec) => str_starts_with($key, 'external_api:idempotency_lock:') && $sec === 10)
+        ->withArgs(fn (string $key, int $sec) => str_starts_with($key, 'lock:external_api:idempotency:') && $sec === 10)
         ->andReturn($lock);
     Cache::shouldReceive('get')->andReturn(null);
 

@@ -4,10 +4,11 @@ namespace App\Http\Middleware;
 
 use App\Exceptions\ApiException;
 use App\Support\External\IdempotencyStore;
+use App\Support\Locking\LockKey;
+use App\Support\Locking\LockTimeoutException;
+use App\Support\Locking\Mutex;
 use Closure;
-use Illuminate\Contracts\Cache\LockTimeoutException;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
 use Symfony\Component\HttpFoundation\Response;
 
 class EnforceIdempotency
@@ -36,44 +37,47 @@ class EnforceIdempotency
         $tokenScope = (string) ($request->user()?->currentAccessToken()?->id ?? 'session');
         $hash = hash('sha256', $request->getContent() ?: '');
 
-        $lock = Cache::lock(IdempotencyStore::lockKey($tokenScope, $key), self::LOCK_TTL_SECONDS);
+        $mutex = Mutex::for(
+            LockKey::externalIdempotency($tokenScope, $key),
+            self::LOCK_TTL_SECONDS,
+            self::LOCK_BLOCK_SECONDS,
+        );
 
         try {
-            $lock->block(self::LOCK_BLOCK_SECONDS);
+            return $mutex->protect(fn (): Response => $this->processInsideLock($request, $next, $tokenScope, $key, $hash));
         } catch (LockTimeoutException) {
             throw ApiException::idempotencyKeyConflict();
         }
+    }
 
-        try {
-            $existing = $this->store->get($tokenScope, $key);
-            if ($existing !== null) {
-                if ($existing['request_hash'] !== $hash) {
-                    throw ApiException::idempotencyKeyConflict();
-                }
-                $resp = response($existing['body'], $existing['status']);
-                foreach ($existing['headers'] as $h => $v) {
-                    $resp->headers->set($h, $v);
-                }
-                $resp->headers->set('Idempotent-Replayed', 'true');
-
-                return $resp;
+    private function processInsideLock(Request $request, Closure $next, string $tokenScope, string $key, string $hash): Response
+    {
+        $existing = $this->store->get($tokenScope, $key);
+        if ($existing !== null) {
+            if ($existing['request_hash'] !== $hash) {
+                throw ApiException::idempotencyKeyConflict();
             }
-
-            /** @var Response $response */
-            $response = $next($request);
-
-            if ($response->getStatusCode() >= 200 && $response->getStatusCode() < 300) {
-                $this->store->put($tokenScope, $key, [
-                    'request_hash' => $hash,
-                    'status' => $response->getStatusCode(),
-                    'body' => (string) $response->getContent(),
-                    'headers' => ['Content-Type' => $response->headers->get('Content-Type', 'application/json')],
-                ]);
+            $resp = response($existing['body'], $existing['status']);
+            foreach ($existing['headers'] as $h => $v) {
+                $resp->headers->set($h, $v);
             }
+            $resp->headers->set('Idempotent-Replayed', 'true');
 
-            return $response;
-        } finally {
-            $lock->release();
+            return $resp;
         }
+
+        /** @var Response $response */
+        $response = $next($request);
+
+        if ($response->getStatusCode() >= 200 && $response->getStatusCode() < 300) {
+            $this->store->put($tokenScope, $key, [
+                'request_hash' => $hash,
+                'status' => $response->getStatusCode(),
+                'body' => (string) $response->getContent(),
+                'headers' => ['Content-Type' => $response->headers->get('Content-Type', 'application/json')],
+            ]);
+        }
+
+        return $response;
     }
 }

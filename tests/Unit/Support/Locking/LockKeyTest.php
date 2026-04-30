@@ -23,3 +23,10 @@ it('produces deterministic keys for certificate generation', function () {
 it('produces deterministic keys for sentiment analysis', function () {
     expect(LockKey::ratingSentiment(99))->toBe('lock:sentiment:rating:99');
 });
+
+it('produces deterministic keys for external API idempotency', function () {
+    $hash = hash('sha256', 'my-key');
+
+    expect(LockKey::externalIdempotency('tok-1', 'my-key'))
+        ->toBe('lock:external_api:idempotency:tok-1:'.$hash);
+});

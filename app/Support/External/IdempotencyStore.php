@@ -24,16 +24,6 @@ class IdempotencyStore
 
     public static function cacheKey(string $tokenScope, string $key): string
     {
-        return 'external_api:idempotency:'.$tokenScope.':'.self::scopeHash($key);
-    }
-
-    public static function lockKey(string $tokenScope, string $key): string
-    {
-        return 'external_api:idempotency_lock:'.$tokenScope.':'.self::scopeHash($key);
-    }
-
-    private static function scopeHash(string $key): string
-    {
-        return hash('sha256', $key);
+        return 'external_api:idempotency:'.$tokenScope.':'.hash('sha256', $key);
     }
 }
