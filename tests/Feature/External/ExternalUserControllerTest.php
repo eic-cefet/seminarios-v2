@@ -85,6 +85,37 @@ describe('GET /api/external/v1/users', function () {
         actingAsUser();
         $this->getJson('/api/external/v1/users')->assertForbidden();
     });
+
+    it('cursor pagination round-trip', function () {
+        actingAsAdmin();
+        User::factory()->count(40)->create();
+
+        $first = $this->getJson('/api/external/v1/users?paginate=cursor');
+        $first->assertSuccessful()->assertJsonStructure(['data', 'meta' => ['per_page', 'next_cursor', 'prev_cursor', 'has_more']]);
+
+        $cursor = $first->json('meta.next_cursor');
+        expect($cursor)->not->toBeNull();
+        expect($first->json('meta.has_more'))->toBeTrue();
+
+        $second = $this->getJson('/api/external/v1/users?paginate=cursor&cursor='.$cursor);
+        $second->assertSuccessful();
+        expect($second->json('data.0.id'))->not->toBe($first->json('data.0.id'));
+    });
+
+    it('rejects an unknown paginate mode with 422', function () {
+        actingAsAdmin();
+        $this->getJson('/api/external/v1/users?paginate=mystery')->assertStatus(422);
+    });
+
+    it('defaults to page-based pagination when paginate is omitted', function () {
+        actingAsAdmin();
+        User::factory()->count(2)->create();
+
+        $response = $this->getJson('/api/external/v1/users');
+
+        $response->assertSuccessful()
+            ->assertJsonStructure(['data', 'meta' => ['current_page', 'last_page', 'per_page', 'total', 'from', 'to']]);
+    });
 });
 
 describe('GET /api/external/v1/users/{id}', function () {
