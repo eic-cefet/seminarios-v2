@@ -14,13 +14,16 @@ use Illuminate\Support\Facades\Gate;
 
 class ExternalLocationController extends Controller
 {
-    public function index(): AnonymousResourceCollection
+    public function index(Request $request): AnonymousResourceCollection
     {
         Gate::authorize('viewAny', SeminarLocation::class);
 
-        return ExternalLocationResource::collection(
-            SeminarLocation::orderBy('name')->get()
-        );
+        $locations = SeminarLocation::orderBy('name')->get();
+
+        $lastModified = $locations->max('updated_at') ?? now();
+        $request->attributes->set('external_last_modified', $lastModified);
+
+        return ExternalLocationResource::collection($locations);
     }
 
     public function show(Request $request, SeminarLocation $location): ExternalLocationResource

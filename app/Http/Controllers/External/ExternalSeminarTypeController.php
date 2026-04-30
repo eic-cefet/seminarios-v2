@@ -14,13 +14,16 @@ use Illuminate\Support\Facades\Gate;
 
 class ExternalSeminarTypeController extends Controller
 {
-    public function index(): AnonymousResourceCollection
+    public function index(Request $request): AnonymousResourceCollection
     {
         Gate::authorize('viewAny', SeminarType::class);
 
-        return ExternalSeminarTypeResource::collection(
-            SeminarType::orderBy('name')->get()
-        );
+        $types = SeminarType::orderBy('name')->get();
+
+        $lastModified = $types->max('updated_at') ?? now();
+        $request->attributes->set('external_last_modified', $lastModified);
+
+        return ExternalSeminarTypeResource::collection($types);
     }
 
     public function show(Request $request, SeminarType $seminarType): ExternalSeminarTypeResource

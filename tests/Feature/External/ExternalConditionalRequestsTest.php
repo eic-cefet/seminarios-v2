@@ -43,3 +43,11 @@ it('returns 304 to If-Modified-Since on show', function () {
         ->getJson("/api/external/v1/locations/{$loc->id}")
         ->assertStatus(304);
 });
+
+it('returns Last-Modified on index endpoints', function () {
+    actingAsAdmin();
+    \App\Models\SeminarLocation::factory()->count(2)->create();
+
+    $response = $this->getJson('/api/external/v1/locations');
+    expect($response->headers->get('Last-Modified'))->not->toBeNull();
+});

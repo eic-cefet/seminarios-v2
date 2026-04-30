@@ -40,6 +40,9 @@ class ExternalUserController extends Controller
 
         $users = $query->orderBy('name')->paginate(15);
 
+        $lastModified = collect($users->items())->max('updated_at') ?? now();
+        $request->attributes->set('external_last_modified', $lastModified);
+
         return ExternalUserResource::collection($users);
     }
 

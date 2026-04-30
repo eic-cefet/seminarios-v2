@@ -37,6 +37,9 @@ class ExternalWorkshopController extends Controller
 
         $workshops = $query->orderBy('name')->paginate(15);
 
+        $lastModified = collect($workshops->items())->max('updated_at') ?? now();
+        $request->attributes->set('external_last_modified', $lastModified);
+
         return ExternalWorkshopResource::collection($workshops);
     }
 
