@@ -1,7 +1,13 @@
 <?php
 
+use App\Providers\AppServiceProvider;
+use App\Providers\CloudWatchServiceProvider;
+use App\Providers\FortifyServiceProvider;
+use App\Providers\ScrambleServiceProvider;
+
 return [
-    App\Providers\AppServiceProvider::class,
-    App\Providers\CloudWatchServiceProvider::class,
-    App\Providers\FortifyServiceProvider::class,
+    AppServiceProvider::class,
+    CloudWatchServiceProvider::class,
+    FortifyServiceProvider::class,
+    ScrambleServiceProvider::class,
 ];
