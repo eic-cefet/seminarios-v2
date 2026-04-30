@@ -1552,4 +1552,75 @@ describe('SeminarForm', () => {
             expect(mockNavigate).toHaveBeenCalledWith('/seminars');
         });
     });
+
+    it('does not send seminar_type_id=0 or workshop_id=0 when Radix Select emits an empty value', async () => {
+        const { useParams, useNavigate } = await import('react-router-dom');
+        vi.mocked(useParams).mockReturnValue({ id: '42' });
+        vi.mocked(useNavigate).mockReturnValue(vi.fn());
+
+        const { seminarsApi, dropdownApi } = await import('../../api/adminClient');
+        vi.mocked(seminarsApi.get).mockResolvedValue({
+            data: {
+                id: 42,
+                name: 'Existing',
+                description: null,
+                scheduled_at: '2026-06-01T10:00:00-03:00',
+                duration_minutes: 60,
+                room_link: null,
+                active: true,
+                seminar_location_id: 5,
+                seminar_type_id: 7,
+                workshop_id: 9,
+                location: { id: 5, name: 'Sala A', max_vacancies: 30 },
+                seminar_type: { id: 7, name: 'Palestra' },
+                workshop: { id: 9, name: 'WS' },
+                subjects: [{ id: 1, name: 'Redes' }],
+                speakers: [{ id: 18, name: 'Alice' }],
+            },
+        } as any);
+        vi.mocked(dropdownApi.locations).mockResolvedValue({
+            data: [{ id: 5, name: 'Sala A', max_vacancies: 30 }],
+        } as any);
+        vi.mocked(dropdownApi.seminarTypes).mockResolvedValue({
+            data: [{ id: 7, name: 'Palestra' }],
+        } as any);
+        vi.mocked(dropdownApi.workshops).mockResolvedValue({
+            data: [{ id: 9, name: 'WS' }],
+        } as any);
+        const updateSpy = vi.fn().mockResolvedValue({ data: {} });
+        vi.mocked(seminarsApi.update).mockImplementation(updateSpy as any);
+
+        render(<SeminarForm />);
+
+        // Wait for seminar data + reference data to populate the form
+        await waitFor(() => {
+            expect(screen.getByLabelText('Nome *')).toHaveValue('Existing');
+        });
+
+        // Native selects rendered by the Radix Select mock, in DOM order:
+        // [0] duration, [1] location, [2] type, [3] workshop
+        const nativeSelects = document.querySelectorAll(
+            'select[data-testid="mock-native-select"]',
+        );
+        expect(nativeSelects).toHaveLength(4);
+
+        // Simulate Radix Select transiently emitting onValueChange("") on
+        // the type and workshop selects during the post-edit unmount/remount.
+        fireEvent.change(nativeSelects[2], { target: { value: '' } });
+        fireEvent.change(nativeSelects[3], { target: { value: '' } });
+
+        // Click "Atualizar Seminário" to fire the update mutation
+        fireEvent.click(screen.getByText('Atualizar Seminário'));
+
+        await waitFor(() => {
+            expect(updateSpy).toHaveBeenCalled();
+        });
+
+        const payload = updateSpy.mock.calls[0][1];
+        expect(payload.seminar_type_id).not.toBe(0);
+        expect(payload.workshop_id).not.toBe(0);
+        expect(payload.seminar_type_id).toBeUndefined();
+        expect(payload.workshop_id).toBeUndefined();
+        expect(payload.seminar_location_id).toBe(5);
+    });
 });
