@@ -239,6 +239,37 @@ describe('SeminarDetails', () => {
         );
     });
 
+    it('strips markdown from calendar event description', async () => {
+        const seminar = createSeminar({
+            slug: 'markdown-seminar',
+            name: 'Markdown Seminar',
+            description: '# Resumo\nFala sobre **redes** de passe.',
+            scheduledAt: '2026-06-15T14:00:00Z',
+        });
+        vi.mocked(seminarsApi.get).mockResolvedValue({ data: seminar });
+        const user = userEvent.setup();
+
+        render(<SeminarDetails />);
+
+        await waitFor(() => {
+            expect(
+                screen.getByRole('button', { name: /adicionar ao calendário/i }),
+            ).toBeInTheDocument();
+        });
+
+        await user.click(
+            screen.getByRole('button', { name: /adicionar ao calendário/i }),
+        );
+
+        const googleLink = (await screen.findByText('Google Calendar')).closest('a');
+        const googleUrl = new URL(googleLink!.getAttribute('href')!);
+        const details = googleUrl.searchParams.get('details') ?? '';
+
+        expect(details).toContain('Resumo Fala sobre redes de passe.');
+        expect(details).not.toContain('# Resumo');
+        expect(details).not.toContain('**redes**');
+    });
+
     it('shows "Inscreva-se" heading for non-registered user', async () => {
         const seminar = createSeminar({ name: 'Test', isExpired: false });
         vi.mocked(seminarsApi.get).mockResolvedValue({ data: seminar });
