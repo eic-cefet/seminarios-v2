@@ -15,6 +15,34 @@ export function containsHTML(text: string): boolean {
 }
 
 /**
+ * Strip common Markdown syntax to produce plain text for previews.
+ * Not a full parser — covers what users typically write in descriptions:
+ * headings, emphasis, links, images, code, blockquotes, lists, rules.
+ */
+export function stripMarkdown(text: string): string {
+    if (!text) {
+        return "";
+    }
+
+    return text
+        .replace(/```[\s\S]*?```/g, "")
+        .replace(/`([^`]+)`/g, "$1")
+        .replace(/!\[([^\]]*)\]\([^)]*\)/g, "$1")
+        .replace(/\[([^\]]+)\]\([^)]*\)/g, "$1")
+        .replace(/^\s*#{1,6}\s+/gm, "")
+        .replace(/^\s*>\s?/gm, "")
+        .replace(/^\s*[-*+]\s+/gm, "")
+        .replace(/^\s*\d+\.\s+/gm, "")
+        .replace(/^\s*[-*_]{3,}\s*$/gm, "")
+        .replace(/\*\*([^*]+)\*\*/g, "$1")
+        .replace(/__([^_]+)__/g, "$1")
+        .replace(/(^|[^*])\*([^*\n]+)\*/g, "$1$2")
+        .replace(/(^|[^_])_([^_\n]+)_/g, "$1$2")
+        .replace(/\s+/g, " ")
+        .trim();
+}
+
+/**
  * Parse a date string or Date into a zoned Date in America/Sao_Paulo.
  */
 export function toSaoPaulo(date: string | Date): Date {

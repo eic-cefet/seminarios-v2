@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Seminar;
+use App\Support\MarkdownStripper;
 use InvalidArgumentException;
 use Spatie\IcalendarGenerator\Components\Calendar;
 use Spatie\IcalendarGenerator\Components\Event;
@@ -22,7 +23,7 @@ class IcsGenerationService
 
         $uid = 'seminar-'.$seminar->id.'@'.parse_url(config('app.url'), PHP_URL_HOST);
 
-        $description = strip_tags($seminar->description ?? '');
+        $description = MarkdownStripper::strip(strip_tags($seminar->description ?? ''));
         if ($seminar->room_link) {
             $description .= ($description ? "\n\n" : '').'Link de acesso: '.$seminar->room_link;
         }

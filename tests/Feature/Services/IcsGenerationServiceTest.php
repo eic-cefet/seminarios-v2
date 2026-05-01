@@ -125,6 +125,20 @@ describe('IcsGenerationService', function () {
         expect($ics)->not->toContain('<strong>');
     });
 
+    it('strips markdown syntax from description', function () {
+        $seminar = Seminar::factory()->create([
+            'scheduled_at' => now()->addDay(),
+            'description' => "# Resumo\nFala sobre **redes** de passe.",
+        ]);
+
+        $ics = app(IcsGenerationService::class)->generateForSeminar($seminar);
+        $unfolded = preg_replace("/\r\n[ \t]/", '', $ics);
+
+        expect($unfolded)->toContain('Resumo Fala sobre redes de passe.');
+        expect($unfolded)->not->toContain('# Resumo');
+        expect($unfolded)->not->toContain('**redes**');
+    });
+
     it('includes room link in description when available', function () {
         $seminar = Seminar::factory()->create([
             'scheduled_at' => now()->addDay(),

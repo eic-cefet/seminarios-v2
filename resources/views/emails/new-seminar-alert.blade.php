@@ -18,7 +18,7 @@ Um novo seminário combina com suas preferências de alerta.
 </x-mail::panel>
 
 @if ($seminar->description)
-{{ \Illuminate\Support\Str::limit(strip_tags($seminar->description), 400) }}
+{{ \Illuminate\Support\Str::limit(\App\Support\MarkdownStripper::strip(strip_tags($seminar->description)), 400) }}
 @endif
 
 <x-mail::button :url="url('/seminario/' . $seminar->slug)">

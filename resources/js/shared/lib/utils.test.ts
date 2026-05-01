@@ -1,4 +1,4 @@
-import { cn, containsHTML, buildUrl, isSafeRedirect } from './utils';
+import { cn, containsHTML, buildUrl, isSafeRedirect, stripMarkdown } from './utils';
 
 describe('cn', () => {
     it('merges class names', () => {
@@ -32,6 +32,49 @@ describe('containsHTML', () => {
 
     it('returns false for non-tag angle brackets', () => {
         expect(containsHTML('5 < 10')).toBe(false);
+    });
+});
+
+describe('stripMarkdown', () => {
+    it('removes heading hashes', () => {
+        expect(stripMarkdown('# Resumo')).toBe('Resumo');
+        expect(stripMarkdown('### Sub')).toBe('Sub');
+    });
+
+    it('removes bold and italic markers', () => {
+        expect(stripMarkdown('Texto com **negrito** aqui')).toBe('Texto com negrito aqui');
+        expect(stripMarkdown('Texto com __negrito__ e _itálico_')).toBe('Texto com negrito e itálico');
+        expect(stripMarkdown('Texto com *itálico* aqui')).toBe('Texto com itálico aqui');
+    });
+
+    it('extracts text from links and images', () => {
+        expect(stripMarkdown('Ver [docs](https://x.com/y)')).toBe('Ver docs');
+        expect(stripMarkdown('![alt text](http://x/img.png)')).toBe('alt text');
+    });
+
+    it('removes inline and block code', () => {
+        expect(stripMarkdown('Use `npm` para instalar')).toBe('Use npm para instalar');
+        expect(stripMarkdown('antes\n```\nbloco\n```\ndepois')).toBe('antes depois');
+    });
+
+    it('removes list, blockquote, and rule markers', () => {
+        expect(stripMarkdown('- item 1\n- item 2')).toBe('item 1 item 2');
+        expect(stripMarkdown('1. primeiro\n2. segundo')).toBe('primeiro segundo');
+        expect(stripMarkdown('> citação')).toBe('citação');
+        expect(stripMarkdown('texto\n---\nmais')).toBe('texto mais');
+    });
+
+    it('collapses whitespace and trims', () => {
+        expect(stripMarkdown('  texto   com    espaços  ')).toBe('texto com espaços');
+    });
+
+    it('returns empty string for empty input', () => {
+        expect(stripMarkdown('')).toBe('');
+    });
+
+    it('handles a realistic seminar description', () => {
+        const input = '# Resumo\nEste trabalho investiga a relação entre a **estrutura das redes de passe no futebol** e o desempenho.';
+        expect(stripMarkdown(input)).toBe('Resumo Este trabalho investiga a relação entre a estrutura das redes de passe no futebol e o desempenho.');
     });
 });
 

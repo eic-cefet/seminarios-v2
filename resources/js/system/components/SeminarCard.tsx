@@ -1,7 +1,13 @@
 import { Link } from "react-router-dom";
 import { Calendar, Users, BookOpen } from "lucide-react";
 import { ROUTES } from "@shared/config/routes";
-import { cn, formatDateTime, isExpired, containsHTML } from "@shared/lib/utils";
+import {
+    cn,
+    formatDateTime,
+    isExpired,
+    containsHTML,
+    stripMarkdown,
+} from "@shared/lib/utils";
 import type { Seminar } from "@shared/types";
 import { Badge } from "./Badge";
 
@@ -53,7 +59,7 @@ export function SeminarCard({
                         <p className="mt-1 text-sm text-gray-500 line-clamp-2">
                             {containsHTML(seminar.description)
                                 ? "Clique para ver os detalhes"
-                                : seminar.description}
+                                : stripMarkdown(seminar.description)}
                         </p>
                     )}
 

@@ -4,7 +4,7 @@ import { SeminarCard } from './SeminarCard';
 import { createSeminar } from '@/test/factories';
 
 vi.mock('@shared/lib/utils', async () => {
-    const actual = await vi.importActual('@shared/lib/utils');
+    const actual = await vi.importActual<typeof import('@shared/lib/utils')>('@shared/lib/utils');
     return {
         ...actual,
         formatDateTime: vi.fn((_date: string) => 'Formatted Date'),
@@ -84,5 +84,16 @@ describe('SeminarCard', () => {
 
         expect(screen.getByText('Clique para ver os detalhes')).toBeInTheDocument();
         expect(screen.queryByText('<p>HTML content</p>')).not.toBeInTheDocument();
+    });
+
+    it('strips markdown syntax from a plain description preview', () => {
+        const seminar = createSeminar({
+            description: '# Resumo\nEste trabalho investiga **redes de passe** no futebol.',
+        });
+        render(<SeminarCard seminar={seminar} />);
+
+        expect(
+            screen.getByText('Resumo Este trabalho investiga redes de passe no futebol.'),
+        ).toBeInTheDocument();
     });
 });
