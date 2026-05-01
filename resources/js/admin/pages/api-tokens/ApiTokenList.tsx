@@ -59,6 +59,7 @@ import { Switch } from "../../components/ui/switch";
 import { Badge } from "../../components/ui/badge";
 import { PageTitle } from "@shared/components/PageTitle";
 import { buildUrl, formatDateTime, isExpired } from "@shared/lib/utils";
+import { useApiTokenForm } from "./useApiTokenForm";
 
 const EXPIRY_OPTIONS = [
     { value: "7", label: "7 dias" },
@@ -187,14 +188,8 @@ export default function ApiTokenList() {
     const [regeneratingToken, setRegeneratingToken] =
         useState<AdminApiToken | null>(null);
 
-    const [formName, setFormName] = useState("");
-    const [formExpiry, setFormExpiry] = useState("90");
-    const [formAbilities, setFormAbilities] = useState<string[]>([]);
-    const [fullAccess, setFullAccess] = useState(true);
-
-    const [editName, setEditName] = useState("");
-    const [editAbilities, setEditAbilities] = useState<string[]>([]);
-    const [editFullAccess, setEditFullAccess] = useState(true);
+    const create = useApiTokenForm({ mode: "create" });
+    const edit = useApiTokenForm({ mode: "edit" });
     const copyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     const { data, isLoading } = useQuery({
@@ -212,10 +207,7 @@ export default function ApiTokenList() {
             setIsCreateOpen(false);
             setCreatedToken(response.data.token);
             setIsTokenShown(true);
-            setFormName("");
-            setFormExpiry("90");
-            setFormAbilities([]);
-            setFullAccess(true);
+            create.reset();
         },
         onError: () => {
             toast.error("Erro ao criar token");
@@ -262,14 +254,7 @@ export default function ApiTokenList() {
 
     const openEditDialog = (token: AdminApiToken) => {
         setEditingToken(token);
-        setEditName(token.name);
-        if (token.abilities.includes("*")) {
-            setEditFullAccess(true);
-            setEditAbilities([]);
-        } else {
-            setEditFullAccess(false);
-            setEditAbilities([...token.abilities]);
-        }
+        edit.loadFrom(token);
     };
 
     const handleEdit = (e: React.FormEvent) => {
@@ -279,9 +264,9 @@ export default function ApiTokenList() {
         updateMutation.mutate({
             id: editingToken.id,
             data: {
-                name: editName,
+                name: edit.values.name,
                 /* v8 ignore next -- @preserve both branches covered via edit form tests */
-                abilities: editFullAccess ? undefined : editAbilities,
+                abilities: edit.values.fullAccess ? undefined : edit.values.abilities,
             },
         });
     };
@@ -289,11 +274,11 @@ export default function ApiTokenList() {
     const handleCreate = (e: React.FormEvent) => {
         e.preventDefault();
         createMutation.mutate({
-            name: formName,
+            name: create.values.name,
             /* v8 ignore next -- @preserve both branches tested via form submit */
             expires_in_days:
-                formExpiry === "never" ? null : parseInt(formExpiry, 10),
-            abilities: fullAccess ? undefined : formAbilities,
+                create.values.expiry === "never" ? null : parseInt(create.values.expiry, 10),
+            abilities: create.values.fullAccess ? undefined : create.values.abilities,
         });
     };
 
@@ -308,8 +293,8 @@ export default function ApiTokenList() {
 
     const isCreateDisabled =
         createMutation.isPending ||
-        !formName ||
-        (!fullAccess && formAbilities.length === 0);
+        !create.values.name ||
+        (!create.values.fullAccess && create.values.abilities.length === 0);
     const createButtonLabel = createMutation.isPending
         ? "Criando..."
         : "Criar Token";
@@ -323,8 +308,8 @@ export default function ApiTokenList() {
 
     const isEditDisabled =
         updateMutation.isPending ||
-        !editName ||
-        (!editFullAccess && editAbilities.length === 0);
+        !edit.values.name ||
+        (!edit.values.fullAccess && edit.values.abilities.length === 0);
     const editButtonLabel = updateMutation.isPending
         ? "Salvando..."
         : "Salvar";
@@ -572,9 +557,9 @@ export default function ApiTokenList() {
                                 </Label>
                                 <Input
                                     id="token-name"
-                                    value={formName}
+                                    value={create.values.name}
                                     onChange={(e) =>
-                                        setFormName(e.target.value)
+                                        create.setName(e.target.value)
                                     }
                                     placeholder="Ex: Integração TCC"
                                     required
@@ -583,8 +568,8 @@ export default function ApiTokenList() {
                             <div className="space-y-2">
                                 <Label htmlFor="token-expiry">Expiração</Label>
                                 <Select
-                                    value={formExpiry}
-                                    onValueChange={setFormExpiry}
+                                    value={create.values.expiry}
+                                    onValueChange={create.setExpiry}
                                 >
                                     <SelectTrigger id="token-expiry">
                                         <SelectValue />
@@ -613,19 +598,19 @@ export default function ApiTokenList() {
                                         </Label>
                                         <Switch
                                             id="full-access"
-                                            checked={fullAccess}
+                                            checked={create.values.fullAccess}
                                             onCheckedChange={(checked) => {
-                                                setFullAccess(checked);
+                                                create.setFullAccess(checked);
                                                 if (checked)
-                                                    setFormAbilities([]);
+                                                    create.setAbilities([]);
                                             }}
                                         />
                                     </div>
                                 </div>
-                                {!fullAccess && (
+                                {!create.values.fullAccess && (
                                     <AccessLevelPicker
-                                        abilities={formAbilities}
-                                        onChange={setFormAbilities}
+                                        abilities={create.values.abilities}
+                                        onChange={create.setAbilities}
                                     />
                                 )}
                             </div>
@@ -704,9 +689,9 @@ export default function ApiTokenList() {
                                 </Label>
                                 <Input
                                     id="edit-token-name"
-                                    value={editName}
+                                    value={edit.values.name}
                                     onChange={(e) =>
-                                        setEditName(e.target.value)
+                                        edit.setName(e.target.value)
                                     }
                                     required
                                 />
@@ -723,19 +708,19 @@ export default function ApiTokenList() {
                                         </Label>
                                         <Switch
                                             id="edit-full-access"
-                                            checked={editFullAccess}
+                                            checked={edit.values.fullAccess}
                                             onCheckedChange={(checked) => {
-                                                setEditFullAccess(checked);
+                                                edit.setFullAccess(checked);
                                                 if (checked)
-                                                    setEditAbilities([]);
+                                                    edit.setAbilities([]);
                                             }}
                                         />
                                     </div>
                                 </div>
-                                {!editFullAccess && (
+                                {!edit.values.fullAccess && (
                                     <AccessLevelPicker
-                                        abilities={editAbilities}
-                                        onChange={setEditAbilities}
+                                        abilities={edit.values.abilities}
+                                        onChange={edit.setAbilities}
                                     />
                                 )}
                             </div>
