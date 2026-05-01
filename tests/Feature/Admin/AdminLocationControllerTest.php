@@ -181,3 +181,12 @@ describe('DELETE /api/admin/locations/{id}', function () {
         expect(SeminarLocation::find($location->id))->not->toBeNull();
     });
 });
+
+it('rejects location creation with missing name', function () {
+    actingAsAdmin();
+
+    $response = $this->postJson('/api/admin/locations', []);
+
+    $response->assertUnprocessable()
+        ->assertJsonValidationErrors(['name', 'max_vacancies']);
+});
