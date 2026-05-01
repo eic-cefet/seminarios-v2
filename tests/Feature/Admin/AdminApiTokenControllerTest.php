@@ -292,3 +292,15 @@ describe('DELETE /api/admin/api-tokens/{id}', function () {
         $response->assertForbidden();
     });
 });
+
+it('rejects token creation with an unknown ability', function () {
+    actingAsAdmin();
+
+    $response = $this->postJson('/api/admin/api-tokens', [
+        'name' => 'Test Token',
+        'abilities' => ['definitely-not-a-real-ability'],
+    ]);
+
+    $response->assertUnprocessable()
+        ->assertJsonValidationErrors(['abilities.0']);
+});

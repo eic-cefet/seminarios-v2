@@ -4,13 +4,14 @@ namespace App\Http\Controllers\Admin;
 
 use App\Enums\AuditEvent;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\AdminApiTokenStoreRequest;
+use App\Http\Requests\Admin\AdminApiTokenUpdateRequest;
 use App\Http\Resources\Admin\ApiTokenResource;
 use App\Models\AuditLog;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
-use Illuminate\Validation\Rule;
 
 class AdminApiTokenController extends Controller
 {
@@ -53,14 +54,9 @@ class AdminApiTokenController extends Controller
         ]);
     }
 
-    public function store(Request $request): JsonResponse
+    public function store(AdminApiTokenStoreRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'expires_in_days' => ['nullable', 'integer', 'in:7,30,60,90,180'],
-            'abilities' => ['nullable', 'array'],
-            'abilities.*' => ['string', Rule::in(self::AVAILABLE_ABILITIES)],
-        ]);
+        $validated = $request->validated();
 
         $user = $request->user();
         $expiresAt = isset($validated['expires_in_days'])
@@ -84,17 +80,13 @@ class AdminApiTokenController extends Controller
         ], 201);
     }
 
-    public function update(Request $request, int $id): JsonResponse
+    public function update(AdminApiTokenUpdateRequest $request, int $id): JsonResponse
     {
         $token = $request->user()
             ->tokens()
             ->findOrFail($id);
 
-        $validated = $request->validate([
-            'name' => ['sometimes', 'string', 'max:255'],
-            'abilities' => ['sometimes', 'array'],
-            'abilities.*' => ['string', Rule::in(self::AVAILABLE_ABILITIES)],
-        ]);
+        $validated = $request->validated();
 
         if (isset($validated['name'])) {
             $token->name = $validated['name'];
