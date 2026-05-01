@@ -1,4 +1,14 @@
 import { render, screen, userEvent, waitFor } from '@/test/test-utils';
+import { toast } from 'sonner';
+import { ApiRequestError } from '@shared/api/client';
+
+vi.mock('sonner', () => ({
+    toast: {
+        error: vi.fn(),
+        info: vi.fn(),
+        success: vi.fn(),
+    },
+}));
 
 // Holder for captured queryFn from useQuery calls
 const capturedQueryFns: { queryFn: (() => any) | null } = { queryFn: null };
@@ -34,6 +44,9 @@ import { SubjectMultiSelect } from './SubjectMultiSelect';
 
 beforeEach(async () => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
+    vi.mocked(toast.error).mockClear();
+    vi.mocked(toast.info).mockClear();
+    vi.mocked(toast.success).mockClear();
     const { subjectsApi } = await import('../api/adminClient');
     vi.mocked(subjectsApi.list).mockResolvedValue({
         data: [],
@@ -480,9 +493,11 @@ describe('SubjectMultiSelect', () => {
         });
     });
 
-    it('shows error toast when AI request fails with 503', async () => {
+    it('shows AI-not-configured toast when AI request fails with 503', async () => {
         const { aiApi } = await import('../api/adminClient');
-        vi.mocked(aiApi.suggestSubjectTags).mockRejectedValue({ status: 503 });
+        vi.mocked(aiApi.suggestSubjectTags).mockRejectedValue(
+            new ApiRequestError('ai_not_configured', 'AI not configured', 503),
+        );
 
         render(<SubjectMultiSelect {...defaultProps} value={['React']} />);
         const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
@@ -490,7 +505,9 @@ describe('SubjectMultiSelect', () => {
         await user.click(screen.getByRole('button', { name: /sugerir com ia/i }));
 
         await waitFor(() => {
-            expect(aiApi.suggestSubjectTags).toHaveBeenCalled();
+            expect(toast.error).toHaveBeenCalledWith(
+                expect.stringContaining('IA não configurada'),
+            );
         });
     });
 
@@ -504,7 +521,9 @@ describe('SubjectMultiSelect', () => {
         await user.click(screen.getByRole('button', { name: /sugerir com ia/i }));
 
         await waitFor(() => {
-            expect(aiApi.suggestSubjectTags).toHaveBeenCalled();
+            expect(toast.error).toHaveBeenCalledWith(
+                expect.stringContaining('Erro ao buscar sugestões'),
+            );
         });
     });
 
