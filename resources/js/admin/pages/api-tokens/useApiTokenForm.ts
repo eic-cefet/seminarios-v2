@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 
 export interface ApiTokenFormValues {
     name: string;
@@ -16,6 +16,9 @@ interface TokenLike {
     abilities: string[];
 }
 
+// Defaults are intentionally duplicated per mode: edit mode currently mirrors
+// create defaults, but the two are kept separate so future divergence (e.g. a
+// different default expiry for edits) does not require restructuring the hook.
 const CREATE_DEFAULTS: ApiTokenFormValues = {
     name: "",
     expiry: "90",
@@ -31,7 +34,10 @@ const EDIT_DEFAULTS: ApiTokenFormValues = {
 };
 
 export function useApiTokenForm({ mode }: UseApiTokenFormOptions) {
-    const initial = mode === "create" ? CREATE_DEFAULTS : EDIT_DEFAULTS;
+    const initial = useMemo(
+        () => (mode === "create" ? CREATE_DEFAULTS : EDIT_DEFAULTS),
+        [mode],
+    );
     const [values, setValues] = useState<ApiTokenFormValues>(initial);
 
     const setName = useCallback(
@@ -55,12 +61,12 @@ export function useApiTokenForm({ mode }: UseApiTokenFormOptions) {
 
     const loadFrom = useCallback((token: TokenLike) => {
         const isFullAccess = token.abilities.includes("*");
-        setValues({
+        setValues((v) => ({
+            ...v,
             name: token.name,
-            expiry: "90",
             abilities: isFullAccess ? [] : [...token.abilities],
             fullAccess: isFullAccess,
-        });
+        }));
     }, []);
 
     return {

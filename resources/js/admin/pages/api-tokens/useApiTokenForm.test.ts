@@ -47,6 +47,8 @@ describe("useApiTokenForm", () => {
         act(() => {
             result.current.setName("Foo");
             result.current.setAbilities(["seminars:read"]);
+            result.current.setExpiry("30");
+            result.current.setFullAccess(false);
         });
 
         act(() => {
@@ -55,5 +57,7 @@ describe("useApiTokenForm", () => {
 
         expect(result.current.values.name).toBe("");
         expect(result.current.values.abilities).toEqual([]);
+        expect(result.current.values.expiry).toBe("90");
+        expect(result.current.values.fullAccess).toBe(true);
     });
 });
