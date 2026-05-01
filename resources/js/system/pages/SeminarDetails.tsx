@@ -27,6 +27,7 @@ import {
     formatDateTime,
     formatDurationMinutes,
     isToday as isTodayDate,
+    stripMarkdown,
 } from "@shared/lib/utils";
 import { ROUTES } from "@shared/config/routes";
 import { getErrorMessage } from "@shared/lib/errors";
@@ -465,7 +466,11 @@ export default function SeminarDetails() {
                                             title: seminar.name,
                                             startsAt: seminar.scheduledAt,
                                             endsAt: seminar.endsAt,
-                                            description: seminar.description,
+                                            description: seminar.description
+                                                ? stripMarkdown(
+                                                      seminar.description,
+                                                  )
+                                                : seminar.description,
                                             location: seminar.location?.name,
                                             roomLink: seminar.roomLink,
                                             eventPath: ROUTES.SYSTEM.SEMINAR_DETAILS(seminar.slug),

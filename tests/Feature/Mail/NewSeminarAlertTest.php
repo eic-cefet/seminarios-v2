@@ -38,3 +38,17 @@ it('renders the blade template with seminar context', function () {
 
     expect($rendered)->toContain('Ana')->toContain('Palestra Kubernetes');
 });
+
+it('strips markdown syntax from the description excerpt', function () {
+    $user = User::factory()->create();
+    $seminar = Seminar::factory()->create([
+        'description' => "# Resumo\nFala sobre **redes** de passe no futebol.",
+    ]);
+
+    $rendered = (new NewSeminarAlert($user, $seminar))->render();
+
+    expect($rendered)
+        ->toContain('Resumo Fala sobre redes de passe no futebol.')
+        ->not->toContain('# Resumo')
+        ->not->toContain('**redes**');
+});
