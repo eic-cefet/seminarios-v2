@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Admin;
 use App\Exceptions\ApiException;
 use App\Http\Controllers\Concerns\EscapesLikeWildcards;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\AdminWorkshopStoreRequest;
+use App\Http\Requests\Admin\AdminWorkshopUpdateRequest;
 use App\Http\Resources\Admin\AdminWorkshopResource;
 use App\Models\Seminar;
 use App\Models\Workshop;
@@ -48,16 +50,9 @@ class AdminWorkshopController extends Controller
         return new AdminWorkshopResource($workshop);
     }
 
-    public function store(Request $request): JsonResponse
+    public function store(AdminWorkshopStoreRequest $request): JsonResponse
     {
-        Gate::authorize('create', Workshop::class);
-
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255', 'unique:workshops,name'],
-            'description' => ['nullable', 'string'],
-            'seminar_ids' => ['nullable', 'array'],
-            'seminar_ids.*' => ['integer', 'exists:seminars,id'],
-        ]);
+        $validated = $request->validated();
 
         $slug = $this->slugService->generateUnique($validated['name'], Workshop::class);
 
@@ -80,16 +75,9 @@ class AdminWorkshopController extends Controller
             ->setStatusCode(201);
     }
 
-    public function update(Request $request, Workshop $workshop): JsonResponse
+    public function update(AdminWorkshopUpdateRequest $request, Workshop $workshop): JsonResponse
     {
-        Gate::authorize('update', $workshop);
-
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255', 'unique:workshops,name,'.$workshop->id],
-            'description' => ['nullable', 'string'],
-            'seminar_ids' => ['nullable', 'array'],
-            'seminar_ids.*' => ['integer', 'exists:seminars,id'],
-        ]);
+        $validated = $request->validated();
 
         $slug = $this->slugService->generateUnique(
             $validated['name'], Workshop::class, 'slug', $workshop->id
