@@ -8,6 +8,10 @@ use Illuminate\Validation\Rule;
 
 class AdminApiTokenUpdateRequest extends FormRequest
 {
+    /**
+     * Authorization is enforced by the `admin` middleware on the route group
+     * in routes/admin.php — no per-action gate is needed.
+     */
     public function authorize(): bool
     {
         return true;
