@@ -184,6 +184,18 @@ it('parses gigabyte memory limits', function () {
     }
 });
 
+it('parses megabyte memory limits', function () {
+    $original = ini_get('memory_limit');
+    ini_set('memory_limit', '512M');
+
+    try {
+        $info = $this->service->collect();
+        expect($info['memory']['limit_bytes'])->toBe(512 * 1024 * 1024);
+    } finally {
+        ini_set('memory_limit', (string) $original);
+    }
+});
+
 it('parses kilobyte memory limits', function () {
     $original = ini_get('memory_limit');
     // Must be above current process usage; 512000K ≈ 500MB
@@ -238,7 +250,7 @@ it('reads app_version from the VERSION file at the project root', function () {
     file_put_contents($path, "v9.9.9\n");
 
     try {
-        $info = app(\App\Services\SystemInfoService::class)->collect();
+        $info = app(SystemInfoService::class)->collect();
         expect($info['runtime']['app_version'])->toBe('v9.9.9');
     } finally {
         if ($original === null) {
@@ -257,7 +269,7 @@ it('falls back to "dev" when the VERSION file is missing', function () {
     }
 
     try {
-        $info = app(\App\Services\SystemInfoService::class)->collect();
+        $info = app(SystemInfoService::class)->collect();
         expect($info['runtime']['app_version'])->toBe('dev');
     } finally {
         if ($original !== null) {
@@ -272,7 +284,7 @@ it('falls back to "dev" when the VERSION file is empty', function () {
     file_put_contents($path, "   \n");
 
     try {
-        $info = app(\App\Services\SystemInfoService::class)->collect();
+        $info = app(SystemInfoService::class)->collect();
         expect($info['runtime']['app_version'])->toBe('dev');
     } finally {
         if ($original === null) {
