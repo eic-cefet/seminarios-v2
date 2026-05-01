@@ -3,10 +3,11 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\AdminLocationStoreRequest;
+use App\Http\Requests\Admin\AdminLocationUpdateRequest;
 use App\Http\Resources\Admin\AdminLocationResource;
 use App\Models\SeminarLocation;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\Gate;
 
@@ -32,14 +33,9 @@ class AdminLocationController extends Controller
         return new AdminLocationResource($location);
     }
 
-    public function store(Request $request): JsonResponse
+    public function store(AdminLocationStoreRequest $request): JsonResponse
     {
-        Gate::authorize('create', SeminarLocation::class);
-
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'max_vacancies' => ['required', 'integer', 'min:1'],
-        ]);
+        $validated = $request->validated();
 
         $location = SeminarLocation::create($validated);
         $location->loadCount('seminars');
@@ -50,14 +46,9 @@ class AdminLocationController extends Controller
         ], 201);
     }
 
-    public function update(Request $request, SeminarLocation $location): JsonResponse
+    public function update(AdminLocationUpdateRequest $request, SeminarLocation $location): JsonResponse
     {
-        Gate::authorize('update', $location);
-
-        $validated = $request->validate([
-            'name' => ['sometimes', 'string', 'max:255'],
-            'max_vacancies' => ['sometimes', 'integer', 'min:1'],
-        ]);
+        $validated = $request->validated();
 
         $location->update($validated);
         $location->loadCount('seminars');

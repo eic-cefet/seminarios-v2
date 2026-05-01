@@ -254,6 +254,27 @@ describe('PUT /api/admin/workshops/{id}', function () {
 
         $response->assertSuccessful();
     });
+
+    it('rejects update with name already used by another workshop', function () {
+        actingAsAdmin();
+        Workshop::factory()->create(['name' => 'Workshop Alpha']);
+        $target = Workshop::factory()->create(['name' => 'Workshop Beta']);
+
+        $this->putJson("/api/admin/workshops/{$target->slug}", [
+            'name' => 'Workshop Alpha',
+        ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['name']);
+    });
+
+    it('rejects unauthenticated update', function () {
+        $target = Workshop::factory()->create(['name' => 'Workshop Beta']);
+
+        $this->putJson("/api/admin/workshops/{$target->slug}", [
+            'name' => 'Workshop Gamma',
+        ])
+            ->assertUnauthorized();
+    });
 });
 
 describe('DELETE /api/admin/workshops/{id}', function () {

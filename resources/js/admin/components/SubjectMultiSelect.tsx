@@ -2,6 +2,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { Check, Loader2, Plus, Sparkles, X } from "lucide-react";
 import { useCallback, useRef, useState } from "react";
 import { toast } from "sonner";
+import { ApiRequestError } from "@shared/api/client";
 import { DropdownPortal } from "@shared/components/DropdownPortal";
 import { useDebouncedSearch } from "@shared/hooks/useDebouncedSearch";
 import { useDropdownNavigation } from "@shared/hooks/useDropdownNavigation";
@@ -93,8 +94,8 @@ export function SubjectMultiSelect({
                 toast.info("Nenhuma sugestão adicional encontrada.");
             }
         },
-        onError: (error: any) => {
-            if (error?.status === 503) {
+        onError: (error: unknown) => {
+            if (error instanceof ApiRequestError && error.status === 503) {
                 toast.error("IA não configurada. Defina AI_API_KEY no ambiente.");
             } else {
                 toast.error("Erro ao buscar sugestões. Tente novamente.");
