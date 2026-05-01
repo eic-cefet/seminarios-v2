@@ -255,22 +255,24 @@ describe('PUT /api/admin/workshops/{id}', function () {
         $response->assertSuccessful();
     });
 
-    it('rejects update with a name already used by a different workshop via Form Request', function () {
+    it('rejects update with name already used by another workshop', function () {
         actingAsAdmin();
-        $other = Workshop::factory()->create(['name' => 'Workshop Alpha']);
+        Workshop::factory()->create(['name' => 'Workshop Alpha']);
         $target = Workshop::factory()->create(['name' => 'Workshop Beta']);
 
-        $response = $this->putJson("/api/admin/workshops/{$target->slug}", [
+        $this->putJson("/api/admin/workshops/{$target->slug}", [
             'name' => 'Workshop Alpha',
-        ]);
-
-        $response->assertUnprocessable()
+        ])
+            ->assertUnprocessable()
             ->assertJsonValidationErrors(['name']);
+    });
 
-        // Form Request authorize() — anonymous user must be rejected before validation runs.
-        auth()->guard('web')->logout();
-        app('auth')->forgetGuards();
-        $this->putJson("/api/admin/workshops/{$target->slug}", ['name' => 'Workshop Gamma'])
+    it('rejects unauthenticated update', function () {
+        $target = Workshop::factory()->create(['name' => 'Workshop Beta']);
+
+        $this->putJson("/api/admin/workshops/{$target->slug}", [
+            'name' => 'Workshop Gamma',
+        ])
             ->assertUnauthorized();
     });
 });
