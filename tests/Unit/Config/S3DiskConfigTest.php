@@ -1,21 +1,25 @@
 <?php
 
-it('exposes temporary_url on the s3 disk so signed URLs can use a public host', function () {
-    config()->set('filesystems.disks.s3.temporary_url', 'https://minio.example.test');
-
-    expect(config('filesystems.disks.s3.temporary_url'))
-        ->toBe('https://minio.example.test');
-});
+use Illuminate\Support\Env;
 
 it('maps AWS_S3_TEMPORARY_URL into the s3 disk temporary_url key', function () {
-    config()->set('filesystems.disks.s3', config('filesystems.disks.s3'));
-    putenv('AWS_S3_TEMPORARY_URL=https://public.minio.test');
+    Env::getRepository()->set('AWS_S3_TEMPORARY_URL', 'https://public.minio.test');
+
+    try {
+        $fresh = require config_path('filesystems.php');
+
+        expect($fresh['disks']['s3'])
+            ->toHaveKey('temporary_url')
+            ->and($fresh['disks']['s3']['temporary_url'])->toBe('https://public.minio.test');
+    } finally {
+        Env::getRepository()->clear('AWS_S3_TEMPORARY_URL');
+    }
+});
+
+it('leaves temporary_url null when AWS_S3_TEMPORARY_URL is unset', function () {
+    Env::getRepository()->clear('AWS_S3_TEMPORARY_URL');
 
     $fresh = require config_path('filesystems.php');
 
-    expect($fresh['disks']['s3'])
-        ->toHaveKey('temporary_url')
-        ->and($fresh['disks']['s3']['temporary_url'])->toBe('https://public.minio.test');
-
-    putenv('AWS_S3_TEMPORARY_URL');
+    expect($fresh['disks']['s3']['temporary_url'])->toBeNull();
 });
