@@ -13,6 +13,15 @@ it('explicitly sets bucket_endpoint=false on the s3 disk for MinIO compatibility
         ->and(config('filesystems.disks.s3.bucket_endpoint'))->toBeFalse();
 });
 
-it('maps AWS_URL into the s3 disk temporary_url key', function () {
-    expect(config('filesystems.disks.s3'))->toHaveKey('temporary_url');
+it('maps AWS_S3_TEMPORARY_URL into the s3 disk temporary_url key', function () {
+    config()->set('filesystems.disks.s3', config('filesystems.disks.s3'));
+    putenv('AWS_S3_TEMPORARY_URL=https://public.minio.test');
+
+    $fresh = require config_path('filesystems.php');
+
+    expect($fresh['disks']['s3'])
+        ->toHaveKey('temporary_url')
+        ->and($fresh['disks']['s3']['temporary_url'])->toBe('https://public.minio.test');
+
+    putenv('AWS_S3_TEMPORARY_URL');
 });
