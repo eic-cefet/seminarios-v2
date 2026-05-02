@@ -69,7 +69,9 @@ export default function BugReport() {
 
         setFiles((prev) => [...prev, ...validFiles]);
 
-        fileInputRef.current && (fileInputRef.current.value = "");
+        if (fileInputRef.current) {
+            fileInputRef.current.value = "";
+        }
     };
 
     const removeFile = (index: number) => {
