@@ -1,3 +1,4 @@
+import { axe } from 'jest-axe';
 import { render, screen, userEvent } from '@/test/test-utils';
 import { MultiSelect, type MultiSelectOption } from './multi-select';
 
@@ -136,5 +137,65 @@ describe('MultiSelect', () => {
         expect(onChange).toHaveBeenCalled();
         // The popover should NOT have opened (stopPropagation prevents the trigger click)
         expect(screen.getByRole('combobox')).toHaveAttribute('aria-expanded', 'false');
+    });
+
+    it('selects an option via keyboard (Enter)', async () => {
+        const user = userEvent.setup();
+        const onChange = vi.fn();
+        render(
+            <MultiSelect options={options} selected={[]} onChange={onChange} />,
+        );
+
+        await user.click(screen.getByRole('combobox'));
+        const option = await screen.findByRole('option', { name: 'Option 1' });
+        option.focus();
+        await user.keyboard('{Enter}');
+
+        expect(onChange).toHaveBeenCalledWith(['1']);
+    });
+
+    it('selects an option via keyboard (Space)', async () => {
+        const user = userEvent.setup();
+        const onChange = vi.fn();
+        render(
+            <MultiSelect options={options} selected={[]} onChange={onChange} />,
+        );
+
+        await user.click(screen.getByRole('combobox'));
+        const option = await screen.findByRole('option', { name: 'Option 2' });
+        option.focus();
+        await user.keyboard(' ');
+
+        expect(onChange).toHaveBeenCalledWith(['2']);
+    });
+
+    it('exposes aria-selected on the listbox options', async () => {
+        const user = userEvent.setup();
+        render(
+            <MultiSelect
+                options={options}
+                selected={['1']}
+                onChange={vi.fn()}
+            />,
+        );
+
+        await user.click(screen.getByRole('combobox'));
+        expect(
+            await screen.findByRole('option', { name: 'Option 1' }),
+        ).toHaveAttribute('aria-selected', 'true');
+        expect(screen.getByRole('option', { name: 'Option 2' })).toHaveAttribute(
+            'aria-selected',
+            'false',
+        );
+    });
+
+    it('has no axe violations when open', async () => {
+        const user = userEvent.setup();
+        const { container } = render(
+            <MultiSelect options={options} selected={[]} onChange={vi.fn()} />,
+        );
+        await user.click(screen.getByRole('combobox'));
+        await screen.findByRole('option', { name: 'Option 1' });
+        expect(await axe(container)).toHaveNoViolations();
     });
 });

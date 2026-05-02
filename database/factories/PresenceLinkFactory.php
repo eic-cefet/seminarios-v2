@@ -2,11 +2,12 @@
 
 namespace Database\Factories;
 
+use App\Models\PresenceLink;
 use App\Models\Seminar;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\PresenceLink>
+ * @extends Factory<PresenceLink>
  */
 class PresenceLinkFactory extends Factory
 {

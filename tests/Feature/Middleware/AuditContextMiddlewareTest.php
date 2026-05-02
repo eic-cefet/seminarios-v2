@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\AuditContextMiddleware;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Route;
 use Illuminate\Support\Facades\Context;
 
 describe('AuditContextMiddleware', function () {
@@ -9,7 +10,7 @@ describe('AuditContextMiddleware', function () {
         $middleware = new AuditContextMiddleware;
 
         $request = Request::create('/test', 'GET');
-        $route = new \Illuminate\Routing\Route('GET', '/test', []);
+        $route = new Route('GET', '/test', []);
         $route->setAction(['uses' => 'App\Http\Controllers\Admin\AdminSeminarController@index', 'controller' => 'App\Http\Controllers\Admin\AdminSeminarController@index']);
         $request->setRouteResolver(fn () => $route);
 
@@ -23,7 +24,7 @@ describe('AuditContextMiddleware', function () {
         $middleware = new AuditContextMiddleware;
 
         $request = Request::create('/test', 'GET');
-        $route = new \Illuminate\Routing\Route('GET', '/test', function () {
+        $route = new Route('GET', '/test', function () {
             return response('ok');
         });
         $request->setRouteResolver(fn () => $route);

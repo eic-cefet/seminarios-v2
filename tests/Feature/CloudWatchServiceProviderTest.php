@@ -2,6 +2,7 @@
 
 use App\Providers\CloudWatchServiceProvider;
 use Aws\CloudWatchLogs\CloudWatchLogsClient;
+use Aws\CommandInterface;
 use Aws\Exception\AwsException;
 use Aws\Result;
 use Illuminate\Support\Facades\Cache;
@@ -135,7 +136,7 @@ it('handles ResourceAlreadyExistsException for log group', function () {
 
     $awsException = new AwsException(
         'Resource already exists',
-        Mockery::mock(\Aws\CommandInterface::class),
+        Mockery::mock(CommandInterface::class),
         ['code' => 'ResourceAlreadyExistsException']
     );
 
@@ -168,7 +169,7 @@ it('handles ResourceAlreadyExistsException for log stream', function () {
 
     $awsException = new AwsException(
         'Resource already exists',
-        Mockery::mock(\Aws\CommandInterface::class),
+        Mockery::mock(CommandInterface::class),
         ['code' => 'ResourceAlreadyExistsException']
     );
 
@@ -201,7 +202,7 @@ it('reports non-ResourceAlreadyExistsException errors', function () {
 
     $awsException = new AwsException(
         'Access denied',
-        Mockery::mock(\Aws\CommandInterface::class),
+        Mockery::mock(CommandInterface::class),
         ['code' => 'AccessDeniedException']
     );
 

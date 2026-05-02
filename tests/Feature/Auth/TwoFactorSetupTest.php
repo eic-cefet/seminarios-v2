@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\AuditEvent;
+use App\Enums\Role;
 use App\Models\AuditLog;
 use App\Models\User;
 use PragmaRX\Google2FA\Google2FA;
@@ -90,7 +91,7 @@ it('lets a regular student enable, confirm and use 2FA end-to-end', function () 
 });
 
 it('also lets admins disable their own 2FA (opt-in feature)', function () {
-    $this->user->assignRole(\App\Enums\Role::Admin);
+    $this->user->assignRole(Role::Admin);
     $this->postJson('/api/profile/two-factor/enable');
 
     $this->deleteJson('/api/profile/two-factor')->assertSuccessful();

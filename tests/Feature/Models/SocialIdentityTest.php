@@ -2,6 +2,7 @@
 
 use App\Models\SocialIdentity;
 use App\Models\User;
+use Illuminate\Support\Carbon;
 
 describe('SocialIdentity Model', function () {
     it('belongs to a user', function () {
@@ -44,7 +45,7 @@ describe('SocialIdentity Model', function () {
             'token_expires_at' => $expiresAt,
         ]);
 
-        expect($socialIdentity->token_expires_at)->toBeInstanceOf(\Illuminate\Support\Carbon::class);
+        expect($socialIdentity->token_expires_at)->toBeInstanceOf(Carbon::class);
     });
 
     it('has fillable attributes', function () {

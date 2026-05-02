@@ -1,6 +1,9 @@
 <?php
 
+use App\Http\Middleware\LogRequestMiddleware;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Symfony\Component\HttpFoundation\Response;
 
 beforeEach(function () {
     // Enable request logging for these specific tests
@@ -92,10 +95,10 @@ it('logs response duration in milliseconds', function () {
 });
 
 it('captures response size when Content-Length header is present', function () {
-    $middleware = new \App\Http\Middleware\LogRequestMiddleware;
-    $request = \Illuminate\Http\Request::create('/test', 'GET');
+    $middleware = new LogRequestMiddleware;
+    $request = Request::create('/test', 'GET');
 
-    $response = new \Symfony\Component\HttpFoundation\Response('test content');
+    $response = new Response('test content');
     $response->headers->set('Content-Length', '12');
 
     $middleware->handle($request, fn () => $response);
@@ -118,9 +121,9 @@ it('skips logging when disabled via config', function () {
 });
 
 it('skips logging when start time is not set', function () {
-    $middleware = new \App\Http\Middleware\LogRequestMiddleware;
-    $request = new \Illuminate\Http\Request;
-    $response = new \Symfony\Component\HttpFoundation\Response;
+    $middleware = new LogRequestMiddleware;
+    $request = new Request;
+    $response = new Response;
 
     // Call terminate without handle (no start time set)
     $middleware->terminate($request, $response);

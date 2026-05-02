@@ -52,6 +52,7 @@ export function MultiSelect({
                     variant="outline"
                     role="combobox"
                     aria-expanded={open}
+                    aria-label={placeholder}
                     className={cn(
                         "w-full justify-between min-h-10 h-auto",
                         className,
@@ -85,32 +86,45 @@ export function MultiSelect({
             </PopoverTrigger>
             <PopoverContent className="w-full p-0" align="start">
                 <ScrollArea className="h-72">
-                    <div className="p-1">
-                        {options.map((option) => (
-                            <div
-                                key={option.value}
-                                className={cn(
-                                    "flex items-center space-x-2 rounded-sm px-2 py-1.5 cursor-pointer hover:bg-accent",
-                                    selected.includes(option.value) &&
-                                        "bg-accent",
-                                )}
-                                onClick={() => handleSelect(option.value)}
-                            >
+                    <div className="p-1" role="listbox" aria-multiselectable>
+                        {options.map((option) => {
+                            const isSelected = selected.includes(option.value);
+                            return (
                                 <div
+                                    key={option.value}
+                                    role="option"
+                                    aria-selected={isSelected}
+                                    tabIndex={0}
                                     className={cn(
-                                        "flex h-4 w-4 items-center justify-center rounded-sm border border-primary",
-                                        selected.includes(option.value)
-                                            ? "bg-primary text-primary-foreground"
-                                            : "opacity-50",
+                                        "flex items-center space-x-2 rounded-sm px-2 py-1.5 cursor-pointer hover:bg-accent focus:bg-accent focus:outline-none",
+                                        isSelected && "bg-accent",
                                     )}
+                                    onClick={() => handleSelect(option.value)}
+                                    onKeyDown={(e) => {
+                                        if (e.key === "Enter" || e.key === " ") {
+                                            e.preventDefault();
+                                            handleSelect(option.value);
+                                        }
+                                    }}
                                 >
-                                    {selected.includes(option.value) && (
-                                        <Check className="h-3 w-3" />
-                                    )}
+                                    <div
+                                        className={cn(
+                                            "flex h-4 w-4 items-center justify-center rounded-sm border border-primary",
+                                            isSelected
+                                                ? "bg-primary text-primary-foreground"
+                                                : "opacity-50",
+                                        )}
+                                    >
+                                        {isSelected && (
+                                            <Check className="h-3 w-3" />
+                                        )}
+                                    </div>
+                                    <span className="text-sm">
+                                        {option.label}
+                                    </span>
                                 </div>
-                                <span className="text-sm">{option.label}</span>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 </ScrollArea>
             </PopoverContent>

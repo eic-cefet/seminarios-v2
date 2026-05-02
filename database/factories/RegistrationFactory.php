@@ -2,12 +2,13 @@
 
 namespace Database\Factories;
 
+use App\Models\Registration;
 use App\Models\Seminar;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Registration>
+ * @extends Factory<Registration>
  */
 class RegistrationFactory extends Factory
 {
