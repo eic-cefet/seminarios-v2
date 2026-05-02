@@ -2,13 +2,14 @@
 
 namespace App\Models;
 
+use Database\Factories\MfaTrustedDeviceFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class MfaTrustedDevice extends Model
 {
-    /** @use HasFactory<\Database\Factories\MfaTrustedDeviceFactory> */
+    /** @use HasFactory<MfaTrustedDeviceFactory> */
     use HasFactory;
 
     protected $fillable = ['user_id', 'token_hash', 'label', 'ip', 'last_used_at', 'expires_at'];

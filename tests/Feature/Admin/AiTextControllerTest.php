@@ -2,6 +2,7 @@
 
 use App\Models\Rating;
 use App\Models\Seminar;
+use App\Models\Subject;
 use App\Models\User;
 use Illuminate\Routing\Middleware\ThrottleRequests;
 use Illuminate\Support\Facades\Http;
@@ -270,9 +271,9 @@ describe('POST /admin/ai/suggest-subject-tags', function () {
     it('uses historical co-occurrence data when available', function () {
         actingAsAdmin();
 
-        $subject1 = \App\Models\Subject::factory()->create(['name' => 'React']);
-        $subject2 = \App\Models\Subject::factory()->create(['name' => 'TypeScript']);
-        $subject3 = \App\Models\Subject::factory()->create(['name' => 'Next.js']);
+        $subject1 = Subject::factory()->create(['name' => 'React']);
+        $subject2 = Subject::factory()->create(['name' => 'TypeScript']);
+        $subject3 = Subject::factory()->create(['name' => 'Next.js']);
 
         $seminar = Seminar::factory()->create();
         $seminar->subjects()->attach([$subject1->id, $subject2->id, $subject3->id]);

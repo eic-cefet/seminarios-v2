@@ -8,6 +8,7 @@ use App\Enums\AuditEventType;
 use App\Jobs\GenerateCertificateJob;
 use App\Models\AuditLog;
 use App\Models\Registration;
+use App\Services\CertificateService;
 use Illuminate\Console\Command;
 
 class ProcessPendingCertificatesCommand extends Command
@@ -56,7 +57,7 @@ class ProcessPendingCertificatesCommand extends Command
 
             if ($this->option('sync')) {
                 (new GenerateCertificateJob($registration, $sendEmail))->handle(
-                    app(\App\Services\CertificateService::class)
+                    app(CertificateService::class)
                 );
             } else {
                 GenerateCertificateJob::dispatch($registration, $sendEmail);

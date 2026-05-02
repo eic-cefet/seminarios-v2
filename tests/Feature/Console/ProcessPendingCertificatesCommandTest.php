@@ -4,6 +4,7 @@ use App\Jobs\GenerateCertificateJob;
 use App\Models\Registration;
 use App\Models\Seminar;
 use App\Models\User;
+use App\Services\CertificateService;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Queue;
@@ -192,7 +193,7 @@ describe('certificates:process-pending command', function () {
         ]);
 
         // Mock the CertificateService with shouldIgnoreMissing to handle all methods
-        $mockCertificateService = Mockery::mock(\App\Services\CertificateService::class)->shouldIgnoreMissing();
+        $mockCertificateService = Mockery::mock(CertificateService::class)->shouldIgnoreMissing();
         $mockCertificateService->shouldReceive('ensureCertificateCode')
             ->andReturn('CERT-123');
         $mockCertificateService->shouldReceive('jpgExists')
@@ -200,7 +201,7 @@ describe('certificates:process-pending command', function () {
         $mockCertificateService->shouldReceive('pdfExists')
             ->andReturn(true);
 
-        $this->app->instance(\App\Services\CertificateService::class, $mockCertificateService);
+        $this->app->instance(CertificateService::class, $mockCertificateService);
 
         // Use --no-email to avoid S3 storage operations
         $this->artisan('certificates:process-pending --sync --no-email')

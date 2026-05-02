@@ -5,6 +5,7 @@ use App\Models\AuditLog;
 use App\Models\Course;
 use App\Models\PresenceLink;
 use App\Models\Seminar;
+use App\Models\SeminarType;
 use App\Models\SocialIdentity;
 use App\Models\Subject;
 use App\Models\User;
@@ -54,7 +55,7 @@ describe('Auditable Trait', function () {
 
     describe('model deletion', function () {
         it('logs a deleted event for hard deletes', function () {
-            $seminarType = \App\Models\SeminarType::factory()->create();
+            $seminarType = SeminarType::factory()->create();
 
             AuditLog::query()->delete();
 

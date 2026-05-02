@@ -2,12 +2,15 @@
 
 namespace Database\Factories;
 
+use App\Models\User;
+use App\Models\UserSpeakerData;
+use App\Models\UserStudentData;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\User>
+ * @extends Factory<User>
  */
 class UserFactory extends Factory
 {
@@ -51,14 +54,14 @@ class UserFactory extends Factory
     public function speaker(): static
     {
         return $this->afterCreating(function ($user) {
-            \App\Models\UserSpeakerData::factory()->create(['user_id' => $user->id]);
+            UserSpeakerData::factory()->create(['user_id' => $user->id]);
         });
     }
 
     public function student(): static
     {
         return $this->afterCreating(function ($user) {
-            \App\Models\UserStudentData::factory()->create(['user_id' => $user->id]);
+            UserStudentData::factory()->create(['user_id' => $user->id]);
         });
     }
 }

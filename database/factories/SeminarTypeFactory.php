@@ -2,10 +2,11 @@
 
 namespace Database\Factories;
 
+use App\Models\SeminarType;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\SeminarType>
+ * @extends Factory<SeminarType>
  */
 class SeminarTypeFactory extends Factory
 {

@@ -131,7 +131,7 @@ class ExternalUserController extends Controller
     {
         try {
             return IncludesParser::resolve($request->query('include'), self::INCLUDE_MAP);
-        } catch (\InvalidArgumentException $e) {
+        } catch (InvalidArgumentException $e) {
             throw ValidationException::withMessages(['include' => $e->getMessage()]);
         }
     }

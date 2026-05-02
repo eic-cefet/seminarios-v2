@@ -6,10 +6,11 @@ use App\Enums\CourseRole;
 use App\Enums\CourseSituation;
 use App\Models\Course;
 use App\Models\User;
+use App\Models\UserStudentData;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\UserStudentData>
+ * @extends Factory<UserStudentData>
  */
 class UserStudentDataFactory extends Factory
 {

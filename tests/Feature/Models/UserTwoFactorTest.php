@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\MfaTrustedDevice;
 use App\Models\User;
 
 it('user has two-factor columns hidden and castable', function () {
@@ -15,5 +16,5 @@ it('user has two-factor columns hidden and castable', function () {
 
 it('user has trustedDevices relationship', function () {
     $user = User::factory()->create();
-    expect($user->trustedDevices()->getRelated())->toBeInstanceOf(\App\Models\MfaTrustedDevice::class);
+    expect($user->trustedDevices()->getRelated())->toBeInstanceOf(MfaTrustedDevice::class);
 });
