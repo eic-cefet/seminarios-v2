@@ -169,7 +169,7 @@ MinIO credentials: `minioadmin` / `minioadmin`. The `seminarios-eic` bucket is c
 
 The `.env.example` ships pre-configured for all these services -- just `cp .env.example .env` and everything connects out of the box.
 
-> **Note:** If you have `AWS_*` environment variables exported in your shell (e.g. from `~/.zshrc` or AWS CLI), they will override the `.env` values. Unset them before running the dev server: `unset AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_ENDPOINT AWS_BUCKET AWS_USE_PATH_STYLE_ENDPOINT`
+> **Note:** If you have `AWS_*` environment variables exported in your shell (e.g. from `~/.zshrc` or AWS CLI), they will override the `.env` values. Unset them before running the dev server: `unset AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_ENDPOINT AWS_BUCKET AWS_USE_PATH_STYLE_ENDPOINT AWS_S3_TEMPORARY_URL`
 
 ### Seed Data
 
