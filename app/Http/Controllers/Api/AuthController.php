@@ -13,6 +13,7 @@ use App\Mail\WelcomeUser;
 use App\Models\AuditLog;
 use App\Models\User;
 use App\Models\UserConsent;
+use App\Services\IpHasher;
 use App\Services\TwoFactorDeviceService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -38,6 +39,10 @@ class AuthController extends Controller
         $user = User::where('email', $validated['email'])->first();
 
         if (! $user) {
+            AuditLog::record(
+                event: AuditEvent::UserLoginFailed,
+                eventData: ['reason' => 'user_not_found'],
+            );
             throw ApiException::mismatchedCredentials();
         }
 
@@ -56,6 +61,12 @@ class AuthController extends Controller
         }
 
         if (! $passwordMatches) {
+            AuditLog::record(
+                event: AuditEvent::UserLoginFailed,
+                auditable: $user,
+                eventData: ['reason' => 'invalid_password'],
+                userId: $user->id,
+            );
             throw ApiException::mismatchedCredentials();
         }
 
@@ -147,14 +158,18 @@ class AuthController extends Controller
             'course_id' => $validated['course_id'] ?? null,
         ]);
 
+        $hasher = app(IpHasher::class);
+        $ipHash = $hasher->hash($request->ip());
+        $uaHash = $hasher->hashOpaque((string) $request->userAgent());
+
         foreach ([ConsentType::TermsOfService, ConsentType::PrivacyPolicy] as $type) {
             UserConsent::create([
                 'user_id' => $user->id,
                 'type' => $type,
                 'granted' => true,
                 'version' => config('lgpd.versions.'.$type->value) ?? '1.0',
-                'ip_address' => $request->ip(),
-                'user_agent' => substr((string) $request->userAgent(), 0, 500),
+                'ip_hash' => $ipHash,
+                'user_agent_hash' => $uaHash,
                 'source' => 'registration',
             ]);
         }

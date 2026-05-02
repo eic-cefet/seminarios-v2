@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\AuditEvent;
 use App\Http\Controllers\Concerns\EscapesLikeWildcards;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\AdminUserStoreRequest;
 use App\Http\Requests\Admin\AdminUserUpdateRequest;
 use App\Http\Resources\Admin\AdminUserResource;
+use App\Models\AuditLog;
 use App\Models\User;
 use App\Models\UserSpeakerData;
 use App\Services\SlugService;
@@ -62,6 +64,11 @@ class AdminUserController extends Controller
     {
         Gate::authorize('view', $user);
 
+        AuditLog::record(
+            event: AuditEvent::UserViewedByAdmin,
+            auditable: $user,
+        );
+
         $user->load(['studentData', 'speakerData', 'roles']);
 
         return new AdminUserResource($user);
@@ -82,6 +89,7 @@ class AdminUserController extends Controller
 
             if (isset($validated['role']) && $validated['role'] !== 'user') {
                 $user->assignRole($validated['role']);
+                $this->recordRoleAssignment($user, $validated['role'], 'store');
             }
 
             if (! empty($validated['student_data'])) {
@@ -121,10 +129,25 @@ class AdminUserController extends Controller
             }
             $user->save();
 
+            if (! empty($validated['password'])) {
+                AuditLog::record(
+                    event: AuditEvent::UserPasswordResetByAdmin,
+                    auditable: $user,
+                );
+            }
+
             if (isset($validated['role'])) {
+                $user->load('roles');
+                $previousRole = $user->roles->first()?->name;
                 $user->syncRoles(
                     $validated['role'] === 'user' ? [] : [$validated['role']],
                 );
+
+                if ($validated['role'] === 'user' && $previousRole !== null) {
+                    $this->recordRoleRevocation($user, $previousRole, 'update');
+                } elseif ($validated['role'] !== 'user' && $previousRole !== $validated['role']) {
+                    $this->recordRoleAssignment($user, $validated['role'], 'update');
+                }
             }
 
             if (array_key_exists('student_data', $validated)) {
@@ -168,6 +191,11 @@ class AdminUserController extends Controller
 
         $user->delete();
 
+        AuditLog::record(
+            event: AuditEvent::UserDeletedByAdmin,
+            auditable: $user,
+        );
+
         return response()->json([
             'message' => 'Usuário excluído com sucesso',
         ]);
@@ -178,11 +206,35 @@ class AdminUserController extends Controller
         Gate::authorize('restore', $user);
 
         $user->restore();
+
+        AuditLog::record(
+            event: AuditEvent::UserRestoredByAdmin,
+            auditable: $user,
+        );
+
         $user->load(['studentData', 'speakerData', 'roles']);
 
         return response()->json([
             'message' => 'Usuário restaurado com sucesso',
             'data' => new AdminUserResource($user),
         ]);
+    }
+
+    private function recordRoleAssignment(User $user, string $role, string $source): void
+    {
+        AuditLog::record(
+            event: AuditEvent::UserRoleAssigned,
+            auditable: $user,
+            eventData: ['role' => $role, 'source' => $source],
+        );
+    }
+
+    private function recordRoleRevocation(User $user, string $previousRole, string $source): void
+    {
+        AuditLog::record(
+            event: AuditEvent::UserRoleRevoked,
+            auditable: $user,
+            eventData: ['previous_role' => $previousRole, 'source' => $source],
+        );
     }
 }

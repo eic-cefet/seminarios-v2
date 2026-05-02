@@ -17,6 +17,7 @@ class UserDataExportService
     public function collect(User $user): array
     {
         $user->loadMissing([
+            'roles:id,name',
             'studentData.course',
             'speakerData',
             'registrations.seminar:id,slug,name,scheduled_at',
@@ -83,11 +84,11 @@ class UserDataExportService
                     config('lgpd.retention.audit_logs_days', 90),
                 ))
                 ->orderByDesc('created_at')
-                ->get(['event_name', 'event_type', 'ip_address', 'created_at'])
+                ->get(['event_name', 'event_type', 'ip_hash', 'created_at'])
                 ->map(fn ($log) => [
                     'event' => $log->event_name,
                     'type' => $log->event_type,
-                    'ip' => $log->ip_address,
+                    'ip_hash' => $log->ip_hash,
                     'at' => $log->created_at?->toIso8601String(),
                 ])
                 ->values()

@@ -111,7 +111,7 @@ it('scrubs email and name from audit log event_data', function () {
             'new_values' => ['email' => 'target@example.com', 'name' => 'U'],
         ],
         'origin' => 'test',
-        'ip_address' => '127.0.0.1',
+        'ip_hash' => hash('sha256', '127.0.0.1'),
     ]);
 
     $this->service->anonymize($user);

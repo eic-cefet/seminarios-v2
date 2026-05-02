@@ -21,6 +21,11 @@ class AdminLgpdController extends Controller
     {
         Gate::authorize('viewLgpdData', User::class);
 
+        AuditLog::record(
+            event: AuditEvent::LgpdRecordViewedByAdmin,
+            auditable: $user,
+        );
+
         $user->load(['consents', 'dataExportRequests']);
 
         return response()->json([

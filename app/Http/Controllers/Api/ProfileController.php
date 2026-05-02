@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Enums\AuditEvent;
 use App\Exceptions\ApiException;
 use App\Http\Controllers\Concerns\FormatsUserResponse;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ProfileUpdateRequest;
 use App\Http\Requests\StudentDataUpdateRequest;
+use App\Models\AuditLog;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -77,6 +79,11 @@ class ProfileController extends Controller
         $user->update([
             'password' => $validated['password'],
         ]);
+
+        AuditLog::record(
+            event: AuditEvent::UserPasswordChanged,
+            auditable: $user,
+        );
 
         return response()->json([
             'message' => 'Senha atualizada com sucesso.',

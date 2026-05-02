@@ -57,7 +57,6 @@ class GenerateAuditLogReportJob implements ShouldQueue
             $query->where(function ($q) use ($escaped) {
                 $q->where('event_name', 'like', "%{$escaped}%")
                     ->orWhere('origin', 'like', "%{$escaped}%")
-                    ->orWhere('ip_address', 'like', "%{$escaped}%")
                     ->orWhereHas('user', function ($q) use ($escaped) {
                         $q->where('name', 'like', "%{$escaped}%");
                     });

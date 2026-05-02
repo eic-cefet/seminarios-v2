@@ -38,7 +38,7 @@ class AuditLogExport implements FromQuery, ShouldAutoSize, WithHeadings, WithMap
             'Tipo',
             'Entidade',
             'Origem',
-            'IP',
+            'IP (hash)',
             'Dados',
         ];
     }
@@ -55,7 +55,7 @@ class AuditLogExport implements FromQuery, ShouldAutoSize, WithHeadings, WithMap
             $row->event_type->value === 'manual' ? 'Manual' : 'Sistema',
             $auditable,
             $row->origin ?? '',
-            $row->ip_address ?? '',
+            $row->ip_hash ?? '',
             $row->event_data ? json_encode($row->event_data, JSON_UNESCAPED_UNICODE) : '',
         ];
     }
