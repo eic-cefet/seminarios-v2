@@ -51,3 +51,32 @@ cumulative_bump() {
 
     echo "$highest"
 }
+
+# gather_release_authors <repo> <pr_numbers>
+#   <repo>        is "owner/name" (e.g., "eic-cefet/seminarios-v2").
+#   <pr_numbers>  is a space-separated string of PR numbers.
+# For each PR, fetches the commits and emits TSV "login<TAB>name<TAB>email"
+# for the unique commit authors across all PRs. Bot logins (suffix "[bot]")
+# and empty logins (orphaned/deleted accounts) are skipped. Order: first
+# appearance wins. Network-free callers can override `gh` with a shell
+# function for testing.
+gather_release_authors() {
+    local repo="$1"
+    local prs="$2"
+    local n
+    {
+        for n in $prs; do
+            # `--jq` renders one TSV line per commit; --paginate covers >100
+            # commits per PR. `|| true` swallows transient API errors so a
+            # single bad PR fetch doesn't abort the whole release.
+            gh api "repos/${repo}/pulls/${n}/commits" \
+                --paginate \
+                --jq '.[] | "\(.author.login // "")\t\(.commit.author.name)\t\(.commit.author.email)"' \
+                2>/dev/null || true
+        done
+    } | awk -F'\t' '
+        $1 == "" { next }                # skip orphaned commits
+        $1 ~ /\[bot\]$/ { next }          # skip bot accounts
+        !seen[$1]++ { print }             # dedupe by login, preserve order
+    '
+}
