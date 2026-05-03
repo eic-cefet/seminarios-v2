@@ -80,3 +80,10 @@ gather_release_authors() {
         !seen[$1]++ { print }             # dedupe by login, preserve order
     '
 }
+
+# format_coauthor_trailers
+# Reads TSV "login<TAB>name<TAB>email" lines on stdin. Emits one
+# "Co-authored-by: <name> <<email>>" line per row. Empty stdin → empty stdout.
+format_coauthor_trailers() {
+    awk -F'\t' 'NF >= 3 { printf "Co-authored-by: %s <%s>\n", $2, $3 }'
+}

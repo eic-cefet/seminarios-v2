@@ -88,6 +88,24 @@ carol	Carol Q	carol@example.com"
 
 test_gather_release_authors_dedupes_and_strips_bots
 
+test_format_coauthor_trailers_emits_one_per_line() {
+    local out
+    out=$(printf 'alice\tAlice Example\talice@example.com\nbob\tBob Example\tbob@example.com\n' \
+        | format_coauthor_trailers)
+    local expected="Co-authored-by: Alice Example <alice@example.com>
+Co-authored-by: Bob Example <bob@example.com>"
+    assert_eq "format_coauthor_trailers renders one trailer per author" "$expected" "$out"
+}
+
+test_format_coauthor_trailers_empty_input_empty_output() {
+    local out
+    out=$(printf '' | format_coauthor_trailers)
+    assert_eq "format_coauthor_trailers handles empty stdin" "" "$out"
+}
+
+test_format_coauthor_trailers_emits_one_per_line
+test_format_coauthor_trailers_empty_input_empty_output
+
 # -----------------------------------------------------------------------------
 echo
 echo "Passed: $PASS, Failed: $FAIL"
