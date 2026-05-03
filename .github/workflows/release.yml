@@ -204,13 +204,17 @@ jobs:
       - name: Configure git identity
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          APP_SLUG: ${{ steps.app-token.outputs.app-slug }}
         run: |
-          # Resolve the bot's login + numeric id from the App's token so the
-          # noreply email matches a real GitHub user. Without the id prefix
-          # GitHub can't link the commit to the bot account, and the squash
-          # commit silently falls back to the merger App's identity.
-          BOT_LOGIN=$(gh api /user --jq .login)
-          BOT_ID=$(gh api /user --jq .id)
+          # Resolve the bot's login + numeric id so the noreply email matches
+          # a real GitHub user. Without the id prefix GitHub can't link the
+          # commit to the bot account, and the squash commit silently falls
+          # back to the merger App's identity.
+          # `gh api /user` is 403 for App tokens (Apps aren't users), so we
+          # use the create-github-app-token action's `app-slug` output and
+          # look up the bot's numeric id via the public users endpoint.
+          BOT_LOGIN="${APP_SLUG}[bot]"
+          BOT_ID=$(gh api "/users/${APP_SLUG}%5Bbot%5D" --jq .id)
           git config user.name  "$BOT_LOGIN"
           git config user.email "${BOT_ID}+${BOT_LOGIN}@users.noreply.github.com"
 
