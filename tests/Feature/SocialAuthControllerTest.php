@@ -94,6 +94,12 @@ describe('GET /auth/{provider}/callback', function () {
             'email' => 'existing-oauth@example.com',
         ]);
 
+        SocialIdentity::create([
+            'user_id' => $existingUser->id,
+            'provider' => 'google',
+            'provider_id' => 'google-existing-login',
+        ]);
+
         $fakeUser = new SocialiteUser;
         $fakeUser->id = 'google-existing-login';
         $fakeUser->name = 'Existing User';
@@ -106,10 +112,16 @@ describe('GET /auth/{provider}/callback', function () {
         expect(UserConsent::where('user_id', $existingUser->id)->where('source', 'oauth')->count())->toBe(0);
     });
 
-    it('uses existing user on oauth callback', function () {
+    it('reuses existing user on oauth callback when SocialIdentity is already linked', function () {
         $existingUser = User::factory()->create([
             'email' => 'existing@example.com',
             'name' => 'Existing User',
+        ]);
+
+        SocialIdentity::create([
+            'user_id' => $existingUser->id,
+            'provider' => 'google',
+            'provider_id' => 'google-456',
         ]);
 
         $fakeUser = new SocialiteUser;
@@ -224,7 +236,7 @@ describe('GET /auth/{provider}/callback', function () {
         $response->assertRedirect('/auth/callback?error=authentication_failed');
     });
 
-    it('links a SocialIdentity to an existing email-only user on first oauth login', function () {
+    it('refuses to silently link a new provider to an existing email-only local user (F-13)', function () {
         $existingUser = User::factory()->create([
             'email' => 'returning@example.com',
             'name' => 'Returning User',
@@ -243,20 +255,15 @@ describe('GET /auth/{provider}/callback', function () {
 
         Socialite::fake('google', $fakeUser);
 
-        $this->get('/auth/google/callback')->assertRedirect();
+        $this->get('/auth/google/callback')
+            ->assertRedirect('/auth/callback?error=oauth_merge_refused');
 
-        // No duplicate user.
+        // No silent link: existing user must still have zero identities.
+        expect(SocialIdentity::where('user_id', $existingUser->id)->count())->toBe(0)
+            ->and(SocialIdentity::where('provider', 'google')->where('provider_id', 'google-link-1')->exists())->toBeFalse();
+
+        // No duplicate user, no privilege escalation.
         expect(User::where('email', 'returning@example.com')->count())->toBe(1);
-
-        // Identity is linked to the SAME existing user.
-        $identity = SocialIdentity::where('provider', 'google')
-            ->where('provider_id', 'google-link-1')
-            ->firstOrFail();
-
-        expect($identity->user_id)->toBe($existingUser->id)
-            ->and($identity->token)->toBe('access-token-xyz')
-            ->and($identity->refresh_token)->toBe('refresh-token-xyz')
-            ->and($identity->token_expires_at)->not->toBeNull();
     });
 
     it('reuses existing SocialIdentity by provider_id and refreshes tokens', function () {
@@ -307,7 +314,7 @@ describe('GET /auth/{provider}/callback', function () {
         expect(Cache::get("auth_code:{$matches[1]}"))->toBe($user->id);
     });
 
-    it('links multiple providers to the same user when emails match', function () {
+    it('refuses to silently link a second provider when only the first is registered (F-13)', function () {
         $googleUser = new SocialiteUser;
         $googleUser->id = 'g-1';
         $googleUser->name = 'Multi Provider';
@@ -318,23 +325,19 @@ describe('GET /auth/{provider}/callback', function () {
 
         $user = User::where('email', 'multi@example.com')->firstOrFail();
 
+        // Second provider for the same email — must be refused.
         $githubUser = new SocialiteUser;
         $githubUser->id = 'gh-1';
         $githubUser->name = 'Multi Provider';
         $githubUser->email = 'multi@example.com';
 
         Socialite::fake('github', $githubUser);
-        $this->get('/auth/github/callback')->assertRedirect();
+        $this->get('/auth/github/callback')
+            ->assertRedirect('/auth/callback?error=oauth_merge_refused');
 
         expect(User::where('email', 'multi@example.com')->count())->toBe(1)
-            ->and($user->fresh()->socialIdentities()->count())->toBe(2);
-
-        $this->assertDatabaseHas('social_identities', [
-            'user_id' => $user->id, 'provider' => 'google', 'provider_id' => 'g-1',
-        ]);
-        $this->assertDatabaseHas('social_identities', [
-            'user_id' => $user->id, 'provider' => 'github', 'provider_id' => 'gh-1',
-        ]);
+            ->and($user->fresh()->socialIdentities()->count())->toBe(1)
+            ->and(SocialIdentity::where('provider', 'github')->where('provider_id', 'gh-1')->exists())->toBeFalse();
     });
 
     it('persists SocialIdentity with null tokens when provider omits them', function () {

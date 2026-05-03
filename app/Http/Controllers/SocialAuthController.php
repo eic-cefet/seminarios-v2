@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Enums\AuditEvent;
 use App\Enums\ConsentType;
 use App\Exceptions\ApiException;
+use App\Exceptions\OAuthMergeRefusedException;
 use App\Models\AuditLog;
 use App\Models\SocialIdentity;
 use App\Models\User;
@@ -52,6 +53,18 @@ class SocialAuthController extends Controller
             Cache::put("auth_code:{$code}", $user->id, now()->addMinutes(5));
 
             return redirect("/auth/callback?code={$code}");
+        } catch (OAuthMergeRefusedException $e) {
+            AuditLog::record(
+                event: AuditEvent::OAuthMergeRefused,
+                auditable: $e->existingUser,
+                eventData: [
+                    'provider' => $e->provider,
+                    'user_message' => OAuthMergeRefusedException::USER_MESSAGE,
+                ],
+                userId: $e->existingUser->id,
+            );
+
+            return redirect('/auth/callback?error=oauth_merge_refused');
         } catch (\Throwable $e) {
             report($e);
 
@@ -116,7 +129,7 @@ class SocialAuthController extends Controller
             return $user;
         }
 
-        return DB::transaction(function () use ($socialUser, $request) {
+        return DB::transaction(function () use ($socialUser, $provider, $request) {
             $existing = User::withTrashed()
                 ->where('email', $socialUser->getEmail())
                 ->lockForUpdate()
@@ -127,7 +140,7 @@ class SocialAuthController extends Controller
                     throw new \RuntimeException('OAuth login attempted for a deleted account.');
                 }
 
-                return $existing;
+                throw new OAuthMergeRefusedException($existing, $provider);
             }
 
             $user = User::create([

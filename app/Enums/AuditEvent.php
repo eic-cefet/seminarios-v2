@@ -16,6 +16,7 @@ enum AuditEvent: string
     // Auth (additions)
     case UserLoginFailed = 'user.login_failed';
     case UserPasswordChanged = 'user.password_changed';
+    case OAuthMergeRefused = 'auth.oauth_merge_refused';
 
     // Account management (admin-initiated)
     case UserPasswordResetByAdmin = 'user.password_reset_by_admin';
