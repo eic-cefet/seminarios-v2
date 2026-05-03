@@ -202,9 +202,17 @@ jobs:
           token: ${{ steps.app-token.outputs.token }}
 
       - name: Configure git identity
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
-          git config user.name  "seminarios-bot[bot]"
-          git config user.email "seminarios-bot[bot]@users.noreply.github.com"
+          # Resolve the bot's login + numeric id from the App's token so the
+          # noreply email matches a real GitHub user. Without the id prefix
+          # GitHub can't link the commit to the bot account, and the squash
+          # commit silently falls back to the merger App's identity.
+          BOT_LOGIN=$(gh api /user --jq .login)
+          BOT_ID=$(gh api /user --jq .id)
+          git config user.name  "$BOT_LOGIN"
+          git config user.email "${BOT_ID}+${BOT_LOGIN}@users.noreply.github.com"
 
       # ---------------------------------------------------------------
       # Branch A — this commit IS a VERSION bump → tag it and exit.
@@ -346,7 +354,20 @@ jobs:
           git checkout -b "$BRANCH"
           echo "$NEW_VERSION" > VERSION
           git add VERSION
-          git commit -m "chore(release): ${NEW_VERSION}"
+
+          # Gather unique non-bot commit authors across the source PRs. Used
+          # both for Co-authored-by trailers on this commit and for assignees
+          # on the PR.
+          AUTHORS_TSV="$RUNNER_TEMP/release-authors.tsv"
+          gather_release_authors "${{ github.repository }}" "$PR_NUMBERS" > "$AUTHORS_TSV"
+          COAUTHORS=$(format_coauthor_trailers < "$AUTHORS_TSV")
+          ASSIGNEES=$(format_assignee_list < "$AUTHORS_TSV")
+
+          COMMIT_MSG="chore(release): ${NEW_VERSION}"
+          if [ -n "$COAUTHORS" ]; then
+              COMMIT_MSG="${COMMIT_MSG}"$'\n\n'"${COAUTHORS}"
+          fi
+          git commit -m "$COMMIT_MSG"
           git push origin "$BRANCH"
 
           # Title carries the source PR refs so it shows up in the changelog
@@ -389,6 +410,15 @@ jobs:
               --title "$TITLE" \
               --body "$PR_BODY")
           echo "Opened release PR: $PR_URL"
+
+          # Assign every contributor whose work is in this release. The API
+          # silently ignores users without triage permission (external fork
+          # contributors), so we tolerate non-zero exit — the PR is already
+          # open and the rest of the flow does not depend on assignees.
+          if [ -n "$ASSIGNEES" ]; then
+              gh pr edit "$PR_URL" --add-assignee "$ASSIGNEES" \
+                  || echo "Note: some assignees may not have been added (insufficient permissions)."
+          fi
 
           gh pr merge --auto --squash "$PR_URL" || \
             echo "Auto-merge could not be enabled (perhaps disabled on the repo). The PR is open and can be merged manually."
