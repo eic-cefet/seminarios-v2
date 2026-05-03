@@ -1,6 +1,6 @@
 import { ApiRequestError, seminarsApi, subjectsApi, workshopsApi, seminarTypesApi, coursesApi, statsApi, authApi, registrationApi, profileApi, bugReportApi, alertPreferencesApi, consentsApi, dataPrivacyApi } from './client';
 import { createSeminar, createSubject, createWorkshop, createPaginatedResponse } from '@/test/factories';
-import { getCookie } from './httpUtils';
+import { getCookie, getCsrfCookie } from './httpUtils';
 
 // Mock httpUtils to avoid CSRF fetch in tests
 vi.mock('./httpUtils', async (importOriginal) => {
@@ -13,6 +13,7 @@ vi.mock('./httpUtils', async (importOriginal) => {
 });
 
 const mockGetCookie = getCookie as ReturnType<typeof vi.fn>;
+const mockGetCsrfCookie = getCsrfCookie as ReturnType<typeof vi.fn>;
 
 describe('ApiRequestError', () => {
     it('creates an error with code, message, status', () => {
@@ -561,6 +562,10 @@ describe('fetchApi (via API namespaces)', () => {
     });
 
     describe('consentsApi', () => {
+        beforeEach(() => {
+            mockGetCsrfCookie.mockClear();
+        });
+
         it('list calls GET /api/consents', async () => {
             mockFetchSuccess({ data: [] });
 
@@ -601,6 +606,17 @@ describe('fetchApi (via API namespaces)', () => {
             );
         });
 
+        it('record primes CSRF cookie before POST', async () => {
+            mockFetchSuccess({ data: { id: 1, type: 'privacy_policy', granted: true, version: null, source: null, created_at: null } });
+
+            await consentsApi.record({ type: 'privacy_policy', granted: true });
+
+            expect(mockGetCsrfCookie).toHaveBeenCalledTimes(1);
+            const csrfOrder = mockGetCsrfCookie.mock.invocationCallOrder[0];
+            const fetchOrder = fetchSpy.mock.invocationCallOrder[0];
+            expect(csrfOrder).toBeLessThan(fetchOrder);
+        });
+
         it('record passes anonymous_id when provided', async () => {
             mockFetchSuccess({ data: { id: 2, type: 'cookies_functional', granted: false, version: null, source: null, created_at: null } });
 
@@ -621,6 +637,10 @@ describe('fetchApi (via API namespaces)', () => {
     });
 
     describe('dataPrivacyApi', () => {
+        beforeEach(() => {
+            mockGetCsrfCookie.mockClear();
+        });
+
         it('listExports calls GET /api/profile/data-export', async () => {
             mockFetchSuccess({ data: [] });
 
@@ -655,6 +675,17 @@ describe('fetchApi (via API namespaces)', () => {
             );
         });
 
+        it('requestExport primes CSRF cookie before POST', async () => {
+            mockFetchSuccess({ data: { id: 1, status: 'queued', file_size_bytes: null, expires_at: null, completed_at: null, created_at: null, is_downloadable: false } });
+
+            await dataPrivacyApi.requestExport();
+
+            expect(mockGetCsrfCookie).toHaveBeenCalledTimes(1);
+            const csrfOrder = mockGetCsrfCookie.mock.invocationCallOrder[0];
+            const fetchOrder = fetchSpy.mock.invocationCallOrder[0];
+            expect(csrfOrder).toBeLessThan(fetchOrder);
+        });
+
         it('requestDeletion calls POST /api/profile/delete-request with JSON body', async () => {
             mockFetchSuccess({ message: 'Enviamos um link de confirmação para o seu e-mail.' });
 
@@ -668,6 +699,17 @@ describe('fetchApi (via API namespaces)', () => {
                     body: JSON.stringify({ password: 'my-password' }),
                 }),
             );
+        });
+
+        it('requestDeletion primes CSRF cookie before POST', async () => {
+            mockFetchSuccess({ message: 'ok' });
+
+            await dataPrivacyApi.requestDeletion('pw');
+
+            expect(mockGetCsrfCookie).toHaveBeenCalledTimes(1);
+            const csrfOrder = mockGetCsrfCookie.mock.invocationCallOrder[0];
+            const fetchOrder = fetchSpy.mock.invocationCallOrder[0];
+            expect(csrfOrder).toBeLessThan(fetchOrder);
         });
 
         it('confirmDeletion calls POST /api/profile/delete-confirm with token body', async () => {
@@ -686,6 +728,17 @@ describe('fetchApi (via API namespaces)', () => {
             );
         });
 
+        it('confirmDeletion primes CSRF cookie before POST', async () => {
+            mockFetchSuccess({ message: 'ok', scheduled_for: '2026-05-23T00:00:00.000000Z' });
+
+            await dataPrivacyApi.confirmDeletion('a'.repeat(64));
+
+            expect(mockGetCsrfCookie).toHaveBeenCalledTimes(1);
+            const csrfOrder = mockGetCsrfCookie.mock.invocationCallOrder[0];
+            const fetchOrder = fetchSpy.mock.invocationCallOrder[0];
+            expect(csrfOrder).toBeLessThan(fetchOrder);
+        });
+
         it('cancelDeletion calls POST /api/profile/delete-cancel', async () => {
             mockFetchSuccess({ message: 'Deletion cancelled' });
 
@@ -696,6 +749,17 @@ describe('fetchApi (via API namespaces)', () => {
                 expect.stringContaining('/api/profile/delete-cancel'),
                 expect.objectContaining({ method: 'POST' }),
             );
+        });
+
+        it('cancelDeletion primes CSRF cookie before POST', async () => {
+            mockFetchSuccess({ message: 'ok' });
+
+            await dataPrivacyApi.cancelDeletion();
+
+            expect(mockGetCsrfCookie).toHaveBeenCalledTimes(1);
+            const csrfOrder = mockGetCsrfCookie.mock.invocationCallOrder[0];
+            const fetchOrder = fetchSpy.mock.invocationCallOrder[0];
+            expect(csrfOrder).toBeLessThan(fetchOrder);
         });
     });
 

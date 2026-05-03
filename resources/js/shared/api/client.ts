@@ -487,11 +487,13 @@ export interface RecordConsentInput {
 
 export const consentsApi = {
     list: () => fetchApi<{ data: ConsentRecord[] }>("/consents"),
-    record: (input: RecordConsentInput) =>
-        fetchApi<{ data: ConsentRecord }>("/consents", {
+    record: async (input: RecordConsentInput) => {
+        await getCsrfCookie();
+        return fetchApi<{ data: ConsentRecord }>("/consents", {
             method: "POST",
             body: JSON.stringify(input),
-        }),
+        });
+    },
 };
 
 // LGPD Data Privacy
@@ -508,30 +510,38 @@ export interface DataExportRequest {
 export const dataPrivacyApi = {
     listExports: () =>
         fetchApi<{ data: DataExportRequest[] }>("/profile/data-export"),
-    requestExport: () =>
-        fetchApi<{ data: DataExportRequest }>("/profile/data-export", {
+    requestExport: async () => {
+        await getCsrfCookie();
+        return fetchApi<{ data: DataExportRequest }>("/profile/data-export", {
             method: "POST",
-        }),
-    requestDeletion: (password: string) =>
-        fetchApi<{ message: string }>(
+        });
+    },
+    requestDeletion: async (password: string) => {
+        await getCsrfCookie();
+        return fetchApi<{ message: string }>(
             "/profile/delete-request",
             {
                 method: "POST",
                 body: JSON.stringify({ password }),
             },
-        ),
-    confirmDeletion: (token: string) =>
-        fetchApi<{ message: string; scheduled_for: string }>(
+        );
+    },
+    confirmDeletion: async (token: string) => {
+        await getCsrfCookie();
+        return fetchApi<{ message: string; scheduled_for: string }>(
             "/profile/delete-confirm",
             {
                 method: "POST",
                 body: JSON.stringify({ token }),
             },
-        ),
-    cancelDeletion: () =>
-        fetchApi<{ message: string }>("/profile/delete-cancel", {
+        );
+    },
+    cancelDeletion: async () => {
+        await getCsrfCookie();
+        return fetchApi<{ message: string }>("/profile/delete-cancel", {
             method: "POST",
-        }),
+        });
+    },
 };
 
 // Bug Report
