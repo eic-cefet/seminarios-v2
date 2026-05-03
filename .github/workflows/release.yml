@@ -202,9 +202,17 @@ jobs:
           token: ${{ steps.app-token.outputs.token }}
 
       - name: Configure git identity
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
-          git config user.name  "seminarios-bot[bot]"
-          git config user.email "seminarios-bot[bot]@users.noreply.github.com"
+          # Resolve the bot's login + numeric id from the App's token so the
+          # noreply email matches a real GitHub user. Without the id prefix
+          # GitHub can't link the commit to the bot account, and the squash
+          # commit silently falls back to the merger App's identity.
+          BOT_LOGIN=$(gh api /user --jq .login)
+          BOT_ID=$(gh api /user --jq .id)
+          git config user.name  "$BOT_LOGIN"
+          git config user.email "${BOT_ID}+${BOT_LOGIN}@users.noreply.github.com"
 
       # ---------------------------------------------------------------
       # Branch A — this commit IS a VERSION bump → tag it and exit.
