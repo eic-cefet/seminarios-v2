@@ -106,6 +106,34 @@ test_format_coauthor_trailers_empty_input_empty_output() {
 test_format_coauthor_trailers_emits_one_per_line
 test_format_coauthor_trailers_empty_input_empty_output
 
+test_format_assignee_list_joins_with_comma() {
+    local out
+    out=$(printf 'alice\tA\ta@x\nbob\tB\tb@x\ncarol\tC\tc@x\n' \
+        | format_assignee_list)
+    assert_eq "format_assignee_list joins logins with comma" "alice,bob,carol" "$out"
+}
+
+test_format_assignee_list_caps_at_ten() {
+    local input=""
+    for i in 1 2 3 4 5 6 7 8 9 10 11 12; do
+        input="${input}user${i}\tName${i}\tu${i}@x\n"
+    done
+    local out
+    out=$(printf "$input" | format_assignee_list)
+    assert_eq "format_assignee_list caps the list at 10 logins" \
+        "user1,user2,user3,user4,user5,user6,user7,user8,user9,user10" "$out"
+}
+
+test_format_assignee_list_empty_input_empty_output() {
+    local out
+    out=$(printf '' | format_assignee_list)
+    assert_eq "format_assignee_list handles empty stdin" "" "$out"
+}
+
+test_format_assignee_list_joins_with_comma
+test_format_assignee_list_caps_at_ten
+test_format_assignee_list_empty_input_empty_output
+
 # -----------------------------------------------------------------------------
 echo
 echo "Passed: $PASS, Failed: $FAIL"

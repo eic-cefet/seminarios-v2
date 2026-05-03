@@ -87,3 +87,18 @@ gather_release_authors() {
 format_coauthor_trailers() {
     awk -F'\t' 'NF >= 3 { printf "Co-authored-by: %s <%s>\n", $2, $3 }'
 }
+
+# format_assignee_list
+# Reads TSV "login<TAB>name<TAB>email" lines on stdin and prints a single
+# comma-separated string of logins, capped at 10 entries (GitHub's hard
+# limit on PR assignees). Empty stdin → empty stdout, no trailing newline.
+format_assignee_list() {
+    awk -F'\t' '
+        NF >= 1 && $1 != "" {
+            count++
+            if (count > 10) next
+            if (out == "") { out = $1 } else { out = out "," $1 }
+        }
+        END { if (out != "") print out }
+    '
+}
