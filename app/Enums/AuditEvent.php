@@ -10,6 +10,7 @@ enum AuditEvent: string
     case UserRegister = 'user.register';
     case UserForgotPassword = 'user.forgot_password';
     case UserPasswordReset = 'user.password_reset';
+    case UserPasswordResetSessionsCleared = 'user.password_reset_sessions_cleared';
     case UserSocialLogin = 'user.social_login';
     case UserCommunicationPreferencesUpdated = 'user.communication_preferences.updated';
 
