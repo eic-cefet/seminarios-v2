@@ -19,6 +19,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Password;
@@ -231,6 +232,22 @@ class AuthController extends Controller
         }
 
         AuditLog::record(AuditEvent::UserPasswordReset, auditable: $resetUser);
+
+        $sessionsDeleted = DB::table('sessions')
+            ->where('user_id', $resetUser->id)
+            ->where('id', '!=', session()->getId())
+            ->delete();
+
+        $trustedDevicesDeleted = $resetUser->trustedDevices()->delete();
+
+        AuditLog::record(
+            AuditEvent::UserPasswordResetSessionsCleared,
+            auditable: $resetUser,
+            eventData: [
+                'sessions_deleted' => $sessionsDeleted,
+                'trusted_devices_deleted' => $trustedDevicesDeleted,
+            ],
+        );
 
         return response()->json([
             'message' => 'Senha redefinida com sucesso.',
