@@ -4,6 +4,7 @@ import { Wrench, Calendar } from "lucide-react";
 import { Layout } from "../components/Layout";
 import { PageTitle } from "@shared/components/PageTitle";
 import { LoadingRegion } from "@shared/components/LoadingRegion";
+import { Skeleton } from "@shared/components/Skeleton";
 import { ROUTES } from "@shared/config/routes";
 import { workshopsApi } from "@shared/api/client";
 
@@ -37,10 +38,7 @@ export default function Workshops() {
                             className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
                         >
                             {[1, 2, 3].map((i) => (
-                                <div
-                                    key={i}
-                                    className="h-48 animate-pulse rounded-lg bg-gray-200"
-                                />
+                                <Skeleton key={i} className="h-48 rounded-lg" />
                             ))}
                         </LoadingRegion>
                     ) : workshops.length > 0 ? (
