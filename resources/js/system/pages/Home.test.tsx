@@ -44,6 +44,29 @@ describe('Home', () => {
         });
     });
 
+    it('shows stats skeletons while stats query is loading and never flashes 0', () => {
+        vi.mocked(statsApi.get).mockImplementation(() => new Promise(() => {}));
+
+        const { container } = render(<Home />);
+
+        expect(screen.queryByText('0')).not.toBeInTheDocument();
+
+        const numberSkeletons = container.querySelectorAll('.skeleton.h-7');
+        expect(numberSkeletons.length).toBe(3);
+    });
+
+    it('renders numeric stats once the query resolves', async () => {
+        vi.mocked(statsApi.get).mockResolvedValue({ data: { subjects: 5, seminars: 10, workshops: 3 } });
+
+        render(<Home />);
+
+        await waitFor(() => {
+            expect(screen.getByText('5')).toBeInTheDocument();
+            expect(screen.getByText('10')).toBeInTheDocument();
+            expect(screen.getByText('3')).toBeInTheDocument();
+        });
+    });
+
     it('renders seminar cards after loading', async () => {
         const seminar = createSeminar({ name: 'Test Seminar' });
         vi.mocked(seminarsApi.upcoming).mockResolvedValue({ data: [seminar] });

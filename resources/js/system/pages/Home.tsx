@@ -9,15 +9,34 @@ import { Skeleton } from "@shared/components/Skeleton";
 import { ROUTES } from "@shared/config/routes";
 import { seminarsApi, subjectsApi, statsApi } from "@shared/api/client";
 
-function StatCard({ icon: Icon, value, label }: { icon: LucideIcon; value: number; label: string }) {
+function StatCard({
+    icon: Icon,
+    value,
+    label,
+    isLoading,
+}: {
+    icon: LucideIcon;
+    value: number;
+    label: string;
+    isLoading: boolean;
+}) {
     return (
         <div className="flex items-center gap-4 rounded-lg bg-gray-50 p-4">
             <div className="rounded-full bg-primary-100 p-3">
                 <Icon className="h-6 w-6 text-primary-600" />
             </div>
-            <div>
-                <p className="text-2xl font-bold text-gray-900">{value}</p>
-                <p className="text-sm text-gray-500">{label}</p>
+            <div className="flex-1">
+                {isLoading ? (
+                    <>
+                        <Skeleton className="h-7 w-12" />
+                        <Skeleton className="mt-2 h-4 w-20" />
+                    </>
+                ) : (
+                    <>
+                        <p className="text-2xl font-bold text-gray-900">{value}</p>
+                        <p className="text-sm text-gray-500">{label}</p>
+                    </>
+                )}
             </div>
         </div>
     );
@@ -34,7 +53,7 @@ export default function Home() {
         queryFn: () => subjectsApi.list({ sort: "seminars", limit: 8 }),
     });
 
-    const { data: statsData } = useQuery({
+    const { data: statsData, isLoading: loadingStats } = useQuery({
         queryKey: ["stats"],
         queryFn: () => statsApi.get(),
     });
@@ -82,9 +101,9 @@ export default function Home() {
                 <section className="border-b border-gray-200 bg-white">
                     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
                         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                            <StatCard icon={BookOpen} value={stats?.subjects ?? 0} label="Tópicos" />
-                            <StatCard icon={Presentation} value={stats?.seminars ?? 0} label="Seminários" />
-                            <StatCard icon={Wrench} value={stats?.workshops ?? 0} label="Workshops" />
+                            <StatCard icon={BookOpen} value={stats?.subjects ?? 0} label="Tópicos" isLoading={loadingStats} />
+                            <StatCard icon={Presentation} value={stats?.seminars ?? 0} label="Seminários" isLoading={loadingStats} />
+                            <StatCard icon={Wrench} value={stats?.workshops ?? 0} label="Workshops" isLoading={loadingStats} />
                         </div>
                     </div>
                 </section>
