@@ -5,6 +5,7 @@ import { Layout } from "../components/Layout";
 import { SeminarCard } from "../components/SeminarCard";
 import { PageTitle } from "@shared/components/PageTitle";
 import { LoadingRegion } from "@shared/components/LoadingRegion";
+import { Skeleton } from "@shared/components/Skeleton";
 import { ROUTES } from "@shared/config/routes";
 import { workshopsApi } from "@shared/api/client";
 
@@ -36,17 +37,14 @@ export default function WorkshopDetails() {
                     <LoadingRegion label="Carregando detalhes do workshop">
                         <div className="bg-primary-600">
                             <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-                                <div className="h-8 w-48 animate-pulse rounded bg-white/30" />
-                                <div className="mt-2 h-4 w-72 animate-pulse rounded bg-white/20" />
+                                <Skeleton tone="onPrimary" className="h-8 w-48 rounded" />
+                                <Skeleton tone="onPrimary" className="mt-2 h-4 w-72 rounded" />
                             </div>
                         </div>
                         <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
                             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                                 {[1, 2, 3].map((i) => (
-                                    <div
-                                        key={i}
-                                        className="h-48 animate-pulse rounded-lg bg-gray-200"
-                                    />
+                                    <Skeleton key={i} className="h-48 rounded-lg" />
                                 ))}
                             </div>
                         </div>
