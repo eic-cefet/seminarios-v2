@@ -16,6 +16,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { Seminar } from "@shared/types";
 import { ROUTES } from "@shared/config/routes";
 import { cn, toSaoPaulo } from "@shared/lib/utils";
+import { Skeleton } from "@shared/components/Skeleton";
 
 interface PresentationsCalendarProps {
     seminars: Seminar[];
@@ -117,12 +118,9 @@ export function PresentationsCalendar({
             </div>
 
             {isLoading ? (
-                <div className="grid gap-px bg-gray-200 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                     {Array.from({ length: 6 }).map((_, index) => (
-                        <div
-                            key={index}
-                            className="h-40 animate-pulse bg-white"
-                        />
+                        <Skeleton key={index} className="h-40 rounded-md" />
                     ))}
                 </div>
             ) : seminars.length > 0 ? (

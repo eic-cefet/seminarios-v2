@@ -20,6 +20,7 @@ import { CalendarMenu } from "../components/CalendarMenu";
 import { LoginModal } from "../components/LoginModal";
 import { PageTitle } from "@shared/components/PageTitle";
 import { LoadingRegion } from "@shared/components/LoadingRegion";
+import { Skeleton } from "@shared/components/Skeleton";
 import { seminarsApi, registrationApi } from "@shared/api/client";
 import {
     cn,
@@ -160,13 +161,13 @@ export default function SeminarDetails() {
                     <LoadingRegion label="Carregando detalhes do seminário">
                         <div className="bg-white border-b border-gray-200">
                             <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-                                <div className="h-4 w-32 animate-pulse rounded bg-gray-200 mb-4" />
-                                <div className="h-10 w-96 animate-pulse rounded bg-gray-200" />
-                                <div className="h-4 w-64 animate-pulse rounded bg-gray-200 mt-4" />
+                                <Skeleton className="mb-4 h-4 w-32 rounded" />
+                                <Skeleton className="h-10 w-96 rounded" />
+                                <Skeleton className="mt-4 h-4 w-64 rounded" />
                             </div>
                         </div>
                         <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-                            <div className="h-64 animate-pulse rounded-lg bg-gray-200" />
+                            <Skeleton className="h-64 rounded-lg" />
                         </div>
                     </LoadingRegion>
                 </Layout>

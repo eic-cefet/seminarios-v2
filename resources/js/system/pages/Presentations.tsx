@@ -15,6 +15,7 @@ import { SeminarCard } from "../components/SeminarCard";
 import { PresentationsCalendar } from "../components/PresentationsCalendar";
 import { PageTitle } from "@shared/components/PageTitle";
 import { LoadingRegion } from "@shared/components/LoadingRegion";
+import { Skeleton } from "@shared/components/Skeleton";
 import { seminarsApi, seminarTypesApi } from "@shared/api/client";
 import { cn, toSaoPaulo } from "@shared/lib/utils";
 
@@ -249,10 +250,7 @@ export default function Presentations() {
                                 className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
                             >
                                 {[1, 2, 3, 4, 5, 6].map((i) => (
-                                    <div
-                                        key={i}
-                                        className="h-48 animate-pulse rounded-lg bg-gray-200"
-                                    />
+                                    <Skeleton key={i} className="h-48 rounded-lg" />
                                 ))}
                             </LoadingRegion>
                         ) : seminars.length > 0 ? (
