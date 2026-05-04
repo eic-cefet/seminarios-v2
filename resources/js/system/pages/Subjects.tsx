@@ -4,6 +4,7 @@ import { BookOpen } from "lucide-react";
 import { Layout } from "../components/Layout";
 import { PageTitle } from "@shared/components/PageTitle";
 import { LoadingRegion } from "@shared/components/LoadingRegion";
+import { Skeleton } from "@shared/components/Skeleton";
 import { ROUTES } from "@shared/config/routes";
 import { subjectsApi } from "@shared/api/client";
 
@@ -37,10 +38,7 @@ export default function Subjects() {
                             className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
                         >
                             {[1, 2, 3, 4, 5, 6].map((i) => (
-                                <div
-                                    key={i}
-                                    className="h-32 animate-pulse rounded-lg bg-gray-200"
-                                />
+                                <Skeleton key={i} className="h-32 rounded-lg" />
                             ))}
                         </LoadingRegion>
                     ) : subjects.length > 0 ? (
