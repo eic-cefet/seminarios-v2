@@ -25,8 +25,10 @@ class SeminarRescheduled extends Mailable
 
     public function envelope(): Envelope
     {
+        $reagendado = $this->seminar->ifMasculine('reagendado', 'reagendada');
+
         return new Envelope(
-            subject: 'Seminário reagendado: '.$this->seminar->name.' - '.config('mail.name'),
+            subject: $this->seminar->typeName().' '.$reagendado.': '.$this->seminar->name.' - '.config('mail.name'),
         );
     }
 

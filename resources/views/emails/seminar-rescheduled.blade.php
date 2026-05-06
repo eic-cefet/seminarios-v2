@@ -1,9 +1,9 @@
 <x-mail::message>
-# Seminário Reagendado
+# {{ $seminar->typeName() }} {{ $seminar->ifMasculine('Reagendado', 'Reagendada') }}
 
 Olá, **{{ $userName }}**!
 
-O seminário **{{ $seminar->name }}** foi reagendado:
+{{ $seminar->ifMasculine('O', 'A') }} {{ $seminar->inlineName() }} **{{ $seminar->name }}** foi {{ $seminar->ifMasculine('reagendado', 'reagendada') }}:
 
 <x-mail::panel>
 **Data anterior:** <del>{{ $oldScheduledAt->format('d/m/Y') }} às {{ $oldScheduledAt->format('H:i') }}</del>
@@ -20,7 +20,7 @@ O seminário **{{ $seminar->name }}** foi reagendado:
 </x-mail::panel>
 
 <x-mail::button :url="url('/seminario/' . $seminar->slug)">
-Ver Detalhes do Seminário
+Ver Detalhes {{ $seminar->ifMasculine('do', 'da') }} {{ $seminar->typeName() }}
 </x-mail::button>
 
 **Anexamos o arquivo .ics atualizado para você atualizar o evento no seu calendário.**
