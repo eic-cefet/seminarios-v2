@@ -1,5 +1,5 @@
 <x-mail::message>
-# {{ $seminar->ifMasculine('Novo', 'Nova') }} {{ $seminar->seminarType?->name ?? 'Seminário' }} Disponível
+# {{ $seminar->ifMasculine('Novo', 'Nova') }} {{ $seminar->typeName() }} Disponível
 
 Olá, **{{ $userName }}**!
 
@@ -22,7 +22,7 @@ Olá, **{{ $userName }}**!
 @endif
 
 <x-mail::button :url="url('/seminario/' . $seminar->slug)">
-Ver Detalhes {{ $seminar->ifMasculine('do', 'da') }} {{ $seminar->seminarType?->name ?? 'Seminário' }}
+Ver Detalhes {{ $seminar->ifMasculine('do', 'da') }} {{ $seminar->typeName() }}
 </x-mail::button>
 
 Você está recebendo este e-mail porque ativou os alertas de novos seminários. Para alterar ou desativar, acesse suas preferências.

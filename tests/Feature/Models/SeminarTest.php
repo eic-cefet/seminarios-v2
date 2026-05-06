@@ -29,4 +29,24 @@ describe('gender helpers', function () {
 
         expect($seminar->inlineName())->toBe('seminário');
     });
+
+    it('Seminar::typeName uses the type name in titlecase', function () {
+        $type = SeminarType::factory()->create(['name' => 'Dissertação']);
+        $seminar = Seminar::factory()->for($type, 'seminarType')->create();
+
+        expect($seminar->typeName())->toBe('Dissertação');
+    });
+
+    it('Seminar::typeName preserves acronyms (e.g., TCC stays uppercase)', function () {
+        $type = SeminarType::factory()->create(['name' => 'TCC']);
+        $seminar = Seminar::factory()->for($type, 'seminarType')->create();
+
+        expect($seminar->typeName())->toBe('TCC');
+    });
+
+    it('Seminar::typeName falls back to "Seminário" when type is null', function () {
+        $seminar = Seminar::factory()->create(['seminar_type_id' => null]);
+
+        expect($seminar->typeName())->toBe('Seminário');
+    });
 });

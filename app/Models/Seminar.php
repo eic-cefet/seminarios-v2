@@ -115,4 +115,9 @@ class Seminar extends Model
     {
         return $this->seminarType?->inlineName() ?? 'seminário';
     }
+
+    public function typeName(): string
+    {
+        return $this->seminarType?->name ?? 'Seminário';
+    }
 }
