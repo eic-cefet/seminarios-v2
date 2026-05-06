@@ -128,6 +128,25 @@ describe('CertificateGenerated Mail', function () {
         expect($mail->pdfPath)->toBe($pdfPath);
     });
 
+    it('throws a descriptive runtime exception when the s3 pdf is missing at send time', function () {
+        Storage::fake('s3');
+        // Intentionally do NOT put any file on S3.
+
+        $registration = Registration::factory()->create([
+            'certificate_code' => 'MISSING-S3',
+        ]);
+
+        $mail = new CertificateGenerated($registration, 'certs/missing.pdf');
+        $attachment = $mail->attachments()[0];
+
+        expect(fn () => $attachment->attachWith(
+            fn () => null,
+            function (Closure $data) {
+                $data();
+            }
+        ))->toThrow(RuntimeException::class, 'certs/missing.pdf');
+    });
+
     it('lazily loads attachment bytes from s3 at send time', function () {
         Storage::fake('s3');
 

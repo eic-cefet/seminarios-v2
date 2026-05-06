@@ -63,7 +63,24 @@ class CertificateGenerated extends Mailable
         $filename = 'certificado-'.$this->registration->seminar->slug.'.pdf';
 
         return [
-            Attachment::fromData(fn () => Storage::disk('s3')->get($this->pdfPath), $filename)
+            Attachment::fromData(function (): string {
+                $content = Storage::disk('s3')->get($this->pdfPath);
+
+                // Storage::get() returns null when the object is missing on
+                // S3. Without this check the closure would return null,
+                // produce a malformed attachment, and the SendQueuedMailable
+                // job would either send a broken email or fail with an
+                // opaque TypeError. Throwing here lets the queue worker
+                // retry and ultimately move the mail to failed_jobs with a
+                // message ops can act on.
+                if ($content === null) {
+                    throw new \RuntimeException(
+                        "Certificate PDF not found on S3 at path: {$this->pdfPath}"
+                    );
+                }
+
+                return $content;
+            }, $filename)
                 ->withMime('application/pdf'),
         ];
     }
