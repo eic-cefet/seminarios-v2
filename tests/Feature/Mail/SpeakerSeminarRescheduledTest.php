@@ -2,6 +2,7 @@
 
 use App\Mail\SpeakerSeminarRescheduled;
 use App\Models\Seminar;
+use App\Models\SeminarType;
 use App\Models\User;
 
 it('renders speaker reschedule subject and old/new dates', function () {
@@ -40,4 +41,24 @@ it('skips ICS attachment when scheduled_at is null', function () {
     $mailable = new SpeakerSeminarRescheduled($speaker, $seminar, $old);
 
     expect($mailable->attachments())->toBe([]);
+});
+
+it('keeps "Sua apresentação foi remarcada" wording regardless of seminar type gender', function () {
+    foreach ([
+        SeminarType::factory()->masculine()->create(['name' => 'Seminário', 'name_plural' => 'Seminários']),
+        SeminarType::factory()->feminine()->create(['name' => 'Dissertação', 'name_plural' => 'Dissertações']),
+    ] as $type) {
+        $seminar = Seminar::factory()->for($type, 'seminarType')->create([
+            'name' => 'Test',
+            'scheduled_at' => now()->addDays(5),
+        ]);
+        $speaker = User::factory()->create();
+        $previous = now()->addDays(2);
+
+        $mailable = new SpeakerSeminarRescheduled($speaker, $seminar, $previous);
+
+        $mailable->assertHasSubject('Sua apresentação foi remarcada: Test - '.config('mail.name'));
+        $mailable->assertSeeInHtml('Sua apresentação foi remarcada');
+        $mailable->assertSeeInHtml('A apresentação abaixo foi remarcada');
+    }
 });
