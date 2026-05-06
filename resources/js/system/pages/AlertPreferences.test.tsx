@@ -66,7 +66,10 @@ describe('AlertPreferences', () => {
             seminarRescheduled: payload.seminar_rescheduled,
         }));
         vi.mocked(seminarTypesApi.list).mockResolvedValue({
-            data: [{ id: 1, name: 'Palestra' }, { id: 2, name: 'Workshop' }],
+            data: [
+                { id: 1, name: 'Palestra', name_plural: null, gender: 'feminine' },
+                { id: 2, name: 'Workshop', name_plural: null, gender: 'masculine' },
+            ],
         });
         vi.mocked(subjectsApi.list).mockResolvedValue({
             data: [{ id: 10, name: 'IA', slug: 'ia' }, { id: 20, name: 'Segurança', slug: 'seguranca' }],

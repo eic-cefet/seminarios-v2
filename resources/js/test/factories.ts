@@ -66,6 +66,8 @@ export function createSeminarType(overrides: Partial<SeminarType> = {}): Seminar
     return {
         id,
         name: `Type ${id}`,
+        name_plural: null,
+        gender: 'masculine',
         ...overrides,
     };
 }

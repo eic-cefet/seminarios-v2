@@ -1,3 +1,5 @@
+import type { Gender } from "@shared/lib/gender";
+
 export interface User {
     id: number;
     name: string;
@@ -49,6 +51,8 @@ export interface Subject {
 export interface SeminarType {
     id: number;
     name: string;
+    name_plural: string | null;
+    gender: Gender;
 }
 
 export interface Speaker {

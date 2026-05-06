@@ -27,7 +27,12 @@ describe('Presentations', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         vi.mocked(seminarsApi.list).mockResolvedValue(createPaginatedResponse([]));
-        vi.mocked(seminarTypesApi.list).mockResolvedValue({ data: [{ id: 1, name: 'Palestra' }, { id: 2, name: 'Workshop' }] });
+        vi.mocked(seminarTypesApi.list).mockResolvedValue({
+            data: [
+                { id: 1, name: 'Palestra', name_plural: null, gender: 'feminine' },
+                { id: 2, name: 'Workshop', name_plural: null, gender: 'masculine' },
+            ],
+        });
     });
 
     it('renders "Apresentações" heading', () => {

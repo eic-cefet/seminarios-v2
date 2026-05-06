@@ -847,7 +847,7 @@ describe('SeminarForm', () => {
         vi.mocked(useParams).mockReturnValue({});
 
         const { dropdownApi } = await import('../../api/adminClient');
-        vi.mocked(dropdownApi.seminarTypes).mockResolvedValue({ data: [{ id: 1, name: 'Seminar Type A' }] });
+        vi.mocked(dropdownApi.seminarTypes).mockResolvedValue({ data: [{ id: 1, name: 'Seminar Type A', name_plural: null, gender: 'masculine' }] });
         vi.mocked(dropdownApi.workshops).mockResolvedValue({ data: [{ id: 2, name: 'Workshop B' }] });
         vi.mocked(dropdownApi.locations).mockResolvedValue({ data: [{ id: 3, name: 'Room C', max_vacancies: 100 }] });
 
@@ -1222,7 +1222,7 @@ describe('SeminarForm', () => {
         vi.mocked(useParams).mockReturnValue({});
 
         const { dropdownApi } = await import('../../api/adminClient');
-        vi.mocked(dropdownApi.seminarTypes).mockResolvedValue({ data: [{ id: 2, name: 'Talk' }] });
+        vi.mocked(dropdownApi.seminarTypes).mockResolvedValue({ data: [{ id: 2, name: 'Talk', name_plural: null, gender: 'masculine' }] });
         vi.mocked(dropdownApi.locations).mockResolvedValue({ data: [{ id: 1, name: 'Room 1', max_vacancies: 50 }] });
 
         render(<SeminarForm />);
@@ -1419,7 +1419,7 @@ describe('SeminarForm', () => {
 
         const { dropdownApi } = await import('../../api/adminClient');
         vi.mocked(dropdownApi.locations).mockResolvedValue({ data: [{ id: 1, name: 'Room 1', max_vacancies: 50 }] });
-        vi.mocked(dropdownApi.seminarTypes).mockResolvedValue({ data: [{ id: 2, name: 'Talk' }] });
+        vi.mocked(dropdownApi.seminarTypes).mockResolvedValue({ data: [{ id: 2, name: 'Talk', name_plural: null, gender: 'masculine' }] });
         vi.mocked(dropdownApi.workshops).mockResolvedValue({ data: [{ id: 3, name: 'Workshop X' }] });
 
         render(<SeminarForm />);

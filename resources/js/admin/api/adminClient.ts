@@ -1,4 +1,5 @@
 import type { PaginatedResponse } from "@shared/types";
+import type { Gender } from "@shared/lib/gender";
 import {
     buildQueryString,
     createApiClient,
@@ -95,6 +96,8 @@ export interface AdminSubject {
 export interface AdminSeminarType {
     id: number;
     name: string;
+    name_plural: string | null;
+    gender: Gender;
     seminars_count?: number;
     created_at: string;
     updated_at: string;
@@ -110,6 +113,8 @@ export interface LocationDropdownItem {
 export interface SeminarTypeDropdownItem {
     id: number;
     name: string;
+    name_plural: string | null;
+    gender: Gender;
 }
 
 export interface WorkshopDropdownItem {
