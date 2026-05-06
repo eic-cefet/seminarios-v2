@@ -3,7 +3,7 @@
 
 Olá, **{{ $speakerName }}**!
 
-Lembre-se: amanhã você está apresentando o seminário abaixo.
+Lembre-se: amanhã você está apresentando {{ $seminar->ifMasculine('o', 'a') }} {{ $seminar->inlineName() }} abaixo.
 
 <x-mail::panel>
 **{{ $seminar->name }}**
