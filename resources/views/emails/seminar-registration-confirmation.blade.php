@@ -21,10 +21,10 @@ Sua inscrição {{ $seminar->ifMasculine('no', 'na') }} {{ $seminar->inlineName(
 </x-mail::panel>
 
 <x-mail::button :url="url('/seminario/' . $seminar->slug)">
-Ver detalhes {{ $seminar->ifMasculine('do', 'da') }} {{ $seminar->typeName() }}
+Ver detalhes {{ $seminar->ifMasculine('do', 'da') }} {{ $seminar->inlineName() }}
 </x-mail::button>
 
-Você receberá lembretes antes do evento. Caso não possa comparecer, cancele sua inscrição na página {{ $seminar->ifMasculine('do', 'da') }} {{ $seminar->typeName() }}.
+Você receberá lembretes antes do evento. Caso não possa comparecer, cancele sua inscrição na página {{ $seminar->ifMasculine('do', 'da') }} {{ $seminar->inlineName() }}.
 
 Até logo,<br>
 {{ config('mail.team_name') }}

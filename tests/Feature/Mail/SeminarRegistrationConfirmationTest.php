@@ -41,8 +41,8 @@ it('uses feminine articles in the body for a feminine type', function () {
 
     expect($rendered)
         ->toContain('Sua inscrição na dissertação abaixo foi confirmada')
-        ->toContain('Ver detalhes da Dissertação')
-        ->toContain('cancele sua inscrição na página da Dissertação');
+        ->toContain('Ver detalhes da dissertação')
+        ->toContain('cancele sua inscrição na página da dissertação');
 });
 
 it('keeps masculine articles in the body for a masculine type', function () {
@@ -57,8 +57,8 @@ it('keeps masculine articles in the body for a masculine type', function () {
 
     expect($rendered)
         ->toContain('Sua inscrição no seminário abaixo foi confirmada')
-        ->toContain('Ver detalhes do Seminário')
-        ->toContain('cancele sua inscrição na página do Seminário');
+        ->toContain('Ver detalhes do seminário')
+        ->toContain('cancele sua inscrição na página do seminário');
 });
 
 it('falls back to "seminário" when seminar has no type', function () {
