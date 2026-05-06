@@ -105,4 +105,14 @@ class Seminar extends Model
     {
         return $query->where('scheduled_at', '<', now());
     }
+
+    public function ifMasculine(string $masculine, string $feminine): string
+    {
+        return $this->seminarType?->ifMasculine($masculine, $feminine) ?? $masculine;
+    }
+
+    public function inlineName(): string
+    {
+        return $this->seminarType?->inlineName() ?? 'seminário';
+    }
 }
