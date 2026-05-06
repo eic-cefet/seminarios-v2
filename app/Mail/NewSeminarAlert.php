@@ -23,8 +23,11 @@ class NewSeminarAlert extends Mailable implements ShouldQueue
 
     public function envelope(): Envelope
     {
+        $novo = $this->seminar->ifMasculine('Novo', 'Nova');
+        $noun = $this->seminar->inlineName();
+
         return new Envelope(
-            subject: 'Novo seminário: '.$this->seminar->name.' - '.config('mail.name'),
+            subject: "{$novo} {$noun}: ".$this->seminar->name.' - '.config('mail.name'),
         );
     }
 
