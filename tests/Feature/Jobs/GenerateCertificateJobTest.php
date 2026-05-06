@@ -152,6 +152,46 @@ describe('GenerateCertificateJob', function () {
         Mail::assertNothingSent();
     });
 
+    it('queues a mailable whose serialized form is JSON-encodable (no binary in payload)', function () {
+        Mail::fake();
+        Storage::fake('s3');
+
+        // Real binary PDF bytes — \x00, \xFF, \xFE break JSON encoding.
+        $binaryPdf = "%PDF-1.4\n\x00\xFF\xFE\nbinary garbage\n%%EOF";
+
+        $seminar = Seminar::factory()->create();
+        $registration = Registration::factory()->create([
+            'seminar_id' => $seminar->id,
+            'present' => true,
+            'certificate_code' => 'BINARY-PAYLOAD',
+            'certificate_sent' => false,
+        ]);
+
+        $mockService = $this->mock(CertificateService::class);
+        $mockService->shouldReceive('ensureCertificateCode')->once();
+        $mockService->shouldReceive('jpgExists')->once()->andReturn(true);
+        $mockService->shouldReceive('pdfExists')->once()->andReturn(true);
+        $mockService->shouldReceive('getPdfPath')->andReturn('certificates/binary.pdf');
+
+        Storage::disk('s3')->put('certificates/binary.pdf', $binaryPdf);
+
+        (new GenerateCertificateJob($registration))->handle($mockService);
+
+        // Mimic Laravel\Queue\Queue::createPayload — serialize the queued job
+        // and JSON-encode the outer payload. Embedding raw PDF bytes in the
+        // serialized form blows up here with JSON_ERROR_UTF8 (5).
+        Mail::assertQueued(CertificateGenerated::class, function ($mail) use ($binaryPdf) {
+            $serialized = serialize($mail);
+            expect($serialized)->not->toContain($binaryPdf);
+
+            $payload = json_encode(['command' => $serialized]);
+            expect($payload)->not->toBeFalse();
+            expect(json_last_error())->toBe(JSON_ERROR_NONE);
+
+            return true;
+        });
+    });
+
     it('dispatches CertificateReadyNotification after successful certificate generation', function () {
         Notification::fake();
         Mail::fake();

@@ -10,14 +10,21 @@ use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Mail\Mailables\Headers;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Storage;
 
 class CertificateGenerated extends Mailable
 {
     use Queueable, SerializesModels;
 
+    /**
+     * Carry only the S3 path on the mailable. The raw PDF bytes are pulled
+     * lazily inside attachments(), because Laravel's queue JSON-encodes the
+     * outer payload and binary content in the serialized form blows it up
+     * with JSON_ERROR_UTF8 (Queue.php:130 InvalidPayloadException).
+     */
     public function __construct(
         public Registration $registration,
-        public string $pdfContent
+        public string $pdfPath
     ) {}
 
     public function envelope(): Envelope
@@ -56,7 +63,7 @@ class CertificateGenerated extends Mailable
         $filename = 'certificado-'.$this->registration->seminar->slug.'.pdf';
 
         return [
-            Attachment::fromData(fn () => $this->pdfContent, $filename)
+            Attachment::fromData(fn () => Storage::disk('s3')->get($this->pdfPath), $filename)
                 ->withMime('application/pdf'),
         ];
     }

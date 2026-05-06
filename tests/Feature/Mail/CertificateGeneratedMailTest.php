@@ -4,6 +4,7 @@ use App\Mail\CertificateGenerated;
 use App\Models\Registration;
 use App\Models\Seminar;
 use App\Models\User;
+use Illuminate\Support\Facades\Storage;
 
 describe('CertificateGenerated Mail', function () {
     it('has correct subject with seminar name', function () {
@@ -116,14 +117,41 @@ describe('CertificateGenerated Mail', function () {
         expect($attachments)->toHaveCount(1);
     });
 
-    it('stores pdf content', function () {
+    it('stores the s3 pdf path, not the binary content', function () {
         $registration = Registration::factory()->create([
-            'certificate_code' => 'CONTENT-TEST',
+            'certificate_code' => 'PATH-TEST',
         ]);
 
-        $pdfContent = '%PDF-1.4 mock content';
-        $mail = new CertificateGenerated($registration, $pdfContent);
+        $pdfPath = 'certificates/2024/test/path-test.pdf';
+        $mail = new CertificateGenerated($registration, $pdfPath);
 
-        expect($mail->pdfContent)->toBe($pdfContent);
+        expect($mail->pdfPath)->toBe($pdfPath);
+    });
+
+    it('lazily loads attachment bytes from s3 at send time', function () {
+        Storage::fake('s3');
+
+        $binaryPdf = "%PDF-1.4\n\x00\xFF\xFE\nlazy bytes\n%%EOF";
+        Storage::disk('s3')->put('certs/lazy.pdf', $binaryPdf);
+
+        $registration = Registration::factory()->create([
+            'certificate_code' => 'LAZY-TEST',
+        ]);
+
+        $mail = new CertificateGenerated($registration, 'certs/lazy.pdf');
+
+        // Serializing the mailable for queueing must not embed the binary.
+        expect(serialize($mail))->not->toContain($binaryPdf);
+
+        // But at attachment build time we should still have the bytes.
+        $attachment = $mail->attachments()[0];
+        $resolved = null;
+        $attachment->attachWith(
+            fn () => null,
+            function (Closure $data) use (&$resolved) {
+                $resolved = $data();
+            }
+        );
+        expect($resolved)->toBe($binaryPdf);
     });
 });
