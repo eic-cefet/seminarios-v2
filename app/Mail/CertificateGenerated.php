@@ -50,6 +50,7 @@ class CertificateGenerated extends Mailable
             markdown: 'emails.certificate-generated',
             with: [
                 'userName' => $this->registration->user->name,
+                'seminar' => $this->registration->seminar,
                 'seminarName' => $this->registration->seminar->name,
                 'seminarDate' => $this->registration->seminar->scheduled_at->format('d/m/Y'),
                 'certificateCode' => $this->registration->certificate_code,

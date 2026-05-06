@@ -3,6 +3,7 @@
 use App\Mail\CertificateGenerated;
 use App\Models\Registration;
 use App\Models\Seminar;
+use App\Models\SeminarType;
 use App\Models\User;
 use Illuminate\Support\Facades\Storage;
 
@@ -172,5 +173,65 @@ describe('CertificateGenerated Mail', function () {
             }
         );
         expect($resolved)->toBe($binaryPdf);
+    });
+
+    it('uses feminine article in body for a feminine type', function () {
+        $type = SeminarType::factory()->feminine()->create([
+            'name' => 'Dissertação',
+            'name_plural' => 'Dissertações',
+        ]);
+        $seminar = Seminar::factory()->for($type, 'seminarType')->create([
+            'name' => 'Método X',
+            'scheduled_at' => now()->subDay(),
+        ]);
+        $registration = Registration::factory()->for($seminar)->create([
+            'certificate_code' => 'TEST-FEM',
+        ]);
+
+        $rendered = (new CertificateGenerated($registration, 'pdf-bytes'))->render();
+
+        expect($rendered)
+            ->toContain('Parabéns por sua participação na dissertação <strong')
+            ->toContain('Método X')
+            ->toContain('realizada em');
+    });
+
+    it('uses masculine article in body for a masculine type', function () {
+        $type = SeminarType::factory()->masculine()->create([
+            'name' => 'Seminário',
+            'name_plural' => 'Seminários',
+        ]);
+        $seminar = Seminar::factory()->for($type, 'seminarType')->create([
+            'name' => 'Tópico Y',
+            'scheduled_at' => now()->subDay(),
+        ]);
+        $registration = Registration::factory()->for($seminar)->create([
+            'certificate_code' => 'TEST-MAS',
+        ]);
+
+        $rendered = (new CertificateGenerated($registration, 'pdf-bytes'))->render();
+
+        expect($rendered)
+            ->toContain('Parabéns por sua participação no seminário <strong')
+            ->toContain('Tópico Y')
+            ->toContain('realizado em');
+    });
+
+    it('falls back to "no seminário ... realizado" when type is null', function () {
+        $seminar = Seminar::factory()->create([
+            'name' => 'Sem tipo',
+            'seminar_type_id' => null,
+            'scheduled_at' => now()->subDay(),
+        ]);
+        $registration = Registration::factory()->for($seminar)->create([
+            'certificate_code' => 'TEST-NULL',
+        ]);
+
+        $rendered = (new CertificateGenerated($registration, 'pdf-bytes'))->render();
+
+        expect($rendered)
+            ->toContain('Parabéns por sua participação no seminário <strong')
+            ->toContain('Sem tipo')
+            ->toContain('realizado em');
     });
 });
