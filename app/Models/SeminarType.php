@@ -30,4 +30,30 @@ class SeminarType extends Model
     {
         return $this->hasMany(Seminar::class);
     }
+
+    public function ifMasculine(string $masculine, string $feminine): string
+    {
+        return $this->gender->ifMasculine($masculine, $feminine);
+    }
+
+    public function inlineName(): string
+    {
+        return self::lowercaseUnlessAcronym($this->name);
+    }
+
+    public function inlinePlural(): string
+    {
+        return self::lowercaseUnlessAcronym($this->name_plural ?? $this->name);
+    }
+
+    private static function lowercaseUnlessAcronym(string $value): string
+    {
+        $alphaOnly = preg_replace('/[^\p{L}]/u', '', $value);
+
+        if ($alphaOnly !== '' && $alphaOnly === mb_strtoupper($alphaOnly)) {
+            return $value;
+        }
+
+        return mb_strtolower($value);
+    }
 }

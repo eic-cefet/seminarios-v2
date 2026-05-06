@@ -30,4 +30,46 @@ describe('SeminarType Model', function () {
 
         expect($seminarType->name)->toBe('Palestra');
     });
+
+    it('exposes ifMasculine that picks the masculine variant for a masculine type', function () {
+        $type = SeminarType::factory()->masculine()->create();
+
+        expect($type->ifMasculine('Novo', 'Nova'))->toBe('Novo');
+    });
+
+    it('exposes ifMasculine that picks the feminine variant for a feminine type', function () {
+        $type = SeminarType::factory()->feminine()->create();
+
+        expect($type->ifMasculine('Novo', 'Nova'))->toBe('Nova');
+    });
+
+    it('inlineName returns the name lowercased for regular nouns', function () {
+        $type = SeminarType::factory()->create(['name' => 'Dissertação']);
+
+        expect($type->inlineName())->toBe('dissertação');
+    });
+
+    it('inlineName preserves acronyms (all-uppercase alpha)', function () {
+        $type = SeminarType::factory()->create(['name' => 'TCC']);
+
+        expect($type->inlineName())->toBe('TCC');
+    });
+
+    it('inlinePlural uses the lowercased name_plural when set', function () {
+        $type = SeminarType::factory()->create([
+            'name' => 'Dissertação',
+            'name_plural' => 'Dissertações',
+        ]);
+
+        expect($type->inlinePlural())->toBe('dissertações');
+    });
+
+    it('inlinePlural falls back to inlineName when name_plural is null', function () {
+        $type = SeminarType::factory()->create([
+            'name' => 'TCC',
+            'name_plural' => null,
+        ]);
+
+        expect($type->inlinePlural())->toBe('TCC');
+    });
 });
