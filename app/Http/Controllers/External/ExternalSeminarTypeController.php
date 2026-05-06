@@ -40,6 +40,8 @@ class ExternalSeminarTypeController extends Controller
     }
 
     #[BodyParameter('name', description: 'Seminar type display name (must be unique)', type: 'string', example: 'Qualificação')]
+    #[BodyParameter('name_plural', description: 'Plural form of the type display name (optional)', type: 'string', example: 'Qualificações')]
+    #[BodyParameter('gender', description: 'Grammatical gender (defaults to masculine)', type: 'string', example: 'feminine')]
     public function store(ExternalSeminarTypeStoreRequest $request): JsonResponse
     {
         $type = SeminarType::create($request->validated());
@@ -51,6 +53,8 @@ class ExternalSeminarTypeController extends Controller
     }
 
     #[BodyParameter('name', description: 'Seminar type display name (must be unique, excluding the current record)', type: 'string', example: 'Qualificação')]
+    #[BodyParameter('name_plural', description: 'Plural form of the type display name (optional)', type: 'string', example: 'Qualificações')]
+    #[BodyParameter('gender', description: 'Grammatical gender (defaults to masculine)', type: 'string', example: 'feminine')]
     public function update(ExternalSeminarTypeUpdateRequest $request, SeminarType $seminarType): JsonResponse
     {
         $seminarType->update($request->validated());

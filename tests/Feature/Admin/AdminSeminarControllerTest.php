@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\Gender;
 use App\Jobs\ProcessSeminarRescheduleJob;
 use App\Models\Seminar;
 use App\Models\SeminarLocation;
@@ -600,6 +601,25 @@ describe('GET /admin/seminar-types', function () {
                 'data' => [
                     '*' => ['id', 'name'],
                 ],
+            ]);
+    });
+
+    it('returns gender and name_plural on each item', function () {
+        actingAsAdmin();
+        SeminarType::factory()->create([
+            'name' => 'Dissertação',
+            'name_plural' => 'Dissertações',
+            'gender' => Gender::Feminine,
+        ]);
+
+        $response = $this->getJson('/api/admin/seminar-types');
+
+        $response->assertSuccessful()
+            ->assertJsonStructure(['data' => ['*' => ['id', 'name', 'gender', 'name_plural']]])
+            ->assertJsonFragment([
+                'name' => 'Dissertação',
+                'name_plural' => 'Dissertações',
+                'gender' => 'feminine',
             ]);
     });
 });

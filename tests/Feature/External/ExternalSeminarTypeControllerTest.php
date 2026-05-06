@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\Gender;
 use App\Models\Seminar;
 use App\Models\SeminarType;
 use App\Models\User;
@@ -38,6 +39,24 @@ describe('GET /api/external/v1/seminar-types', function () {
     it('returns 403 for non-admin user', function () {
         actingAsUser();
         $this->getJson('/api/external/v1/seminar-types')->assertForbidden();
+    });
+
+    it('returns gender and name_plural in the index response', function () {
+        actingAsAdmin();
+        SeminarType::factory()->create([
+            'name' => 'Dissertação',
+            'name_plural' => 'Dissertações',
+            'gender' => Gender::Feminine,
+        ]);
+
+        $response = $this->getJson('/api/external/v1/seminar-types');
+
+        $response->assertSuccessful()
+            ->assertJsonFragment([
+                'name' => 'Dissertação',
+                'name_plural' => 'Dissertações',
+                'gender' => 'feminine',
+            ]);
     });
 });
 
@@ -87,6 +106,49 @@ describe('POST /api/external/v1/seminar-types', function () {
         actingAsAdmin();
         $this->postJson('/api/external/v1/seminar-types', [])->assertStatus(422);
     });
+
+    it('accepts gender and name_plural on store and persists them', function () {
+        actingAsAdmin();
+
+        $response = $this->postJson('/api/external/v1/seminar-types', [
+            'name' => 'Tese',
+            'name_plural' => 'Teses',
+            'gender' => 'feminine',
+        ]);
+
+        $response->assertSuccessful()->assertJsonFragment([
+            'name' => 'Tese',
+            'name_plural' => 'Teses',
+            'gender' => 'feminine',
+        ]);
+
+        expect(SeminarType::query()->where('name', 'Tese')->first())
+            ->name_plural->toBe('Teses')
+            ->gender->toBe(Gender::Feminine);
+    });
+
+    it('defaults gender to masculine when not provided on store', function () {
+        actingAsAdmin();
+
+        $response = $this->postJson('/api/external/v1/seminar-types', [
+            'name' => 'Banca',
+        ]);
+
+        $response->assertSuccessful();
+        expect(SeminarType::query()->where('name', 'Banca')->first()->gender)
+            ->toBe(Gender::Masculine);
+    });
+
+    it('rejects invalid gender values on store', function () {
+        actingAsAdmin();
+
+        $response = $this->postJson('/api/external/v1/seminar-types', [
+            'name' => 'X',
+            'gender' => 'neuter',
+        ]);
+
+        $response->assertStatus(422)->assertJsonValidationErrors(['gender']);
+    });
 });
 
 describe('PUT /api/external/v1/seminar-types/{id}', function () {
@@ -123,6 +185,22 @@ describe('PUT /api/external/v1/seminar-types/{id}', function () {
         ]);
 
         $response->assertSuccessful();
+    });
+
+    it('updates gender and name_plural', function () {
+        actingAsAdmin();
+        $type = SeminarType::factory()->masculine()->create(['name' => 'X', 'name_plural' => null]);
+
+        $response = $this->patchJson('/api/external/v1/seminar-types/'.$type->id, [
+            'name' => 'X',
+            'gender' => 'feminine',
+            'name_plural' => 'Xs',
+        ]);
+
+        $response->assertSuccessful();
+        expect($type->fresh())
+            ->gender->toBe(Gender::Feminine)
+            ->name_plural->toBe('Xs');
     });
 });
 

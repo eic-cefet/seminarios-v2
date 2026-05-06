@@ -15,7 +15,7 @@ class ExternalSeminarTypeResource extends JsonResource
     /** @return list<string> */
     public function availableFields(): array
     {
-        return ['id', 'name'];
+        return ['id', 'name', 'name_plural', 'gender'];
     }
 
     /**
@@ -26,6 +26,8 @@ class ExternalSeminarTypeResource extends JsonResource
         return [
             'id' => $this->id,
             'name' => $this->name,
+            'name_plural' => $this->name_plural,
+            'gender' => $this->gender->value,
         ];
     }
 }

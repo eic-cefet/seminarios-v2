@@ -25,6 +25,8 @@ class ExternalSeminarTypeUpdateRequest extends FormRequest
 
         return [
             'name' => ['required', 'string', 'max:255', "unique:seminar_types,name,{$id}"],
+            'name_plural' => ['nullable', 'string', 'max:255'],
+            'gender' => ['nullable', 'string', 'in:masculine,feminine'],
         ];
     }
 }

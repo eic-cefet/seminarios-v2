@@ -12,6 +12,8 @@ class SeminarTypeResource extends JsonResource
         return [
             'id' => $this->id,
             'name' => $this->name,
+            'name_plural' => $this->name_plural,
+            'gender' => $this->gender->value,
         ];
     }
 }

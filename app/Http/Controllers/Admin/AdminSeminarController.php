@@ -170,10 +170,15 @@ class AdminSeminarController extends Controller
 
     public function listTypes(): JsonResponse
     {
-        $types = SeminarType::orderBy('name')->get(['id', 'name']);
+        $types = SeminarType::orderBy('name')->get(['id', 'name', 'name_plural', 'gender']);
 
         return response()->json([
-            'data' => $types,
+            'data' => $types->map(fn (SeminarType $t) => [
+                'id' => $t->id,
+                'name' => $t->name,
+                'name_plural' => $t->name_plural,
+                'gender' => $t->gender->value,
+            ]),
         ]);
     }
 
