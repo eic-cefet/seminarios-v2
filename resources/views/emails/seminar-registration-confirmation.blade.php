@@ -3,7 +3,7 @@
 
 Olá, **{{ $userName }}**!
 
-Sua inscrição no seminário abaixo foi confirmada:
+Sua inscrição {{ $seminar->ifMasculine('no', 'na') }} {{ $seminar->inlineName() }} abaixo foi confirmada:
 
 <x-mail::panel>
 **{{ $seminar->name }}**
@@ -21,10 +21,10 @@ Sua inscrição no seminário abaixo foi confirmada:
 </x-mail::panel>
 
 <x-mail::button :url="url('/seminario/' . $seminar->slug)">
-Ver detalhes do seminário
+Ver detalhes {{ $seminar->ifMasculine('do', 'da') }} {{ $seminar->typeName() }}
 </x-mail::button>
 
-Você receberá lembretes antes do evento. Caso não possa comparecer, cancele sua inscrição na página do seminário.
+Você receberá lembretes antes do evento. Caso não possa comparecer, cancele sua inscrição na página {{ $seminar->ifMasculine('do', 'da') }} {{ $seminar->typeName() }}.
 
 Até logo,<br>
 {{ config('mail.team_name') }}
