@@ -15,11 +15,11 @@ Sua apresentação aconteceu há dois dias. Aqui vai um resumo rápido:
 </x-mail::panel>
 
 @if($attendeesPresent === 0)
-> Nenhuma presença foi marcada para este seminário. Se houve confirmações que ainda não foram registradas, faça-o pela página do seminário para que os presentes recebam o certificado.
+> Nenhuma presença foi marcada para {{ $seminar->ifMasculine('este', 'esta') }} {{ $seminar->inlineName() }}. Se houve confirmações que ainda não foram registradas, faça-o pela página {{ $seminar->ifMasculine('do', 'da') }} {{ $seminar->inlineName() }} para que os presentes recebam o certificado.
 @endif
 
 <x-mail::button :url="url('/seminario/' . $seminar->slug)">
-Ver seminário
+Ver {{ $seminar->inlineName() }}
 </x-mail::button>
 
 Obrigado por contribuir,<br>
