@@ -149,6 +149,17 @@ describe('POST /api/external/v1/seminar-types', function () {
 
         $response->assertStatus(422)->assertJsonValidationErrors(['gender']);
     });
+
+    it('rejects null gender on store', function () {
+        actingAsAdmin();
+
+        $response = $this->postJson('/api/external/v1/seminar-types', [
+            'name' => 'NullGenderTest',
+            'gender' => null,
+        ]);
+
+        $response->assertStatus(422)->assertJsonValidationErrors(['gender']);
+    });
 });
 
 describe('PUT /api/external/v1/seminar-types/{id}', function () {
@@ -191,7 +202,7 @@ describe('PUT /api/external/v1/seminar-types/{id}', function () {
         actingAsAdmin();
         $type = SeminarType::factory()->masculine()->create(['name' => 'X', 'name_plural' => null]);
 
-        $response = $this->patchJson('/api/external/v1/seminar-types/'.$type->id, [
+        $response = $this->putJson('/api/external/v1/seminar-types/'.$type->id, [
             'name' => 'X',
             'gender' => 'feminine',
             'name_plural' => 'Xs',
@@ -201,6 +212,18 @@ describe('PUT /api/external/v1/seminar-types/{id}', function () {
         expect($type->fresh())
             ->gender->toBe(Gender::Feminine)
             ->name_plural->toBe('Xs');
+    });
+
+    it('rejects null gender on update', function () {
+        actingAsAdmin();
+        $type = SeminarType::factory()->create();
+
+        $response = $this->putJson("/api/external/v1/seminar-types/{$type->id}", [
+            'name' => $type->name,
+            'gender' => null,
+        ]);
+
+        $response->assertStatus(422)->assertJsonValidationErrors(['gender']);
     });
 });
 
