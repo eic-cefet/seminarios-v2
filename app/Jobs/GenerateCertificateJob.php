@@ -19,7 +19,6 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Facades\Storage;
 
 class GenerateCertificateJob implements ShouldBeUnique, ShouldQueue
 {
@@ -66,11 +65,14 @@ class GenerateCertificateJob implements ShouldBeUnique, ShouldQueue
 
         if ($this->sendEmail && ! $this->registration->certificate_sent) {
             if ($gate->canEmail($this->registration->user, CommunicationCategory::CertificateReady)) {
-                $pdfPath = $certificateService->getPdfPath($this->registration);
-                $pdfContent = Storage::disk('s3')->get($pdfPath);
-
+                // Carry only the path on the queued mailable. Embedding the
+                // raw PDF bytes in the mailable's properties breaks the queue
+                // payload encoder (JSON_ERROR_UTF8 in Queue.php:130).
                 Mail::to($this->registration->user->email)
-                    ->queue(new CertificateGenerated($this->registration, $pdfContent));
+                    ->queue(new CertificateGenerated(
+                        $this->registration,
+                        $certificateService->getPdfPath($this->registration),
+                    ));
             }
 
             // Mark sent whether the email went out or was intentionally skipped by the
