@@ -15,6 +15,7 @@ use App\Models\User;
 use App\Models\UserSpeakerData;
 use App\Models\UserStudentData;
 use App\Models\Workshop;
+use App\Support\SeminarTypeBackfill;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
 
@@ -28,7 +29,12 @@ class DevelopmentSeeder extends Seeder
         $seminarTypes = collect([
             'Seminário', 'Qualificação', 'Dissertação', 'TCC',
             'Aula inaugural', 'Painel', 'Doutorado',
-        ])->map(fn (string $name) => SeminarType::create(['name' => $name]));
+        ])->map(function (string $name): SeminarType {
+            $type = SeminarType::create(['name' => $name]);
+            SeminarTypeBackfill::apply($type);
+
+            return $type->refresh();
+        });
 
         // --- Locations (real CEFET-RJ style rooms) ---
         $locationData = [
