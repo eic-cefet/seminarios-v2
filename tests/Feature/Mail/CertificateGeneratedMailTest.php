@@ -176,6 +176,9 @@ describe('CertificateGenerated Mail', function () {
     });
 
     it('uses feminine article in body for a feminine type', function () {
+        Storage::fake('s3');
+        Storage::disk('s3')->put('certs/fem.pdf', '%PDF-test');
+
         $type = SeminarType::factory()->feminine()->create([
             'name' => 'Dissertação',
             'name_plural' => 'Dissertações',
@@ -188,7 +191,7 @@ describe('CertificateGenerated Mail', function () {
             'certificate_code' => 'TEST-FEM',
         ]);
 
-        $rendered = (new CertificateGenerated($registration, 'pdf-bytes'))->render();
+        $rendered = (new CertificateGenerated($registration, 'certs/fem.pdf'))->render();
 
         expect($rendered)
             ->toContain('Parabéns por sua participação na dissertação <strong')
@@ -197,6 +200,9 @@ describe('CertificateGenerated Mail', function () {
     });
 
     it('uses masculine article in body for a masculine type', function () {
+        Storage::fake('s3');
+        Storage::disk('s3')->put('certs/masc.pdf', '%PDF-test');
+
         $type = SeminarType::factory()->masculine()->create([
             'name' => 'Seminário',
             'name_plural' => 'Seminários',
@@ -209,7 +215,7 @@ describe('CertificateGenerated Mail', function () {
             'certificate_code' => 'TEST-MAS',
         ]);
 
-        $rendered = (new CertificateGenerated($registration, 'pdf-bytes'))->render();
+        $rendered = (new CertificateGenerated($registration, 'certs/masc.pdf'))->render();
 
         expect($rendered)
             ->toContain('Parabéns por sua participação no seminário <strong')
@@ -218,6 +224,9 @@ describe('CertificateGenerated Mail', function () {
     });
 
     it('falls back to "no seminário ... realizado" when type is null', function () {
+        Storage::fake('s3');
+        Storage::disk('s3')->put('certs/null.pdf', '%PDF-test');
+
         $seminar = Seminar::factory()->create([
             'name' => 'Sem tipo',
             'seminar_type_id' => null,
@@ -227,7 +236,7 @@ describe('CertificateGenerated Mail', function () {
             'certificate_code' => 'TEST-NULL',
         ]);
 
-        $rendered = (new CertificateGenerated($registration, 'pdf-bytes'))->render();
+        $rendered = (new CertificateGenerated($registration, 'certs/null.pdf'))->render();
 
         expect($rendered)
             ->toContain('Parabéns por sua participação no seminário <strong')
