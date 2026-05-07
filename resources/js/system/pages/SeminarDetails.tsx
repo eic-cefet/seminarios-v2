@@ -34,6 +34,7 @@ import { ROUTES } from "@shared/config/routes";
 import { getErrorMessage } from "@shared/lib/errors";
 import { useAuth } from "@shared/contexts/AuthContext";
 import { analytics } from "@shared/lib/analytics";
+import { ifMasculine, inlineTypeName } from "@shared/lib/gender";
 import DOMPurify from "dompurify";
 import ReactMarkdown from "react-markdown";
 import rehypeSanitize from "rehype-sanitize";
@@ -204,6 +205,8 @@ export default function SeminarDetails() {
 
     const isExpired = seminar.isExpired;
     const isToday = !isExpired && isTodayDate(seminar.scheduledAt);
+    const typeGender = seminar.seminarType?.gender ?? "masculine";
+    const typeInline = inlineTypeName(seminar.seminarType?.name);
 
     return (
         <>
@@ -286,7 +289,7 @@ export default function SeminarDetails() {
                             {seminar.description && (
                                 <section>
                                     <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                                        Sobre o seminário
+                                        Sobre {ifMasculine(typeGender, "o", "a")} {typeInline}
                                     </h2>
                                     {containsHTML(seminar.description) ? (
                                         <div
@@ -429,7 +432,7 @@ export default function SeminarDetails() {
                                     ) : (
                                         <>
                                             <h3 className="font-semibold text-gray-900 mb-4">
-                                                Inscreva-se neste seminário
+                                                Inscreva-se {ifMasculine(typeGender, "neste", "nesta")} {typeInline}
                                             </h3>
                                             {registrationError && (
                                                 <div className="mb-4 rounded-md bg-red-50 p-3 text-sm text-red-700">
@@ -452,7 +455,7 @@ export default function SeminarDetails() {
                                 ) : (
                                     <>
                                         <h3 className="font-semibold text-gray-500 mb-2">
-                                            Este seminário já foi realizado
+                                            {ifMasculine(typeGender, "Este", "Esta")} {typeInline} já foi {ifMasculine(typeGender, "realizado", "realizada")}
                                         </h3>
                                         <p className="text-sm text-gray-600">
                                             Confira outros seminários

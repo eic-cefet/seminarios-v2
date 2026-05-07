@@ -151,7 +151,11 @@ describe('SeminarDetails', () => {
     });
 
     it('shows expired seminar state', async () => {
-        const seminar = createSeminar({ name: 'Old Seminar', isExpired: true });
+        const seminar = createSeminar({
+            name: 'Old Seminar',
+            isExpired: true,
+            seminarType: createSeminarType({ name: 'Seminário', gender: 'masculine' }),
+        });
         vi.mocked(seminarsApi.get).mockResolvedValue({ data: seminar });
 
         render(<SeminarDetails />);
@@ -271,7 +275,11 @@ describe('SeminarDetails', () => {
     });
 
     it('shows "Inscreva-se" heading for non-registered user', async () => {
-        const seminar = createSeminar({ name: 'Test', isExpired: false });
+        const seminar = createSeminar({
+            name: 'Test',
+            isExpired: false,
+            seminarType: createSeminarType({ name: 'Seminário', gender: 'masculine' }),
+        });
         vi.mocked(seminarsApi.get).mockResolvedValue({ data: seminar });
         vi.mocked(useAuth).mockReturnValue({
             user: createUser(), isLoading: false, isAuthenticated: true,
@@ -408,7 +416,11 @@ describe('SeminarDetails', () => {
     });
 
     it('shows seminar description', async () => {
-        const seminar = createSeminar({ name: 'Test', description: 'This is a test description' });
+        const seminar = createSeminar({
+            name: 'Test',
+            description: 'This is a test description',
+            seminarType: createSeminarType({ name: 'Seminário', gender: 'masculine' }),
+        });
         vi.mocked(seminarsApi.get).mockResolvedValue({ data: seminar });
 
         render(<SeminarDetails />);
@@ -652,6 +664,95 @@ describe('SeminarDetails', () => {
         await waitFor(() => {
             expect(screen.getByText('Processando...')).toBeInTheDocument();
         });
+    });
+
+    it('uses feminine articles for a Dissertação (active)', async () => {
+        const seminarType = createSeminarType({
+            name: 'Dissertação',
+            name_plural: 'Dissertações',
+            gender: 'feminine',
+        });
+        const seminar = createSeminar({
+            name: 'Defesa de Mestrado',
+            description: 'Resumo da pesquisa',
+            isExpired: false,
+            seminarType,
+        });
+        vi.mocked(seminarsApi.get).mockResolvedValue({ data: seminar });
+
+        render(<SeminarDetails />);
+
+        expect(
+            await screen.findByText(/Sobre a dissertação/i),
+        ).toBeInTheDocument();
+        expect(
+            screen.getByText(/Inscreva-se nesta dissertação/i),
+        ).toBeInTheDocument();
+    });
+
+    it('uses masculine articles for a Seminário (active)', async () => {
+        const seminarType = createSeminarType({
+            name: 'Seminário',
+            name_plural: 'Seminários',
+            gender: 'masculine',
+        });
+        const seminar = createSeminar({
+            name: 'Apresentação Padrão',
+            description: 'Resumo do seminário',
+            isExpired: false,
+            seminarType,
+        });
+        vi.mocked(seminarsApi.get).mockResolvedValue({ data: seminar });
+
+        render(<SeminarDetails />);
+
+        expect(
+            await screen.findByText(/Sobre o seminário/i),
+        ).toBeInTheDocument();
+        expect(
+            screen.getByText(/Inscreva-se neste seminário/i),
+        ).toBeInTheDocument();
+    });
+
+    it('uses feminine past participle when feminine type is expired', async () => {
+        const seminarType = createSeminarType({
+            name: 'Dissertação',
+            name_plural: 'Dissertações',
+            gender: 'feminine',
+        });
+        const seminar = createSeminar({
+            name: 'Defesa Antiga',
+            description: 'Resumo',
+            isExpired: true,
+            seminarType,
+        });
+        vi.mocked(seminarsApi.get).mockResolvedValue({ data: seminar });
+
+        render(<SeminarDetails />);
+
+        expect(
+            await screen.findByText(/Esta dissertação já foi realizada/i),
+        ).toBeInTheDocument();
+    });
+
+    it('preserves acronym casing for inline type name (TCC)', async () => {
+        const seminarType = createSeminarType({
+            name: 'TCC',
+            name_plural: 'TCCs',
+            gender: 'masculine',
+        });
+        const seminar = createSeminar({
+            name: 'Defesa de TCC',
+            description: 'Resumo',
+            isExpired: false,
+            seminarType,
+        });
+        vi.mocked(seminarsApi.get).mockResolvedValue({ data: seminar });
+
+        render(<SeminarDetails />);
+
+        expect(await screen.findByText(/Sobre o TCC/)).toBeInTheDocument();
+        expect(screen.getByText(/Inscreva-se neste TCC/)).toBeInTheDocument();
     });
 
     it('calls unregisterMutation onError when unregister fails', async () => {
