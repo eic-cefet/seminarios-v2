@@ -5,6 +5,7 @@ namespace App\Mail;
 use App\Models\Seminar;
 use App\Models\User;
 use App\Services\IcsGenerationService;
+use App\Support\SeminarPluralDescriptor;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
@@ -30,9 +31,14 @@ class SeminarReminder extends Mailable implements ShouldQueue
     public function envelope(): Envelope
     {
         $count = $this->seminars->count();
-        $subject = $count === 1
-            ? 'Lembrete: Seminário amanhã!'
-            : "Lembrete: {$count} seminários amanhã!";
+
+        if ($count === 1) {
+            $seminar = $this->seminars->first();
+            $subject = "Lembrete: {$seminar->typeName()} amanhã!";
+        } else {
+            $desc = SeminarPluralDescriptor::for($this->seminars);
+            $subject = "Lembrete: {$count} {$desc->noun} amanhã!";
+        }
 
         return new Envelope(
             subject: $subject.' - '.config('mail.name'),
@@ -51,11 +57,18 @@ class SeminarReminder extends Mailable implements ShouldQueue
 
     public function content(): Content
     {
+        $count = $this->seminars->count();
+        $desc = SeminarPluralDescriptor::for($this->seminars);
+        $singleSeminar = $count === 1 ? $this->seminars->first() : null;
+
         return new Content(
             markdown: 'emails.seminar-reminder',
             with: [
                 'userName' => $this->user->name,
                 'seminars' => $this->seminars,
+                'count' => $count,
+                'singleSeminar' => $singleSeminar,
+                'collectionDescriptor' => $desc,
             ],
         );
     }

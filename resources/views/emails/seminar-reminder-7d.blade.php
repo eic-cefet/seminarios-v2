@@ -1,12 +1,16 @@
 <x-mail::message>
-# Lembrete de Seminário{{ $seminars->count() > 1 ? 's' : '' }}
+@if($count === 1)
+# Lembrete de {{ $singleSeminar->typeName() }}
+@else
+# Lembrete de {{ Str::ucfirst($collectionDescriptor->noun) }}
+@endif
 
 Olá, **{{ $userName }}**!
 
-@if($seminars->count() === 1)
-Não esqueça! Você está inscrito no seminário que acontecerá **na próxima semana**:
+@if($count === 1)
+Não esqueça! Você está inscrito {{ $singleSeminar->ifMasculine('no', 'na') }} {{ $singleSeminar->inlineName() }} que acontecerá **na próxima semana**:
 @else
-Não esqueça! Você está inscrito nos seminários que acontecerão **na próxima semana**:
+Não esqueça! Você está inscrito {{ $collectionDescriptor->ifMasculine('nos', 'nas') }} {{ $collectionDescriptor->noun }} que acontecerão **na próxima semana**:
 @endif
 
 @foreach($seminars as $seminar)
@@ -26,9 +30,9 @@ Não esqueça! Você está inscrito nos seminários que acontecerão **na próxi
 </x-mail::panel>
 @endforeach
 
-@if($seminars->count() === 1)
-<x-mail::button :url="url('/seminario/' . $seminars->first()->slug)">
-Ver Detalhes do Seminário
+@if($count === 1)
+<x-mail::button :url="url('/seminario/' . $singleSeminar->slug)">
+Ver Detalhes {{ $singleSeminar->ifMasculine('do', 'da') }} {{ $singleSeminar->typeName() }}
 </x-mail::button>
 @else
 <x-mail::button :url="url('/perfil')">

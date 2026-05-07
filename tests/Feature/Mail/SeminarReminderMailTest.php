@@ -3,12 +3,13 @@
 use App\Mail\SeminarReminder;
 use App\Models\Seminar;
 use App\Models\SeminarLocation;
+use App\Models\SeminarType;
 use App\Models\User;
 
 describe('SeminarReminder Mail', function () {
     it('has singular subject for one seminar', function () {
         $user = User::factory()->create();
-        $seminar = Seminar::factory()->create();
+        $seminar = Seminar::factory()->create(['seminar_type_id' => null]);
 
         $mail = new SeminarReminder($user, collect([$seminar]));
         $envelope = $mail->envelope();
@@ -18,12 +19,12 @@ describe('SeminarReminder Mail', function () {
 
     it('has plural subject for multiple seminars', function () {
         $user = User::factory()->create();
-        $seminars = Seminar::factory()->count(3)->create();
+        $seminars = Seminar::factory()->count(3)->create(['seminar_type_id' => null]);
 
         $mail = new SeminarReminder($user, $seminars);
         $envelope = $mail->envelope();
 
-        expect($envelope->subject)->toBe('Lembrete: 3 seminários amanhã! - '.config('mail.name'));
+        expect($envelope->subject)->toBe('Lembrete: 3 apresentações amanhã! - '.config('mail.name'));
     });
 
     it('uses markdown template', function () {
@@ -176,6 +177,103 @@ describe('SeminarReminder Mail', function () {
         $mail = new SeminarReminder($user, collect([$seminar]));
 
         expect($mail->user->id)->toBe($user->id);
+    });
+
+    it('subject uses {Type} for a single seminar', function () {
+        $type = SeminarType::factory()->feminine()->create([
+            'name' => 'Dissertação',
+            'name_plural' => 'Dissertações',
+        ]);
+        $seminar = Seminar::factory()->for($type, 'seminarType')->create(['name' => 'X']);
+        $user = User::factory()->create();
+
+        $mail = new SeminarReminder($user, collect([$seminar]));
+
+        expect($mail->envelope()->subject)->toBe('Lembrete: Dissertação amanhã! - '.config('mail.name'));
+    });
+
+    it('subject uses single-type plural when all seminars share one type', function () {
+        $type = SeminarType::factory()->feminine()->create([
+            'name' => 'Dissertação',
+            'name_plural' => 'Dissertações',
+        ]);
+        $seminars = Seminar::factory()->count(3)->for($type, 'seminarType')->create();
+        $user = User::factory()->create();
+
+        $mail = new SeminarReminder($user, $seminars);
+
+        expect($mail->envelope()->subject)->toBe('Lembrete: 3 dissertações amanhã! - '.config('mail.name'));
+    });
+
+    it('subject falls back to "apresentações" for mixed types', function () {
+        $masc = SeminarType::factory()->masculine()->create([
+            'name' => 'Seminário',
+            'name_plural' => 'Seminários',
+        ]);
+        $fem = SeminarType::factory()->feminine()->create([
+            'name' => 'Dissertação',
+            'name_plural' => 'Dissertações',
+        ]);
+        $seminars = collect([
+            Seminar::factory()->for($masc, 'seminarType')->create(),
+            Seminar::factory()->for($fem, 'seminarType')->create(),
+        ])->each->load('seminarType');
+        $user = User::factory()->create();
+
+        $mail = new SeminarReminder($user, $seminars);
+
+        expect($mail->envelope()->subject)->toBe('Lembrete: 2 apresentações amanhã! - '.config('mail.name'));
+    });
+
+    it('singular body uses the seminar type article and noun', function () {
+        $type = SeminarType::factory()->feminine()->create([
+            'name' => 'Dissertação',
+            'name_plural' => 'Dissertações',
+        ]);
+        $seminar = Seminar::factory()->for($type, 'seminarType')->create();
+        $user = User::factory()->create();
+
+        $rendered = (new SeminarReminder($user, collect([$seminar])))->render();
+
+        expect($rendered)
+            ->toContain('Lembrete de Dissertação')
+            ->toContain('Você está inscrito na dissertação que acontecerá')
+            ->toContain('Ver Detalhes da Dissertação');
+    });
+
+    it('plural body for mixed types uses "apresentações" with feminine articles', function () {
+        $masc = SeminarType::factory()->masculine()->create([
+            'name' => 'Seminário',
+            'name_plural' => 'Seminários',
+        ]);
+        $fem = SeminarType::factory()->feminine()->create([
+            'name' => 'Dissertação',
+            'name_plural' => 'Dissertações',
+        ]);
+        $seminars = collect([
+            Seminar::factory()->for($masc, 'seminarType')->create(),
+            Seminar::factory()->for($fem, 'seminarType')->create(),
+        ])->each->load('seminarType');
+        $user = User::factory()->create();
+
+        $rendered = (new SeminarReminder($user, $seminars))->render();
+
+        expect($rendered)
+            ->toContain('Lembrete de Apresentações')
+            ->toContain('Você está inscrito nas apresentações que acontecerão');
+    });
+
+    it('plural body for single shared type uses that type plural', function () {
+        $type = SeminarType::factory()->feminine()->create([
+            'name' => 'Dissertação',
+            'name_plural' => 'Dissertações',
+        ]);
+        $seminars = Seminar::factory()->count(2)->for($type, 'seminarType')->create();
+        $user = User::factory()->create();
+
+        $rendered = (new SeminarReminder($user, $seminars))->render();
+
+        expect($rendered)->toContain('Você está inscrito nas dissertações que acontecerão');
     });
 
 });
