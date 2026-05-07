@@ -43,6 +43,13 @@ class SeminarPluralDescriptor
         if ($types->count() === 1) {
             $type = $types->first();
 
+            // Fall back to the generic "apresentações" if the type has no plural
+            // form set — pluralizing a singular noun via prefix ("3 minicurso")
+            // is grammatically wrong in Portuguese.
+            if ($type->name_plural === null) {
+                return self::generic();
+            }
+
             return new self(
                 noun: $type->inlinePlural(),
                 gender: $type->gender,

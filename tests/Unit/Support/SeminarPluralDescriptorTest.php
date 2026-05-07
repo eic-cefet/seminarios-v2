@@ -76,3 +76,16 @@ it('exposes ifMasculine using the descriptor gender', function () {
     expect($desc->ifMasculine('nos', 'nas'))->toBe('nos');
     expect($desc->noun)->toBe('painéis');
 });
+
+it('falls back to "apresentações" when the single shared type has no name_plural', function () {
+    $type = SeminarType::factory()->masculine()->create([
+        'name' => 'Minicurso',
+        'name_plural' => null,
+    ]);
+    $seminars = Seminar::factory()->count(3)->for($type, 'seminarType')->create();
+
+    $desc = SeminarPluralDescriptor::for($seminars->load('seminarType'));
+
+    expect($desc->noun)->toBe('apresentações');
+    expect($desc->gender)->toBe(Gender::Feminine);
+});
