@@ -14,6 +14,7 @@ use App\Models\Seminar;
 use App\Models\User;
 use App\Notifications\ResetPassword;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Storage;
 
 describe('MessageSent audit listener', function () {
     beforeEach(function () {
@@ -25,10 +26,14 @@ describe('MessageSent audit listener', function () {
     });
 
     it('records one audit entry per successful send', function () {
+        Storage::fake('s3');
+
         $user = User::factory()->create();
         $registration = Registration::factory()->for($user)->create();
+        $pdfPath = 'certificates/audit-test.pdf';
+        Storage::disk('s3')->put($pdfPath, '%PDF-1.4 fake');
 
-        Mail::to($user)->send(new CertificateGenerated($registration, 'pdf'));
+        Mail::to($user)->send(new CertificateGenerated($registration, $pdfPath));
 
         $logs = AuditLog::forEvent(AuditEvent::EmailSent)->get();
         expect($logs)->toHaveCount(1);
