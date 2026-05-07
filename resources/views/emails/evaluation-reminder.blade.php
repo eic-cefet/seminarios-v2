@@ -3,10 +3,10 @@
 
 Olá, **{{ $userName }}**!
 
-@if($seminars->count() === 1)
-Você participou do seminário abaixo e gostaríamos de saber sua opinião:
+@if($count === 1)
+Você participou {{ $singleSeminar->ifMasculine('do', 'da') }} {{ $singleSeminar->inlineName() }} abaixo e gostaríamos de saber sua opinião:
 @else
-Você participou dos seminários abaixo e gostaríamos de saber sua opinião:
+Você participou {{ $collectionDescriptor->ifMasculine('dos', 'das') }} {{ $collectionDescriptor->noun }} abaixo e gostaríamos de saber sua opinião:
 @endif
 
 @foreach($seminars as $seminar)
@@ -25,10 +25,18 @@ Você participou dos seminários abaixo e gostaríamos de saber sua opinião:
 Sua avaliação nos ajuda a melhorar a qualidade dos nossos eventos. A avaliação leva menos de 1 minuto.
 
 <x-mail::button :url="$evaluationUrl">
-Avaliar Seminário{{ $seminars->count() > 1 ? 's' : '' }}
+@if($count === 1)
+Avaliar {{ $singleSeminar->typeName() }}
+@else
+Avaliar {{ Str::ucfirst($collectionDescriptor->noun) }}
+@endif
 </x-mail::button>
 
-Você tem até 30 dias após a realização do seminário para enviar sua avaliação.
+@if($count === 1)
+Você tem até 30 dias após a realização {{ $singleSeminar->ifMasculine('do', 'da') }} {{ $singleSeminar->inlineName() }} para enviar sua avaliação.
+@else
+Você tem até 30 dias após a realização {{ $collectionDescriptor->ifMasculine('dos', 'das') }} {{ $collectionDescriptor->noun }} para enviar sua avaliação.
+@endif
 
 Atenciosamente,<br>
 {{ config('mail.team_name') }}

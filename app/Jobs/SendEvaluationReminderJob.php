@@ -37,7 +37,7 @@ class SendEvaluationReminderJob implements ShouldQueue
         $gate ??= app(CommunicationGate::class);
 
         $registrations = Registration::whereIn('id', $this->registrationIds)
-            ->with(['seminar.seminarLocation'])
+            ->with(['seminar.seminarLocation', 'seminar.seminarType'])
             ->get();
 
         if ($registrations->isEmpty()) {

@@ -4,6 +4,7 @@ namespace App\Mail;
 
 use App\Models\Seminar;
 use App\Models\User;
+use App\Support\SeminarPluralDescriptor;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
@@ -28,9 +29,17 @@ class EvaluationReminder extends Mailable implements ShouldQueue
     public function envelope(): Envelope
     {
         $count = $this->seminars->count();
-        $subject = $count === 1
-            ? 'Avalie o seminário que você participou'
-            : "Avalie os {$count} seminários que você participou";
+
+        if ($count === 1) {
+            $seminar = $this->seminars->first();
+            $article = $seminar->ifMasculine('o', 'a');
+            $noun = $seminar->inlineName();
+            $subject = "Avalie {$article} {$noun} que você participou";
+        } else {
+            $desc = SeminarPluralDescriptor::for($this->seminars);
+            $articlePlural = $desc->ifMasculine('os', 'as');
+            $subject = "Avalie {$articlePlural} {$count} {$desc->noun} que você participou";
+        }
 
         return new Envelope(
             subject: $subject.' - '.config('mail.name'),
@@ -49,11 +58,18 @@ class EvaluationReminder extends Mailable implements ShouldQueue
 
     public function content(): Content
     {
+        $count = $this->seminars->count();
+        $desc = $count === 1 ? null : SeminarPluralDescriptor::for($this->seminars);
+        $singleSeminar = $count === 1 ? $this->seminars->first() : null;
+
         return new Content(
             markdown: 'emails.evaluation-reminder',
             with: [
                 'userName' => $this->user->name,
                 'seminars' => $this->seminars,
+                'count' => $count,
+                'singleSeminar' => $singleSeminar,
+                'collectionDescriptor' => $desc,
                 'evaluationUrl' => url('/avaliar'),
             ],
         );
