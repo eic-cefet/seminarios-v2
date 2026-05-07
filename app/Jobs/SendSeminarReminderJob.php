@@ -43,7 +43,7 @@ class SendSeminarReminderJob implements ShouldQueue
         }
 
         $registrations = Registration::whereIn('id', $this->registrationIds)
-            ->with(['seminar.seminarLocation'])
+            ->with(['seminar.seminarLocation', 'seminar.seminarType'])
             ->get();
 
         if ($registrations->isEmpty()) {

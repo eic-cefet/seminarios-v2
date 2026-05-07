@@ -92,6 +92,30 @@ describe('SendSeminarReminderJob', function () {
         expect($registration2->fresh()->reminder_sent)->toBeTrue();
     });
 
+    it('eager-loads seminarType on seminars passed to the mailable to avoid N+1', function () {
+        Mail::fake();
+
+        $user = User::factory()->create();
+        $seminar1 = Seminar::factory()->create(['scheduled_at' => now()->addDay()]);
+        $seminar2 = Seminar::factory()->create(['scheduled_at' => now()->addDay()]);
+        $registration1 = Registration::factory()->create([
+            'user_id' => $user->id,
+            'seminar_id' => $seminar1->id,
+            'reminder_sent' => false,
+        ]);
+        $registration2 = Registration::factory()->create([
+            'user_id' => $user->id,
+            'seminar_id' => $seminar2->id,
+            'reminder_sent' => false,
+        ]);
+
+        (new SendSeminarReminderJob($user, collect([$registration1->id, $registration2->id])))->handle();
+
+        Mail::assertQueued(SeminarReminder::class, function ($mail) {
+            return $mail->seminars->every(fn ($seminar) => $seminar->relationLoaded('seminarType'));
+        });
+    });
+
     it('queues SeminarReminder7d and marks reminder_7d_sent when category=7d', function () {
         Mail::fake();
         $user = User::factory()->create();

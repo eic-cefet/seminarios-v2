@@ -86,7 +86,7 @@ class SendSeminarRemindersCommand extends Command
                 $q->whereDoesntHave('user.alertPreference')
                     ->orWhereHas('user.alertPreference', fn ($q2) => $q2->where($prefColumn, true));
             })
-            ->with(['user', 'seminar.seminarLocation'])
+            ->with(['user', 'seminar.seminarLocation', 'seminar.seminarType'])
             ->get();
 
         if ($registrations->isEmpty()) {
