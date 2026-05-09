@@ -18,6 +18,20 @@ it('renders subject, addressee and seminar info', function () {
     $mailable->assertHasSubject('Inscrição confirmada: IA na Prática - '.config('mail.name'));
 });
 
+it('uses gender-neutral feminine "apresentação" in body', function () {
+    $user = User::factory()->create(['name' => 'Ana']);
+    $seminar = Seminar::factory()->create(['name' => 'IA na Prática']);
+
+    $mailable = new SeminarRegistrationConfirmation($user, $seminar);
+
+    $mailable->assertSeeInHtml('Sua inscrição na apresentação abaixo foi confirmada');
+    $mailable->assertSeeInHtml('Ver detalhes da apresentação');
+    $mailable->assertSeeInHtml('cancele sua inscrição na página da apresentação');
+    $mailable->assertDontSeeInHtml('inscrição no seminário');
+    $mailable->assertDontSeeInHtml('Ver detalhes do seminário');
+    $mailable->assertDontSeeInHtml('página do seminário');
+});
+
 it('skips ICS attachment when scheduled_at is null', function () {
     $user = User::factory()->create();
     $seminar = new Seminar(['name' => 'Sem data', 'slug' => 'sem-data']);
