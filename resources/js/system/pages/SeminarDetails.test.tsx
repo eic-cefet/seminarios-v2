@@ -81,7 +81,7 @@ describe('SeminarDetails', () => {
         render(<SeminarDetails />);
 
         await waitFor(() => {
-            expect(screen.getByRole('heading', { name: /seminário não encontrado/i })).toBeInTheDocument();
+            expect(screen.getByRole('heading', { name: /apresentação não encontrada/i })).toBeInTheDocument();
         });
     });
 
@@ -102,7 +102,7 @@ describe('SeminarDetails', () => {
         render(<SeminarDetails />);
 
         // The loading state shows pulse animations but no heading
-        expect(screen.queryByRole('heading', { name: /seminário não encontrado/i })).not.toBeInTheDocument();
+        expect(screen.queryByRole('heading', { name: /apresentação não encontrada/i })).not.toBeInTheDocument();
     });
 
     it('shows register button for unauthenticated user with non-expired seminar', async () => {
@@ -157,7 +157,7 @@ describe('SeminarDetails', () => {
         render(<SeminarDetails />);
 
         await waitFor(() => {
-            expect(screen.getByText(/este seminário já foi realizado/i)).toBeInTheDocument();
+            expect(screen.getByText(/esta apresentação já foi realizada/i)).toBeInTheDocument();
         });
     });
 
@@ -281,7 +281,7 @@ describe('SeminarDetails', () => {
         render(<SeminarDetails />);
 
         await waitFor(() => {
-            expect(screen.getByText(/inscreva-se neste seminário/i)).toBeInTheDocument();
+            expect(screen.getByText(/inscreva-se nesta apresentação/i)).toBeInTheDocument();
         });
     });
 
@@ -414,7 +414,7 @@ describe('SeminarDetails', () => {
         render(<SeminarDetails />);
 
         await waitFor(() => {
-            expect(screen.getByText(/sobre o seminário/i)).toBeInTheDocument();
+            expect(screen.getByText(/sobre a apresentação/i)).toBeInTheDocument();
         });
     });
 

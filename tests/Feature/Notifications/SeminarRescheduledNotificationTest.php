@@ -23,3 +23,13 @@ it('records a notification with seminar context', function () {
             && str_contains($data['body'], $seminar->name);
     });
 });
+
+it('uses gender-neutral feminine title and body', function () {
+    $seminar = Seminar::factory()->create(['name' => 'Quantum Computing']);
+    $notification = new SeminarRescheduledNotification($seminar, previousStartsAt: '2026-05-05 14:00:00');
+
+    $data = $notification->toDatabase(User::factory()->make());
+
+    expect($data['title'])->toBe('Apresentação reagendada');
+    expect($data['body'])->toBe('"Quantum Computing" foi reagendada. Confira a nova data.');
+});

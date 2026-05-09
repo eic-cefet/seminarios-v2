@@ -165,13 +165,14 @@ class CertificateService
             $font->align('center');
         });
 
-        // Seminary date and type
+        // Presentation date — uses the gender-neutral "à apresentação" so that
+        // any feminine seminar type (e.g. "Dissertação") agrees grammatically
+        // without needing per-type article selection. The seminar's name is
+        // rendered on the next line and continues to identify the work.
         $date = $registration->seminar->scheduled_at->format('d/m/Y').' às '.$registration->seminar->scheduled_at->format('H:i');
-        $typeName = $registration->seminar->seminarType?->name ?? 'Seminário';
-        $typeDisplay = $typeName === mb_strtoupper($typeName) ? $typeName : mb_strtolower($typeName);
 
         $certificate->text(
-            "Compareceu, no dia {$date}, ao {$typeDisplay}",
+            "Compareceu, no dia {$date}, à apresentação",
             $centerW,
             $positions['seminary_date'],
             function (FontFactory $font) use ($cp) {

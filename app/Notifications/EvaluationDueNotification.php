@@ -20,7 +20,7 @@ class EvaluationDueNotification extends InAppNotification
 
     protected function body(): string
     {
-        return "Avalie o seminário \"{$this->seminar->name}\".";
+        return "Avalie a apresentação \"{$this->seminar->name}\".";
     }
 
     protected function actionUrl(): ?string

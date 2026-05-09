@@ -31,8 +31,8 @@ class SeminarReminder7d extends Mailable implements ShouldQueue
     {
         $count = $this->seminars->count();
         $subject = $count === 1
-            ? 'Lembrete: Seminário na próxima semana!'
-            : "Lembrete: {$count} seminários na próxima semana!";
+            ? 'Lembrete: Apresentação na próxima semana!'
+            : "Lembrete: {$count} apresentações na próxima semana!";
 
         return new Envelope(
             subject: $subject.' - '.config('mail.name'),

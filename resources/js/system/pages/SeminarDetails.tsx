@@ -158,7 +158,7 @@ export default function SeminarDetails() {
             <>
                 <PageTitle title="Carregando..." />
                 <Layout>
-                    <LoadingRegion label="Carregando detalhes do seminário">
+                    <LoadingRegion label="Carregando detalhes da apresentação">
                         <div className="bg-white border-b border-gray-200">
                             <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
                                 <Skeleton className="mb-4 h-4 w-32 rounded" />
@@ -178,16 +178,16 @@ export default function SeminarDetails() {
     if (error || !seminar) {
         return (
             <>
-                <PageTitle title="Seminário não encontrado" />
+                <PageTitle title="Apresentação não encontrada" />
                 <Layout>
                     <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 text-center">
                         <Calendar className="mx-auto h-12 w-12 text-gray-400" />
                         <h1 className="mt-4 text-2xl font-bold text-gray-900">
-                            Seminário não encontrado
+                            Apresentação não encontrada
                         </h1>
                         <p className="mt-2 text-gray-500">
-                            O seminário que você está procurando não existe ou
-                            foi removido.
+                            A apresentação que você está procurando não existe
+                            ou foi removida.
                         </p>
                         <Link
                             to={ROUTES.SYSTEM.PRESENTATIONS}
@@ -286,7 +286,7 @@ export default function SeminarDetails() {
                             {seminar.description && (
                                 <section>
                                     <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                                        Sobre o seminário
+                                        Sobre a apresentação
                                     </h2>
                                     {containsHTML(seminar.description) ? (
                                         <div
@@ -429,7 +429,7 @@ export default function SeminarDetails() {
                                     ) : (
                                         <>
                                             <h3 className="font-semibold text-gray-900 mb-4">
-                                                Inscreva-se neste seminário
+                                                Inscreva-se nesta apresentação
                                             </h3>
                                             {registrationError && (
                                                 <div className="mb-4 rounded-md bg-red-50 p-3 text-sm text-red-700">
@@ -452,10 +452,10 @@ export default function SeminarDetails() {
                                 ) : (
                                     <>
                                         <h3 className="font-semibold text-gray-500 mb-2">
-                                            Este seminário já foi realizado
+                                            Esta apresentação já foi realizada
                                         </h3>
                                         <p className="text-sm text-gray-600">
-                                            Confira outros seminários
+                                            Confira outras apresentações
                                             disponíveis
                                         </p>
                                     </>

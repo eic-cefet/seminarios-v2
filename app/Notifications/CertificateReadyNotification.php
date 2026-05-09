@@ -23,7 +23,7 @@ class CertificateReadyNotification extends InAppNotification
 
     protected function body(): string
     {
-        return "O certificado do seminário \"{$this->seminar->name}\" já está disponível.";
+        return "O certificado da apresentação \"{$this->seminar->name}\" já está disponível.";
     }
 
     protected function actionUrl(): ?string

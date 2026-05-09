@@ -18,12 +18,12 @@ class SeminarRescheduledNotification extends InAppNotification
 
     protected function title(): string
     {
-        return 'Seminário reagendado';
+        return 'Apresentação reagendada';
     }
 
     protected function body(): string
     {
-        return "\"{$this->seminar->name}\" foi reagendado. Confira a nova data.";
+        return "\"{$this->seminar->name}\" foi reagendada. Confira a nova data.";
     }
 
     protected function actionUrl(): ?string

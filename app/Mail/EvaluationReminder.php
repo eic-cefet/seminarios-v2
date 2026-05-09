@@ -29,8 +29,8 @@ class EvaluationReminder extends Mailable implements ShouldQueue
     {
         $count = $this->seminars->count();
         $subject = $count === 1
-            ? 'Avalie o seminário que você participou'
-            : "Avalie os {$count} seminários que você participou";
+            ? 'Avalie a apresentação que você participou'
+            : "Avalie as {$count} apresentações que você participou";
 
         return new Envelope(
             subject: $subject.' - '.config('mail.name'),
