@@ -25,6 +25,6 @@ class EvaluationDueNotification extends InAppNotification
 
     protected function actionUrl(): ?string
     {
-        return "/seminario/{$this->seminar->slug}/avaliar";
+        return '/avaliar';
     }
 }
