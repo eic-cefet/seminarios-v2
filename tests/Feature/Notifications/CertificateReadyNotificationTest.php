@@ -21,3 +21,12 @@ it('records a database notification with seminar context and certificate URL', f
             && $data['action_url'] === '/profile/certificates/42';
     });
 });
+
+it('uses gender-neutral feminine "apresentação" in body', function () {
+    $seminar = Seminar::factory()->create(['name' => 'AI in Education']);
+    $notification = new CertificateReadyNotification($seminar, '/profile/certificates/42');
+
+    $data = $notification->toDatabase(User::factory()->make());
+
+    expect($data['body'])->toBe('O certificado da apresentação "AI in Education" já está disponível.');
+});
