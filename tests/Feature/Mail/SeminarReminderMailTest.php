@@ -13,7 +13,7 @@ describe('SeminarReminder Mail', function () {
         $mail = new SeminarReminder($user, collect([$seminar]));
         $envelope = $mail->envelope();
 
-        expect($envelope->subject)->toBe('Lembrete: Seminário amanhã! - '.config('mail.name'));
+        expect($envelope->subject)->toBe('Lembrete: Apresentação amanhã! - '.config('mail.name'));
     });
 
     it('has plural subject for multiple seminars', function () {
@@ -23,7 +23,35 @@ describe('SeminarReminder Mail', function () {
         $mail = new SeminarReminder($user, $seminars);
         $envelope = $mail->envelope();
 
-        expect($envelope->subject)->toBe('Lembrete: 3 seminários amanhã! - '.config('mail.name'));
+        expect($envelope->subject)->toBe('Lembrete: 3 apresentações amanhã! - '.config('mail.name'));
+    });
+
+    it('uses gender-neutral feminine "apresentação" in singular body', function () {
+        $user = User::factory()->create(['name' => 'Lia']);
+        $seminar = Seminar::factory()->create(['name' => 'AI Workshop']);
+
+        $rendered = (new SeminarReminder($user, collect([$seminar])))->render();
+
+        expect($rendered)
+            ->toContain('Lembrete de Apresentação')
+            ->toContain('Não esqueça! Você está inscrito na apresentação que acontecerá')
+            ->toContain('Ver Detalhes da Apresentação')
+            ->not->toContain('Lembrete de Seminário')
+            ->not->toContain('inscrito no seminário')
+            ->not->toContain('Detalhes do Seminário');
+    });
+
+    it('uses feminine plural "apresentações" in plural body', function () {
+        $user = User::factory()->create(['name' => 'Lia']);
+        $seminars = Seminar::factory()->count(2)->create();
+
+        $rendered = (new SeminarReminder($user, $seminars))->render();
+
+        expect($rendered)
+            ->toContain('Lembrete de Apresentações')
+            ->toContain('Não esqueça! Você está inscrito nas apresentações que acontecerão')
+            ->not->toContain('Lembrete de Seminários')
+            ->not->toContain('inscrito nos seminários');
     });
 
     it('uses markdown template', function () {
