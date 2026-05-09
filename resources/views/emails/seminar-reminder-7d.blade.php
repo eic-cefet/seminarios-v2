@@ -1,12 +1,12 @@
 <x-mail::message>
-# Lembrete de Seminário{{ $seminars->count() > 1 ? 's' : '' }}
+# {{ $seminars->count() > 1 ? 'Lembrete de Apresentações' : 'Lembrete de Apresentação' }}
 
 Olá, **{{ $userName }}**!
 
 @if($seminars->count() === 1)
-Não esqueça! Você está inscrito no seminário que acontecerá **na próxima semana**:
+Não esqueça! Você está inscrito na apresentação que acontecerá **na próxima semana**:
 @else
-Não esqueça! Você está inscrito nos seminários que acontecerão **na próxima semana**:
+Não esqueça! Você está inscrito nas apresentações que acontecerão **na próxima semana**:
 @endif
 
 @foreach($seminars as $seminar)
@@ -28,7 +28,7 @@ Não esqueça! Você está inscrito nos seminários que acontecerão **na próxi
 
 @if($seminars->count() === 1)
 <x-mail::button :url="url('/seminario/' . $seminars->first()->slug)">
-Ver Detalhes do Seminário
+Ver Detalhes da Apresentação
 </x-mail::button>
 @else
 <x-mail::button :url="url('/perfil')">
