@@ -13,10 +13,10 @@ it('records a notification pointing at the evaluation route', function () {
 
     $user->notify(new EvaluationDueNotification($seminar));
 
-    Notification::assertSentTo($user, EvaluationDueNotification::class, function ($notification) use ($seminar) {
+    Notification::assertSentTo($user, EvaluationDueNotification::class, function ($notification) {
         $data = $notification->toDatabase(User::factory()->make());
 
         return $data['category'] === 'evaluation_due'
-            && str_contains($data['action_url'], $seminar->slug);
+            && $data['action_url'] === '/avaliar';
     });
 });
