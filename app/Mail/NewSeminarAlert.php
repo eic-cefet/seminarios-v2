@@ -24,7 +24,7 @@ class NewSeminarAlert extends Mailable implements ShouldQueue
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Novo seminário: '.$this->seminar->name.' - '.config('mail.name'),
+            subject: 'Nova apresentação: '.$this->seminar->name.' - '.config('mail.name'),
         );
     }
 

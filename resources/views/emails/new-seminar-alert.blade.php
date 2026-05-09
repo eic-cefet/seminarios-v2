@@ -1,9 +1,9 @@
 <x-mail::message>
-# Novo Seminário Disponível
+# Nova Apresentação Disponível
 
 Olá, **{{ $userName }}**!
 
-Um novo seminário combina com suas preferências de alerta.
+Uma nova apresentação combina com suas preferências de alerta.
 
 <x-mail::panel>
 **{{ $seminar->name }}**
@@ -22,10 +22,10 @@ Um novo seminário combina com suas preferências de alerta.
 @endif
 
 <x-mail::button :url="url('/seminario/' . $seminar->slug)">
-Ver Detalhes do Seminário
+Ver Detalhes da Apresentação
 </x-mail::button>
 
-Você está recebendo este e-mail porque ativou os alertas de novos seminários. Para alterar ou desativar, acesse suas preferências.
+Você está recebendo este e-mail porque ativou os alertas de novas apresentações. Para alterar ou desativar, acesse suas preferências.
 
 Atenciosamente,<br>
 {{ config('mail.team_name') }}
