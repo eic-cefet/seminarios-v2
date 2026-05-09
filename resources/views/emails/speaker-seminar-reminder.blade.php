@@ -3,7 +3,7 @@
 
 Olá, **{{ $speakerName }}**!
 
-Lembre-se: amanhã você está apresentando o seminário abaixo.
+Lembre-se: amanhã você fará a apresentação abaixo.
 
 <x-mail::panel>
 **{{ $seminar->name }}**
