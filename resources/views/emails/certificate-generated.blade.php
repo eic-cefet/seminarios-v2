@@ -3,7 +3,7 @@
 
 Olá, **{{ $userName }}**!
 
-Parabéns por sua participação no seminário **"{{ $seminarName }}"**, realizado em {{ $seminarDate }}.
+Parabéns por sua participação na apresentação **"{{ $seminarName }}"**, realizada em {{ $seminarDate }}.
 
 Seu certificado de participação foi gerado com sucesso e está anexado a este e-mail em formato PDF.
 

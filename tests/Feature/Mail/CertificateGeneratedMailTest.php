@@ -65,6 +65,25 @@ describe('CertificateGenerated Mail', function () {
         expect($content->with['seminarName'])->toBe('Web Development Workshop');
     });
 
+    it('uses gender-neutral feminine "apresentação" in body', function () {
+        Storage::fake('s3');
+        Storage::disk('s3')->put('certs/body-test.pdf', '%PDF-1.4 stub');
+
+        $seminar = Seminar::factory()->create(['name' => 'Web Workshop', 'scheduled_at' => '2024-06-15 14:00:00']);
+        $registration = Registration::factory()->create([
+            'seminar_id' => $seminar->id,
+            'certificate_code' => 'BODY-TEST',
+        ]);
+
+        $rendered = (new CertificateGenerated($registration, 'certs/body-test.pdf'))->render();
+
+        expect($rendered)
+            ->toContain('Parabéns por sua participação na apresentação')
+            ->toContain('realizada em 15/06/2024')
+            ->not->toContain('participação no seminário')
+            ->not->toContain('realizado em');
+    });
+
     it('passes formatted seminar date to template', function () {
         $seminar = Seminar::factory()->create([
             'scheduled_at' => '2024-06-15 14:00:00',
