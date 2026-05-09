@@ -287,6 +287,29 @@ describe('CertificateService JPG generation', function () {
     });
 });
 
+describe('CertificateService rendered text', function () {
+    it('does not access seminarType when rendering JPG (gender-neutral copy)', function () {
+        $seminar = Seminar::factory()->create([
+            'scheduled_at' => '2024-06-15 14:00:00',
+            'name' => 'Dissertação X',
+        ]);
+        // Force seminarType relation to null so any access would trip a property access on null
+        $seminar->setRelation('seminarType', null);
+
+        $registration = Registration::factory()->create([
+            'seminar_id' => $seminar->id,
+            'certificate_code' => 'no-type-cert',
+        ]);
+        // Re-bind the seminar with null seminarType onto the freshly fetched registration
+        $registration->setRelation('seminar', $seminar);
+
+        $service = new CertificateService;
+        $path = $service->generateJpg($registration);
+
+        Storage::disk('s3')->assertExists($path);
+    });
+});
+
 describe('CertificateService PDF generation', function () {
     it('generates PDF certificate and uploads to S3', function () {
         $registration = Registration::factory()->create([
