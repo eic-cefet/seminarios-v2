@@ -26,7 +26,7 @@ class SeminarRescheduled extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Seminário reagendado: '.$this->seminar->name.' - '.config('mail.name'),
+            subject: 'Apresentação reagendada: '.$this->seminar->name.' - '.config('mail.name'),
         );
     }
 

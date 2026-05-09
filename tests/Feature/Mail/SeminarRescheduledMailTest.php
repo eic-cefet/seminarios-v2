@@ -14,7 +14,31 @@ describe('SeminarRescheduled Mail', function () {
         $mail = new SeminarRescheduled($user, $seminar, $oldDate);
         $envelope = $mail->envelope();
 
-        expect($envelope->subject)->toBe('Seminário reagendado: AI Workshop - '.config('mail.name'));
+        expect($envelope->subject)->toBe('Apresentação reagendada: AI Workshop - '.config('mail.name'));
+    });
+
+    it('uses gender-neutral feminine "apresentação" in subject and body', function () {
+        $user = User::factory()->create(['name' => 'Joana']);
+        $seminar = Seminar::factory()->create([
+            'name' => 'AI Workshop',
+            'scheduled_at' => now()->addDays(7),
+        ]);
+        $oldDate = now()->addDay();
+
+        $mail = new SeminarRescheduled($user, $seminar, $oldDate);
+
+        expect($mail->envelope()->subject)->toStartWith('Apresentação reagendada: AI Workshop');
+
+        $rendered = $mail->render();
+        expect($rendered)
+            ->toContain('Apresentação Reagendada')
+            ->toContain('A apresentação')
+            ->toContain('foi reagendada:')
+            ->toContain('Ver Detalhes da Apresentação')
+            ->not->toContain('Seminário Reagendado')
+            ->not->toContain('O seminário')
+            ->not->toContain('foi reagendado:')
+            ->not->toContain('Detalhes do Seminário');
     });
 
     it('uses markdown template', function () {

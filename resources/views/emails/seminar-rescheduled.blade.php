@@ -1,9 +1,9 @@
 <x-mail::message>
-# Seminário Reagendado
+# Apresentação Reagendada
 
 Olá, **{{ $userName }}**!
 
-O seminário **{{ $seminar->name }}** foi reagendado:
+A apresentação **{{ $seminar->name }}** foi reagendada:
 
 <x-mail::panel>
 **Data anterior:** <del>{{ $oldScheduledAt->format('d/m/Y') }} às {{ $oldScheduledAt->format('H:i') }}</del>
@@ -20,7 +20,7 @@ O seminário **{{ $seminar->name }}** foi reagendado:
 </x-mail::panel>
 
 <x-mail::button :url="url('/seminario/' . $seminar->slug)">
-Ver Detalhes do Seminário
+Ver Detalhes da Apresentação
 </x-mail::button>
 
 **Anexamos o arquivo .ics atualizado para você atualizar o evento no seu calendário.**
