@@ -64,7 +64,7 @@ describe('SubjectList', () => {
 
     it('renders the subtitle', () => {
         render(<SubjectList />);
-        expect(screen.getByText('Gerenciar tópicos dos seminários')).toBeInTheDocument();
+        expect(screen.getByText('Gerenciar tópicos das apresentações')).toBeInTheDocument();
     });
 
     it('renders the new topic button', () => {
@@ -859,7 +859,7 @@ describe('SubjectList', () => {
         render(<SubjectList />);
 
         await act(() => {
-            capturedSubDeleteOptions.onError(new Error('Este tópico possui seminários associado'));
+            capturedSubDeleteOptions.onError(new Error('Este tópico possui apresentações associadas'));
         });
 
         expect(screen.getByText('Tópicos')).toBeInTheDocument();
@@ -1256,7 +1256,7 @@ describe('SubjectList', () => {
         expect(screen.getByText('Null Count B (0)')).toBeInTheDocument();
 
         // totalSeminarsAffected should be 0 (null ?? 0 = 0 for both)
-        // The warning paragraph shows "afetando 0 seminários"
+        // The warning paragraph shows "afetando 0 apresentações"
         expect(screen.getByText(/afetando/)).toHaveTextContent('0');
     });
 
