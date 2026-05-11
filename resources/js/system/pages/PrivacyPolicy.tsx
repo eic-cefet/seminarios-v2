@@ -48,7 +48,7 @@ export default function PrivacyPolicy() {
                                     },
                                     {
                                         label: "Participação",
-                                        body: "inscrições em seminários, presença, certificados emitidos.",
+                                        body: "inscrições em apresentações, presença, certificados emitidos.",
                                     },
                                     {
                                         label: "Feedback",
@@ -78,7 +78,7 @@ export default function PrivacyPolicy() {
                                 items={[
                                     {
                                         label: "Execução de contrato (V)",
-                                        body: "gestão da conta, inscrição em seminários e emissão de certificados.",
+                                        body: "gestão da conta, inscrição em apresentações e emissão de certificados.",
                                     },
                                     {
                                         label: "Legítimo interesse (IX)",
@@ -198,7 +198,7 @@ export default function PrivacyPolicy() {
                                 items={[
                                     {
                                         label: "AWS S3 (Amazon Web Services)",
-                                        body: "armazenamento dos arquivos PDF/JPG dos certificados. Contêm seu nome, o nome do seminário e a data.",
+                                        body: "armazenamento dos arquivos PDF/JPG dos certificados. Contêm seu nome, o nome da apresentação e a data.",
                                     },
                                     {
                                         label: "OpenAI",
