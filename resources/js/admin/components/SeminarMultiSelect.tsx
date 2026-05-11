@@ -164,7 +164,7 @@ export function SeminarMultiSelect({
                         }
                         onFocus={() => setShowSuggestions(true)}
                         placeholder={
-                            value.length === 0 ? "Buscar seminários..." : ""
+                            value.length === 0 ? "Buscar apresentações..." : ""
                         }
                         className="flex-1 min-w-[150px] border-0 focus-visible:ring-0 p-0 h-6"
                     />
@@ -239,7 +239,7 @@ export function SeminarMultiSelect({
                         className="bg-popover border border-border rounded-md shadow-md p-3"
                     >
                         <p className="text-sm text-muted-foreground text-center">
-                            Nenhum seminário disponível
+                            Nenhuma apresentação disponível
                         </p>
                     </div>
                 </DropdownPortal>
