@@ -5,10 +5,10 @@ Olá, **{{ $userName }}**!
 
 Sua conta foi criada com sucesso. Agora você pode:
 
-- Consultar a programação de seminários e workshops
+- Consultar a programação de apresentações e workshops
 - Se inscrever em eventos de seu interesse
 - Receber certificados de participação
-- Avaliar os seminários que participou
+- Avaliar as apresentações que participou
 
 <x-mail::button :url="$loginUrl">
 Acessar o Sistema
