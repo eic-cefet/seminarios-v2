@@ -65,7 +65,7 @@ describe('NotificationResource', function () {
             'data' => [
                 'category' => 'evaluation_due',
                 'title' => 'Avaliação pendente',
-                'body' => 'Avalie o seminário.',
+                'body' => 'Avalie a apresentação "Test Seminar".',
             ],
             'read_at' => null,
             'created_at' => now(),

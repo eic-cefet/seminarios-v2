@@ -50,9 +50,9 @@ class ApiException extends Exception
         return new self('conflict', $message, 409);
     }
 
-    public static function notFound(string $resource = 'Recurso'): self
+    public static function notFound(string $resource = 'Recurso', ?string $message = null): self
     {
-        return new self('not_found', "{$resource} não encontrado", 404);
+        return new self('not_found', $message ?? "{$resource} não encontrado", 404);
     }
 
     public static function rateLimited(): self

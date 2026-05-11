@@ -78,6 +78,14 @@ describe('ApiException', function () {
         expect($exception->getMessage())->toBe('User não encontrado');
     });
 
+    it('creates not found exception with custom message override', function () {
+        $exception = ApiException::notFound(message: 'Apresentação não encontrada');
+
+        expect($exception->errorCode)->toBe('not_found');
+        expect($exception->statusCode)->toBe(404);
+        expect($exception->getMessage())->toBe('Apresentação não encontrada');
+    });
+
     it('creates rate limited exception', function () {
         $exception = ApiException::rateLimited();
 
