@@ -52,7 +52,7 @@ export function CertificatesSection() {
                         </p>
                         <p className="mt-1 text-xs text-gray-500">
                             Certificados são gerados após a confirmação de
-                            presença em um seminário.
+                            presença em uma apresentação.
                         </p>
                     </div>
                 ) : (

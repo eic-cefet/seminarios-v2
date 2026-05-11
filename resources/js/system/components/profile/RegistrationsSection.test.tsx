@@ -29,7 +29,7 @@ describe('RegistrationsSection', () => {
         render(<RegistrationsSection />);
 
         await waitFor(() => {
-            expect(screen.getByText(/você ainda não se inscreveu em nenhum seminário/i)).toBeInTheDocument();
+            expect(screen.getByText(/você ainda não se inscreveu em nenhuma apresentação/i)).toBeInTheDocument();
         });
     });
 
