@@ -399,7 +399,8 @@ describe('POST /api/profile/ratings/{seminar}', function () {
             'score' => 5,
         ]);
 
-        $response->assertForbidden();
+        $response->assertForbidden()
+            ->assertJsonFragment(['message' => 'Você não participou desta apresentação.']);
     });
 
     it('rejects rating for seminar older than 30 days', function () {
@@ -418,7 +419,8 @@ describe('POST /api/profile/ratings/{seminar}', function () {
             'score' => 5,
         ]);
 
-        $response->assertForbidden();
+        $response->assertForbidden()
+            ->assertJsonFragment(['message' => 'O prazo para avaliar esta apresentação expirou.']);
     });
 
     it('rejects duplicate rating', function () {
@@ -442,7 +444,8 @@ describe('POST /api/profile/ratings/{seminar}', function () {
             'score' => 5,
         ]);
 
-        $response->assertConflict();
+        $response->assertConflict()
+            ->assertJsonFragment(['message' => 'Você já avaliou esta apresentação.']);
     });
 
     it('validates score range', function () {

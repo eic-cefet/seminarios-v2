@@ -172,7 +172,7 @@ describe('POST /profile/ratings/{seminar} - sentiment dispatch', function () {
 
         $this->postJson("/api/profile/ratings/{$seminar->id}", ['score' => 5, 'comment' => 'oi'])
             ->assertConflict()
-            ->assertJsonFragment(['message' => 'Você já avaliou este seminário.']);
+            ->assertJsonFragment(['message' => 'Você já avaliou esta apresentação.']);
     });
 
     it('returns conflict when the unique constraint fires after the existence pre-check', function () {
@@ -193,6 +193,6 @@ describe('POST /profile/ratings/{seminar} - sentiment dispatch', function () {
 
         $this->postJson("/api/profile/ratings/{$seminar->id}", ['score' => 4, 'comment' => 'race'])
             ->assertConflict()
-            ->assertJsonFragment(['message' => 'Você já avaliou este seminário.']);
+            ->assertJsonFragment(['message' => 'Você já avaliou esta apresentação.']);
     });
 });
