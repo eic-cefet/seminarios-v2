@@ -48,18 +48,18 @@ class SeminarStoreRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'name.required' => 'O nome do seminário é obrigatório.',
+            'name.required' => 'O nome da apresentação é obrigatório.',
             'name.max' => 'O nome não pode ter mais de 255 caracteres.',
-            'scheduled_at.required' => 'A data do seminário é obrigatória.',
+            'scheduled_at.required' => 'A data da apresentação é obrigatória.',
             'scheduled_at.date' => 'A data deve ser válida.',
-            'duration_minutes.required' => 'A duração do seminário é obrigatória.',
+            'duration_minutes.required' => 'A duração da apresentação é obrigatória.',
             'duration_minutes.integer' => 'A duração deve ser um número inteiro de minutos.',
             'duration_minutes.in' => 'A duração deve ser 30 minutos, 1 hora, 2 horas ou 4 horas.',
             'room_link.url' => 'O link da sala deve ser uma URL válida.',
             'active.required' => 'O status de ativo é obrigatório.',
             'seminar_location_id.required' => 'O local é obrigatório.',
             'seminar_location_id.exists' => 'O local selecionado não existe.',
-            'seminar_type_id.exists' => 'O tipo de seminário selecionado não existe.',
+            'seminar_type_id.exists' => 'O tipo de apresentação selecionado não existe.',
             'workshop_id.exists' => 'O workshop selecionado não existe.',
             'subject_names.required' => 'Pelo menos um tópico é obrigatório.',
             'subject_names.min' => 'Pelo menos um tópico é obrigatório.',
