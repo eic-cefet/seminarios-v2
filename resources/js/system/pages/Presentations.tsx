@@ -111,7 +111,7 @@ export default function Presentations() {
                             Apresentações
                         </h1>
                         <p className="mt-2 text-gray-500">
-                            Todas as apresentações e seminários realizados
+                            Todas as apresentações realizadas
                         </p>
                     </div>
                 </div>

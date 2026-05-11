@@ -26,7 +26,7 @@ export default function Subjects() {
                             Tópicos
                         </h1>
                         <p className="mt-2 text-gray-500">
-                            Explore os seminários organizados por tópico
+                            Explore as apresentações organizadas por tópico
                         </p>
                     </div>
                 </div>
@@ -59,7 +59,7 @@ export default function Subjects() {
                                             </h2>
                                             <p className="mt-1 text-sm text-gray-500">
                                                 {subject.seminarsCount ?? 0}{" "}
-                                                seminários
+                                                apresentações
                                             </p>
                                         </div>
                                     </div>
