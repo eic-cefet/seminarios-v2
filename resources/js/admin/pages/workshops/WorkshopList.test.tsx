@@ -934,7 +934,7 @@ describe('WorkshopList', () => {
         });
 
         // The SeminarMultiSelect renders an input with this placeholder
-        const seminarInput = screen.getByPlaceholderText('Buscar seminários...');
+        const seminarInput = screen.getByPlaceholderText('Buscar apresentações...');
         await user.click(seminarInput);
 
         // Wait for the suggestion to appear from mock data

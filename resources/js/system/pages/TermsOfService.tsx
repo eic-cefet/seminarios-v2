@@ -74,7 +74,7 @@ export default function TermsOfService() {
 
                         <Section number="4" title="Propriedade intelectual">
                             <p className="text-base leading-relaxed text-gray-700">
-                                O conteúdo apresentado nos seminários pertence
+                                O conteúdo apresentado nas apresentações pertence
                                 a seus respectivos autores. O sistema e sua
                                 marca pertencem ao CEFET-RJ. Certificados
                                 emitidos comprovam presença e carga horária e

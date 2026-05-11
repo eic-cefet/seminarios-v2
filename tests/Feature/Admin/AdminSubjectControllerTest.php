@@ -223,7 +223,7 @@ describe('DELETE /api/admin/subjects/{id}', function () {
         $response = $this->deleteJson("/api/admin/subjects/{$subject->slug}");
 
         $response->assertStatus(409)
-            ->assertJsonPath('message', 'Este assunto está associado a seminários e não pode ser excluído');
+            ->assertJsonPath('message', 'Este assunto está associado a apresentações e não pode ser excluído');
 
         expect(Subject::find($subject->id))->not->toBeNull();
     });

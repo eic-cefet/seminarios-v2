@@ -21,7 +21,7 @@ describe('SeminarMultiSelect', () => {
 
     it('renders the component', () => {
         render(<SeminarMultiSelect {...defaultProps} />);
-        expect(screen.getByPlaceholderText('Buscar seminários...')).toBeInTheDocument();
+        expect(screen.getByPlaceholderText('Buscar apresentações...')).toBeInTheDocument();
     });
 
     it('renders the label when provided', () => {
@@ -31,7 +31,7 @@ describe('SeminarMultiSelect', () => {
 
     it('renders the placeholder when no values are selected', () => {
         render(<SeminarMultiSelect {...defaultProps} />);
-        expect(screen.getByPlaceholderText('Buscar seminários...')).toBeInTheDocument();
+        expect(screen.getByPlaceholderText('Buscar apresentações...')).toBeInTheDocument();
     });
 
     it('renders selected seminars as badges', () => {
@@ -74,7 +74,7 @@ describe('SeminarMultiSelect', () => {
     it('allows typing in the search input', async () => {
         render(<SeminarMultiSelect {...defaultProps} />);
         const user = userEvent.setup();
-        const input = screen.getByPlaceholderText('Buscar seminários...');
+        const input = screen.getByPlaceholderText('Buscar apresentações...');
         await user.type(input, 'test');
         expect(input).toHaveValue('test');
     });
@@ -156,7 +156,7 @@ describe('SeminarMultiSelect', () => {
 
         render(<SeminarMultiSelect {...defaultProps} />);
         const user = userEvent.setup();
-        const input = screen.getByPlaceholderText('Buscar seminários...');
+        const input = screen.getByPlaceholderText('Buscar apresentações...');
         await user.click(input);
 
         await waitFor(() => {
@@ -175,7 +175,7 @@ describe('SeminarMultiSelect', () => {
 
         render(<SeminarMultiSelect {...defaultProps} onChange={mockOnChange} />);
         const user = userEvent.setup();
-        const input = screen.getByPlaceholderText('Buscar seminários...');
+        const input = screen.getByPlaceholderText('Buscar apresentações...');
         await user.click(input);
 
         await waitFor(() => {
@@ -220,11 +220,11 @@ describe('SeminarMultiSelect', () => {
 
         render(<SeminarMultiSelect {...defaultProps} />);
         const user = userEvent.setup();
-        const input = screen.getByPlaceholderText('Buscar seminários...');
+        const input = screen.getByPlaceholderText('Buscar apresentações...');
         await user.click(input);
 
         await waitFor(() => {
-            expect(screen.getByText('Nenhum seminário disponível')).toBeInTheDocument();
+            expect(screen.getByText('Nenhuma apresentação disponível')).toBeInTheDocument();
         });
     });
 
@@ -232,7 +232,7 @@ describe('SeminarMultiSelect', () => {
         const mockOnChange = vi.fn();
         render(<SeminarMultiSelect {...defaultProps} onChange={mockOnChange} />);
         const user = userEvent.setup();
-        const input = screen.getByPlaceholderText('Buscar seminários...');
+        const input = screen.getByPlaceholderText('Buscar apresentações...');
         await user.click(input);
         await user.keyboard('{Backspace}');
         expect(mockOnChange).not.toHaveBeenCalled();
@@ -313,7 +313,7 @@ describe('SeminarMultiSelect', () => {
 
         render(<SeminarMultiSelect {...defaultProps} onChange={mockOnChange} />);
         const user = userEvent.setup();
-        const input = screen.getByPlaceholderText('Buscar seminários...');
+        const input = screen.getByPlaceholderText('Buscar apresentações...');
         await user.click(input);
 
         // Wait for suggestions to appear
@@ -346,7 +346,7 @@ describe('SeminarMultiSelect', () => {
         const mockOnChange = vi.fn();
         const user = userEvent.setup();
         render(<SeminarMultiSelect value={[]} onChange={mockOnChange} />);
-        await user.click(screen.getByPlaceholderText('Buscar seminários...'));
+        await user.click(screen.getByPlaceholderText('Buscar apresentações...'));
 
         const option = await screen.findByRole('option', { name: /Click-or-Enter Seminar/i });
         option.focus();
@@ -363,7 +363,7 @@ describe('SeminarMultiSelect', () => {
         const mockOnChange = vi.fn();
         const user = userEvent.setup();
         render(<SeminarMultiSelect value={[]} onChange={mockOnChange} />);
-        await user.click(screen.getByPlaceholderText('Buscar seminários...'));
+        await user.click(screen.getByPlaceholderText('Buscar apresentações...'));
 
         const option = await screen.findByRole('option', { name: /Space-Activated/i });
         option.focus();
@@ -380,7 +380,7 @@ describe('SeminarMultiSelect', () => {
         const mockOnChange = vi.fn();
         const user = userEvent.setup();
         render(<SeminarMultiSelect value={[]} onChange={mockOnChange} />);
-        await user.click(screen.getByPlaceholderText('Buscar seminários...'));
+        await user.click(screen.getByPlaceholderText('Buscar apresentações...'));
 
         const option = await screen.findByRole('option', { name: /Ignored Key/i });
         option.focus();

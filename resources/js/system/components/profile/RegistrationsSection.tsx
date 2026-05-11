@@ -54,7 +54,7 @@ export function RegistrationsSection() {
                     <div className="px-6 py-8 text-center">
                         <Calendar className="mx-auto h-8 w-8 text-gray-300" />
                         <p className="mt-2 text-sm text-gray-500">
-                            Você ainda não se inscreveu em nenhum seminário.
+                            Você ainda não se inscreveu em nenhuma apresentação.
                         </p>
                         <Link
                             to={ROUTES.SYSTEM.PRESENTATIONS}

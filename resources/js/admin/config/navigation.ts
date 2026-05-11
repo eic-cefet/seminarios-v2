@@ -27,10 +27,10 @@ export const adminNavigation: NavItem[] = [
     { label: "Dashboard", href: "/", icon: LayoutDashboard },
     { label: "Usuários", href: "/users", icon: Users, adminOnly: true },
     {
-        label: "Seminários",
+        label: "Apresentações",
         icon: Presentation,
         children: [
-            { label: "Seminários", href: "/seminars" },
+            { label: "Apresentações", href: "/seminars" },
             { label: "Workshops", href: "/workshops", adminOnly: true },
             { label: "Locais", href: "/locations", adminOnly: true },
             { label: "Tópicos", href: "/subjects", adminOnly: true },

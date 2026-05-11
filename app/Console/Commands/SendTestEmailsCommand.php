@@ -131,7 +131,7 @@ class SendTestEmailsCommand extends Command
         $seminar = Seminar::create([
             'name' => $name,
             'slug' => 'test-'.uniqid(),
-            'description' => 'Este é um seminário de teste para verificar o template de email.',
+            'description' => 'Esta é uma apresentação de teste para verificar o template de email.',
             'scheduled_at' => $scheduledAt ?? Carbon::tomorrow()->setHour(14)->setMinute(0),
             'seminar_location_id' => $locationId,
         ]);
@@ -166,7 +166,7 @@ class SendTestEmailsCommand extends Command
     private function createCertificateMail(): CertificateGenerated
     {
         $user = $this->createTestUser();
-        $seminar = $this->createTestSeminar('Seminário de Teste: Introdução à IA');
+        $seminar = $this->createTestSeminar('Apresentação de Teste: Introdução à IA');
         $registration = $this->createTestRegistration($user, $seminar);
 
         $mockPdfContent = '%PDF-1.4 mock certificate content for testing';

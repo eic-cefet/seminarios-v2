@@ -169,6 +169,21 @@ describe('MultiSelect', () => {
         expect(onChange).toHaveBeenCalledWith(['2']);
     });
 
+    it('does not trigger handleSelect for non-Enter/non-Space keys', async () => {
+        const user = userEvent.setup();
+        const onChange = vi.fn();
+        render(
+            <MultiSelect options={options} selected={[]} onChange={onChange} />,
+        );
+
+        await user.click(screen.getByRole('combobox'));
+        const option = await screen.findByRole('option', { name: 'Option 1' });
+        option.focus();
+        await user.keyboard('a');
+
+        expect(onChange).not.toHaveBeenCalled();
+    });
+
     it('exposes aria-selected on the listbox options', async () => {
         const user = userEvent.setup();
         render(

@@ -59,4 +59,16 @@ describe('WelcomeUser Mail', function () {
 
         expect($mail->render())->toBeString();
     });
+
+    it('renders the welcome body using feminine "apresentação" copy', function () {
+        $user = User::factory()->create();
+
+        $rendered = (new WelcomeUser($user))->render();
+
+        expect($rendered)
+            ->toContain('Consultar a programação de apresentações e workshops')
+            ->toContain('Avaliar as apresentações que participou')
+            ->not->toContain('programação de seminários')
+            ->not->toContain('Avaliar os seminários');
+    });
 });

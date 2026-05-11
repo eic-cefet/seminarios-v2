@@ -36,7 +36,7 @@ describe('POST /api/seminars/{slug}/register', function () {
         $response = $this->postJson("/api/seminars/{$seminar->slug}/register");
 
         $response->assertStatus(400)
-            ->assertJsonPath('message', 'Este seminário já foi realizado');
+            ->assertJsonPath('message', 'Esta apresentação já foi realizada');
     });
 
     it('returns error when already registered', function () {
@@ -51,7 +51,7 @@ describe('POST /api/seminars/{slug}/register', function () {
         $response = $this->postJson("/api/seminars/{$seminar->slug}/register");
 
         $response->assertStatus(409)
-            ->assertJsonPath('message', 'Você já está inscrito neste seminário');
+            ->assertJsonPath('message', 'Você já está inscrito nesta apresentação');
     });
 
     it('returns 404 for non-existent seminar', function () {
@@ -59,7 +59,8 @@ describe('POST /api/seminars/{slug}/register', function () {
 
         $response = $this->postJson('/api/seminars/non-existent/register');
 
-        $response->assertStatus(404);
+        $response->assertStatus(404)
+            ->assertJsonPath('message', 'Apresentação não encontrada');
     });
 
     it('returns 404 for inactive seminar', function () {
@@ -68,7 +69,8 @@ describe('POST /api/seminars/{slug}/register', function () {
 
         $response = $this->postJson("/api/seminars/{$seminar->slug}/register");
 
-        $response->assertStatus(404);
+        $response->assertStatus(404)
+            ->assertJsonPath('message', 'Apresentação não encontrada');
     });
 
     it('queues a registration confirmation email after a successful registration', function () {
@@ -139,7 +141,7 @@ describe('DELETE /api/seminars/{slug}/register', function () {
         $response = $this->deleteJson("/api/seminars/{$seminar->slug}/register");
 
         $response->assertStatus(400)
-            ->assertJsonPath('message', 'Você não está inscrito neste seminário');
+            ->assertJsonPath('message', 'Você não está inscrito nesta apresentação');
     });
 
     it('returns unregister_blocked for expired seminar', function () {

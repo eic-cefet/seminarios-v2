@@ -48,7 +48,7 @@ describe('PresenceLinkModal', () => {
 
         await waitFor(() => {
             expect(
-                screen.getByText('Nenhum link de presença foi criado para este seminário ainda.'),
+                screen.getByText('Nenhum link de presença foi criado para esta apresentação ainda.'),
             ).toBeInTheDocument();
         });
     });

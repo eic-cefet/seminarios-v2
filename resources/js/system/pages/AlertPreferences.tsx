@@ -132,11 +132,11 @@ export default function AlertPreferences() {
                                 </div>
                                 <div className="px-6 py-6 space-y-4">
                                     {([
-                                        { id: "pref-sr24h", label: "Lembrete 24h antes do seminário", checked: seminarReminder24h, set: setSeminarReminder24h },
-                                        { id: "pref-sr7d", label: "Lembrete 7 dias antes do seminário", checked: seminarReminder7d, set: setSeminarReminder7d },
-                                        { id: "pref-eval", label: "Pedido para avaliar seminários assistidos", checked: evaluationPrompt, set: setEvaluationPrompt },
+                                        { id: "pref-sr24h", label: "Lembrete 24h antes da apresentação", checked: seminarReminder24h, set: setSeminarReminder24h },
+                                        { id: "pref-sr7d", label: "Lembrete 7 dias antes da apresentação", checked: seminarReminder7d, set: setSeminarReminder7d },
+                                        { id: "pref-eval", label: "Pedido para avaliar apresentações assistidas", checked: evaluationPrompt, set: setEvaluationPrompt },
                                         { id: "pref-cert", label: "Certificado pronto", checked: certificateReady, set: setCertificateReady },
-                                        { id: "pref-resched", label: "Seminário reagendado", checked: seminarRescheduled, set: setSeminarRescheduled },
+                                        { id: "pref-resched", label: "Apresentação reagendada", checked: seminarRescheduled, set: setSeminarRescheduled },
                                         { id: "pref-announce", label: "Comunicados gerais", checked: announcements, set: setAnnouncements },
                                         { id: "pref-workshop-ann", label: "Comunicado de novos workshops", checked: workshopAnnouncements, set: setWorkshopAnnouncements },
                                     ] as const).map((row) => (
@@ -159,11 +159,11 @@ export default function AlertPreferences() {
                                     <div className="flex items-center gap-2">
                                         <Bell className="h-5 w-5 text-gray-400" />
                                         <h2 className="text-lg font-semibold text-gray-900">
-                                            Alertas de novos seminários
+                                            Alertas de novas apresentações
                                         </h2>
                                     </div>
                                     <p className="mt-1 text-xs text-gray-500">
-                                        Receba um e-mail quando um novo seminário ativo for publicado. Deixe os filtros vazios para receber alertas de todos os seminários.
+                                        Receba um e-mail quando uma nova apresentação ativa for publicada. Deixe os filtros vazios para receber alertas de todas as apresentações.
                                     </p>
                                 </div>
 
@@ -195,7 +195,7 @@ export default function AlertPreferences() {
                                     >
                                         <div>
                                             <legend className="block text-sm font-medium text-gray-900 mb-2">
-                                                Tipos de seminário (opcional)
+                                                Tipos de apresentação (opcional)
                                             </legend>
                                             <p className="text-xs text-gray-500 mb-3">
                                                 Vazio = todos os tipos.

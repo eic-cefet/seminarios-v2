@@ -78,7 +78,7 @@ describe('AlertPreferences', () => {
 
         render(<AlertPreferences />);
 
-        expect(await screen.findByRole('heading', { name: /alertas de novos seminários/i })).toBeInTheDocument();
+        expect(await screen.findByRole('heading', { name: /alertas de novas apresentações/i })).toBeInTheDocument();
     });
 
     it('loads the current preference and shows opt-in unchecked by default', async () => {
@@ -228,7 +228,7 @@ describe('AlertPreferences', () => {
 
         render(<AlertPreferences />);
 
-        const toggle = await screen.findByLabelText(/lembrete 24h antes do seminário/i);
+        const toggle = await screen.findByLabelText(/lembrete 24h antes da apresentação/i);
         expect(toggle).toBeChecked();
         await user.click(toggle);
         await user.click(screen.getByRole('button', { name: /salvar preferências/i }));
@@ -272,6 +272,6 @@ describe('AlertPreferences', () => {
 
         render(<AlertPreferences />);
 
-        expect(screen.queryByRole('heading', { name: /alertas de novos seminários/i })).not.toBeInTheDocument();
+        expect(screen.queryByRole('heading', { name: /alertas de novas apresentações/i })).not.toBeInTheDocument();
     });
 });

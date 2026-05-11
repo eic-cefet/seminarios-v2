@@ -37,7 +37,7 @@ describe('Presentations', () => {
 
     it('renders subtitle text', () => {
         render(<Presentations />);
-        expect(screen.getByText(/todas as apresentações e seminários realizados/i)).toBeInTheDocument();
+        expect(screen.getByText(/todas as apresentações realizadas/i)).toBeInTheDocument();
     });
 
     it('renders seminar cards after loading', async () => {

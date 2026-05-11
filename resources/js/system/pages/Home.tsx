@@ -102,7 +102,7 @@ export default function Home() {
                     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
                         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                             <StatCard icon={BookOpen} value={stats?.subjects ?? 0} label="Tópicos" isLoading={loadingStats} />
-                            <StatCard icon={Presentation} value={stats?.seminars ?? 0} label="Seminários" isLoading={loadingStats} />
+                            <StatCard icon={Presentation} value={stats?.seminars ?? 0} label="Apresentações" isLoading={loadingStats} />
                             <StatCard icon={Wrench} value={stats?.workshops ?? 0} label="Workshops" isLoading={loadingStats} />
                         </div>
                     </div>
@@ -113,10 +113,10 @@ export default function Home() {
                         <div className="flex items-center justify-between">
                             <div>
                                 <h2 className="text-2xl font-bold text-gray-900">
-                                    Próximos Seminários
+                                    Próximas Apresentações
                                 </h2>
                                 <p className="mt-1 text-gray-500">
-                                    Confira os seminários que acontecerão em
+                                    Confira as apresentações que acontecerão em
                                     breve
                                 </p>
                             </div>
@@ -150,7 +150,7 @@ export default function Home() {
                         ) : (
                             <div className="mt-6 rounded-lg border border-dashed border-gray-300 p-8 text-center">
                                 <p className="text-gray-500">
-                                    Nenhum seminário agendado no momento
+                                    Nenhuma apresentação agendada no momento
                                 </p>
                             </div>
                         )}
@@ -160,7 +160,7 @@ export default function Home() {
                                 to={ROUTES.SYSTEM.PRESENTATIONS}
                                 className="inline-flex w-full items-center justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
                             >
-                                Ver todos os seminários
+                                Ver todas as apresentações
                                 <ArrowRight className="ml-1 h-4 w-4" />
                             </Link>
                         </div>
@@ -175,7 +175,7 @@ export default function Home() {
                                     Tópicos
                                 </h2>
                                 <p className="mt-1 text-gray-500">
-                                    Explore os seminários por tópico
+                                    Explore as apresentações por tópico
                                 </p>
                             </div>
                             <Link
@@ -207,7 +207,7 @@ export default function Home() {
                                         <div className="flex items-center justify-between">
                                             <span className="text-xs text-gray-500">
                                                 {subject.seminarsCount ?? 0}{" "}
-                                                seminários
+                                                apresentações
                                             </span>
                                         </div>
                                         <h3 className="mt-2 font-semibold text-gray-900 group-hover:text-primary-600 transition-colors">

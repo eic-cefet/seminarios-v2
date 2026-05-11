@@ -146,7 +146,7 @@ export default function SubjectList() {
         },
         onError: (error: Error) => {
             if (error.message.includes("associado")) {
-                toast.error("Este tópico possui seminários associados");
+                toast.error("Este tópico possui apresentações associadas");
             } else {
                 toast.error("Erro ao excluir tópico");
             }
@@ -255,7 +255,7 @@ export default function SubjectList() {
                         Tópicos
                     </h1>
                     <p className="text-muted-foreground">
-                        Gerenciar tópicos dos seminários
+                        Gerenciar tópicos das apresentações
                     </p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -519,7 +519,7 @@ export default function SubjectList() {
                                 <strong>{selectedIds.length}</strong>{" "}
                                 tópicos serão mesclados, afetando{" "}
                                 <strong>{totalSeminarsAffected}</strong>{" "}
-                                seminários.
+                                apresentações.
                             </p>
                         </div>
 

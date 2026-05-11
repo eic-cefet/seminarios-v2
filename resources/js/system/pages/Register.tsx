@@ -131,7 +131,7 @@ export default function Register() {
                                 Criar conta
                             </h2>
                             <p className="mt-2 text-center text-sm text-gray-600">
-                                Cadastre-se para participar dos seminários
+                                Cadastre-se para participar das apresentações
                             </p>
                         </div>
 

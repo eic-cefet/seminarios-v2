@@ -49,7 +49,7 @@ class SeminarUpdateRequest extends FormRequest
             'duration_minutes.in' => 'A duração deve ser 30 minutos, 1 hora, 2 horas ou 4 horas.',
             'room_link.url' => 'O link da sala deve ser uma URL válida.',
             'seminar_location_id.exists' => 'O local selecionado não existe.',
-            'seminar_type_id.exists' => 'O tipo de seminário selecionado não existe.',
+            'seminar_type_id.exists' => 'O tipo de apresentação selecionado não existe.',
             'workshop_id.exists' => 'O workshop selecionado não existe.',
             'subject_names.min' => 'Pelo menos um tópico é obrigatório.',
             'speaker_ids.min' => 'Pelo menos um palestrante é obrigatório.',

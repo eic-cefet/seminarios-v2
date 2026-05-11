@@ -300,7 +300,7 @@ describe('DELETE /api/admin/workshops/{id}', function () {
         $response = $this->deleteJson("/api/admin/workshops/{$workshop->slug}");
 
         $response->assertStatus(409)
-            ->assertJsonPath('message', 'Este workshop possui seminários associados e não pode ser excluído');
+            ->assertJsonPath('message', 'Este workshop possui apresentações associadas e não pode ser excluído');
 
         expect(Workshop::find($workshop->id))->not->toBeNull();
     });

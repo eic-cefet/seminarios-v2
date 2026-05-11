@@ -18,7 +18,7 @@ class RegistrationController extends Controller
             ->first();
 
         if (! $seminar) {
-            throw ApiException::notFound('Seminário');
+            throw ApiException::notFound(message: 'Apresentação não encontrada');
         }
 
         return $seminar;

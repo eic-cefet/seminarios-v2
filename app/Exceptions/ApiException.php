@@ -50,9 +50,9 @@ class ApiException extends Exception
         return new self('conflict', $message, 409);
     }
 
-    public static function notFound(string $resource = 'Recurso'): self
+    public static function notFound(string $resource = 'Recurso', ?string $message = null): self
     {
-        return new self('not_found', "{$resource} não encontrado", 404);
+        return new self('not_found', $message ?? "{$resource} não encontrado", 404);
     }
 
     public static function rateLimited(): self
@@ -82,17 +82,17 @@ class ApiException extends Exception
 
     public static function alreadyRegistered(): self
     {
-        return new self('already_registered', 'Você já está inscrito neste seminário', 409);
+        return new self('already_registered', 'Você já está inscrito nesta apresentação', 409);
     }
 
     public static function notRegistered(): self
     {
-        return new self('not_registered', 'Você não está inscrito neste seminário', 400);
+        return new self('not_registered', 'Você não está inscrito nesta apresentação', 400);
     }
 
     public static function seminarExpired(): self
     {
-        return new self('seminar_expired', 'Este seminário já foi realizado', 400);
+        return new self('seminar_expired', 'Esta apresentação já foi realizada', 400);
     }
 
     public static function cannotMergeSubjects(): self
@@ -102,27 +102,27 @@ class ApiException extends Exception
 
     public static function subjectInUse(): self
     {
-        return new self('subject_in_use', 'Este assunto está associado a seminários e não pode ser excluído', 409);
+        return new self('subject_in_use', 'Este assunto está associado a apresentações e não pode ser excluído', 409);
     }
 
     public static function workshopInUse(): self
     {
-        return new self('workshop_in_use', 'Este workshop possui seminários associados e não pode ser excluído', 409);
+        return new self('workshop_in_use', 'Este workshop possui apresentações associadas e não pode ser excluído', 409);
     }
 
     public static function locationInUse(): self
     {
-        return new self('location_in_use', 'Esta localização está associada a seminários e não pode ser excluída', 409);
+        return new self('location_in_use', 'Esta localização está associada a apresentações e não pode ser excluída', 409);
     }
 
     public static function seminarTypeInUse(): self
     {
-        return new self('seminar_type_in_use', 'Este tipo de seminário está associado a seminários e não pode ser excluído', 409);
+        return new self('seminar_type_in_use', 'Este tipo de apresentação está associado a apresentações e não pode ser excluído', 409);
     }
 
     public static function seminarHasRegistrations(): self
     {
-        return new self('seminar_has_registrations', 'Este seminário possui inscrições e não pode ser excluído', 409);
+        return new self('seminar_has_registrations', 'Esta apresentação possui inscrições e não pode ser excluída', 409);
     }
 
     public static function cannotDeleteSelf(): self
@@ -132,7 +132,7 @@ class ApiException extends Exception
 
     public static function seminarFull(): self
     {
-        return new self('seminar_full', 'Este seminário atingiu sua capacidade máxima', 409);
+        return new self('seminar_full', 'Esta apresentação atingiu sua capacidade máxima', 409);
     }
 
     public static function unregisterBlocked(): self

@@ -150,12 +150,12 @@ describe('SeminarForm', () => {
 
     it('renders the new seminar heading', () => {
         render(<SeminarForm />);
-        expect(screen.getByText('Novo Seminário')).toBeInTheDocument();
+        expect(screen.getByText('Nova Apresentação')).toBeInTheDocument();
     });
 
     it('renders the subtitle for new seminar', () => {
         render(<SeminarForm />);
-        expect(screen.getByText('Preencha os dados do novo seminário')).toBeInTheDocument();
+        expect(screen.getByText('Preencha os dados da nova apresentação')).toBeInTheDocument();
     });
 
     it('renders the name input field', () => {
@@ -208,7 +208,7 @@ describe('SeminarForm', () => {
     it('renders the cancel and submit buttons', () => {
         render(<SeminarForm />);
         expect(screen.getByText('Cancelar')).toBeInTheDocument();
-        expect(screen.getByText('Criar Seminário')).toBeInTheDocument();
+        expect(screen.getByText('Criar Apresentação')).toBeInTheDocument();
     });
 
     it('renders the select speakers button', () => {
@@ -221,8 +221,8 @@ describe('SeminarForm', () => {
         vi.mocked(useParams).mockReturnValue({ id: '1' });
 
         render(<SeminarForm />);
-        expect(screen.getByText('Editar Seminário')).toBeInTheDocument();
-        expect(screen.getByText('Atualizar Seminário')).toBeInTheDocument();
+        expect(screen.getByText('Editar Apresentação')).toBeInTheDocument();
+        expect(screen.getByText('Atualizar Apresentação')).toBeInTheDocument();
     });
 
     it('allows typing in the name field', async () => {
@@ -292,12 +292,12 @@ describe('SeminarForm', () => {
         vi.mocked(useParams).mockReturnValue({ id: '1' });
 
         render(<SeminarForm />);
-        expect(screen.getByText('Atualize os dados do seminário')).toBeInTheDocument();
+        expect(screen.getByText('Atualize os dados da apresentação')).toBeInTheDocument();
     });
 
     it('renders the active switch', () => {
         render(<SeminarForm />);
-        expect(screen.getByText('Seminário ativo')).toBeInTheDocument();
+        expect(screen.getByText('Apresentação ativa')).toBeInTheDocument();
     });
 
     it('navigates back when cancel is clicked', async () => {
@@ -319,7 +319,7 @@ describe('SeminarForm', () => {
         render(<SeminarForm />);
         const user = userEvent.setup();
 
-        await user.click(screen.getByText('Criar Seminário'));
+        await user.click(screen.getByText('Criar Apresentação'));
 
         await waitFor(() => {
             expect(screen.getByText('Nome é obrigatório')).toBeInTheDocument();
@@ -335,7 +335,7 @@ describe('SeminarForm', () => {
 
         // Fill name but not date
         await user.type(screen.getByLabelText('Nome *'), 'Some Seminar');
-        await user.click(screen.getByText('Criar Seminário'));
+        await user.click(screen.getByText('Criar Apresentação'));
 
         await waitFor(() => {
             expect(screen.getByText('Data é obrigatória')).toBeInTheDocument();
@@ -355,7 +355,7 @@ describe('SeminarForm', () => {
         const nativeSelects = document.querySelectorAll('select[data-testid="mock-native-select"]');
         fireEvent.change(nativeSelects[0], { target: { value: '' } });
 
-        await user.click(screen.getByText('Criar Seminário'));
+        await user.click(screen.getByText('Criar Apresentação'));
 
         await waitFor(() => {
             expect(screen.getByText('Selecione uma duração válida')).toBeInTheDocument();
@@ -380,8 +380,8 @@ describe('SeminarForm', () => {
         await user.type(screen.getByLabelText('Nome *'), 'Test Seminar');
         fireEvent.change(screen.getByLabelText('Data e Hora *'), { target: { value: '2026-06-15T14:00' } });
 
-        // Submit button should be "Criar Seminário"
-        expect(screen.getByText('Criar Seminário')).toBeInTheDocument();
+        // Submit button should be "Criar Apresentação"
+        expect(screen.getByText('Criar Apresentação')).toBeInTheDocument();
     });
 
     it('shows slug display only when name has a value', async () => {
@@ -437,7 +437,7 @@ describe('SeminarForm', () => {
         vi.mocked(useParams).mockReturnValue({ id: '5' });
 
         render(<SeminarForm />);
-        expect(screen.getByText('Atualizar Seminário')).toBeInTheDocument();
+        expect(screen.getByText('Atualizar Apresentação')).toBeInTheDocument();
     });
 
     it('renders new mode with create button text', async () => {
@@ -445,7 +445,7 @@ describe('SeminarForm', () => {
         vi.mocked(useParams).mockReturnValue({});
 
         render(<SeminarForm />);
-        expect(screen.getByText('Criar Seminário')).toBeInTheDocument();
+        expect(screen.getByText('Criar Apresentação')).toBeInTheDocument();
     });
 
     it('loads seminar data in edit mode when all reference data is available', async () => {
@@ -511,7 +511,7 @@ describe('SeminarForm', () => {
         fireEvent.change(screen.getByLabelText('Data e Hora *'), { target: { value: '2026-07-01T10:00' } });
 
         // Submit the form - this will trigger validation first
-        await user.click(screen.getByText('Criar Seminário'));
+        await user.click(screen.getByText('Criar Apresentação'));
 
         // The form should attempt to validate and potentially show errors since
         // location and speakers are also required
@@ -573,7 +573,7 @@ describe('SeminarForm', () => {
         vi.mocked(useParams).mockReturnValue({ id: '1' });
 
         render(<SeminarForm />);
-        expect(screen.getByText('Atualizar Seminário')).toBeInTheDocument();
+        expect(screen.getByText('Atualizar Apresentação')).toBeInTheDocument();
     });
 
     it('shows Nenhum palestrante selecionado when no speakers selected', () => {
@@ -602,7 +602,7 @@ describe('SeminarForm', () => {
         await user.type(screen.getByLabelText('Nome *'), 'Test');
         fireEvent.change(screen.getByLabelText('Data e Hora *'), { target: { value: '2026-07-01T10:00' } });
 
-        await user.click(screen.getByText('Criar Seminário'));
+        await user.click(screen.getByText('Criar Apresentação'));
 
         await waitFor(() => {
             expect(screen.getByText('Selecione pelo menos um palestrante')).toBeInTheDocument();
@@ -619,7 +619,7 @@ describe('SeminarForm', () => {
         await user.type(screen.getByLabelText('Nome *'), 'Test');
         fireEvent.change(screen.getByLabelText('Data e Hora *'), { target: { value: '2026-07-01T10:00' } });
 
-        await user.click(screen.getByText('Criar Seminário'));
+        await user.click(screen.getByText('Criar Apresentação'));
 
         await waitFor(() => {
             expect(screen.getByText('Selecione pelo menos um tópico')).toBeInTheDocument();
@@ -636,7 +636,7 @@ describe('SeminarForm', () => {
         await user.type(screen.getByLabelText('Nome *'), 'Test');
         fireEvent.change(screen.getByLabelText('Data e Hora *'), { target: { value: '2026-07-01T10:00' } });
 
-        await user.click(screen.getByText('Criar Seminário'));
+        await user.click(screen.getByText('Criar Apresentação'));
 
         await waitFor(() => {
             expect(screen.getByText('Local é obrigatório')).toBeInTheDocument();
@@ -657,7 +657,7 @@ describe('SeminarForm', () => {
         vi.mocked(useParams).mockReturnValue({});
 
         render(<SeminarForm />);
-        expect(screen.getByText('Seminário ativo')).toBeInTheDocument();
+        expect(screen.getByText('Apresentação ativa')).toBeInTheDocument();
     });
 
     it('calls createMutation.mutate when form is submitted with all valid data', async () => {
@@ -680,7 +680,7 @@ describe('SeminarForm', () => {
         fireEvent.change(screen.getByLabelText('Data e Hora *'), { target: { value: '2026-07-01T10:00' } });
 
         // Submit - will have validation errors for location/subjects/speakers
-        await user.click(screen.getByText('Criar Seminário'));
+        await user.click(screen.getByText('Criar Apresentação'));
 
         // Verify that validation errors are shown (because we didn't set location/speakers/subjects through the form)
         await waitFor(() => {
@@ -730,7 +730,7 @@ describe('SeminarForm', () => {
 
         // Submit the form
         const user = userEvent.setup();
-        await user.click(screen.getByText('Atualizar Seminário'));
+        await user.click(screen.getByText('Atualizar Apresentação'));
 
         await waitFor(() => {
             expect(seminarsApi.update).toHaveBeenCalledWith(42, expect.objectContaining({
@@ -753,7 +753,7 @@ describe('SeminarForm', () => {
         render(<SeminarForm />);
         // The error toast is tested through the mutation's onError callback
         // The component renders without errors
-        expect(screen.getByText('Criar Seminário')).toBeInTheDocument();
+        expect(screen.getByText('Criar Apresentação')).toBeInTheDocument();
     });
 
     it('shows error toast when update mutation fails', async () => {
@@ -763,7 +763,7 @@ describe('SeminarForm', () => {
         vi.mocked(seminarsApi.update).mockRejectedValue(new Error('Server error'));
 
         render(<SeminarForm />);
-        expect(screen.getByText('Atualizar Seminário')).toBeInTheDocument();
+        expect(screen.getByText('Atualizar Apresentação')).toBeInTheDocument();
     });
 
     it('opens the speaker selection modal when button is clicked', async () => {
@@ -875,14 +875,14 @@ describe('SeminarForm', () => {
         render(<SeminarForm />);
 
         // The form renders for creation
-        expect(screen.getByText('Criar Seminário')).toBeInTheDocument();
+        expect(screen.getByText('Criar Apresentação')).toBeInTheDocument();
         expect(screen.getByText('Nenhum palestrante selecionado')).toBeInTheDocument();
     });
 
     it('shows correct button text during submission pending state', () => {
         render(<SeminarForm />);
-        // When no mutation is pending, button should say "Criar Seminário"
-        expect(screen.getByText('Criar Seminário')).toBeInTheDocument();
+        // When no mutation is pending, button should say "Criar Apresentação"
+        expect(screen.getByText('Criar Apresentação')).toBeInTheDocument();
         // No "Salvando..." text should be visible
         expect(screen.queryByText('Salvando...')).not.toBeInTheDocument();
     });
@@ -922,7 +922,7 @@ describe('SeminarForm', () => {
         });
 
         // Component should still be rendered
-        expect(screen.getByText('Criar Seminário')).toBeInTheDocument();
+        expect(screen.getByText('Criar Apresentação')).toBeInTheDocument();
     });
 
     it('updateMutation onSuccess navigates to /seminars', async () => {
@@ -956,7 +956,7 @@ describe('SeminarForm', () => {
             updateMutation.onError(new Error('Update failed'));
         });
 
-        expect(screen.getByText('Atualizar Seminário')).toBeInTheDocument();
+        expect(screen.getByText('Atualizar Apresentação')).toBeInTheDocument();
     });
 
     it('SpeakerSelectionModal onClose callback closes the modal', async () => {
@@ -993,7 +993,7 @@ describe('SeminarForm', () => {
         fireEvent.change(screen.getByLabelText('Data e Hora *'), { target: { value: '2026-08-01T10:00' } });
 
         // Click submit - this will call handleSubmit -> onSubmit
-        await user.click(screen.getByText('Criar Seminário'));
+        await user.click(screen.getByText('Criar Apresentação'));
 
         // Should show validation errors for location/speakers/subjects
         await waitFor(() => {
@@ -1311,7 +1311,7 @@ describe('SeminarForm', () => {
         // Wait a tick for the useEffect to run after all data is available
         await waitFor(() => {
             // The form should show edit mode heading (confirming data loaded)
-            expect(screen.getByText('Editar Seminário')).toBeInTheDocument();
+            expect(screen.getByText('Editar Apresentação')).toBeInTheDocument();
         });
 
         // The name field should be empty since name was null -> ""
@@ -1539,7 +1539,7 @@ describe('SeminarForm', () => {
         expect(screen.getByText('John Doe')).toBeInTheDocument();
 
         const user = userEvent.setup();
-        await user.click(screen.getByText('Atualizar Seminário'));
+        await user.click(screen.getByText('Atualizar Apresentação'));
 
         await waitFor(() => {
             expect(seminarsApi.update).toHaveBeenCalledWith(77, expect.objectContaining({
@@ -1612,8 +1612,8 @@ describe('SeminarForm', () => {
         fireEvent.change(nativeSelects[2], { target: { value: '' } });
         fireEvent.change(nativeSelects[3], { target: { value: '' } });
 
-        // Click "Atualizar Seminário" to fire the update mutation
-        fireEvent.click(screen.getByText('Atualizar Seminário'));
+        // Click "Atualizar Apresentação" to fire the update mutation
+        fireEvent.click(screen.getByText('Atualizar Apresentação'));
 
         await waitFor(() => {
             expect(updateSpy).toHaveBeenCalled();
@@ -1718,7 +1718,7 @@ describe('SeminarForm', () => {
         });
 
         // No user interaction with selects — submit straight after load
-        fireEvent.click(screen.getByText('Atualizar Seminário'));
+        fireEvent.click(screen.getByText('Atualizar Apresentação'));
 
         await waitFor(() => {
             expect(updateSpy).toHaveBeenCalled();

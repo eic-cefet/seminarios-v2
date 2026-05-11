@@ -95,8 +95,8 @@ export function PresenceLinkModal({
                     ) : !presenceLink ? (
                         <div className="space-y-4 py-4">
                             <p className="text-sm text-muted-foreground">
-                                Nenhum link de presença foi criado para este
-                                seminário ainda.
+                                Nenhum link de presença foi criado para esta
+                                apresentação ainda.
                             </p>
                             <Button
                                 onClick={() => createMutation.mutate()}

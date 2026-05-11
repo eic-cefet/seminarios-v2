@@ -183,14 +183,14 @@ export default function SeminarForm() {
         mutationFn: (data: SeminarFormData) => seminarsApi.create(data),
         onSuccess: (response) => {
             queryClient.invalidateQueries({ queryKey: ["admin-seminars"] });
-            toast.success("Seminário criado com sucesso");
+            toast.success("Apresentação criada com sucesso");
             analytics.event("admin_seminar_create", {
                 seminar_id: response?.data?.id,
             });
             navigate(ROUTES.ADMIN.SEMINARS);
         },
         onError: () => {
-            toast.error("Erro ao criar seminário");
+            toast.error("Erro ao criar apresentação");
         },
     });
 
@@ -200,12 +200,12 @@ export default function SeminarForm() {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["admin-seminars"] });
             queryClient.invalidateQueries({ queryKey: ["admin-seminar", id] });
-            toast.success("Seminário atualizado com sucesso");
+            toast.success("Apresentação atualizada com sucesso");
             analytics.event("admin_seminar_update", { seminar_id: Number(id) });
             navigate(ROUTES.ADMIN.SEMINARS);
         },
         onError: () => {
-            toast.error("Erro ao atualizar seminário");
+            toast.error("Erro ao atualizar apresentação");
         },
     });
 
@@ -229,18 +229,18 @@ export default function SeminarForm() {
     return (
         <>
             <PageTitle
-                title={isEditMode ? "Editar Seminário" : "Novo Seminário"}
+                title={isEditMode ? "Editar Apresentação" : "Nova Apresentação"}
             />
             <div className="space-y-6">
                 <div className="flex items-center justify-between">
                     <div>
                         <h1 className="text-2xl font-bold">
-                            {isEditMode ? "Editar Seminário" : "Novo Seminário"}
+                            {isEditMode ? "Editar Apresentação" : "Nova Apresentação"}
                         </h1>
                         <p className="text-muted-foreground">
                             {isEditMode
-                                ? "Atualize os dados do seminário"
-                                : "Preencha os dados do novo seminário"}
+                                ? "Atualize os dados da apresentação"
+                                : "Preencha os dados da nova apresentação"}
                         </p>
                     </div>
                 </div>
@@ -298,7 +298,7 @@ export default function SeminarForm() {
                                             setValue("active", checked)
                                         }
                                     />
-                                    <Label>Seminário ativo</Label>
+                                    <Label>Apresentação ativa</Label>
                                 </div>
                             </CardContent>
                         </Card>
@@ -588,8 +588,8 @@ export default function SeminarForm() {
                             updateMutation.isPending
                                 ? "Salvando..."
                                 : isEditMode
-                                  ? "Atualizar Seminário"
-                                  : "Criar Seminário"}
+                                  ? "Atualizar Apresentação"
+                                  : "Criar Apresentação"}
                         </Button>
                     </div>
                 </form>

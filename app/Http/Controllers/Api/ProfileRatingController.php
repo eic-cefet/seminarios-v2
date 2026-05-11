@@ -40,13 +40,13 @@ class ProfileRatingController extends Controller
             ->first();
 
         if (! $registration) {
-            throw ApiException::forbidden('Você não participou deste seminário.');
+            throw ApiException::forbidden('Você não participou desta apresentação.');
         }
 
         $seminar = $registration->seminar;
 
         if (! $ratings->isWithinWindow($seminar)) {
-            throw ApiException::forbidden('O prazo para avaliar este seminário expirou.');
+            throw ApiException::forbidden('O prazo para avaliar esta apresentação expirou.');
         }
 
         $aiAnalysisConsent = (bool) ($validated['ai_analysis_consent'] ?? false);
@@ -58,7 +58,7 @@ class ProfileRatingController extends Controller
                     ->where('user_id', $user->id)
                     ->exists()
                 ) {
-                    throw ApiException::conflict('Você já avaliou este seminário.');
+                    throw ApiException::conflict('Você já avaliou esta apresentação.');
                 }
 
                 try {
@@ -72,7 +72,7 @@ class ProfileRatingController extends Controller
                 } catch (UniqueConstraintViolationException) {
                     // Race fallback: another request created the rating between
                     // our pre-check and insert despite the Mutex.
-                    throw ApiException::conflict('Você já avaliou este seminário.');
+                    throw ApiException::conflict('Você já avaliou esta apresentação.');
                 }
             });
 

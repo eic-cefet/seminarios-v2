@@ -11,7 +11,7 @@ import { adminNavigation, filterNavigation } from "../../config/navigation";
 export function Sidebar() {
     const { user, logout } = useAuth();
     const isAdmin = hasRole(user?.roles, ROLES.ADMIN);
-    const [openMenus, setOpenMenus] = useState<string[]>(["Seminários"]);
+    const [openMenus, setOpenMenus] = useState<string[]>(["Apresentações"]);
 
     const toggleMenu = (label: string) => {
         setOpenMenus((prev) =>

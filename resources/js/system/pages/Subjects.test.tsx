@@ -51,7 +51,7 @@ describe('Subjects', () => {
         });
     });
 
-    it('shows 0 seminários when subject.seminarsCount is undefined', async () => {
+    it('shows 0 apresentações when subject.seminarsCount is undefined', async () => {
         vi.mocked(subjectsApi.list).mockResolvedValue({
             data: [createSubject({ name: 'Topic Without Count', seminarsCount: undefined as any })],
         });
@@ -62,6 +62,6 @@ describe('Subjects', () => {
             expect(screen.getByText('Topic Without Count')).toBeInTheDocument();
         });
 
-        expect(screen.getByText(/0\s+seminários/)).toBeInTheDocument();
+        expect(screen.getByText(/0\s+apresentações/)).toBeInTheDocument();
     });
 });

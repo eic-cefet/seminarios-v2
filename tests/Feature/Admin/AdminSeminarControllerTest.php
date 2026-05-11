@@ -178,7 +178,7 @@ describe('POST /api/admin/seminars', function () {
         ]);
 
         $response->assertStatus(201)
-            ->assertJsonPath('message', 'Seminário criado com sucesso')
+            ->assertJsonPath('message', 'Apresentação criada com sucesso')
             ->assertJsonPath('data.name', 'Novo Seminário');
 
         expect(Seminar::where('name', 'Novo Seminário')->exists())->toBeTrue();
@@ -241,7 +241,7 @@ describe('POST /api/admin/seminars', function () {
         ]);
 
         $response->assertStatus(422)
-            ->assertJsonValidationErrors(['name']);
+            ->assertJsonValidationErrors(['name' => 'O nome da apresentação é obrigatório.']);
     });
 
     it('returns validation error for missing scheduled_at', function () {
@@ -253,7 +253,35 @@ describe('POST /api/admin/seminars', function () {
         ]);
 
         $response->assertStatus(422)
-            ->assertJsonValidationErrors(['scheduled_at']);
+            ->assertJsonValidationErrors(['scheduled_at' => 'A data da apresentação é obrigatória.']);
+    });
+
+    it('returns validation error for invalid seminar_type_id', function () {
+        actingAsAdmin();
+
+        $response = $this->postJson('/api/admin/seminars', [
+            'name' => 'Test Seminar',
+            'scheduled_at' => now()->addDays(7)->toDateTimeString(),
+            'active' => true,
+            'seminar_type_id' => 999999,
+        ]);
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors(['seminar_type_id' => 'O tipo de apresentação selecionado não existe.']);
+    });
+
+    it('returns validation error for invalid duration_minutes value', function () {
+        actingAsAdmin();
+
+        $response = $this->postJson('/api/admin/seminars', [
+            'name' => 'Test Seminar',
+            'scheduled_at' => now()->addDays(7)->toDateTimeString(),
+            'duration_minutes' => 13,
+            'active' => true,
+        ]);
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors(['duration_minutes']);
     });
 
     it('returns validation error for missing subjects', function () {
@@ -325,7 +353,7 @@ describe('PUT /api/admin/seminars/{id}', function () {
         ]);
 
         $response->assertSuccessful()
-            ->assertJsonPath('message', 'Seminário atualizado com sucesso')
+            ->assertJsonPath('message', 'Apresentação atualizada com sucesso')
             ->assertJsonPath('data.name', 'Seminário Atualizado');
     });
 
@@ -559,7 +587,7 @@ describe('DELETE /api/admin/seminars/{id}', function () {
         $response = $this->deleteJson("/api/admin/seminars/{$seminar->id}");
 
         $response->assertSuccessful()
-            ->assertJsonPath('message', 'Seminário excluído com sucesso');
+            ->assertJsonPath('message', 'Apresentação excluída com sucesso');
 
         expect(Seminar::find($seminar->id))->toBeNull();
         expect(Seminar::withTrashed()->find($seminar->id))->not->toBeNull();

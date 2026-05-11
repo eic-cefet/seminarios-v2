@@ -69,9 +69,13 @@ export default function BugReport() {
 
         setFiles((prev) => [...prev, ...validFiles]);
 
+        // The ref is bound to a mounted <input>, so .current is always set when
+        // this onChange fires. The null check is defensive only.
+        /* v8 ignore start */
         if (fileInputRef.current) {
             fileInputRef.current.value = "";
         }
+        /* v8 ignore stop */
     };
 
     const removeFile = (index: number) => {

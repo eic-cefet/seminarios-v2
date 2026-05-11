@@ -145,7 +145,7 @@ Esta pasta compactada contém todos os dados pessoais que mantemos sobre você,
 organizados nos seguintes arquivos JSON:
 
 - profile.json — identificação, papel, dados de aluno/palestrante.
-- registrations.json — inscrições e presenças nos seminários.
+- registrations.json — inscrições e presenças nas apresentações.
 - ratings.json — avaliações e comentários enviados.
 - consents.json — histórico completo de consentimentos.
 - social_identities.json — vínculos com provedores OAuth (sem tokens).

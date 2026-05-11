@@ -69,9 +69,9 @@ class DevelopmentSeeder extends Seeder
 
         // --- Workshops ---
         $workshopData = [
-            ['name' => 'Workshop de Machine Learning Aplicado', 'description' => 'Série de seminários sobre aplicações práticas de Machine Learning na indústria e na pesquisa acadêmica.'],
+            ['name' => 'Workshop de Machine Learning Aplicado', 'description' => 'Série de apresentações sobre aplicações práticas de Machine Learning na indústria e na pesquisa acadêmica.'],
             ['name' => 'Semana de Segurança Cibernética', 'description' => 'Palestras e demonstrações sobre as últimas tendências em segurança da informação e proteção de dados.'],
-            ['name' => 'Jornada de Engenharia de Software', 'description' => 'Seminários sobre boas práticas, arquitetura e tendências em desenvolvimento de software.'],
+            ['name' => 'Jornada de Engenharia de Software', 'description' => 'Apresentações sobre boas práticas, arquitetura e tendências em desenvolvimento de software.'],
         ];
         $workshops = collect($workshopData)->map(fn (array $data) => Workshop::create([
             ...$data,
@@ -230,8 +230,8 @@ class DevelopmentSeeder extends Seeder
         ];
 
         $seminarDescriptions = [
-            "Este seminário aborda as técnicas mais recentes e seus impactos na área. Serão apresentados estudos de caso e demonstrações práticas.\n\nOs participantes terão a oportunidade de discutir os desafios e as oportunidades no campo.",
-            "Apresentação dos fundamentos teóricos seguida de exemplos práticos de implementação. O seminário inclui uma sessão de perguntas e discussão aberta.\n\nIndicado para estudantes e profissionais que desejam aprofundar seus conhecimentos na área.",
+            "Esta apresentação aborda as técnicas mais recentes e seus impactos na área. Serão apresentados estudos de caso e demonstrações práticas.\n\nOs participantes terão a oportunidade de discutir os desafios e as oportunidades no campo.",
+            "Apresentação dos fundamentos teóricos seguida de exemplos práticos de implementação. A apresentação inclui uma sessão de perguntas e discussão aberta.\n\nIndicado para estudantes e profissionais que desejam aprofundar seus conhecimentos na área.",
             "Uma visão geral das tendências atuais e futuras, com foco em aplicações reais e resultados de pesquisa recentes do grupo de estudos.\n\nO objetivo é apresentar o estado da arte e discutir direções de pesquisa promissoras.",
         ];
 

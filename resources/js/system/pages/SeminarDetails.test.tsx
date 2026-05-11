@@ -440,6 +440,19 @@ describe('SeminarDetails', () => {
         });
     });
 
+    it('passes a null description through to CalendarMenu without crashing', async () => {
+        // Exercises the falsy branch of the `seminar.description ? stripMarkdown(...) : seminar.description`
+        // ternary that feeds CalendarMenu — seminars without a description should still render.
+        const seminar = createSeminar({ name: 'No-description seminar', description: null as unknown as string });
+        vi.mocked(seminarsApi.get).mockResolvedValue({ data: seminar });
+
+        render(<SeminarDetails />);
+
+        await waitFor(() => {
+            expect(screen.getByText('No-description seminar')).toBeInTheDocument();
+        });
+    });
+
     it('shows speaker details (position, company, bio)', async () => {
         const speaker = createSpeaker({
             name: 'Dr. Smith',
