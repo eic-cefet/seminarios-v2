@@ -191,7 +191,7 @@ export default function FeedbackInsights() {
                                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                                 <Input
                                     id="feedback-search"
-                                    placeholder="Seminário, avaliador, comentário..."
+                                    placeholder="Apresentação, avaliador, comentário..."
                                     value={search}
                                     onChange={(event) => {
                                         setSearch(event.target.value);
@@ -301,7 +301,7 @@ export default function FeedbackInsights() {
                                 <Table>
                                     <TableHeader>
                                         <TableRow>
-                                            <TableHead>Seminário</TableHead>
+                                            <TableHead>Apresentação</TableHead>
                                             <TableHead>Avaliador</TableHead>
                                             <TableHead>Nota</TableHead>
                                             <TableHead>Comentário</TableHead>

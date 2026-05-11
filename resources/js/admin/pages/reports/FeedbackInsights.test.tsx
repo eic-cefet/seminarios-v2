@@ -260,7 +260,7 @@ describe('FeedbackInsights', () => {
 
         await user.type(
             screen.getByPlaceholderText(
-                'Seminário, avaliador, comentário...',
+                'Apresentação, avaliador, comentário...',
             ),
             'maria',
         );
@@ -379,7 +379,7 @@ describe('FeedbackInsights', () => {
 
         expect(resetButton).toBeDisabled();
         expect(
-            screen.getByPlaceholderText('Seminário, avaliador, comentário...'),
+            screen.getByPlaceholderText('Apresentação, avaliador, comentário...'),
         ).toHaveValue('');
     });
 
