@@ -95,7 +95,7 @@ export default function SubjectSeminars() {
                             {subject.name}
                         </h1>
                         <p className="mt-2 text-gray-500">
-                            {subject.seminarsCount ?? 0} seminários neste
+                            {subject.seminarsCount ?? 0} apresentações neste
                             tópico
                         </p>
                     </div>
@@ -116,11 +116,11 @@ export default function SubjectSeminars() {
                         <div className="rounded-lg border border-dashed border-gray-300 p-12 text-center">
                             <BookOpen className="mx-auto h-12 w-12 text-gray-400" />
                             <h3 className="mt-4 text-lg font-medium text-gray-900">
-                                Nenhum seminário encontrado
+                                Nenhuma apresentação encontrada
                             </h3>
                             <p className="mt-2 text-gray-500">
-                                Este tópico ainda não possui seminários
-                                cadastrados.
+                                Este tópico ainda não possui apresentações
+                                cadastradas.
                             </p>
                         </div>
                     )}

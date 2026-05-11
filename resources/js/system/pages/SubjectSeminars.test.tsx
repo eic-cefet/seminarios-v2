@@ -66,7 +66,7 @@ describe('SubjectSeminars', () => {
         render(<SubjectSeminars />);
 
         await waitFor(() => {
-            expect(screen.getByText(/nenhum seminário encontrado/i)).toBeInTheDocument();
+            expect(screen.getByText(/nenhuma apresentação encontrada/i)).toBeInTheDocument();
         });
     });
 
@@ -78,7 +78,7 @@ describe('SubjectSeminars', () => {
         render(<SubjectSeminars />);
 
         await waitFor(() => {
-            expect(screen.getByText(/0 seminários neste tópico/i)).toBeInTheDocument();
+            expect(screen.getByText(/0 apresentações neste tópico/i)).toBeInTheDocument();
         });
     });
 
