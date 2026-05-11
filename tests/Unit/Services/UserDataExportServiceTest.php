@@ -54,6 +54,22 @@ it('builds a ZIP containing JSON files and a README', function () {
     @unlink($zipPath);
 });
 
+it('writes a README inventory note that uses feminine "apresentações" copy', function () {
+    $user = User::factory()->create();
+
+    $zipPath = $this->service->writeZip($user);
+
+    $zip = new ZipArchive;
+    $zip->open($zipPath);
+    $readme = $zip->getFromName('README.txt');
+    $zip->close();
+    @unlink($zipPath);
+
+    expect($readme)
+        ->toContain('inscrições e presenças nas apresentações.')
+        ->not->toContain('inscrições e presenças nos seminários.');
+});
+
 it('creates the tmp directory when it does not exist', function () {
     $user = User::factory()->create();
 
