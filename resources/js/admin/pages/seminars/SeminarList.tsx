@@ -91,13 +91,13 @@ export default function SeminarList() {
         mutationFn: (id: number) => seminarsApi.delete(id),
         onSuccess: (_, id) => {
             queryClient.invalidateQueries({ queryKey: ["admin-seminars"] });
-            toast.success("Seminário excluído com sucesso");
+            toast.success("Apresentação excluída com sucesso");
             analytics.event("admin_seminar_delete", { seminar_id: id });
             setIsDeleteDialogOpen(false);
             setDeletingSeminar(null);
         },
         onError: () => {
-            toast.error("Erro ao excluir seminário");
+            toast.error("Erro ao excluir apresentação");
         },
     });
 
@@ -134,20 +134,20 @@ export default function SeminarList() {
 
     return (
         <>
-            <PageTitle title="Seminários" />
+            <PageTitle title="Apresentações" />
             <div className="space-y-6">
                 <div className="flex items-center justify-between">
                     <div>
                         <h1 className="text-2xl font-bold text-foreground">
-                            Seminários
+                            Apresentações
                         </h1>
                         <p className="text-muted-foreground">
-                            Gerenciar seminários do sistema
+                            Gerenciar apresentações do sistema
                         </p>
                     </div>
                     <Button onClick={() => navigate(ROUTES.ADMIN.SEMINAR_NEW)}>
                         <Plus className="h-4 w-4 mr-2" />
-                        Novo Seminário
+                        Nova Apresentação
                     </Button>
                 </div>
 
@@ -164,7 +164,7 @@ export default function SeminarList() {
                                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                                     <Input
                                         id="search"
-                                        placeholder="Nome do seminário..."
+                                        placeholder="Nome da apresentação..."
                                         value={searchInput}
                                         onChange={(e) =>
                                             setSearchInput(e.target.value)
@@ -208,10 +208,10 @@ export default function SeminarList() {
                 <Card>
                     <CardHeader>
                         <div className="flex items-center justify-between">
-                            <CardTitle>Lista de Seminários</CardTitle>
+                            <CardTitle>Lista de Apresentações</CardTitle>
                             {meta && (
                                 <span className="text-sm text-muted-foreground">
-                                    {meta.total} seminários encontrados
+                                    {meta.total} apresentações encontradas
                                 </span>
                             )}
                         </div>
@@ -226,7 +226,7 @@ export default function SeminarList() {
                         ) : seminars.length === 0 ? (
                             <div className="text-center py-12">
                                 <p className="text-muted-foreground">
-                                    Nenhum seminário encontrado
+                                    Nenhuma apresentação encontrada
                                 </p>
                                 {(searchTerm ||
                                     activeFilter ||
@@ -335,7 +335,7 @@ export default function SeminarList() {
                                     <div className="flex items-center justify-between mt-4 pt-4 border-t border-border">
                                         <div className="text-sm text-muted-foreground">
                                             Mostrando {meta.from} a {meta.to} de{" "}
-                                            {meta.total} seminários
+                                            {meta.total} apresentações
                                         </div>
                                         <div className="flex items-center gap-2">
                                             <Button
@@ -387,10 +387,10 @@ export default function SeminarList() {
                     <AlertDialogContent>
                         <AlertDialogHeader>
                             <AlertDialogTitle>
-                                Excluir seminário?
+                                Excluir apresentação?
                             </AlertDialogTitle>
                             <AlertDialogDescription>
-                                Tem certeza que deseja excluir o seminário "
+                                Tem certeza que deseja excluir a apresentação "
                                 {deletingSeminar?.name}"? Esta ação pode ser
                                 revertida.
                             </AlertDialogDescription>

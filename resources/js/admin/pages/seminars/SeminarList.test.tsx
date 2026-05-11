@@ -31,17 +31,17 @@ import { seminarsApi } from '../../api/adminClient';
 describe('SeminarList', () => {
     it('renders the page heading', () => {
         render(<SeminarList />);
-        expect(screen.getByText('Seminários')).toBeInTheDocument();
+        expect(screen.getByText('Apresentações')).toBeInTheDocument();
     });
 
     it('renders the subtitle', () => {
         render(<SeminarList />);
-        expect(screen.getByText('Gerenciar seminários do sistema')).toBeInTheDocument();
+        expect(screen.getByText('Gerenciar apresentações do sistema')).toBeInTheDocument();
     });
 
     it('renders the new seminar button', () => {
         render(<SeminarList />);
-        expect(screen.getByText('Novo Seminário')).toBeInTheDocument();
+        expect(screen.getByText('Nova Apresentação')).toBeInTheDocument();
     });
 
     it('renders the filters card', () => {
@@ -53,7 +53,7 @@ describe('SeminarList', () => {
         render(<SeminarList />);
 
         await waitFor(() => {
-            expect(screen.getByText('Nenhum seminário encontrado')).toBeInTheDocument();
+            expect(screen.getByText('Nenhuma apresentação encontrada')).toBeInTheDocument();
         });
     });
 
@@ -112,13 +112,13 @@ describe('SeminarList', () => {
 
     it('renders search input', () => {
         render(<SeminarList />);
-        expect(screen.getByPlaceholderText('Nome do seminário...')).toBeInTheDocument();
+        expect(screen.getByPlaceholderText('Nome da apresentação...')).toBeInTheDocument();
     });
 
     it('allows typing in the search input', async () => {
         render(<SeminarList />);
         const user = userEvent.setup();
-        const searchInput = screen.getByPlaceholderText('Nome do seminário...');
+        const searchInput = screen.getByPlaceholderText('Nome da apresentação...');
         await user.type(searchInput, 'IA');
         expect(searchInput).toHaveValue('IA');
     });
@@ -210,7 +210,7 @@ describe('SeminarList', () => {
         render(<SeminarList />);
         const user = userEvent.setup();
 
-        await user.click(screen.getByText('Novo Seminário'));
+        await user.click(screen.getByText('Nova Apresentação'));
         expect(mockNavigate).toHaveBeenCalledWith('/seminars/new');
     });
 
@@ -245,7 +245,7 @@ describe('SeminarList', () => {
         await user.click(deleteButton);
 
         await waitFor(() => {
-            expect(screen.getByText('Excluir seminário?')).toBeInTheDocument();
+            expect(screen.getByText('Excluir apresentação?')).toBeInTheDocument();
         });
         expect(screen.getAllByText(/Seminário Delete/).length).toBeGreaterThanOrEqual(1);
     });
@@ -318,7 +318,7 @@ describe('SeminarList', () => {
         render(<SeminarList />);
 
         await waitFor(() => {
-            expect(screen.getByText('42 seminários encontrados')).toBeInTheDocument();
+            expect(screen.getByText('42 apresentações encontradas')).toBeInTheDocument();
         });
     });
 
@@ -353,7 +353,7 @@ describe('SeminarList', () => {
         await user.click(deleteButton);
 
         await waitFor(() => {
-            expect(screen.getByText('Excluir seminário?')).toBeInTheDocument();
+            expect(screen.getByText('Excluir apresentação?')).toBeInTheDocument();
         });
 
         const confirmBtn = screen.getByRole('button', { name: 'Excluir' });
@@ -404,7 +404,7 @@ describe('SeminarList', () => {
         render(<SeminarList />);
         const user = userEvent.setup();
 
-        const searchInput = screen.getByPlaceholderText('Nome do seminário...');
+        const searchInput = screen.getByPlaceholderText('Nome da apresentação...');
         await user.type(searchInput, 'test search');
 
         await waitFor(() => {
@@ -413,7 +413,7 @@ describe('SeminarList', () => {
     });
 
     it('covers deleteMutation onError (line 99) showing error toast', async () => {
-        // Line 99: toast.error("Erro ao excluir seminário")
+        // Line 99: toast.error("Erro ao excluir apresentação")
         vi.mocked(seminarsApi.list).mockResolvedValue({
             data: [
                 {
@@ -445,7 +445,7 @@ describe('SeminarList', () => {
         await user.click(deleteButton);
 
         await waitFor(() => {
-            expect(screen.getByText('Excluir seminário?')).toBeInTheDocument();
+            expect(screen.getByText('Excluir apresentação?')).toBeInTheDocument();
         });
 
         // Confirm delete - will trigger onError
@@ -495,7 +495,7 @@ describe('SeminarList', () => {
         render(<SeminarList />);
         const user = userEvent.setup();
 
-        const searchInput = screen.getByPlaceholderText('Nome do seminário...');
+        const searchInput = screen.getByPlaceholderText('Nome da apresentação...');
         await user.type(searchInput, 'something');
 
         await waitFor(() => {
@@ -554,7 +554,7 @@ describe('SeminarList', () => {
         render(<SeminarList />);
 
         await waitFor(() => {
-            expect(screen.getByText('Mostrando 1 a 10 de 30 seminários')).toBeInTheDocument();
+            expect(screen.getByText('Mostrando 1 a 10 de 30 apresentações')).toBeInTheDocument();
         });
     });
 
@@ -567,11 +567,11 @@ describe('SeminarList', () => {
         render(<SeminarList />);
         const user = userEvent.setup();
 
-        const searchInput = screen.getByPlaceholderText('Nome do seminário...');
+        const searchInput = screen.getByPlaceholderText('Nome da apresentação...');
         await user.type(searchInput, 'nonexistent');
 
         await waitFor(() => {
-            expect(screen.getByText('Nenhum seminário encontrado')).toBeInTheDocument();
+            expect(screen.getByText('Nenhuma apresentação encontrada')).toBeInTheDocument();
         });
     });
 
@@ -634,7 +634,7 @@ describe('SeminarList', () => {
 
     it('renders the list title card', () => {
         render(<SeminarList />);
-        expect(screen.getByText('Lista de Seminários')).toBeInTheDocument();
+        expect(screen.getByText('Lista de Apresentações')).toBeInTheDocument();
     });
 
     it('clicking Anterior goes back a page', async () => {
@@ -738,7 +738,7 @@ describe('SeminarList', () => {
 
         // The empty state should show "Limpar filtros" link because upcomingFilter is true
         await waitFor(() => {
-            expect(screen.getByText('Nenhum seminário encontrado')).toBeInTheDocument();
+            expect(screen.getByText('Nenhuma apresentação encontrada')).toBeInTheDocument();
         });
 
         // There should be a "Limpar filtros" button in the empty state area (variant="link")
