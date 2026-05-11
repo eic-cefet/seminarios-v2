@@ -100,8 +100,8 @@ describe('Home', () => {
         expect(secLink).toHaveAttribute('href', `/topico/${subjects[1].slug}`);
 
         // Check seminars count is displayed
-        expect(screen.getByText('12 seminários')).toBeInTheDocument();
-        expect(screen.getByText('8 seminários')).toBeInTheDocument();
+        expect(screen.getByText('12 apresentações')).toBeInTheDocument();
+        expect(screen.getByText('8 apresentações')).toBeInTheDocument();
     });
 
     it('renders subject with seminarsCount as 0 when undefined', async () => {
@@ -117,16 +117,16 @@ describe('Home', () => {
         });
 
         // The ?? 0 fallback should display "0 seminários"
-        expect(screen.getByText('0 seminários')).toBeInTheDocument();
+        expect(screen.getByText('0 apresentações')).toBeInTheDocument();
     });
 
-    it('shows "Nenhum seminário agendado" when no upcoming seminars', async () => {
+    it('shows "Nenhuma apresentação agendada" when no upcoming seminars', async () => {
         vi.mocked(seminarsApi.upcoming).mockResolvedValue({ data: [] });
 
         render(<Home />);
 
         await waitFor(() => {
-            expect(screen.getByText(/nenhum seminário agendado no momento/i)).toBeInTheDocument();
+            expect(screen.getByText(/nenhuma apresentação agendada no momento/i)).toBeInTheDocument();
         });
     });
 });
