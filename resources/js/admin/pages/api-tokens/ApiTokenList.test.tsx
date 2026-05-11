@@ -225,7 +225,7 @@ describe('ApiTokenList', () => {
 
         // Should show resource groups with access level buttons
         await waitFor(() => {
-            expect(screen.getByText('Seminários')).toBeInTheDocument();
+            expect(screen.getByText('Apresentações')).toBeInTheDocument();
         });
         expect(screen.getByText('Locais')).toBeInTheDocument();
         expect(screen.getByText('Usuários')).toBeInTheDocument();
@@ -247,10 +247,10 @@ describe('ApiTokenList', () => {
         await userEvent.click(screen.getByRole('switch'));
 
         await waitFor(() => {
-            expect(screen.getByText('Seminários')).toBeInTheDocument();
+            expect(screen.getByText('Apresentações')).toBeInTheDocument();
         });
 
-        // Click "Leitura" for Seminários (first "Leitura" button)
+        // Click "Leitura" for Apresentações (first "Leitura" button)
         const leituraButtons = screen.getAllByText('Leitura');
         await userEvent.click(leituraButtons[0]);
 
@@ -302,10 +302,10 @@ describe('ApiTokenList', () => {
         await userEvent.click(screen.getByRole('switch'));
 
         await waitFor(() => {
-            expect(screen.getByText('Seminários')).toBeInTheDocument();
+            expect(screen.getByText('Apresentações')).toBeInTheDocument();
         });
 
-        // Select Leitura for Seminários
+        // Select Leitura for Apresentações
         const leituraButtons = screen.getAllByText('Leitura');
         await userEvent.click(leituraButtons[0]);
 
@@ -325,7 +325,7 @@ describe('ApiTokenList', () => {
         // Toggle off, select something, toggle back on
         await userEvent.click(screen.getByRole('switch'));
         await waitFor(() => {
-            expect(screen.getByText('Seminários')).toBeInTheDocument();
+            expect(screen.getByText('Apresentações')).toBeInTheDocument();
         });
 
         const leituraButtons = screen.getAllByText('Leitura');
@@ -336,7 +336,7 @@ describe('ApiTokenList', () => {
 
         // Abilities picker should be hidden
         await waitFor(() => {
-            expect(screen.queryByText('Seminários')).not.toBeInTheDocument();
+            expect(screen.queryByText('Apresentações')).not.toBeInTheDocument();
         });
     });
 
@@ -555,7 +555,7 @@ describe('ApiTokenList', () => {
             expect(screen.getByText('Editar Token')).toBeInTheDocument();
         });
         // Scoped token should show abilities picker (full access off)
-        expect(screen.getByText('Seminários')).toBeInTheDocument();
+        expect(screen.getByText('Apresentações')).toBeInTheDocument();
     });
 
     it('submits edit form', async () => {

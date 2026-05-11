@@ -83,8 +83,8 @@ function isTokenExpired(expiresAt: string | null): boolean {
 }
 
 const RESOURCE_GROUPS = [
-    { resource: "seminars", label: "Seminários" },
-    { resource: "seminar-types", label: "Tipos de Seminário" },
+    { resource: "seminars", label: "Apresentações" },
+    { resource: "seminar-types", label: "Tipos de Apresentação" },
     { resource: "locations", label: "Locais" },
     { resource: "users", label: "Usuários" },
     { resource: "speaker-data", label: "Dados de Palestrante" },
