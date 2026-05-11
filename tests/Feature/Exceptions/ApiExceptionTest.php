@@ -113,6 +113,7 @@ describe('ApiException', function () {
 
         expect($exception->errorCode)->toBe('already_registered');
         expect($exception->statusCode)->toBe(409);
+        expect($exception->getMessage())->toBe('Você já está inscrito nesta apresentação');
     });
 
     it('creates not registered exception', function () {
@@ -120,6 +121,7 @@ describe('ApiException', function () {
 
         expect($exception->errorCode)->toBe('not_registered');
         expect($exception->statusCode)->toBe(400);
+        expect($exception->getMessage())->toBe('Você não está inscrito nesta apresentação');
     });
 
     it('creates seminar expired exception', function () {
@@ -127,6 +129,7 @@ describe('ApiException', function () {
 
         expect($exception->errorCode)->toBe('seminar_expired');
         expect($exception->statusCode)->toBe(400);
+        expect($exception->getMessage())->toBe('Esta apresentação já foi realizada');
     });
 
     it('creates cannot merge subjects exception', function () {
@@ -141,6 +144,7 @@ describe('ApiException', function () {
 
         expect($exception->errorCode)->toBe('subject_in_use');
         expect($exception->statusCode)->toBe(409);
+        expect($exception->getMessage())->toBe('Este assunto está associado a apresentações e não pode ser excluído');
     });
 
     it('creates workshop in use exception', function () {
@@ -148,6 +152,7 @@ describe('ApiException', function () {
 
         expect($exception->errorCode)->toBe('workshop_in_use');
         expect($exception->statusCode)->toBe(409);
+        expect($exception->getMessage())->toBe('Este workshop possui apresentações associadas e não pode ser excluído');
     });
 
     it('creates cannot delete self exception', function () {
@@ -162,6 +167,7 @@ describe('ApiException', function () {
 
         expect($exception->errorCode)->toBe('seminar_full');
         expect($exception->statusCode)->toBe(409);
+        expect($exception->getMessage())->toBe('Esta apresentação atingiu sua capacidade máxima');
     });
 
     it('creates location in use exception', function () {
@@ -169,6 +175,7 @@ describe('ApiException', function () {
 
         expect($exception->errorCode)->toBe('location_in_use');
         expect($exception->statusCode)->toBe(409);
+        expect($exception->getMessage())->toBe('Esta localização está associada a apresentações e não pode ser excluída');
     });
 
     it('creates seminar type in use exception', function () {
@@ -176,6 +183,7 @@ describe('ApiException', function () {
 
         expect($exception->errorCode)->toBe('seminar_type_in_use');
         expect($exception->statusCode)->toBe(409);
+        expect($exception->getMessage())->toBe('Este tipo de apresentação está associado a apresentações e não pode ser excluído');
     });
 
     it('creates seminar has registrations exception', function () {
@@ -183,5 +191,6 @@ describe('ApiException', function () {
 
         expect($exception->errorCode)->toBe('seminar_has_registrations');
         expect($exception->statusCode)->toBe(409);
+        expect($exception->getMessage())->toBe('Esta apresentação possui inscrições e não pode ser excluída');
     });
 });
