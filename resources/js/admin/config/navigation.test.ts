@@ -10,15 +10,15 @@ describe('adminNavigation', () => {
         const labels = adminNavigation.map((item) => item.label);
         expect(labels).toContain('Dashboard');
         expect(labels).toContain('Usuários');
-        expect(labels).toContain('Seminários');
+        expect(labels).toContain('Apresentações');
         expect(labels).toContain('Inscrições');
         expect(labels).toContain('Relatórios');
     });
 
-    it('has children for Seminários', () => {
-        const seminarios = adminNavigation.find((item) => item.label === 'Seminários');
-        expect(seminarios?.children).toBeDefined();
-        expect(seminarios?.children?.length).toBeGreaterThan(0);
+    it('has children for Apresentações', () => {
+        const apresentacoes = adminNavigation.find((item) => item.label === 'Apresentações');
+        expect(apresentacoes?.children).toBeDefined();
+        expect(apresentacoes?.children?.length).toBeGreaterThan(0);
     });
 
     it('includes Feedback IA under Relatórios', () => {
@@ -50,11 +50,11 @@ describe('filterNavigation', () => {
 
     it('filters adminOnly children', () => {
         const filtered = filterNavigation(adminNavigation, false);
-        const seminarios = filtered.find((item) => item.label === 'Seminários');
-        expect(seminarios?.children).toBeDefined();
+        const apresentacoes = filtered.find((item) => item.label === 'Apresentações');
+        expect(apresentacoes?.children).toBeDefined();
         // Only non-adminOnly children should remain
-        const childLabels = seminarios?.children?.map((c) => c.label) ?? [];
-        expect(childLabels).toContain('Seminários');
+        const childLabels = apresentacoes?.children?.map((c) => c.label) ?? [];
+        expect(childLabels).toContain('Apresentações');
         expect(childLabels).not.toContain('Locais');
     });
 

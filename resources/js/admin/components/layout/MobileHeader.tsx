@@ -8,7 +8,7 @@ import { adminNavigation, filterNavigation } from "../../config/navigation";
 
 export function MobileHeader() {
     const [menuOpen, setMenuOpen] = useState(false);
-    const [expandedMenus, setExpandedMenus] = useState<string[]>(["Seminários"]);
+    const [expandedMenus, setExpandedMenus] = useState<string[]>(["Apresentações"]);
     const { user, logout } = useAuth();
     const isAdmin = hasRole(user?.roles, ROLES.ADMIN);
 

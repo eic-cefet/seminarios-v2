@@ -84,13 +84,13 @@ describe('MobileHeader', () => {
         expect(screen.queryByText('Inscrições')).not.toBeInTheDocument();
     });
 
-    it('renders the Seminários group trigger when menu is open', () => {
+    it('renders the Apresentações group trigger when menu is open', () => {
         render(<MobileHeader />);
         fireEvent.click(screen.getByText('Abrir menu'));
 
-        // Seminários group trigger should be present
-        const seminarioButtons = screen.getAllByText('Seminários');
-        expect(seminarioButtons.length).toBeGreaterThan(0);
+        // Apresentações group trigger should be present
+        const apresentacoesButtons = screen.getAllByText('Apresentações');
+        expect(apresentacoesButtons.length).toBeGreaterThan(0);
     });
 
     it('calls logout when the logout button is clicked', async () => {
@@ -158,21 +158,21 @@ describe('MobileHeader', () => {
         render(<MobileHeader />);
         fireEvent.click(screen.getByText('Abrir menu'));
 
-        // Seminários group is expanded by default
-        // Find the Seminários button (the group trigger, not the child link)
+        // Apresentações group is expanded by default
+        // Find the Apresentações button (the group trigger, not the child link)
         const allButtons = document.querySelectorAll('button');
-        const seminariosTrigger = Array.from(allButtons).find(
-            (b) => b.textContent?.includes('Seminários') && !b.textContent?.includes('Abrir'),
+        const apresentacoesTrigger = Array.from(allButtons).find(
+            (b) => b.textContent?.includes('Apresentações') && !b.textContent?.includes('Abrir'),
         );
-        expect(seminariosTrigger).toBeTruthy();
+        expect(apresentacoesTrigger).toBeTruthy();
 
         // Click to collapse
-        fireEvent.click(seminariosTrigger!);
+        fireEvent.click(apresentacoesTrigger!);
 
         // Now expanded children should be gone (Workshops, Locais, Tópicos etc.)
         // For admin, these should no longer be visible
         // Click again to re-expand
-        fireEvent.click(seminariosTrigger!);
+        fireEvent.click(apresentacoesTrigger!);
     });
 
     it('hides Relatórios group for teacher users', async () => {
@@ -193,7 +193,7 @@ describe('MobileHeader', () => {
         expect(screen.queryByText('Relatórios')).not.toBeInTheDocument();
     });
 
-    it('hides admin-only Seminários children for teacher users', async () => {
+    it('hides admin-only Apresentações children for teacher users', async () => {
         const { useAuth } = await import('@shared/contexts/AuthContext');
         vi.mocked(useAuth).mockReturnValue({
             user: { id: 2, name: 'Teacher', email: 'teacher@test.com', roles: ['teacher'] } as any,
@@ -209,7 +209,7 @@ describe('MobileHeader', () => {
         render(<MobileHeader />);
         fireEvent.click(screen.getByText('Abrir menu'));
 
-        // Teacher should see the Seminários group but not admin-only children
+        // Teacher should see the Apresentações group but not admin-only children
         expect(screen.queryByText('Workshops')).not.toBeInTheDocument();
         expect(screen.queryByText('Locais')).not.toBeInTheDocument();
         expect(screen.queryByText('Tópicos')).not.toBeInTheDocument();
@@ -262,10 +262,10 @@ describe('MobileHeader', () => {
         });
         fireEvent.click(screen.getByText('Abrir menu'));
 
-        // Seminários group is expanded by default, its children should be visible
-        // The child "Seminários" link (href=/seminars) should be active at route "/seminars"
-        const seminarsChildLinks = screen.getAllByText('Seminários');
-        const childNavLink = seminarsChildLinks
+        // Apresentações group is expanded by default, its children should be visible
+        // The child "Apresentações" link (href=/seminars) should be active at route "/seminars"
+        const apresentacoesChildLinks = screen.getAllByText('Apresentações');
+        const childNavLink = apresentacoesChildLinks
             .map(el => el.closest('a'))
             .find(a => a?.getAttribute('href') === '/seminars');
         expect(childNavLink).toBeInTheDocument();

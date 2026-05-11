@@ -115,16 +115,17 @@ describe('Sidebar', () => {
         expect(screen.queryByText('Inscrições')).not.toBeInTheDocument();
     });
 
-    it('renders the Seminários collapsible menu group', () => {
+    it('renders the Apresentações collapsible menu group', () => {
         render(<Sidebar />);
-        // "Seminários" appears as both the subtitle and the collapsible menu label
-        expect(screen.getAllByText('Seminários').length).toBeGreaterThanOrEqual(1);
+        // The brand subtitle still shows "Seminários"; the collapsible menu
+        // group label is now "Apresentações" (parent + child NavLink).
+        expect(screen.getAllByText('Apresentações').length).toBeGreaterThanOrEqual(1);
     });
 
-    it('renders the Seminários collapsible trigger with open state', () => {
+    it('renders the Apresentações collapsible trigger with open state', () => {
         render(<Sidebar />);
-        // Seminários group is open by default - verify trigger has open state
-        const triggers = screen.getAllByText('Seminários');
+        // Apresentações group is open by default - verify trigger has open state
+        const triggers = screen.getAllByText('Apresentações');
         const trigger = triggers.find(el => el.closest('button'));
         expect(trigger?.closest('button')).toHaveAttribute('data-state', 'open');
     });
@@ -158,8 +159,8 @@ describe('Sidebar', () => {
     it('toggles collapsible menu when trigger is clicked', async () => {
         render(<Sidebar />);
 
-        // Seminários group is open by default
-        const triggers = screen.getAllByText('Seminários');
+        // Apresentações group is open by default
+        const triggers = screen.getAllByText('Apresentações');
         const trigger = triggers.find(el => el.closest('button'));
         expect(trigger?.closest('button')).toHaveAttribute('data-state', 'open');
 
@@ -172,7 +173,7 @@ describe('Sidebar', () => {
         expect(trigger?.closest('button')).toHaveAttribute('data-state', 'open');
     });
 
-    it('renders teacher-visible items in Seminários group for teacher users', async () => {
+    it('renders teacher-visible items in Apresentações group for teacher users', async () => {
         const { useAuth } = await import('@shared/contexts/AuthContext');
         vi.mocked(useAuth).mockReturnValue({
             user: { id: 2, name: 'Teacher', email: 'teacher@test.com', roles: ['teacher'] } as any,
@@ -186,25 +187,25 @@ describe('Sidebar', () => {
         });
 
         render(<Sidebar />);
-        // For teachers, Seminários group should still render (child "Seminários" item is not adminOnly)
-        const seminariosTriggers = screen.getAllByText('Seminários');
-        expect(seminariosTriggers.length).toBeGreaterThanOrEqual(1);
+        // For teachers, Apresentações group should still render (child "Apresentações" item is not adminOnly)
+        const apresentacoesTriggers = screen.getAllByText('Apresentações');
+        expect(apresentacoesTriggers.length).toBeGreaterThanOrEqual(1);
         // But admin-only children like Workshops, Locais, Tópicos should be hidden
         expect(screen.queryByText('Workshops')).not.toBeInTheDocument();
         expect(screen.queryByText('Locais')).not.toBeInTheDocument();
         expect(screen.queryByText('Tópicos')).not.toBeInTheDocument();
     });
 
-    it('renders admin-only children items in Seminários group for admin users', () => {
+    it('renders admin-only children items in Apresentações group for admin users', () => {
         render(<Sidebar />);
-        // Admin should see all Seminários children
+        // Admin should see all Apresentações children
         // These are rendered inside Collapsible.Content which may not render in jsdom,
         // but let's check the trigger contains admin items
-        // Since Seminários is open by default, we check for the items
+        // Since Apresentações is open by default, we check for the items
         const allButtons = document.querySelectorAll('button');
-        // At minimum, the Seminários trigger should be present
-        const seminariosTrigger = Array.from(allButtons).find(b => b.textContent?.includes('Seminários'));
-        expect(seminariosTrigger).toBeTruthy();
+        // At minimum, the Apresentações trigger should be present
+        const apresentacoesTrigger = Array.from(allButtons).find(b => b.textContent?.includes('Apresentações'));
+        expect(apresentacoesTrigger).toBeTruthy();
     });
 
     it('renders the Voltar ao Site link with correct href', () => {
@@ -313,10 +314,10 @@ describe('Sidebar', () => {
             routerProps: { initialEntries: ['/seminars'] },
         });
 
-        // Seminários group is open by default, its children should be visible
-        // The child "Seminários" link (href=/seminars) should be active at route "/seminars"
-        const seminarsChildLinks = screen.getAllByText('Seminários');
-        const childNavLink = seminarsChildLinks
+        // Apresentações group is open by default, its children should be visible
+        // The child "Apresentações" link (href=/seminars) should be active at route "/seminars"
+        const apresentacoesChildLinks = screen.getAllByText('Apresentações');
+        const childNavLink = apresentacoesChildLinks
             .map(el => el.closest('a'))
             .find(a => a?.getAttribute('href') === '/seminars');
         expect(childNavLink).toBeInTheDocument();
