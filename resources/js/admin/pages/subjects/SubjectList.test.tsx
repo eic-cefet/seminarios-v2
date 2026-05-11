@@ -859,7 +859,11 @@ describe('SubjectList', () => {
         render(<SubjectList />);
 
         await act(() => {
-            capturedSubDeleteOptions.onError(new Error('Este tópico possui apresentações associadas'));
+            // The frontend's onError substring-matches "associado" — the real
+            // backend message from ApiException::subjectInUse() reads "Este
+            // assunto está associado a apresentações..." (assunto is masculine,
+            // so "associado" agrees with it).
+            capturedSubDeleteOptions.onError(new Error('Este assunto está associado a apresentações e não pode ser excluído'));
         });
 
         expect(screen.getByText('Tópicos')).toBeInTheDocument();
