@@ -103,7 +103,7 @@ class AdminSeminarController extends Controller
         ])->loadCount('registrations');
 
         return response()->json([
-            'message' => 'Seminário criado com sucesso',
+            'message' => 'Apresentação criada com sucesso',
             'data' => new AdminSeminarResource($seminar),
         ], 201);
     }
@@ -152,7 +152,7 @@ class AdminSeminarController extends Controller
         }
 
         return response()->json([
-            'message' => 'Seminário atualizado com sucesso',
+            'message' => 'Apresentação atualizada com sucesso',
             'data' => new AdminSeminarResource($seminar),
         ]);
     }
@@ -164,7 +164,7 @@ class AdminSeminarController extends Controller
         $seminar->delete();
 
         return response()->json([
-            'message' => 'Seminário excluído com sucesso',
+            'message' => 'Apresentação excluída com sucesso',
         ]);
     }
 

@@ -178,7 +178,7 @@ describe('POST /api/admin/seminars', function () {
         ]);
 
         $response->assertStatus(201)
-            ->assertJsonPath('message', 'Seminário criado com sucesso')
+            ->assertJsonPath('message', 'Apresentação criada com sucesso')
             ->assertJsonPath('data.name', 'Novo Seminário');
 
         expect(Seminar::where('name', 'Novo Seminário')->exists())->toBeTrue();
@@ -353,7 +353,7 @@ describe('PUT /api/admin/seminars/{id}', function () {
         ]);
 
         $response->assertSuccessful()
-            ->assertJsonPath('message', 'Seminário atualizado com sucesso')
+            ->assertJsonPath('message', 'Apresentação atualizada com sucesso')
             ->assertJsonPath('data.name', 'Seminário Atualizado');
     });
 
@@ -587,7 +587,7 @@ describe('DELETE /api/admin/seminars/{id}', function () {
         $response = $this->deleteJson("/api/admin/seminars/{$seminar->id}");
 
         $response->assertSuccessful()
-            ->assertJsonPath('message', 'Seminário excluído com sucesso');
+            ->assertJsonPath('message', 'Apresentação excluída com sucesso');
 
         expect(Seminar::find($seminar->id))->toBeNull();
         expect(Seminar::withTrashed()->find($seminar->id))->not->toBeNull();
