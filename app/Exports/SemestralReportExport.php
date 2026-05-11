@@ -38,7 +38,7 @@ class SemestralReportExport implements FromCollection, ShouldAutoSize, WithHeadi
             'Nome',
             'Email',
             'Curso',
-            'Horas em Seminários',
+            'Horas em Apresentações',
             'Apresentações Assistidas',
         ];
     }
