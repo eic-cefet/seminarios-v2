@@ -47,8 +47,8 @@ export default function Certificates() {
                             )}
                         </div>
                         <p className="mt-1 text-sm text-gray-500">
-                            Certificados emitidos para os seminários que você
-                            participou
+                            Certificados emitidos para as apresentações que
+                            você participou
                         </p>
                     </div>
                 </div>
@@ -67,7 +67,7 @@ export default function Certificates() {
                                 </h3>
                                 <p className="mt-2 text-sm text-gray-500">
                                     Certificados são gerados após a confirmação
-                                    de presença em um seminário.
+                                    de presença em uma apresentação.
                                 </p>
                                 <Link
                                     to={ROUTES.SYSTEM.PRESENTATIONS}
