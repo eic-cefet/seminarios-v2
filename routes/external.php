@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\External\ExternalLocationController;
+use App\Http\Controllers\External\ExternalPresenceLinkController;
 use App\Http\Controllers\External\ExternalSeminarController;
 use App\Http\Controllers\External\ExternalSeminarTypeController;
 use App\Http\Controllers\External\ExternalSpeakerDataController;
@@ -23,6 +24,12 @@ Route::middleware(['auth:sanctum', 'admin', 'external.conditional', 'external.id
         });
         Route::middleware('ability:seminars:delete')->group(function () {
             Route::delete('seminars/{seminar:slug}', [ExternalSeminarController::class, 'destroy'])->name('seminars.destroy');
+        });
+
+        // Presence links
+        Route::middleware('ability:presence-link:read')->group(function () {
+            Route::get('seminars/{seminar:slug}/presence-link', [ExternalPresenceLinkController::class, 'show'])
+                ->name('seminars.presence-link.show');
         });
 
         // Seminar Types
