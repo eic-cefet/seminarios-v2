@@ -138,7 +138,9 @@ describe('Token abilities enforcement', function () {
         expect($response->json('data'))->toContain('workshops:delete');
         expect($response->json('data'))->toContain('locations:delete');
         expect($response->json('data'))->toContain('seminar-types:delete');
-        expect($response->json('data'))->toHaveCount(16);
+        expect($response->json('data'))->toContain('presence-link:read');
+        expect($response->json('data'))->toContain('presence-link:write');
+        expect($response->json('data'))->toHaveCount(18);
     });
 
     it('creates token with specific abilities', function () {

@@ -44,4 +44,9 @@ final class LockKey
     {
         return self::PREFIX.':external_api:idempotency:'.$tokenScope.':'.hash('sha256', $idempotencyKey);
     }
+
+    public static function presenceLinkCreation(int $seminarId): string
+    {
+        return self::PREFIX.':presence_link:seminar:'.$seminarId;
+    }
 }

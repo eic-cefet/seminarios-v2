@@ -230,6 +230,7 @@ describe('ApiTokenList', () => {
         expect(screen.getByText('Locais')).toBeInTheDocument();
         expect(screen.getByText('Usuários')).toBeInTheDocument();
         expect(screen.getByText('Dados de Palestrante')).toBeInTheDocument();
+        expect(screen.getByText('Link de Presença')).toBeInTheDocument();
     });
 
     it('submits with specific abilities when full access is off', async () => {
@@ -268,6 +269,39 @@ describe('ApiTokenList', () => {
             expect.objectContaining({
                 name: 'Scoped Token',
                 abilities: expect.arrayContaining(['seminars:read']),
+            }),
+            expect.anything(),
+        );
+    });
+
+    it('emits presence-link abilities when Escrita is selected for Link de Presença', async () => {
+        render(<ApiTokenList />);
+        await userEvent.click(screen.getByText('Novo Token'));
+
+        await waitFor(() => {
+            expect(screen.getByText('Acesso total')).toBeInTheDocument();
+        });
+
+        await userEvent.type(screen.getByPlaceholderText('Ex: Integração TCC'), 'Presence Token');
+        await userEvent.click(screen.getByRole('switch'));
+
+        await waitFor(() => {
+            expect(screen.getByText('Link de Presença')).toBeInTheDocument();
+        });
+
+        // The "Link de Presença" row's escrita button is the last one (new entry appended at end).
+        const escritaButtons = screen.getAllByText('Escrita');
+        await userEvent.click(escritaButtons[escritaButtons.length - 1]);
+
+        const form = screen.getByPlaceholderText('Ex: Integração TCC').closest('form');
+        await act(async () => {
+            form?.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+        });
+
+        expect(apiTokensApi.create).toHaveBeenCalledWith(
+            expect.objectContaining({
+                name: 'Presence Token',
+                abilities: expect.arrayContaining(['presence-link:read', 'presence-link:write']),
             }),
             expect.anything(),
         );

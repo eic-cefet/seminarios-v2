@@ -90,6 +90,7 @@ class AppServiceProvider extends ServiceProvider
                 'ExternalUser' => 'Users',
                 'ExternalSpeakerData' => 'Speaker Data',
                 'ExternalWorkshop' => 'Workshops',
+                'ExternalPresenceLink' => 'Presence Link',
             ];
 
             foreach ($openApi->paths as $path) {

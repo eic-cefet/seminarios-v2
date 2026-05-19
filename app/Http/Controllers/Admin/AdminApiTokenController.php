@@ -32,6 +32,8 @@ class AdminApiTokenController extends Controller
         'workshops:read',
         'workshops:write',
         'workshops:delete',
+        'presence-link:read',
+        'presence-link:write',
     ];
 
     public function index(Request $request): JsonResponse
