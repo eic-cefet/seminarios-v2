@@ -2,10 +2,13 @@
 
 namespace App\Http\Controllers\External;
 
+use App\Exceptions\ApiException;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\External\ExternalPresenceLinkUpdateRequest;
 use App\Http\Resources\External\ExternalPresenceLinkResource;
 use App\Models\PresenceLink;
 use App\Models\Seminar;
+use Dedoc\Scramble\Attributes\BodyParameter;
 use Dedoc\Scramble\Attributes\QueryParameter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -95,6 +98,70 @@ class ExternalPresenceLinkController extends Controller
             'message' => 'Presence link created successfully.',
             'data' => (new ExternalPresenceLinkResource($presenceLink))->toArray($request),
         ], 201);
+    }
+
+    /**
+     * Update the presence link's active state and/or expiry.
+     *
+     * Accepts both `PATCH` and `PUT` (route registered via `Route::match`).
+     * Body must include at least one of `active` or `expires_at`; an empty
+     * body or a body with only unrecognized fields returns `422`.
+     *
+     * **Implicit expiry policy.** When `active` is sent and `expires_at` is
+     * NOT sent, the server computes `expires_at` so the one-liner case
+     * matches the admin panel:
+     *
+     * | Sent `active` | Sent `expires_at`? | Resulting `expires_at` |
+     * | ------------- | ------------------ | ---------------------- |
+     * | `true`        | no                 | `max(scheduled_at + 4h, now() + 1h)` |
+     * | `false`       | no                 | `null` |
+     * | (any)         | yes                | the value sent (including `null`) |
+     *
+     * If the seminar has no presence link to update, returns
+     * `404 not_found` — call `POST .../presence-link` first to create it.
+     */
+    #[BodyParameter('active', description: 'New active state. When sent without `expires_at`, the server auto-computes the expiry: `true` → `max(scheduled_at + 4h, now() + 1h)`; `false` → `null`. To override the auto-compute, send `expires_at` explicitly.', type: 'boolean', example: true)]
+    #[BodyParameter('expires_at', description: 'Explicit expiry override (ISO-8601 datetime, or `null` to clear). When present in the request body, this value wins over the auto-compute branch — even when `active` is also sent.', type: 'string', example: '2026-06-15T20:00:00Z')]
+    public function update(ExternalPresenceLinkUpdateRequest $request, Seminar $seminar): JsonResponse
+    {
+        Gate::authorize('update', $seminar);
+
+        $presenceLink = $seminar->presenceLink;
+
+        if (! $presenceLink) {
+            throw ApiException::notFound('Presence link not found');
+        }
+
+        $validated = $request->validated();
+        $updates = [];
+
+        if ($request->has('active')) {
+            $newActive = (bool) $validated['active'];
+            $updates['active'] = $newActive;
+
+            if (! $request->has('expires_at')) {
+                if ($newActive) {
+                    $scheduledExpiry = $seminar->scheduled_at?->addHours(4);
+                    $minimumExpiry = now()->addHour();
+                    $updates['expires_at'] = $scheduledExpiry && $scheduledExpiry->gt($minimumExpiry)
+                        ? $scheduledExpiry
+                        : $minimumExpiry;
+                } else {
+                    $updates['expires_at'] = null;
+                }
+            }
+        }
+
+        if ($request->has('expires_at')) {
+            $updates['expires_at'] = $validated['expires_at'] ?? null;
+        }
+
+        $presenceLink->update($updates);
+
+        return response()->json([
+            'message' => 'Presence link updated successfully.',
+            'data' => (new ExternalPresenceLinkResource($presenceLink->fresh()))->toArray($request),
+        ]);
     }
 
     private function wantsQrCode(Request $request): bool
