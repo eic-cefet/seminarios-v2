@@ -61,10 +61,14 @@ class ExternalPresenceLinkController extends Controller
      * seminar:
      *
      * - `uuid` is server-generated.
-     * - `active` defaults to `false`. Call `PATCH .../presence-link` with
-     *   `{ "active": true }` to activate.
-     * - `expires_at` defaults to `seminar.scheduled_at + 4h` when the
-     *   seminar has a scheduled date, otherwise `null`.
+     * - `active` defaults to `true` so the link is usable immediately.
+     *   Call `PATCH .../presence-link` with `{ "active": false }` to
+     *   deactivate later.
+     * - `expires_at` defaults to `max(scheduled_at + 4h, now() + 1h)` —
+     *   the same policy `PATCH { active: true }` applies on toggle. If the
+     *   seminar has no `scheduled_at`, the expiry falls back to `now + 1h`,
+     *   guaranteeing the freshly-created link is valid for at least an
+     *   hour.
      *
      * Idempotent — safe to call defensively:
      * - First call returns `201 Created` with the freshly-minted link.
@@ -87,10 +91,16 @@ class ExternalPresenceLinkController extends Controller
             ], 200);
         }
 
+        $scheduledExpiry = $seminar->scheduled_at?->addHours(4);
+        $minimumExpiry = now()->addHour();
+        $expiresAt = $scheduledExpiry && $scheduledExpiry->gt($minimumExpiry)
+            ? $scheduledExpiry
+            : $minimumExpiry;
+
         $presenceLink = PresenceLink::create([
             'seminar_id' => $seminar->id,
-            'active' => false,
-            'expires_at' => $seminar->scheduled_at?->addHours(4),
+            'active' => true,
+            'expires_at' => $expiresAt,
         ]);
 
         return response()->json([

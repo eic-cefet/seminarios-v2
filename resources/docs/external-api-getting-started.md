@@ -196,7 +196,7 @@ Conditional requests apply: pass `If-Modified-Since` or `If-None-Match` from a p
 POST /api/external/v1/seminars/{slug}/presence-link
 ```
 
-Required ability: `presence-link:write`. Empty body — the UUID is server-generated, `active` defaults to `false`, and `expires_at` is auto-set to `scheduled_at + 4h` when the seminar has a scheduled date.
+Required ability: `presence-link:write`. Empty body — the UUID is server-generated, `active` defaults to `true` so the link is usable immediately, and `expires_at` is auto-set to `max(scheduled_at + 4h, now() + 1h)` (the same rule `PATCH { active: true }` applies). The `now + 1h` floor guarantees the freshly-created link is valid for at least an hour, even when the seminar's `scheduled_at` is in the past or null. Call `PATCH .../presence-link` with `{ "active": false }` to deactivate later.
 
 - **First call:** `201 Created` with `{ "message": "Presence link created successfully.", "data": { ... } }`.
 - **Subsequent calls:** `200 OK` with `{ "message": "Presence link already exists.", "data": { ... } }` — the existing record is returned unchanged. The endpoint is safe to call defensively.

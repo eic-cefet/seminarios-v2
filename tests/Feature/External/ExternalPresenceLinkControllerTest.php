@@ -128,7 +128,7 @@ describe('GET /api/external/v1/seminars/{slug}/presence-link', function () {
 });
 
 describe('POST /api/external/v1/seminars/{slug}/presence-link', function () {
-    it('creates a presence link when none exists', function () {
+    it('creates an active presence link when none exists', function () {
         $admin = User::factory()->admin()->create();
         $token = $admin->createToken('test', ['presence-link:write']);
         $seminar = Seminar::factory()->create(['scheduled_at' => now()->addDay()]);
@@ -141,10 +141,30 @@ describe('POST /api/external/v1/seminars/{slug}/presence-link', function () {
                 'message',
                 'data' => ['id', 'uuid', 'active', 'expires_at', 'is_valid', 'url', 'png_url'],
             ])
-            ->assertJsonPath('data.active', false);
+            ->assertJsonPath('data.active', true)
+            ->assertJsonPath('data.is_valid', true);
 
-        expect($seminar->fresh()->presenceLink)->not->toBeNull();
-        expect($seminar->fresh()->presenceLink->expires_at)->not->toBeNull();
+        $link = $seminar->fresh()->presenceLink;
+        expect($link)->not->toBeNull();
+        expect($link->active)->toBeTrue();
+        expect($link->expires_at)->not->toBeNull();
+        expect($link->expires_at->greaterThan(now()))->toBeTrue();
+    });
+
+    it('uses now+1h as the expiry when scheduled_at+4h would be in the past', function () {
+        $admin = User::factory()->admin()->create();
+        $token = $admin->createToken('test', ['presence-link:write']);
+        $seminar = Seminar::factory()->create(['scheduled_at' => now()->subDays(2)]);
+
+        $this->withToken($token->plainTextToken)
+            ->postJson("/api/external/v1/seminars/{$seminar->slug}/presence-link")
+            ->assertCreated()
+            ->assertJsonPath('data.active', true)
+            ->assertJsonPath('data.is_valid', true);
+
+        $link = $seminar->fresh()->presenceLink;
+        expect($link->expires_at->greaterThan(now()))->toBeTrue();
+        expect($link->expires_at->lessThanOrEqualTo(now()->addHours(2)))->toBeTrue();
     });
 
     it('returns the existing link with 200 when one already exists (idempotent)', function () {
