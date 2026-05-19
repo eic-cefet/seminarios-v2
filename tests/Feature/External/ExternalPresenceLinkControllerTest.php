@@ -242,6 +242,28 @@ describe('PATCH /api/external/v1/seminars/{slug}/presence-link', function () {
         expect($fresh->expires_at->greaterThan(now()))->toBeTrue();
     });
 
+    it('uses now+1h as the expiry on activate when scheduled_at+4h would be in the past', function () {
+        $admin = User::factory()->admin()->create();
+        $token = $admin->createToken('test', ['presence-link:write']);
+        $seminar = Seminar::factory()->create(['scheduled_at' => now()->subDays(2)]);
+        $link = PresenceLink::factory()->create([
+            'seminar_id' => $seminar->id,
+            'active' => false,
+            'expires_at' => null,
+        ]);
+
+        $this->withToken($token->plainTextToken)
+            ->patchJson("/api/external/v1/seminars/{$seminar->slug}/presence-link", [
+                'active' => true,
+            ])
+            ->assertSuccessful();
+
+        $fresh = $link->fresh();
+        expect($fresh->active)->toBeTrue();
+        expect($fresh->expires_at->greaterThan(now()))->toBeTrue();
+        expect($fresh->expires_at->lessThanOrEqualTo(now()->addHours(2)))->toBeTrue();
+    });
+
     it('deactivates the link and clears expires_at when only active=false is sent', function () {
         $admin = User::factory()->admin()->create();
         $token = $admin->createToken('test', ['presence-link:write']);

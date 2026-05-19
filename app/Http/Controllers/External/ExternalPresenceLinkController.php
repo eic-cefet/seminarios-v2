@@ -12,6 +12,7 @@ use Dedoc\Scramble\Attributes\BodyParameter;
 use Dedoc\Scramble\Attributes\QueryParameter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
 
@@ -84,29 +85,38 @@ class ExternalPresenceLinkController extends Controller
     {
         Gate::authorize('update', $seminar);
 
-        if ($existing = $seminar->presenceLink) {
-            return response()->json([
-                'message' => 'Presence link already exists.',
-                'data' => new ExternalPresenceLinkResource($existing),
-            ], 200);
-        }
+        // Wrap the existence-check + create in a transaction with a row-level
+        // lock on the parent seminar. Two concurrent POSTs would otherwise both
+        // pass the existence check and double-create — there is no DB-level
+        // unique constraint on presence_links.seminar_id today.
+        [$presenceLink, $created] = DB::transaction(function () use ($seminar) {
+            $seminar->newQuery()->whereKey($seminar->id)->lockForUpdate()->first();
 
-        $scheduledExpiry = $seminar->scheduled_at?->addHours(4);
-        $minimumExpiry = now()->addHour();
-        $expiresAt = $scheduledExpiry && $scheduledExpiry->gt($minimumExpiry)
-            ? $scheduledExpiry
-            : $minimumExpiry;
+            if ($existing = $seminar->fresh()->presenceLink) {
+                return [$existing, false];
+            }
 
-        $presenceLink = PresenceLink::create([
-            'seminar_id' => $seminar->id,
-            'active' => true,
-            'expires_at' => $expiresAt,
-        ]);
+            $scheduledExpiry = $seminar->scheduled_at?->addHours(4);
+            $minimumExpiry = now()->addHour();
+            $expiresAt = $scheduledExpiry && $scheduledExpiry->gt($minimumExpiry)
+                ? $scheduledExpiry
+                : $minimumExpiry;
+
+            $link = PresenceLink::create([
+                'seminar_id' => $seminar->id,
+                'active' => true,
+                'expires_at' => $expiresAt,
+            ]);
+
+            return [$link, true];
+        });
 
         return response()->json([
-            'message' => 'Presence link created successfully.',
+            'message' => $created
+                ? 'Presence link created successfully.'
+                : 'Presence link already exists.',
             'data' => new ExternalPresenceLinkResource($presenceLink),
-        ], 201);
+        ], $created ? 201 : 200);
     }
 
     /**
