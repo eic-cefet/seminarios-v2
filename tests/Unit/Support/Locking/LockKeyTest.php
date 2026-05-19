@@ -30,3 +30,7 @@ it('produces deterministic keys for external API idempotency', function () {
     expect(LockKey::externalIdempotency('tok-1', 'my-key'))
         ->toBe('lock:external_api:idempotency:tok-1:'.$hash);
 });
+
+it('produces deterministic keys for presence link creation', function () {
+    expect(LockKey::presenceLinkCreation(123))->toBe('lock:presence_link:seminar:123');
+});

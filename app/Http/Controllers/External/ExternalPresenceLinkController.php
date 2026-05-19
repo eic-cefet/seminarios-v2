@@ -8,11 +8,12 @@ use App\Http\Requests\External\ExternalPresenceLinkUpdateRequest;
 use App\Http\Resources\External\ExternalPresenceLinkResource;
 use App\Models\PresenceLink;
 use App\Models\Seminar;
+use App\Support\Locking\LockKey;
+use App\Support\Locking\Mutex;
 use Dedoc\Scramble\Attributes\BodyParameter;
 use Dedoc\Scramble\Attributes\QueryParameter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
 
@@ -85,31 +86,30 @@ class ExternalPresenceLinkController extends Controller
     {
         Gate::authorize('update', $seminar);
 
-        // Wrap the existence-check + create in a transaction with a row-level
-        // lock on the parent seminar. Two concurrent POSTs would otherwise both
-        // pass the existence check and double-create — there is no DB-level
-        // unique constraint on presence_links.seminar_id today.
-        [$presenceLink, $created] = DB::transaction(function () use ($seminar) {
-            $seminar->newQuery()->whereKey($seminar->id)->lockForUpdate()->first();
+        // Serialize concurrent POSTs for the same seminar through the
+        // project's standard Mutex (Cache-backed). Two simultaneous callers
+        // would otherwise both pass the existence check and double-create —
+        // presence_links.seminar_id has no DB-level unique constraint today.
+        [$presenceLink, $created] = Mutex::for(LockKey::presenceLinkCreation($seminar->id))
+            ->protect(function () use ($seminar) {
+                if ($existing = $seminar->fresh()->presenceLink) {
+                    return [$existing, false];
+                }
 
-            if ($existing = $seminar->fresh()->presenceLink) {
-                return [$existing, false];
-            }
+                $scheduledExpiry = $seminar->scheduled_at?->addHours(4);
+                $minimumExpiry = now()->addHour();
+                $expiresAt = $scheduledExpiry && $scheduledExpiry->gt($minimumExpiry)
+                    ? $scheduledExpiry
+                    : $minimumExpiry;
 
-            $scheduledExpiry = $seminar->scheduled_at?->addHours(4);
-            $minimumExpiry = now()->addHour();
-            $expiresAt = $scheduledExpiry && $scheduledExpiry->gt($minimumExpiry)
-                ? $scheduledExpiry
-                : $minimumExpiry;
+                $link = PresenceLink::create([
+                    'seminar_id' => $seminar->id,
+                    'active' => true,
+                    'expires_at' => $expiresAt,
+                ]);
 
-            $link = PresenceLink::create([
-                'seminar_id' => $seminar->id,
-                'active' => true,
-                'expires_at' => $expiresAt,
-            ]);
-
-            return [$link, true];
-        });
+                return [$link, true];
+            });
 
         return response()->json([
             'message' => $created
