@@ -20,7 +20,7 @@ Send a Sanctum personal access token in the `Authorization` header:
 Authorization: Bearer sk-XXXXXXXXXXXXXXXX
 ```
 
-Tokens are issued by an administrator from the admin panel. Each token is bound to an admin or teacher account, has a name, an optional expiry, and a set of fine-grained abilities (e.g. `seminars:read`, `seminars:write`, `workshops:read`, `users:write`, `locations:read`, `seminar-types:write`, `users.speaker-data:read`). A token issued without explicit abilities receives the wildcard `*` and may call every external endpoint.
+Tokens are issued by an administrator from the admin panel. Each token is bound to an admin or teacher account, has a name, an optional expiry, and a set of fine-grained abilities (e.g. `seminars:read`, `seminars:write`, `workshops:read`, `users:write`, `locations:read`, `seminar-types:write`, `users.speaker-data:read`, `presence-link:read`, `presence-link:write`). A token issued without explicit abilities receives the wildcard `*` and may call every external endpoint.
 
 Authentication outcomes:
 
@@ -154,3 +154,74 @@ All error responses share the same envelope:
 | 422  | `validation_error` |
 | 429  | `rate_limited` |
 | 500  | `server_error` |
+
+## Presence Link
+
+Each seminar can have one presence link — a UUID-routed URL attendees open (or scan as a QR code) to register attendance. External integrations can read it, create it, and update its active state or expiry.
+
+### Read
+
+```
+GET /api/external/v1/seminars/{slug}/presence-link
+```
+
+Required ability: `presence-link:read`. Token holder must also be allowed to view the seminar.
+
+Default response:
+
+```json
+{
+  "data": {
+    "id": 17,
+    "uuid": "0a4d8b1c-...-9d8f",
+    "active": true,
+    "expires_at": "2026-06-15T18:00:00Z",
+    "is_expired": false,
+    "is_valid": true,
+    "url": "https://<your-deployment>/p/0a4d8b1c-...-9d8f",
+    "png_url": "https://<your-deployment>/p/0a4d8b1c-...-9d8f.png"
+  }
+}
+```
+
+If the seminar has no presence link configured: `{ "data": null }` with `200 OK`. A missing seminar: `404 not_found`.
+
+For an inline QR PNG, request `?include=qr_code`. The payload gains a `qr_code` field whose value is a `data:image/png;base64,...` URI ready to drop into an `<img src>`. The QR is rendered at scale 20 (matching the admin panel). For lower-bandwidth or print-targeted use cases, fetch `png_url` directly — it serves the raw PNG.
+
+Conditional requests apply: pass `If-Modified-Since` or `If-None-Match` from a previous response and the server replies `304 Not Modified` when neither the seminar nor the presence link has changed since.
+
+### Create (idempotent)
+
+```
+POST /api/external/v1/seminars/{slug}/presence-link
+```
+
+Required ability: `presence-link:write`. Empty body — the UUID is server-generated, `active` defaults to `false`, and `expires_at` is auto-set to `scheduled_at + 4h` when the seminar has a scheduled date.
+
+- **First call:** `201 Created` with `{ "message": "Presence link created successfully.", "data": { ... } }`.
+- **Subsequent calls:** `200 OK` with `{ "message": "Presence link already exists.", "data": { ... } }` — the existing record is returned unchanged. The endpoint is safe to call defensively.
+
+The standard `Idempotency-Key` header is supported and recommended for retry safety after network failures.
+
+### Update (activate / deactivate / re-expire)
+
+```
+PATCH /api/external/v1/seminars/{slug}/presence-link
+PUT   /api/external/v1/seminars/{slug}/presence-link
+```
+
+Required ability: `presence-link:write`. Body — at least one field required:
+
+| Field | Type | Behavior |
+| ----- | ---- | -------- |
+| `active` | boolean | Sets the active flag. |
+| `expires_at` | ISO-8601 string or `null` | Sets the expiry explicitly. |
+
+**Implicit expiry policy.** When `active` is sent and `expires_at` is **not** sent, the server computes the expiry for you:
+
+- `{ "active": true }` → `expires_at = max(scheduled_at + 4h, now() + 1h)`.
+- `{ "active": false }` → `expires_at = null`.
+
+If you send `expires_at` explicitly, that value wins regardless of `active`. Sending only `expires_at` updates the expiry without touching `active`.
+
+Returns `200 OK` with the updated record. If the seminar has no presence link to update, the response is `404 not_found` — call `POST` first to create it. Empty body or unknown-fields-only body → `422 validation_error`.
