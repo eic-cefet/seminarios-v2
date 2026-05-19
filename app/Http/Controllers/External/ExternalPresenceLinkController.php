@@ -50,8 +50,7 @@ class ExternalPresenceLinkController extends Controller
         }
 
         return response()->json([
-            'data' => (new ExternalPresenceLinkResource($presenceLink, includeQrCode: $this->wantsQrCode($request)))
-                ->toArray($request),
+            'data' => new ExternalPresenceLinkResource($presenceLink, includeQrCode: $this->wantsQrCode($request)),
         ]);
     }
 
@@ -84,7 +83,7 @@ class ExternalPresenceLinkController extends Controller
         if ($existing = $seminar->presenceLink) {
             return response()->json([
                 'message' => 'Presence link already exists.',
-                'data' => (new ExternalPresenceLinkResource($existing))->toArray($request),
+                'data' => new ExternalPresenceLinkResource($existing),
             ], 200);
         }
 
@@ -96,7 +95,7 @@ class ExternalPresenceLinkController extends Controller
 
         return response()->json([
             'message' => 'Presence link created successfully.',
-            'data' => (new ExternalPresenceLinkResource($presenceLink))->toArray($request),
+            'data' => new ExternalPresenceLinkResource($presenceLink),
         ], 201);
     }
 
@@ -160,7 +159,7 @@ class ExternalPresenceLinkController extends Controller
 
         return response()->json([
             'message' => 'Presence link updated successfully.',
-            'data' => (new ExternalPresenceLinkResource($presenceLink->fresh()))->toArray($request),
+            'data' => new ExternalPresenceLinkResource($presenceLink->fresh()),
         ]);
     }
 

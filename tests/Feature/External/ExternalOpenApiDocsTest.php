@@ -38,12 +38,14 @@ describe('GET /api/external/docs.json', function () {
         expect($tags)->toContain('Users');
         expect($tags)->toContain('Speaker Data');
         expect($tags)->toContain('Workshops');
+        expect($tags)->toContain('Presence Link');
         expect($tags)->not->toContain('ExternalSeminar');
         expect($tags)->not->toContain('ExternalLocation');
         expect($tags)->not->toContain('ExternalSeminarType');
         expect($tags)->not->toContain('ExternalUser');
         expect($tags)->not->toContain('ExternalSpeakerData');
         expect($tags)->not->toContain('ExternalWorkshop');
+        expect($tags)->not->toContain('ExternalPresenceLink');
     });
 
     it('uses default schema names from Scramble', function () {
@@ -58,6 +60,8 @@ describe('GET /api/external/docs.json', function () {
         expect($schemas)->toContain('ExternalWorkshopResource');
         expect($schemas)->toContain('ExternalSeminarStoreRequest');
         expect($schemas)->toContain('ExternalSeminarUpdateRequest');
+        expect($schemas)->toContain('ExternalPresenceLinkResource');
+        expect($schemas)->toContain('ExternalPresenceLinkUpdateRequest');
     });
 
     it('declares an ApiError component schema', function () {
@@ -140,5 +144,40 @@ describe('GET /api/external/docs.json', function () {
 
         expect($operationIds)->toContain('seminars.index');
         expect($operationIds)->toContain('users.speaker-data.show');
+    });
+
+    it('documents the presence-link endpoints with the expected verbs and operation IDs', function () {
+        $doc = $this->getJson('/api/external/docs.json')->json();
+
+        $path = data_get($doc, 'paths./v1/seminars/{seminar}/presence-link');
+        expect($path)->not->toBeNull('/v1/seminars/{seminar}/presence-link missing from OpenAPI doc');
+
+        // Scramble emits only the first verb from Route::match (`put` here),
+        // same as every other external update route in this codebase. The
+        // route still accepts both PATCH and PUT at runtime — covered by the
+        // controller test "accepts PUT in addition to PATCH".
+        expect($path)->toHaveKey('get');
+        expect($path)->toHaveKey('post');
+        expect($path)->toHaveKey('put');
+
+        expect(data_get($path, 'get.operationId'))->toBe('seminars.presence-link.show');
+        expect(data_get($path, 'post.operationId'))->toBe('seminars.presence-link.store');
+        expect(data_get($path, 'put.operationId'))->toBe('seminars.presence-link.update');
+
+        // GET documents the include query parameter.
+        $getParams = collect(data_get($path, 'get.parameters', []))->pluck('name')->all();
+        expect($getParams)->toContain('include');
+
+        // PUT (update) documents the body fields.
+        $putBody = data_get($path, 'put.requestBody.content.application/json.schema');
+        expect($putBody)->not->toBeNull();
+        $serialized = json_encode($putBody);
+        expect($serialized)->toContain('active');
+        expect($serialized)->toContain('expires_at');
+
+        // Every operation carries the Presence Link tag.
+        expect(data_get($path, 'get.tags'))->toContain('Presence Link');
+        expect(data_get($path, 'post.tags'))->toContain('Presence Link');
+        expect(data_get($path, 'put.tags'))->toContain('Presence Link');
     });
 });
