@@ -31,6 +31,12 @@ Route::middleware(['auth:sanctum', 'admin', 'external.conditional', 'external.id
             Route::get('seminars/{seminar:slug}/presence-link', [ExternalPresenceLinkController::class, 'show'])
                 ->name('seminars.presence-link.show');
         });
+        Route::middleware('ability:presence-link:write')->group(function () {
+            Route::post('seminars/{seminar:slug}/presence-link', [ExternalPresenceLinkController::class, 'store'])
+                ->name('seminars.presence-link.store');
+            Route::match(['put', 'patch'], 'seminars/{seminar:slug}/presence-link', [ExternalPresenceLinkController::class, 'update'])
+                ->name('seminars.presence-link.update');
+        });
 
         // Seminar Types
         Route::middleware('ability:seminar-types:read')->group(function () {

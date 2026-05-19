@@ -126,3 +126,72 @@ describe('GET /api/external/v1/seminars/{slug}/presence-link', function () {
         $second->assertStatus(304);
     });
 });
+
+describe('POST /api/external/v1/seminars/{slug}/presence-link', function () {
+    it('creates a presence link when none exists', function () {
+        $admin = User::factory()->admin()->create();
+        $token = $admin->createToken('test', ['presence-link:write']);
+        $seminar = Seminar::factory()->create(['scheduled_at' => now()->addDay()]);
+
+        $response = $this->withToken($token->plainTextToken)
+            ->postJson("/api/external/v1/seminars/{$seminar->slug}/presence-link");
+
+        $response->assertCreated()
+            ->assertJsonStructure([
+                'message',
+                'data' => ['id', 'uuid', 'active', 'expires_at', 'is_valid', 'url', 'png_url'],
+            ])
+            ->assertJsonPath('data.active', false);
+
+        expect($seminar->fresh()->presenceLink)->not->toBeNull();
+        expect($seminar->fresh()->presenceLink->expires_at)->not->toBeNull();
+    });
+
+    it('returns the existing link with 200 when one already exists (idempotent)', function () {
+        $admin = User::factory()->admin()->create();
+        $token = $admin->createToken('test', ['presence-link:write']);
+        $seminar = Seminar::factory()->create();
+        $existing = PresenceLink::factory()->create([
+            'seminar_id' => $seminar->id,
+            'active' => true,
+        ]);
+
+        $response = $this->withToken($token->plainTextToken)
+            ->postJson("/api/external/v1/seminars/{$seminar->slug}/presence-link");
+
+        $response->assertSuccessful()
+            ->assertStatus(200)
+            ->assertJsonPath('data.id', $existing->id)
+            ->assertJsonPath('data.uuid', $existing->uuid)
+            ->assertJsonPath('data.active', true);
+
+        expect(PresenceLink::where('seminar_id', $seminar->id)->count())->toBe(1);
+    });
+
+    it('returns 401 for unauthenticated requests on POST', function () {
+        $seminar = Seminar::factory()->create();
+        $this->postJson("/api/external/v1/seminars/{$seminar->slug}/presence-link")
+            ->assertUnauthorized();
+    });
+
+    it('returns 403 when the token has only presence-link:read', function () {
+        $admin = User::factory()->admin()->create();
+        $token = $admin->createToken('test', ['presence-link:read']);
+        $seminar = Seminar::factory()->create();
+
+        $this->withToken($token->plainTextToken)
+            ->postJson("/api/external/v1/seminars/{$seminar->slug}/presence-link")
+            ->assertForbidden();
+    });
+
+    it('returns 403 when a teacher tries to create on another teachers seminar', function () {
+        $teacher = User::factory()->teacher()->create();
+        $otherTeacher = User::factory()->teacher()->create();
+        $token = $teacher->createToken('test', ['presence-link:write']);
+        $seminar = Seminar::factory()->create(['created_by' => $otherTeacher->id]);
+
+        $this->withToken($token->plainTextToken)
+            ->postJson("/api/external/v1/seminars/{$seminar->slug}/presence-link")
+            ->assertForbidden();
+    });
+});
