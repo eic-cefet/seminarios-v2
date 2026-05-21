@@ -53,8 +53,8 @@ class PresenceLink extends Model
     }
 
     /**
-     * Schedule-aligned expiry for links that are not being activated
-     * (creation defaults and inactive-link resyncs): scheduled_at + 4h,
+     * Schedule-aligned expiry for inactive links being resynced after a
+     * seminar reschedule (see syncExpiryWithSchedule): scheduled_at + 4h,
      * with no now()+1h clamp — an inactive link is unusable until
      * activation, which recomputes the expiry via computeActivationExpiry.
      */

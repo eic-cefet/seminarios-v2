@@ -37,11 +37,11 @@ class AdminPresenceLinkController extends Controller
             ], 409);
         }
 
-        $expiresAt = PresenceLink::computeScheduledExpiry($seminar->scheduled_at);
+        $expiresAt = PresenceLink::computeActivationExpiry($seminar->scheduled_at);
 
         $presenceLink = PresenceLink::create([
             'seminar_id' => $seminar->id,
-            'active' => false, // Default to inactive
+            'active' => true,
             'expires_at' => $expiresAt,
         ]);
 
