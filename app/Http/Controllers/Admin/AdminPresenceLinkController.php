@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\Admin\PresenceLinkResource;
 use App\Models\PresenceLink;
 use App\Models\Seminar;
+use App\Support\PresenceLinkPolicy;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\Gate;
@@ -37,12 +38,10 @@ class AdminPresenceLinkController extends Controller
             ], 409);
         }
 
-        $expiresAt = $seminar->scheduled_at?->addHours(4);
-
         $presenceLink = PresenceLink::create([
             'seminar_id' => $seminar->id,
-            'active' => false, // Default to inactive
-            'expires_at' => $expiresAt,
+            'active' => PresenceLinkPolicy::defaultActive(),
+            'expires_at' => PresenceLinkPolicy::expiresAt($seminar),
         ]);
 
         return (new PresenceLinkResource($presenceLink, includeQrCode: true))
@@ -66,11 +65,7 @@ class AdminPresenceLinkController extends Controller
         // When activating, expire at the later of: scheduled_at + 4h OR now + 1h
         $expiresAt = null;
         if (! $presenceLink->active) {
-            $scheduledExpiry = $seminar->scheduled_at?->addHours(4);
-            $minimumExpiry = now()->addHour();
-            $expiresAt = $scheduledExpiry && $scheduledExpiry->gt($minimumExpiry)
-                ? $scheduledExpiry
-                : $minimumExpiry;
+            $expiresAt = PresenceLinkPolicy::expiresAt($seminar);
         }
 
         $presenceLink->update([

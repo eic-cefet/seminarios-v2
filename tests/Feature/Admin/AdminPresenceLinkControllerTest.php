@@ -102,7 +102,7 @@ describe('POST /api/admin/seminars/{seminar}/presence-link', function () {
         expect(PresenceLink::where('seminar_id', $seminar->id)->exists())->toBeTrue();
     });
 
-    it('creates presence link with default inactive state', function () {
+    it('creates presence link with default active state', function () {
         actingAsAdmin();
 
         $seminar = Seminar::factory()->upcoming()->create();
@@ -110,7 +110,7 @@ describe('POST /api/admin/seminars/{seminar}/presence-link', function () {
         $response = $this->postJson("/api/admin/seminars/{$seminar->id}/presence-link");
 
         $response->assertStatus(201)
-            ->assertJsonPath('data.active', false);
+            ->assertJsonPath('data.active', true);
     });
 
     it('sets expiration to 4 hours after scheduled_at', function () {
