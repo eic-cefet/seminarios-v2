@@ -2,7 +2,6 @@
 
 namespace App\Console\Commands;
 
-use App\Concerns\TracksAuditContext;
 use App\Enums\AuditEvent;
 use App\Models\AuditLog;
 use App\Models\Subject;
@@ -11,16 +10,12 @@ use Illuminate\Console\Command;
 
 class NormalizeSubjectNamesCommand extends Command
 {
-    use TracksAuditContext;
-
     protected $signature = 'subjects:ai-normalize {--dry-run : Only show suggestions without applying}';
 
     protected $description = 'Use AI to fix subject names (accents, letter case, spacing, typos)';
 
     public function handle(): int
     {
-        $this->setAuditContext();
-
         $ai = app(AiService::class);
 
         if (! $ai) {

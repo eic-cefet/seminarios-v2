@@ -61,6 +61,14 @@ describe('AuditLog Model', function () {
             expect($log->origin)->toBe('TestController@index');
         });
 
+        it('falls back to unknown when no origin is in context', function () {
+            Context::forget('audit.origin');
+
+            $log = AuditLog::record(AuditEvent::ReportGenerated);
+
+            expect($log->origin)->toBe('unknown');
+        });
+
         it('uses system event type when specified', function () {
             $log = AuditLog::record(
                 AuditEvent::CertificateGenerated,

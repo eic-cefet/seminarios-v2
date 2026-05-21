@@ -2,7 +2,6 @@
 
 namespace App\Jobs;
 
-use App\Concerns\TracksAuditContext;
 use App\Enums\AuditEvent;
 use App\Enums\AuditEventType;
 use App\Models\AuditLog;
@@ -18,7 +17,7 @@ use Illuminate\Support\Facades\Log;
 
 class AnalyzeRatingSentiment implements ShouldBeUnique, ShouldQueue
 {
-    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels, TracksAuditContext;
+    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     public int $tries = 3;
 
@@ -37,8 +36,6 @@ class AnalyzeRatingSentiment implements ShouldBeUnique, ShouldQueue
 
     public function handle(): void
     {
-        $this->setAuditContext();
-
         if (empty($this->rating->comment)) {
             return;
         }

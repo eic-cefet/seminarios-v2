@@ -2,7 +2,6 @@
 
 namespace App\Jobs;
 
-use App\Concerns\TracksAuditContext;
 use App\Enums\AuditEvent;
 use App\Enums\AuditEventType;
 use App\Models\AuditLog;
@@ -14,7 +13,7 @@ use Illuminate\Support\Facades\Storage;
 
 class DeleteS3FileJob implements ShouldQueue
 {
-    use Dispatchable, InteractsWithQueue, Queueable, TracksAuditContext;
+    use Dispatchable, InteractsWithQueue, Queueable;
 
     public int $tries = 3;
 
@@ -27,8 +26,6 @@ class DeleteS3FileJob implements ShouldQueue
 
     public function handle(): void
     {
-        $this->setAuditContext();
-
         Storage::disk($this->disk)->delete($this->path);
 
         AuditLog::record(AuditEvent::S3FileDeleted, AuditEventType::System, eventData: [

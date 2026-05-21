@@ -2,7 +2,6 @@
 
 namespace App\Jobs;
 
-use App\Concerns\TracksAuditContext;
 use App\Enums\AuditEvent;
 use App\Enums\AuditEventType;
 use App\Exports\AuditLogExport;
@@ -21,7 +20,7 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class GenerateAuditLogReportJob implements ShouldQueue
 {
-    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels, TracksAuditContext;
+    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     public int $tries = 3;
 
@@ -37,8 +36,6 @@ class GenerateAuditLogReportJob implements ShouldQueue
 
     public function handle(): void
     {
-        $this->setAuditContext();
-
         $from = Carbon::now()->subDays($this->days)->startOfDay();
 
         $query = AuditLog::where('created_at', '>=', $from)

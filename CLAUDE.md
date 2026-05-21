@@ -184,7 +184,7 @@ AuditLog::record(AuditEvent::UserLogin, auditable: $user);
 
 - **Auditable trait** (`app/Models/Concerns/Auditable.php`) — opt-in per model, logs create/update/delete with old/new values
 - **Sensitive fields** excluded globally (`password`, `remember_token`, `token`, `refresh_token`, `two_factor_secret`) + per-model via `$auditExclude`
-- **Origin tracking** — `AuditContextMiddleware` sets controller@method; jobs/commands use `TracksAuditContext` trait
+- **Origin tracking** — `AuditContextMiddleware` sets controller@method; jobs/commands get `audit.origin` auto-set by the `JobProcessing`/`CommandStarting` listeners (`SetAuditOriginForQueuedJob`, `SetAuditOriginForArtisanCommand`)
 - **Pruning** — `php artisan audit:prune --days=90` scheduled daily at 04:00
 
 ### AI Features

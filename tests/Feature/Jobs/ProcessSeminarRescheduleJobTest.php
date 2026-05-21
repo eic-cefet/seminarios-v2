@@ -83,17 +83,18 @@ describe('ProcessSeminarRescheduleJob', function () {
         expect($audit->event_data['notified_users'])->toBe(0);
     });
 
-    it('sets audit context via tracks audit context', function () {
+    it('sets audit.origin to the job FQCN when dispatched through the queue', function () {
         Mail::fake();
 
         $seminar = Seminar::factory()->create(['scheduled_at' => now()->addDays(7)]);
         $oldDate = now()->addDay();
 
-        $job = new ProcessSeminarRescheduleJob($seminar, $oldDate);
-        $job->handle();
+        // Dispatching through the queue fires JobProcessing on the sync driver,
+        // which routes through SetAuditOriginForQueuedJob to set audit.origin.
+        ProcessSeminarRescheduleJob::dispatch($seminar, $oldDate);
 
         $audit = AuditLog::forEvent(AuditEvent::SeminarRescheduled)->first();
-        expect($audit->origin)->toBe('ProcessSeminarRescheduleJob');
+        expect($audit->origin)->toBe(ProcessSeminarRescheduleJob::class);
     });
 
     it('has correct tries and backoff values', function () {

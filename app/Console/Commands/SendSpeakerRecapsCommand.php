@@ -2,7 +2,6 @@
 
 namespace App\Console\Commands;
 
-use App\Concerns\TracksAuditContext;
 use App\Enums\AuditEvent;
 use App\Enums\AuditEventType;
 use App\Jobs\SendSpeakerRecapJob;
@@ -13,8 +12,6 @@ use Illuminate\Support\Facades\DB;
 
 class SendSpeakerRecapsCommand extends Command
 {
-    use TracksAuditContext;
-
     protected $signature = 'reminders:speaker-recaps';
 
     protected $description = 'Send attendance recap emails to speakers two days after their seminar';
@@ -27,8 +24,6 @@ class SendSpeakerRecapsCommand extends Command
 
     public function handle(): int
     {
-        $this->setAuditContext();
-
         $cutoff = now()->subDays(2)->endOfDay();
 
         $rows = DB::table('seminar_speaker')
