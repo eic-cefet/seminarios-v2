@@ -2,7 +2,6 @@
 
 namespace App\Console\Commands;
 
-use App\Concerns\TracksAuditContext;
 use App\Enums\AuditEvent;
 use App\Models\AuditLog;
 use App\Models\Subject;
@@ -13,16 +12,12 @@ use Illuminate\Support\Facades\DB;
 
 class AnalyzeSubjectMergesCommand extends Command
 {
-    use TracksAuditContext;
-
     protected $signature = 'subjects:ai-merge {--dry-run : Only show suggestions without merging}';
 
     protected $description = 'Use AI to identify and merge duplicate subjects';
 
     public function handle(): int
     {
-        $this->setAuditContext();
-
         $ai = app(AiService::class);
 
         if (! $ai) {
