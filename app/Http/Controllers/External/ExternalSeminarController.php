@@ -159,7 +159,7 @@ class ExternalSeminarController extends Controller
                 'created_by' => $request->user()->id,
             ]);
 
-            $seminar->subjects()->sync($this->resolveSubjectNames($validated['subjects']));
+            $seminar->subjects()->sync($this->resolveSubjectNames($validated['subjects'], $this->slugService));
             $seminar->speakers()->sync($validated['speaker_ids']);
 
             return $seminar;
@@ -211,7 +211,7 @@ class ExternalSeminarController extends Controller
             }
 
             if (isset($validated['subjects'])) {
-                $seminar->subjects()->sync($this->resolveSubjectNames($validated['subjects']));
+                $seminar->subjects()->sync($this->resolveSubjectNames($validated['subjects'], $this->slugService));
             }
 
             if (isset($validated['speaker_ids'])) {
