@@ -12,8 +12,9 @@ use App\Models\SeminarLocation;
 use App\Models\User;
 use Illuminate\Console\Command;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
 
 class SendTestEmailsCommand extends Command
 {
@@ -61,8 +62,6 @@ class SendTestEmailsCommand extends Command
         $typesToSend = $only ? [$only => $emailTypes[$only]] : $emailTypes;
 
         try {
-            DB::beginTransaction();
-
             foreach ($typesToSend as $type => $name) {
                 $this->sendTestEmail($type, $name, $testEmail);
             }
@@ -77,7 +76,6 @@ class SendTestEmailsCommand extends Command
             return self::FAILURE;
         } finally {
             $this->cleanup();
-            DB::rollBack();
         }
     }
 
@@ -104,6 +102,9 @@ class SendTestEmailsCommand extends Command
             'evaluation' => $this->createEvaluationMail(),
         };
 
+        // Exception to the queue-only convention (see CLAUDE.md): this CLI dev tool
+        // needs immediate delivery so the operator can inspect rendered templates
+        // before the temporary records are cleaned up.
         $mailable->onConnection('sync');
         Mail::to($testEmail)->queue($mailable);
 
@@ -115,8 +116,7 @@ class SendTestEmailsCommand extends Command
         $user = User::create([
             'name' => 'Usuário de Teste'.($suffix ? " {$suffix}" : ''),
             'email' => 'test-'.uniqid().'@example.com',
-            'provider' => 'test',
-            'provider_id' => 'test-'.uniqid(),
+            'password' => Hash::make('test-password-'.Str::random(16)),
         ]);
 
         $this->createdIds['users'][] = $user->id;
