@@ -8,7 +8,6 @@ use App\Exceptions\ApiException;
 use App\Http\Controllers\Concerns\FormatsUserResponse;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\UserRegistrationRequest;
-use App\Mail\AccountDeletionCancelled;
 use App\Mail\WelcomeUser;
 use App\Models\AuditLog;
 use App\Models\User;
@@ -18,7 +17,6 @@ use App\Services\TwoFactorDeviceService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
@@ -78,13 +76,6 @@ class AuthController extends Controller
                 Auth::login($user, $request->boolean('remember', false));
                 AuditLog::record(AuditEvent::UserLogin, auditable: $user, eventData: ['trusted_device' => true]);
 
-                if ($user->anonymization_requested_at !== null && $user->anonymized_at === null) {
-                    $user->forceFill(['anonymization_requested_at' => null])->save();
-                    Cache::forget('lgpd.deletion-pending:'.$user->id);
-                    AuditLog::record(event: AuditEvent::AccountDeletionCancelled, auditable: $user);
-                    Mail::to($user->email)->queue(new AccountDeletionCancelled($user));
-                }
-
                 return response()->json(['user' => $this->formatUserResponse($user)]);
             }
 
@@ -101,13 +92,6 @@ class AuthController extends Controller
         Auth::login($user, $request->boolean('remember', false));
 
         AuditLog::record(AuditEvent::UserLogin, auditable: $user);
-
-        if ($user->anonymization_requested_at !== null && $user->anonymized_at === null) {
-            $user->forceFill(['anonymization_requested_at' => null])->save();
-            Cache::forget('lgpd.deletion-pending:'.$user->id);
-            AuditLog::record(event: AuditEvent::AccountDeletionCancelled, auditable: $user);
-            Mail::to($user->email)->queue(new AccountDeletionCancelled($user));
-        }
 
         return response()->json([
             'user' => $this->formatUserResponse($user),

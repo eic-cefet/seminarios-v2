@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Listeners\AuditEmailSent;
 use App\Listeners\AuditNotificationSent;
+use App\Listeners\CancelPendingDeletionOnLogin;
 use App\Listeners\SetAuditOriginForArtisanCommand;
 use App\Listeners\SetAuditOriginForQueuedJob;
 use App\Models\AuditLog;
@@ -23,6 +24,7 @@ use App\Services\AiService;
 use Dedoc\Scramble\Scramble;
 use Dedoc\Scramble\Support\Generator\OpenApi;
 use Dedoc\Scramble\Support\Generator\SecurityScheme;
+use Illuminate\Auth\Events\Login;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Console\Events\CommandStarting;
 use Illuminate\Http\Request;
@@ -77,6 +79,7 @@ class AppServiceProvider extends ServiceProvider
         Event::listen(NotificationSent::class, AuditNotificationSent::class);
         Event::listen(JobProcessing::class, SetAuditOriginForQueuedJob::class);
         Event::listen(CommandStarting::class, SetAuditOriginForArtisanCommand::class);
+        Event::listen(Login::class, CancelPendingDeletionOnLogin::class);
 
         Seminar::observe(SeminarAlertObserver::class);
 
