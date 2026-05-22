@@ -6,6 +6,7 @@ import { ROUTES } from "@shared/config/routes";
 import { useAuth } from "@shared/contexts/AuthContext";
 import { getErrorMessage } from "@shared/lib/errors";
 import { isSafeRedirect } from "@shared/lib/utils";
+import { Button } from "@shared/components/Button";
 
 export default function AuthCallback() {
     const [searchParams] = useSearchParams();
@@ -66,12 +67,13 @@ export default function AuthCallback() {
                             Erro na autenticação
                         </h1>
                         <p className="mt-2 text-gray-500">{error}</p>
-                        <button
+                        <Button
+                            variant="primary"
                             onClick={() => navigate(ROUTES.SYSTEM.LOGIN)}
-                            className="mt-6 inline-flex items-center rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700 cursor-pointer"
+                            className="mt-6 px-4 py-2"
                         >
                             Voltar para login
-                        </button>
+                        </Button>
                     </div>
                 </div>
             </Layout>

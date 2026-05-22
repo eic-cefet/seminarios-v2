@@ -16,6 +16,7 @@ import { useAuth } from "@shared/contexts/AuthContext";
 import { authApi } from "@shared/api/client";
 import { twoFactorApi } from "@shared/api/twoFactorApi";
 import { getErrorMessage } from "@shared/lib/errors";
+import { Button } from "@shared/components/Button";
 
 interface LoginModalProps {
     open: boolean;
@@ -214,17 +215,18 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
                                     />
                                 </div>
 
-                                <button
+                                <Button
                                     type="submit"
+                                    variant="primary"
                                     disabled={loading}
                                     className={cn(
-                                        "w-full rounded-md bg-primary-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors cursor-pointer",
+                                        "w-full px-4 py-2.5",
                                         loading &&
                                             "opacity-70 cursor-not-allowed",
                                     )}
                                 >
                                     {loading ? "Entrando..." : "Entrar"}
-                                </button>
+                                </Button>
                             </form>
 
                             <p className="mt-4 text-center text-sm text-gray-500">
@@ -325,16 +327,17 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
                                     >
                                         Voltar
                                     </button>
-                                    <button
+                                    <Button
                                         type="submit"
+                                        variant="primary"
                                         disabled={loading}
                                         className={cn(
-                                            "flex-1 rounded-md bg-primary-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors cursor-pointer",
+                                            "flex-1 px-4 py-2.5",
                                             loading && "opacity-70 cursor-not-allowed",
                                         )}
                                     >
                                         {loading ? "Verificando..." : "Verificar"}
-                                    </button>
+                                    </Button>
                                 </div>
                             </form>
 
@@ -416,17 +419,18 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
                                         >
                                             Voltar
                                         </button>
-                                        <button
+                                        <Button
                                             type="submit"
+                                            variant="primary"
                                             disabled={loading}
                                             className={cn(
-                                                "flex-1 rounded-md bg-primary-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors cursor-pointer",
+                                                "flex-1 px-4 py-2.5",
                                                 loading &&
                                                     "opacity-70 cursor-not-allowed",
                                             )}
                                         >
                                             {loading ? "Enviando..." : "Enviar"}
-                                        </button>
+                                        </Button>
                                     </div>
                                 </form>
                             )}

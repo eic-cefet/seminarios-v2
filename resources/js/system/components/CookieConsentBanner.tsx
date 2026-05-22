@@ -4,6 +4,7 @@ import { useConsent } from "@shared/contexts/ConsentContext";
 import { COOKIE_CATEGORIES } from "@shared/lib/consent";
 import { ROUTES } from "@shared/config/routes";
 import { cn } from "@shared/lib/utils";
+import { Button } from "@shared/components/Button";
 
 export function CookieConsentBanner() {
     const { isOpen, acceptAll, rejectAll, save, close } = useConsent();
@@ -85,18 +86,19 @@ export function CookieConsentBanner() {
                             >
                                 Personalizar
                             </button>
-                            <button
+                            <Button
                                 type="button"
+                                variant="primary"
                                 onClick={() => handleAll(true)}
                                 disabled={saving}
                                 className={cn(
-                                    "cursor-pointer whitespace-nowrap rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700 disabled:cursor-not-allowed",
+                                    "px-4 py-2",
                                     /* v8 ignore next — cosmetic saving state styling */
                                     saving && "opacity-60",
                                 )}
                             >
                                 Aceitar todos
-                            </button>
+                            </Button>
                         </div>
                     </div>
                 ) : (
@@ -169,18 +171,19 @@ export function CookieConsentBanner() {
                             >
                                 Voltar
                             </button>
-                            <button
+                            <Button
                                 type="button"
+                                variant="primary"
                                 onClick={handleCustom}
                                 disabled={saving}
                                 className={cn(
-                                    "cursor-pointer rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700 disabled:cursor-not-allowed",
+                                    "px-4 py-2",
                                     /* v8 ignore next — cosmetic saving state styling */
                                     saving && "opacity-60",
                                 )}
                             >
                                 Salvar preferências
-                            </button>
+                            </Button>
                         </div>
                     </div>
                 )}
