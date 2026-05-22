@@ -61,7 +61,7 @@ describe('SeminarDetails', () => {
             name: 'Advanced React',
             speakers: [speaker],
             location,
-            scheduledAt: '2026-06-15T14:00:00Z',
+            scheduled_at: '2026-06-15T14:00:00Z',
         });
         vi.mocked(seminarsApi.get).mockResolvedValue({ data: seminar });
 
@@ -106,7 +106,7 @@ describe('SeminarDetails', () => {
     });
 
     it('shows register button for unauthenticated user with non-expired seminar', async () => {
-        const seminar = createSeminar({ name: 'Test Seminar', isExpired: false });
+        const seminar = createSeminar({ name: 'Test Seminar', is_expired: false });
         vi.mocked(seminarsApi.get).mockResolvedValue({ data: seminar });
 
         render(<SeminarDetails />);
@@ -117,7 +117,7 @@ describe('SeminarDetails', () => {
     });
 
     it('opens login modal when unauthenticated user clicks register', async () => {
-        const seminar = createSeminar({ name: 'Test Seminar', isExpired: false });
+        const seminar = createSeminar({ name: 'Test Seminar', is_expired: false });
         vi.mocked(seminarsApi.get).mockResolvedValue({ data: seminar });
         const user = userEvent.setup();
 
@@ -133,7 +133,7 @@ describe('SeminarDetails', () => {
     });
 
     it('fires analytics event when unauthenticated user tries to register', async () => {
-        const seminar = createSeminar({ name: 'Test Seminar', isExpired: false });
+        const seminar = createSeminar({ name: 'Test Seminar', is_expired: false });
         vi.mocked(seminarsApi.get).mockResolvedValue({ data: seminar });
         const user = userEvent.setup();
 
@@ -151,7 +151,7 @@ describe('SeminarDetails', () => {
     });
 
     it('shows expired seminar state', async () => {
-        const seminar = createSeminar({ name: 'Old Seminar', isExpired: true });
+        const seminar = createSeminar({ name: 'Old Seminar', is_expired: true });
         vi.mocked(seminarsApi.get).mockResolvedValue({ data: seminar });
 
         render(<SeminarDetails />);
@@ -162,7 +162,7 @@ describe('SeminarDetails', () => {
     });
 
     it('shows "Encerrado" badge for expired seminar', async () => {
-        const seminar = createSeminar({ name: 'Old Seminar', isExpired: true });
+        const seminar = createSeminar({ name: 'Old Seminar', is_expired: true });
         vi.mocked(seminarsApi.get).mockResolvedValue({ data: seminar });
 
         render(<SeminarDetails />);
@@ -173,7 +173,7 @@ describe('SeminarDetails', () => {
     });
 
     it('shows registration count when available', async () => {
-        const seminar = createSeminar({ name: 'Popular Seminar', registrationsCount: 42 });
+        const seminar = createSeminar({ name: 'Popular Seminar', registrations_count: 42 });
         vi.mocked(seminarsApi.get).mockResolvedValue({ data: seminar });
 
         render(<SeminarDetails />);
@@ -188,9 +188,9 @@ describe('SeminarDetails', () => {
             slug: 'calendar-seminar',
             name: 'Calendar Seminar',
             description: 'Seminar details',
-            roomLink: 'https://meet.example.com/calendar-seminar',
+            room_link: 'https://meet.example.com/calendar-seminar',
             location: createLocation({ name: 'Room 202' }),
-            scheduledAt: '2026-06-15T14:00:00Z',
+            scheduled_at: '2026-06-15T14:00:00Z',
         });
         vi.mocked(seminarsApi.get).mockResolvedValue({ data: seminar });
         const user = userEvent.setup();
@@ -244,7 +244,7 @@ describe('SeminarDetails', () => {
             slug: 'markdown-seminar',
             name: 'Markdown Seminar',
             description: '# Resumo\nFala sobre **redes** de passe.',
-            scheduledAt: '2026-06-15T14:00:00Z',
+            scheduled_at: '2026-06-15T14:00:00Z',
         });
         vi.mocked(seminarsApi.get).mockResolvedValue({ data: seminar });
         const user = userEvent.setup();
@@ -271,7 +271,7 @@ describe('SeminarDetails', () => {
     });
 
     it('shows "Inscreva-se" heading for non-registered user', async () => {
-        const seminar = createSeminar({ name: 'Test', isExpired: false });
+        const seminar = createSeminar({ name: 'Test', is_expired: false });
         vi.mocked(seminarsApi.get).mockResolvedValue({ data: seminar });
         vi.mocked(useAuth).mockReturnValue({
             user: createUser(), isLoading: false, isAuthenticated: true,
@@ -286,7 +286,7 @@ describe('SeminarDetails', () => {
     });
 
     it('registers successfully and shows registered state', async () => {
-        const seminar = createSeminar({ name: 'Test', isExpired: false });
+        const seminar = createSeminar({ name: 'Test', is_expired: false });
         vi.mocked(seminarsApi.get).mockResolvedValue({ data: seminar });
         vi.mocked(registrationApi.register).mockResolvedValue({ message: 'ok', registration: { id: 1, seminar_id: 1, created_at: '2024-01-01' } });
         // After registration, the status query returns registered: true
@@ -313,7 +313,7 @@ describe('SeminarDetails', () => {
     });
 
     it('shows registered state with "Cancelar inscrição" button', async () => {
-        const seminar = createSeminar({ name: 'Test', isExpired: false });
+        const seminar = createSeminar({ name: 'Test', is_expired: false });
         vi.mocked(seminarsApi.get).mockResolvedValue({ data: seminar });
         vi.mocked(registrationApi.status).mockResolvedValue({ registered: true });
         vi.mocked(useAuth).mockReturnValue({
@@ -335,8 +335,8 @@ describe('SeminarDetails', () => {
 
         const seminar = createSeminar({
             name: 'Test',
-            isExpired: false,
-            scheduledAt: '2026-06-15T18:00:00Z',
+            is_expired: false,
+            scheduled_at: '2026-06-15T18:00:00Z',
         });
         vi.mocked(seminarsApi.get).mockResolvedValue({ data: seminar });
         vi.mocked(registrationApi.status).mockResolvedValue({ registered: true });
@@ -358,7 +358,7 @@ describe('SeminarDetails', () => {
     });
 
     it('unregisters when "Cancelar inscrição" is clicked', async () => {
-        const seminar = createSeminar({ name: 'Test', isExpired: false });
+        const seminar = createSeminar({ name: 'Test', is_expired: false });
         vi.mocked(seminarsApi.get).mockResolvedValue({ data: seminar });
         vi.mocked(registrationApi.status).mockResolvedValue({ registered: true });
         vi.mocked(registrationApi.unregister).mockResolvedValue({ message: 'ok' });
@@ -382,7 +382,7 @@ describe('SeminarDetails', () => {
     });
 
     it('shows registration error when register fails', async () => {
-        const seminar = createSeminar({ name: 'Test', isExpired: false });
+        const seminar = createSeminar({ name: 'Test', is_expired: false });
         vi.mocked(seminarsApi.get).mockResolvedValue({ data: seminar });
         vi.mocked(registrationApi.status).mockResolvedValue({ registered: false });
         vi.mocked(registrationApi.register).mockRejectedValue(new Error('Already registered'));
@@ -488,7 +488,7 @@ describe('SeminarDetails', () => {
     });
 
     it('shows room link when available', async () => {
-        const seminar = createSeminar({ roomLink: 'https://zoom.us/j/123' });
+        const seminar = createSeminar({ room_link: 'https://zoom.us/j/123' });
         vi.mocked(seminarsApi.get).mockResolvedValue({ data: seminar });
 
         render(<SeminarDetails />);
@@ -529,7 +529,7 @@ describe('SeminarDetails', () => {
 
     it('shows seminar type badge', async () => {
         const seminarType = createSeminarType({ name: 'Workshop' });
-        const seminar = createSeminar({ seminarType });
+        const seminar = createSeminar({ seminar_type: seminarType });
         vi.mocked(seminarsApi.get).mockResolvedValue({ data: seminar });
 
         render(<SeminarDetails />);
@@ -607,7 +607,7 @@ describe('SeminarDetails', () => {
     });
 
     it('shows email reminder text for non-registered users', async () => {
-        const seminar = createSeminar({ isExpired: false });
+        const seminar = createSeminar({ is_expired: false });
         vi.mocked(seminarsApi.get).mockResolvedValue({ data: seminar });
 
         render(<SeminarDetails />);
@@ -618,7 +618,7 @@ describe('SeminarDetails', () => {
     });
 
     it('shows "Processando..." on unregister button while mutation is pending', async () => {
-        const seminar = createSeminar({ name: 'Test', isExpired: false });
+        const seminar = createSeminar({ name: 'Test', is_expired: false });
         vi.mocked(seminarsApi.get).mockResolvedValue({ data: seminar });
         vi.mocked(registrationApi.status).mockResolvedValue({ registered: true });
         // Never-resolving promise keeps the mutation in pending state
@@ -643,7 +643,7 @@ describe('SeminarDetails', () => {
     });
 
     it('shows "Processando..." on register button while mutation is pending', async () => {
-        const seminar = createSeminar({ name: 'Test', isExpired: false });
+        const seminar = createSeminar({ name: 'Test', is_expired: false });
         vi.mocked(seminarsApi.get).mockResolvedValue({ data: seminar });
         vi.mocked(registrationApi.status).mockResolvedValue({ registered: false });
         // Never-resolving promise keeps the mutation in pending state
@@ -668,7 +668,7 @@ describe('SeminarDetails', () => {
     });
 
     it('calls unregisterMutation onError when unregister fails', async () => {
-        const seminar = createSeminar({ name: 'Test', isExpired: false });
+        const seminar = createSeminar({ name: 'Test', is_expired: false });
         vi.mocked(seminarsApi.get).mockResolvedValue({ data: seminar });
         vi.mocked(registrationApi.status).mockResolvedValue({ registered: true });
         vi.mocked(registrationApi.unregister).mockRejectedValue(new Error('Cannot unregister'));

@@ -77,24 +77,40 @@ export interface Workshop {
     seminars?: Seminar[];
 }
 
-export interface Seminar {
+/**
+ * Canonical shape of a public-API seminar summary.
+ *
+ * Emitted by `App\Http\Resources\SeminarResource` and a strict superset of the
+ * smaller projections (UserRegistration, UserCertificate, PendingEvaluation,
+ * PresenceLink), which pick a subset via `Pick<>` aliases in
+ * `shared/api/client.ts`. Sub-object projections (where the backend uses
+ * `$seminar->scheduled_at?->toISOString()`) override `scheduled_at` to a
+ * nullable union; this base type matches the non-null contract of the
+ * canonical `/api/seminars/*` endpoints.
+ */
+export interface PublicSeminarSummary {
     id: number;
     name: string;
     slug: string;
+    scheduled_at: string;
+    ends_at?: string;
+    duration_minutes?: number;
+    is_expired: boolean;
+    seminar_type?: { id: number; name: string } | null;
+    location?: { id: number; name: string } | null;
+}
+
+export interface Seminar extends PublicSeminarSummary {
     description?: string;
-    scheduledAt: string;
-    endsAt?: string;
-    durationMinutes?: number;
-    roomLink?: string;
+    room_link?: string;
     active: boolean;
-    isExpired: boolean;
-    seminarType?: SeminarType;
+    seminar_type?: SeminarType | null;
     workshop?: Workshop;
     subjects?: Subject[];
     speakers?: Speaker[];
-    location?: SeminarLocation;
-    registrationsCount?: number;
-    averageRating?: number;
+    location?: SeminarLocation | null;
+    registrations_count?: number;
+    average_rating?: number;
 }
 
 export interface Registration {

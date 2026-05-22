@@ -1,6 +1,7 @@
 import type {
     Course,
     PaginatedResponse,
+    PublicSeminarSummary,
     Seminar,
     SeminarType,
     Subject,
@@ -256,33 +257,34 @@ export const registrationApi = {
 };
 
 // Profile
+//
+// Sub-object seminar projections (UserRegistration, UserCertificate,
+// PendingEvaluation, PresenceLink) are typed against `PublicSeminarSummary`
+// via `Pick<>` for the canonical shape, but `scheduled_at` / `ends_at` are
+// overridden to nullable here because the backend Resources use
+// `$seminar->scheduled_at?->toISOString()` and historically null was possible.
 export interface UserRegistration {
     id: number;
     present: boolean;
     certificate_code: string | null;
     created_at: string;
-    seminar: {
-        id: number;
-        name: string;
-        slug: string;
+    seminar: Omit<PublicSeminarSummary, "scheduled_at" | "ends_at"> & {
         scheduled_at: string | null;
         ends_at?: string | null;
-        duration_minutes?: number;
-        is_expired: boolean;
-        seminar_type: { id: number; name: string } | null;
-        location: { id: number; name: string } | null;
     };
 }
 
 export interface UserCertificate {
     id: number;
     certificate_code: string;
-    seminar: {
-        id: number;
-        name: string;
-        slug: string;
+    seminar: Omit<
+        Pick<
+            PublicSeminarSummary,
+            "id" | "name" | "slug" | "scheduled_at" | "seminar_type"
+        >,
+        "scheduled_at"
+    > & {
         scheduled_at: string | null;
-        seminar_type: { id: number; name: string } | null;
     };
 }
 
@@ -420,23 +422,25 @@ export const alertPreferencesApi = {
 
 export interface PendingEvaluation {
     id: number;
-    seminar: {
-        id: number;
-        name: string;
-        slug: string;
+    seminar: Omit<
+        Pick<
+            PublicSeminarSummary,
+            | "id"
+            | "name"
+            | "slug"
+            | "scheduled_at"
+            | "seminar_type"
+            | "location"
+        >,
+        "scheduled_at"
+    > & {
         scheduled_at: string | null;
-        seminar_type: { id: number; name: string } | null;
-        location: { id: number; name: string } | null;
     };
 }
 
 // Presence (public QR-code check-in)
 export interface PresenceLinkData {
-    seminar: {
-        id: number;
-        name: string;
-        scheduled_at: string;
-    };
+    seminar: Pick<PublicSeminarSummary, "id" | "name" | "scheduled_at">;
     is_valid: boolean;
     expires_at: string;
 }

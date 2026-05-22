@@ -51,14 +51,14 @@ export function PresentationsCalendar({
 
     const seminarsByDay = seminars.reduce<Record<string, Seminar[]>>(
         (grouped, seminar) => {
-            const seminarDate = toSaoPaulo(seminar.scheduledAt);
+            const seminarDate = toSaoPaulo(seminar.scheduled_at);
             const key = format(seminarDate, "yyyy-MM-dd");
             grouped[key] ??= [];
             grouped[key].push(seminar);
             grouped[key].sort(
                 (a, b) =>
-                    new Date(a.scheduledAt).getTime() -
-                    new Date(b.scheduledAt).getTime(),
+                    new Date(a.scheduled_at).getTime() -
+                    new Date(b.scheduled_at).getTime(),
             );
 
             return grouped;
@@ -67,7 +67,7 @@ export function PresentationsCalendar({
     );
 
     const monthlySeminars = seminars.filter((seminar) =>
-        isSameMonth(toSaoPaulo(seminar.scheduledAt), monthStart),
+        isSameMonth(toSaoPaulo(seminar.scheduled_at), monthStart),
     );
 
     const totalLabel =
@@ -175,7 +175,7 @@ export function PresentationsCalendar({
                                                 to={ROUTES.SYSTEM.SEMINAR_DETAILS(seminar.slug)}
                                                 className={cn(
                                                     "block rounded-xl border px-3 py-2 text-sm transition",
-                                                    seminar.isExpired
+                                                    seminar.is_expired
                                                         ? "border-gray-200 bg-gray-50 text-gray-500 hover:border-gray-300"
                                                         : "border-primary-100 bg-primary-50/70 text-gray-800 hover:border-primary-300 hover:bg-primary-50",
                                                 )}
@@ -187,15 +187,15 @@ export function PresentationsCalendar({
                                                     <span className="shrink-0 text-xs font-medium uppercase tracking-wide text-primary-700">
                                                         {format(
                                                             toSaoPaulo(
-                                                                seminar.scheduledAt,
+                                                                seminar.scheduled_at,
                                                             ),
                                                             "HH:mm",
                                                         )}
                                                     </span>
                                                 </div>
-                                                {seminar.seminarType && (
+                                                {seminar.seminar_type && (
                                                     <p className="mt-1 text-xs text-gray-500">
-                                                        {seminar.seminarType.name}
+                                                        {seminar.seminar_type.name}
                                                     </p>
                                                 )}
                                             </Link>

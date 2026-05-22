@@ -20,32 +20,32 @@ describe('PresentationsCalendar', () => {
                         id: 0,
                         name: 'Expired Talk',
                         slug: 'expired-talk',
-                        scheduledAt: '2026-06-15T13:00:00Z',
-                        isExpired: true,
+                        scheduled_at: '2026-06-15T13:00:00Z',
+                        is_expired: true,
                     }),
                     createSeminar({
                         id: 1,
                         name: 'Late Talk',
                         slug: 'late-talk',
-                        scheduledAt: '2026-06-15T17:00:00Z',
+                        scheduled_at: '2026-06-15T17:00:00Z',
                     }),
                     createSeminar({
                         id: 2,
                         name: 'Early Talk',
                         slug: 'early-talk',
-                        scheduledAt: '2026-06-15T14:00:00Z',
+                        scheduled_at: '2026-06-15T14:00:00Z',
                     }),
                     createSeminar({
                         id: 3,
                         name: 'Extra Talk 1',
                         slug: 'extra-talk-1',
-                        scheduledAt: '2026-06-15T18:00:00Z',
+                        scheduled_at: '2026-06-15T18:00:00Z',
                     }),
                     createSeminar({
                         id: 4,
                         name: 'Extra Talk 2',
                         slug: 'extra-talk-2',
-                        scheduledAt: '2026-06-15T19:00:00Z',
+                        scheduled_at: '2026-06-15T19:00:00Z',
                     }),
                 ]}
                 month={new Date('2026-06-01T12:00:00Z')}
@@ -76,7 +76,7 @@ describe('PresentationsCalendar', () => {
                         id: 1,
                         name: 'Single Talk',
                         slug: 'single-talk',
-                        scheduledAt: '2026-06-15T14:00:00Z',
+                        scheduled_at: '2026-06-15T14:00:00Z',
                     }),
                 ]}
                 month={new Date('2026-06-01T12:00:00Z')}

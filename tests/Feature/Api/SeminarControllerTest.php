@@ -15,7 +15,7 @@ describe('GET /api/seminars', function () {
             ->assertJsonCount(3, 'data')
             ->assertJsonStructure([
                 'data' => [
-                    '*' => ['id', 'name', 'slug', 'scheduledAt'],
+                    '*' => ['id', 'name', 'slug', 'scheduled_at'],
                 ],
                 'meta' => ['current_page', 'last_page', 'per_page', 'total'],
             ]);
@@ -194,11 +194,11 @@ describe('GET /api/seminars/{slug}', function () {
                     'name',
                     'slug',
                     'description',
-                    'scheduledAt',
-                    'seminarType',
+                    'scheduled_at',
+                    'seminar_type',
                     'subjects',
                     'speakers',
-                    'registrationsCount',
+                    'registrations_count',
                 ],
             ]);
     });

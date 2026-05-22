@@ -224,7 +224,7 @@ describe('Presentations', () => {
         const seminars = [
             createSeminar({
                 name: 'Calendar Talk',
-                scheduledAt: '2026-06-15T14:00:00Z',
+                scheduled_at: '2026-06-15T14:00:00Z',
             }),
         ];
         vi.mocked(seminarsApi.list).mockResolvedValue(createPaginatedResponse(seminars));
