@@ -32,7 +32,7 @@ class RegistrationService
                 }
             });
 
-        Mail::to($user)->queue(new SeminarRegistrationConfirmation($user, $seminar));
+        Mail::to($user)->queue((new SeminarRegistrationConfirmation($user, $seminar))->afterCommit());
 
         return $registration;
     }
