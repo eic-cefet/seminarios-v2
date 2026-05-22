@@ -52,72 +52,11 @@ vi.mock('@shared/components/DropdownPortal', () => ({
 // This allows triggering onValueChange via fireEvent.change on native <select> elements
 vi.mock('../../components/ui/select', async () => {
     const React = await vi.importActual<typeof import('react')>('react');
-
-    // Context to pass onValueChange from Select down to SelectContent
-    const SelectContext = React.createContext<{ onValueChange?: (v: string) => void; value?: string }>({});
-
-    function MockSelect({ children, value, onValueChange }: any) {
-        return React.createElement(
-            SelectContext.Provider,
-            { value: { onValueChange, value } },
-            React.createElement('div', { 'data-mock-select': 'true' }, children),
-        );
-    }
-
-    function MockSelectTrigger({ children }: any) {
-        return React.createElement('div', { role: 'combobox' }, children);
-    }
-
-    function MockSelectValue({ placeholder }: any) {
-        return React.createElement('span', null, placeholder);
-    }
-
-    function MockSelectContent({ children }: any) {
-        const ctx = React.useContext(SelectContext);
-        // Collect option values from children
-        const options: Array<{ value: string; label: any }> = [];
-        const collectOptions = (nodes: any) => {
-            React.Children.forEach(nodes, (child: any) => {
-                if (!child) return;
-                if (child.type === MockSelectItem) {
-                    options.push({ value: child.props.value, label: child.props.children });
-                }
-            });
-        };
-        collectOptions(children);
-
-        return React.createElement(
-            'div',
-            null,
-            // Native select for triggering onValueChange
-            React.createElement(
-                'select',
-                {
-                    'data-testid': 'mock-native-select',
-                    value: ctx.value || '',
-                    onChange: (e: any) => ctx.onValueChange?.(e.target.value),
-                },
-                React.createElement('option', { value: '' }, ''),
-                ...options.map((opt: any) =>
-                    React.createElement('option', { key: opt.value, value: opt.value }, opt.label),
-                ),
-            ),
-            // Render original children for text content
-            children,
-        );
-    }
-
-    function MockSelectItem({ children, value }: any) {
-        return React.createElement('div', { 'data-value': value }, children);
-    }
-
-    return {
-        Select: MockSelect,
-        SelectTrigger: MockSelectTrigger,
-        SelectValue: MockSelectValue,
-        SelectContent: MockSelectContent,
-        SelectItem: MockSelectItem,
-    };
+    const { createSelectMockModule } = await import('@/test/mocks/radixSelect');
+    return createSelectMockModule(React, {
+        renderItemsAsSiblings: true,
+        includeEmptyOption: true,
+    });
 });
 
 // Mock global fetch for the helper API functions (listTypes, listWorkshops, listLocations)
