@@ -6,7 +6,6 @@ use App\Enums\CommunicationCategory;
 use App\Mail\WorkshopAvailable;
 use App\Models\User;
 use App\Models\Workshop;
-use App\Services\CommunicationGate;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -24,11 +23,9 @@ class SendWorkshopAvailableJob implements ShouldQueue
 
     public function __construct(public User $user, public int $workshopId) {}
 
-    public function handle(?CommunicationGate $gate = null): void
+    public function handle(): void
     {
-        $gate ??= app(CommunicationGate::class);
-
-        if (! $gate->canEmail($this->user, CommunicationCategory::WorkshopAnnouncements)) {
+        if (! $this->user->wantsCommunication(CommunicationCategory::WorkshopAnnouncements)) {
             return;
         }
 
