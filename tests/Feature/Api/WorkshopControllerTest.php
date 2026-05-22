@@ -71,7 +71,7 @@ it('returns paginated seminars for a workshop', function () {
         ->assertJsonCount(3, 'data')
         ->assertJsonStructure([
             'data' => [
-                '*' => ['id', 'name', 'scheduledAt'],
+                '*' => ['id', 'name', 'scheduled_at'],
             ],
             'meta' => ['total', 'per_page', 'current_page'],
         ]);
