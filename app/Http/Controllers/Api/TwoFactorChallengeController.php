@@ -4,9 +4,9 @@ namespace App\Http\Controllers\Api;
 
 use App\Enums\AuditEvent;
 use App\Exceptions\ApiException;
-use App\Http\Controllers\Concerns\FormatsUserResponse;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\TwoFactorChallengeRequest;
+use App\Http\Resources\MeUserResource;
 use App\Models\AuditLog;
 use App\Models\User;
 use App\Services\TwoFactorDeviceService;
@@ -17,8 +17,6 @@ use PragmaRX\Google2FA\Google2FA;
 
 class TwoFactorChallengeController extends Controller
 {
-    use FormatsUserResponse;
-
     private const MAX_ATTEMPTS_PER_TOKEN = 5;
 
     public function __invoke(TwoFactorChallengeRequest $request, TwoFactorDeviceService $devices): JsonResponse
@@ -84,7 +82,7 @@ class TwoFactorChallengeController extends Controller
         Auth::login($user, (bool) ($payload['remember'] ?? false));
         AuditLog::record(AuditEvent::UserLogin, auditable: $user);
 
-        $response = response()->json(['user' => $this->formatUserResponse($user)]);
+        $response = response()->json(['user' => (new MeUserResource($user))->resolve()]);
 
         if ($request->boolean('remember_device')) {
             $token = $devices->issue($user, $request->userAgent(), $request->ip());

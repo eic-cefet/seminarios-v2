@@ -4,9 +4,9 @@ namespace App\Http\Controllers\Api;
 
 use App\Enums\AuditEvent;
 use App\Exceptions\ApiException;
-use App\Http\Controllers\Concerns\FormatsUserResponse;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\UserRegistrationRequest;
+use App\Http\Resources\MeUserResource;
 use App\Mail\WelcomeUser;
 use App\Models\AuditLog;
 use App\Models\User;
@@ -24,8 +24,6 @@ use Illuminate\Validation\Rules\Password as PasswordRule;
 
 class AuthController extends Controller
 {
-    use FormatsUserResponse;
-
     public function login(Request $request): JsonResponse
     {
         $validated = $request->validate([
@@ -74,7 +72,7 @@ class AuthController extends Controller
                 Auth::login($user, $request->boolean('remember', false));
                 AuditLog::record(AuditEvent::UserLogin, auditable: $user, eventData: ['trusted_device' => true]);
 
-                return response()->json(['user' => $this->formatUserResponse($user)]);
+                return response()->json(['user' => (new MeUserResource($user))->resolve()]);
             }
 
             $challengeToken = Str::random(80);
@@ -92,7 +90,7 @@ class AuthController extends Controller
         AuditLog::record(AuditEvent::UserLogin, auditable: $user);
 
         return response()->json([
-            'user' => $this->formatUserResponse($user),
+            'user' => (new MeUserResource($user))->resolve(),
         ]);
     }
 
@@ -121,7 +119,7 @@ class AuthController extends Controller
         }
 
         return response()->json([
-            'user' => $this->formatUserResponse($user),
+            'user' => (new MeUserResource($user))->resolve(),
         ]);
     }
 
@@ -150,7 +148,7 @@ class AuthController extends Controller
         AuditLog::record(AuditEvent::UserRegister, auditable: $user);
 
         return response()->json([
-            'user' => $this->formatUserResponse($user),
+            'user' => (new MeUserResource($user))->resolve(),
         ], 201);
     }
 
