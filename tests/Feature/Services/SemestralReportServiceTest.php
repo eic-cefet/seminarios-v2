@@ -169,3 +169,59 @@ it('sorts rows by attendee name', function () {
 
     expect($rows->values()->first()['name'])->toBe('Ana Santos');
 });
+
+it('returns an empty collection when filters match no attendees', function () {
+    $course = Course::factory()->create();
+    $user = User::factory()->create();
+    UserStudentData::create([
+        'user_id' => $user->id,
+        'course_id' => $course->id,
+        'course_situation' => 'studying',
+    ]);
+
+    $seminar = Seminar::factory()->create([
+        'active' => true,
+        'scheduled_at' => now()->startOfYear()->addMonth(),
+        'duration_minutes' => 90,
+    ]);
+    Registration::factory()->create([
+        'user_id' => $user->id,
+        'seminar_id' => $seminar->id,
+    ]);
+
+    $currentYear = now()->year;
+    // Filter by a course id no user has
+    $rows = app(SemestralReportService::class)->collect("{$currentYear}.1", [
+        'courses' => [999999],
+    ]);
+
+    expect($rows)->toHaveCount(0);
+});
+
+it('sorts presentations within a row by date ascending', function () {
+    $user = User::factory()->create();
+    $startOfYear = now()->startOfYear();
+
+    $later = Seminar::factory()->create([
+        'name' => 'Later seminar',
+        'active' => true,
+        'scheduled_at' => (clone $startOfYear)->addMonths(4)->setTime(10, 0),
+        'duration_minutes' => 60,
+    ]);
+    $earlier = Seminar::factory()->create([
+        'name' => 'Earlier seminar',
+        'active' => true,
+        'scheduled_at' => (clone $startOfYear)->addMonths(2)->setTime(10, 0),
+        'duration_minutes' => 60,
+    ]);
+
+    Registration::factory()->create(['user_id' => $user->id, 'seminar_id' => $later->id]);
+    Registration::factory()->create(['user_id' => $user->id, 'seminar_id' => $earlier->id]);
+
+    $currentYear = now()->year;
+    $row = app(SemestralReportService::class)->collect("{$currentYear}.1")->first();
+
+    $presentationNames = collect($row['presentations'])->pluck('name')->all();
+
+    expect($presentationNames)->toBe(['Earlier seminar', 'Later seminar']);
+});
