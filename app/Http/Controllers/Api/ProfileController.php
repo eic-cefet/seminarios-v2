@@ -4,10 +4,10 @@ namespace App\Http\Controllers\Api;
 
 use App\Enums\AuditEvent;
 use App\Exceptions\ApiException;
-use App\Http\Controllers\Concerns\FormatsUserResponse;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ProfileUpdateRequest;
 use App\Http\Requests\StudentDataUpdateRequest;
+use App\Http\Resources\MeUserResource;
 use App\Models\AuditLog;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -16,14 +16,12 @@ use Illuminate\Validation\Rules\Password;
 
 class ProfileController extends Controller
 {
-    use FormatsUserResponse;
-
     public function show(Request $request): JsonResponse
     {
         $user = $request->user();
 
         return response()->json([
-            'user' => $this->formatUserResponse($user),
+            'user' => (new MeUserResource($user))->resolve(),
         ]);
     }
 
@@ -42,7 +40,7 @@ class ProfileController extends Controller
 
         return response()->json([
             'message' => 'Perfil atualizado com sucesso.',
-            'user' => $this->formatUserResponse($user),
+            'user' => (new MeUserResource($user))->resolve(),
         ]);
     }
 
@@ -59,7 +57,7 @@ class ProfileController extends Controller
 
         return response()->json([
             'message' => 'Dados atualizados com sucesso.',
-            'user' => $this->formatUserResponse($user),
+            'user' => (new MeUserResource($user))->resolve(),
         ]);
     }
 
