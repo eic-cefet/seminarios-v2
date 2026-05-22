@@ -4,7 +4,11 @@ import { Plus, Pencil, Trash2, Megaphone } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
-import { workshopsApi, type AdminWorkshop } from "../../api/adminClient";
+import {
+    workshopsApi,
+    AdminApiError,
+    type AdminWorkshop,
+} from "../../api/adminClient";
 import { useCRUDListState } from "../../hooks/useCRUDListState";
 import {
     workshopFormDefaults,
@@ -208,15 +212,15 @@ export default function WorkshopList() {
             toast.success("Workshop excluido com sucesso");
             closeDeleteDialog();
         },
-        onError: (error: Error) => {
+        onError: (error: unknown) => {
             if (
-                error.message.includes("associado") ||
-                error.message.includes("seminarios")
+                error instanceof AdminApiError &&
+                error.code === "workshop_in_use"
             ) {
                 toast.error("Este workshop possui seminarios associados");
-            } else {
-                toast.error("Erro ao excluir workshop");
+                return;
             }
+            toast.error("Erro ao excluir workshop");
         },
     });
 
