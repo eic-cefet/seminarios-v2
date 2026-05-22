@@ -7,6 +7,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { PageTitle } from "@shared/components/PageTitle";
+import { Pagination } from "@shared/components/Pagination";
 import { ROUTES } from "@shared/config/routes";
 import { seminarsApi, type AdminSeminar } from "../../api/adminClient";
 import { PresenceLinkModal } from "../../components/PresenceLinkModal";
@@ -330,49 +331,16 @@ export default function SeminarList() {
                                     </TableBody>
                                 </Table>
 
-                                {/* Pagination */}
-                                {meta && meta.last_page > 1 && (
-                                    <div className="flex items-center justify-between mt-4 pt-4 border-t border-border">
-                                        <div className="text-sm text-muted-foreground">
-                                            Mostrando {meta.from} a {meta.to} de{" "}
-                                            {meta.total} apresentações
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                onClick={() =>
-                                                    setPage((p) =>
-                                                        Math.max(1, p - 1),
-                                                    )
-                                                }
-                                                disabled={page === 1}
-                                            >
-                                                Anterior
-                                            </Button>
-                                            <span className="text-sm text-muted-foreground">
-                                                Página {page} de{" "}
-                                                {meta.last_page}
-                                            </span>
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                onClick={() =>
-                                                    setPage((p) =>
-                                                        Math.min(
-                                                            meta.last_page,
-                                                            p + 1,
-                                                        ),
-                                                    )
-                                                }
-                                                disabled={
-                                                    page === meta.last_page
-                                                }
-                                            >
-                                                Próxima
-                                            </Button>
-                                        </div>
-                                    </div>
+                                {meta && (
+                                    <Pagination
+                                        currentPage={meta.current_page}
+                                        lastPage={meta.last_page}
+                                        from={meta.from ?? 0}
+                                        to={meta.to ?? 0}
+                                        total={meta.total}
+                                        itemLabel="apresentações"
+                                        onPageChange={setPage}
+                                    />
                                 )}
                             </>
                         )}
