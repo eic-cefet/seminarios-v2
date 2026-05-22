@@ -4,23 +4,44 @@ vi.mock('@shared/lib/analytics', () => ({
     analytics: { event: vi.fn(), pageview: vi.fn() },
 }));
 
-vi.mock('../../api/adminClient', () => ({
-    subjectsApi: {
-        list: vi.fn().mockResolvedValue({
-            data: [],
-            meta: { last_page: 1, current_page: 1, total: 0, from: 0, to: 0 },
-        }),
-        create: vi.fn(),
-        update: vi.fn(),
-        delete: vi.fn(),
-        merge: vi.fn(),
+const toastErrorMock = vi.fn();
+vi.mock('sonner', () => ({
+    toast: {
+        error: (...args: unknown[]) => toastErrorMock(...args),
+        success: vi.fn(),
     },
-    aiApi: {
-        suggestMergeName: vi.fn(),
-        transformText: vi.fn(),
-    },
-    AdminApiError: class extends Error {},
 }));
+
+vi.mock('../../api/adminClient', () => {
+    class MockAdminApiError extends Error {
+        constructor(
+            public readonly code: string,
+            message: string,
+            public readonly status: number = 409,
+            public readonly errors?: Record<string, string[]>,
+        ) {
+            super(message);
+            this.name = 'AdminApiError';
+        }
+    }
+    return {
+        subjectsApi: {
+            list: vi.fn().mockResolvedValue({
+                data: [],
+                meta: { last_page: 1, current_page: 1, total: 0, from: 0, to: 0 },
+            }),
+            create: vi.fn(),
+            update: vi.fn(),
+            delete: vi.fn(),
+            merge: vi.fn(),
+        },
+        aiApi: {
+            suggestMergeName: vi.fn(),
+            transformText: vi.fn(),
+        },
+        AdminApiError: MockAdminApiError,
+    };
+});
 
 // Capture mutation options for direct callback testing
 let capturedSubCreateOptions: any = null;
@@ -46,7 +67,7 @@ vi.mock('@tanstack/react-query', async () => {
 });
 
 import SubjectList from './SubjectList';
-import { subjectsApi, aiApi } from '../../api/adminClient';
+import { subjectsApi, aiApi, AdminApiError as MockAdminApiError } from '../../api/adminClient';
 
 describe('SubjectList', () => {
     beforeEach(() => {
@@ -55,6 +76,7 @@ describe('SubjectList', () => {
         capturedSubDeleteOptions = null;
         capturedSubMergeOptions = null;
         subMutationCallCount = 0;
+        toastErrorMock.mockClear();
     });
 
     it('renders the page heading', () => {
@@ -854,28 +876,69 @@ describe('SubjectList', () => {
         expect(capturedSubMergeOptions).not.toBeNull();
     });
 
-    it('deleteMutation onError with associado message shows specific error', async () => {
+    it('deleteMutation onError with subject_in_use code shows specific toast', async () => {
         render(<SubjectList />);
 
         await act(() => {
-            // The frontend's onError substring-matches "associado" — the real
-            // backend message from ApiException::subjectInUse() reads "Este
-            // assunto está associado a apresentações..." (assunto is masculine,
-            // so "associado" agrees with it).
-            capturedSubDeleteOptions.onError(new Error('Este assunto está associado a apresentações e não pode ser excluído'));
+            capturedSubDeleteOptions.onError(
+                new MockAdminApiError(
+                    'subject_in_use',
+                    'Este assunto está associado a apresentações e não pode ser excluído',
+                    409,
+                ),
+            );
         });
 
-        expect(screen.getByText('Tópicos')).toBeInTheDocument();
+        expect(toastErrorMock).toHaveBeenCalledWith(
+            'Este tópico possui apresentações associadas',
+        );
+        expect(toastErrorMock).not.toHaveBeenCalledWith('Erro ao excluir tópico');
     });
 
-    it('deleteMutation onError with generic error shows generic message', async () => {
+    it('deleteMutation onError with an unrelated AdminApiError code shows the generic toast', async () => {
+        render(<SubjectList />);
+
+        await act(() => {
+            capturedSubDeleteOptions.onError(
+                new MockAdminApiError('something_else', 'Some other error', 500),
+            );
+        });
+
+        expect(toastErrorMock).toHaveBeenCalledWith('Erro ao excluir tópico');
+        expect(toastErrorMock).not.toHaveBeenCalledWith(
+            'Este tópico possui apresentações associadas',
+        );
+    });
+
+    it('deleteMutation onError with a non-AdminApiError shows the generic toast', async () => {
         render(<SubjectList />);
 
         await act(() => {
             capturedSubDeleteOptions.onError(new Error('Server error'));
         });
 
-        expect(screen.getByText('Tópicos')).toBeInTheDocument();
+        expect(toastErrorMock).toHaveBeenCalledWith('Erro ao excluir tópico');
+        expect(toastErrorMock).not.toHaveBeenCalledWith(
+            'Este tópico possui apresentações associadas',
+        );
+    });
+
+    it('deleteMutation onError ignores substring-only message match (regression for code-based dispatch)', async () => {
+        render(<SubjectList />);
+
+        await act(() => {
+            // Plain Error whose message contains "associado" must NOT trigger
+            // the specific toast — only the typed AdminApiError with the
+            // proper code should.
+            capturedSubDeleteOptions.onError(
+                new Error('Este assunto está associado a apresentações'),
+            );
+        });
+
+        expect(toastErrorMock).toHaveBeenCalledWith('Erro ao excluir tópico');
+        expect(toastErrorMock).not.toHaveBeenCalledWith(
+            'Este tópico possui apresentações associadas',
+        );
     });
 
     it('mergeMutation onError does not crash', async () => {

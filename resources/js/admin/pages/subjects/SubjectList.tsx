@@ -3,7 +3,12 @@ import { Plus, Pencil, Trash2, Merge, Sparkles, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { analytics } from "@shared/lib/analytics";
-import { subjectsApi, aiApi, type AdminSubject } from "../../api/adminClient";
+import {
+    subjectsApi,
+    aiApi,
+    AdminApiError,
+    type AdminSubject,
+} from "../../api/adminClient";
 import { useCRUDListState } from "../../hooks/useCRUDListState";
 import { useDebouncedSearch } from "@shared/hooks/useDebouncedSearch";
 import { Button } from "../../components/ui/button";
@@ -145,12 +150,15 @@ export default function SubjectList() {
             analytics.event("admin_subject_delete", { subject_slug: slug });
             closeDeleteDialog();
         },
-        onError: (error: Error) => {
-            if (error.message.includes("associado")) {
+        onError: (error: unknown) => {
+            if (
+                error instanceof AdminApiError &&
+                error.code === "subject_in_use"
+            ) {
                 toast.error("Este tópico possui apresentações associadas");
-            } else {
-                toast.error("Erro ao excluir tópico");
+                return;
             }
+            toast.error("Erro ao excluir tópico");
         },
     });
 
