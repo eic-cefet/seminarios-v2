@@ -16,8 +16,6 @@ use Illuminate\Support\Facades\Mail;
 
 class SeminarRescheduleNotifier
 {
-    public function __construct(private readonly CommunicationGate $gate) {}
-
     public function notify(Seminar $seminar, DateTimeInterface $oldScheduledAt): void
     {
         $seminar->loadMissing('seminarLocation');
@@ -48,7 +46,7 @@ class SeminarRescheduleNotifier
                 previousStartsAt: (string) $oldScheduledAt,
             ));
 
-            if (! $this->gate->canEmail($registration->user, CommunicationCategory::SeminarRescheduled)) {
+            if (! $registration->user->wantsCommunication(CommunicationCategory::SeminarRescheduled)) {
                 continue;
             }
 

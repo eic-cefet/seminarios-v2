@@ -7,7 +7,6 @@ use App\Mail\EvaluationReminder;
 use App\Models\Registration;
 use App\Models\User;
 use App\Notifications\EvaluationDueNotification;
-use App\Services\CommunicationGate;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -32,10 +31,8 @@ class SendEvaluationReminderJob implements ShouldQueue
         public Collection $registrationIds,
     ) {}
 
-    public function handle(?CommunicationGate $gate = null): void
+    public function handle(): void
     {
-        $gate ??= app(CommunicationGate::class);
-
         $registrations = Registration::whereIn('id', $this->registrationIds)
             ->with(['seminar.seminarLocation'])
             ->get();
@@ -50,7 +47,7 @@ class SendEvaluationReminderJob implements ShouldQueue
             }
         }
 
-        if ($gate->canEmail($this->user, CommunicationCategory::EvaluationPrompt)) {
+        if ($this->user->wantsCommunication(CommunicationCategory::EvaluationPrompt)) {
             $seminars = $registrations->pluck('seminar')->filter();
 
             if ($seminars->isNotEmpty()) {
