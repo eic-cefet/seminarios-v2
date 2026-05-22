@@ -67,7 +67,7 @@ class AppServiceProvider extends ServiceProvider
         }
 
         RateLimiter::for('login', function (Request $request) {
-            return Limit::perMinute((int) env('LOGIN_RATE_LIMIT', 5))
+            return Limit::perMinute((int) config('auth.login_rate_limit'))
                 ->by($request->input('email').'|'.$request->ip());
         });
 
