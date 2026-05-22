@@ -57,4 +57,44 @@ describe('Pagination', () => {
         // Button is disabled on last page
         expect(screen.getByLabelText('Próxima página')).toBeDisabled();
     });
+
+    it("renders the 'Mostrando X a Y de Z' caption when from/to/total are provided", () => {
+        render(
+            <Pagination
+                currentPage={1}
+                lastPage={3}
+                onPageChange={vi.fn()}
+                from={1}
+                to={10}
+                total={25}
+                itemLabel="tópicos"
+            />,
+        );
+        expect(
+            screen.getByText('Mostrando 1 a 10 de 25 tópicos'),
+        ).toBeInTheDocument();
+        expect(screen.queryByText(/Página 1 de 3/)).toBeNull();
+    });
+
+    it('omits the caption when totals are not provided', () => {
+        render(<Pagination currentPage={1} lastPage={3} onPageChange={vi.fn()} />);
+        expect(screen.queryByText(/Mostrando/)).toBeNull();
+        expect(screen.getByText('Página 1 de 3')).toBeInTheDocument();
+    });
+
+    it('falls back to the default itemLabel when not provided', () => {
+        render(
+            <Pagination
+                currentPage={2}
+                lastPage={3}
+                onPageChange={vi.fn()}
+                from={11}
+                to={20}
+                total={25}
+            />,
+        );
+        expect(
+            screen.getByText('Mostrando 11 a 20 de 25 itens'),
+        ).toBeInTheDocument();
+    });
 });

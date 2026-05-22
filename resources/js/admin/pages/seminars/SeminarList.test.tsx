@@ -146,7 +146,9 @@ describe('SeminarList', () => {
             expect(screen.getByText('Anterior')).toBeInTheDocument();
         });
         expect(screen.getByText('Próxima')).toBeInTheDocument();
-        expect(screen.getByText('Página 1 de 3')).toBeInTheDocument();
+        expect(
+            screen.getByText('Mostrando 1 a 10 de 30 apresentações'),
+        ).toBeInTheDocument();
     });
 
     it('disables Anterior button on first page', async () => {

@@ -406,8 +406,7 @@ describe('SubjectList', () => {
         await waitFor(() => {
             expect(screen.getByText('Anterior')).toBeInTheDocument();
         });
-        expect(screen.getByText('Proxima')).toBeInTheDocument();
-        expect(screen.getByText('Pagina 1 de 3')).toBeInTheDocument();
+        expect(screen.getByText('Próxima')).toBeInTheDocument();
         expect(screen.getByText('Mostrando 1 a 10 de 30 tópicos')).toBeInTheDocument();
     });
 
@@ -438,9 +437,9 @@ describe('SubjectList', () => {
         const user = userEvent.setup();
 
         await waitFor(() => {
-            expect(screen.getByText('Proxima')).toBeInTheDocument();
+            expect(screen.getByText('Próxima')).toBeInTheDocument();
         });
-        await user.click(screen.getByText('Proxima'));
+        await user.click(screen.getByText('Próxima'));
 
         await waitFor(() => {
             expect(subjectsApi.list).toHaveBeenCalled();
@@ -806,9 +805,9 @@ describe('SubjectList', () => {
 
         // Go to page 2 first
         await waitFor(() => {
-            expect(screen.getByText('Proxima')).toBeInTheDocument();
+            expect(screen.getByText('Próxima')).toBeInTheDocument();
         });
-        await user.click(screen.getByText('Proxima'));
+        await user.click(screen.getByText('Próxima'));
 
         // Now click Anterior
         await waitFor(() => {
