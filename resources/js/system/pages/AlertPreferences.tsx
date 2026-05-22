@@ -11,6 +11,7 @@ import { useEffect, useState } from "react";
 import { Layout } from "../components/Layout";
 import { ProtectedRoute } from "../components/ProtectedRoute";
 import { ErrorAlert, SuccessAlert } from "../components/profile/FormAlerts";
+import { Button } from "@shared/components/Button";
 
 export default function AlertPreferences() {
     const queryClient = useQueryClient();
@@ -270,17 +271,18 @@ export default function AlertPreferences() {
                             </section>
 
                             <div className="flex justify-end pt-2">
-                                <button
+                                <Button
                                     type="submit"
+                                    variant="primary"
                                     disabled={mutation.isPending}
                                     className={cn(
-                                        "rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-primary-700 transition-colors cursor-pointer",
+                                        "px-4 py-2",
                                         mutation.isPending &&
                                             "opacity-70 cursor-not-allowed",
                                     )}
                                 >
                                     {mutation.isPending ? "Salvando..." : "Salvar preferências"}
-                                </button>
+                                </Button>
                             </div>
                         </form>
                     )}

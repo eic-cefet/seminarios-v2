@@ -16,6 +16,7 @@ import { useAuth } from "@shared/contexts/AuthContext";
 import { formatDateTimeLong } from "@shared/lib/utils";
 import { Layout } from "../components/Layout";
 import { LoginModal } from "../components/LoginModal";
+import { Button } from "@shared/components/Button";
 
 export default function Presence() {
     const { uuid } = useParams<{ uuid: string }>();
@@ -142,13 +143,14 @@ export default function Presence() {
                             )}
 
                             <div className="flex flex-col gap-3">
-                                <button
+                                <Button
+                                    variant="primary"
                                     onClick={() => setShowLoginModal(true)}
-                                    className="w-full inline-flex items-center justify-center gap-2 rounded-md bg-primary-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-primary-700 transition-colors"
+                                    className="w-full px-4 py-2.5"
                                 >
                                     Entrar na conta
                                     <ArrowRight className="h-4 w-4" />
-                                </button>
+                                </Button>
                                 <Link
                                     to={ROUTES.SYSTEM.REGISTER}
                                     className="text-sm text-gray-500 hover:text-gray-700"
@@ -204,12 +206,13 @@ export default function Presence() {
                                 </p>
                             </div>
                             <div className="flex flex-col gap-3">
-                                <button
+                                <Button
+                                    variant="primary"
                                     onClick={() => registerMutation.mutate()}
-                                    className="w-full inline-flex items-center justify-center gap-2 rounded-md bg-primary-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-primary-700 transition-colors"
+                                    className="w-full px-4 py-2.5"
                                 >
                                     Tentar novamente
-                                </button>
+                                </Button>
                                 <Link
                                     to={ROUTES.SYSTEM.HOME}
                                     className="inline-flex items-center justify-center gap-2 text-gray-500 hover:text-gray-700 text-sm"
@@ -264,13 +267,12 @@ export default function Presence() {
                             )}
 
                             <div className="flex flex-col gap-3 pt-2">
-                                <Link
-                                    to={ROUTES.SYSTEM.PROFILE}
-                                    className="w-full inline-flex items-center justify-center gap-2 rounded-md bg-primary-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-primary-700 transition-colors"
-                                >
-                                    Ver minhas inscrições
-                                    <ArrowRight className="h-4 w-4" />
-                                </Link>
+                                <Button asChild variant="primary" className="w-full px-4 py-2.5">
+                                    <Link to={ROUTES.SYSTEM.PROFILE}>
+                                        Ver minhas inscrições
+                                        <ArrowRight className="h-4 w-4" />
+                                    </Link>
+                                </Button>
                                 <Link
                                     to={ROUTES.SYSTEM.HOME}
                                     className="inline-flex items-center justify-center gap-2 text-gray-500 hover:text-gray-700 text-sm"

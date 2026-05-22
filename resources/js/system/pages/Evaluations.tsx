@@ -18,6 +18,7 @@ import { Link } from "react-router-dom";
 import { Badge } from "../components/Badge";
 import { Layout } from "../components/Layout";
 import { ProtectedRoute } from "../components/ProtectedRoute";
+import { Button } from "@shared/components/Button";
 
 export default function Evaluations() {
     return (
@@ -75,12 +76,9 @@ function PendingEvaluationsList() {
                     Voce ja avaliou todos os seminarios que participou
                     recentemente.
                 </p>
-                <Link
-                    to={ROUTES.SYSTEM.PROFILE}
-                    className="mt-6 inline-flex items-center rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-primary-700 transition-colors cursor-pointer"
-                >
-                    Ir para o perfil
-                </Link>
+                <Button asChild variant="primary" className="mt-6 px-4 py-2">
+                    <Link to={ROUTES.SYSTEM.PROFILE}>Ir para o perfil</Link>
+                </Button>
             </div>
         );
     }
@@ -333,11 +331,12 @@ function EvaluationItem({ evaluation, onRated }: EvaluationItemProps) {
                     </label>
 
                     <div className="flex justify-end">
-                        <button
+                        <Button
                             type="submit"
+                            variant="primary"
                             disabled={mutation.isPending || score === 0}
                             className={cn(
-                                "rounded-md bg-primary-600 px-6 py-2 text-sm font-medium text-white shadow-sm hover:bg-primary-700 transition-colors cursor-pointer",
+                                "px-6 py-2",
                                 (mutation.isPending || score === 0) &&
                                     "opacity-70 cursor-not-allowed",
                             )}
@@ -345,7 +344,7 @@ function EvaluationItem({ evaluation, onRated }: EvaluationItemProps) {
                             {mutation.isPending
                                 ? "Enviando..."
                                 : "Enviar avaliacao"}
-                        </button>
+                        </Button>
                     </div>
                 </form>
             )}

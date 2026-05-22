@@ -9,6 +9,7 @@ import { cn } from "@shared/lib/utils";
 import { authApi } from "@shared/api/client";
 import { getErrorMessage } from "@shared/lib/errors";
 import { analytics } from "@shared/lib/analytics";
+import { Button } from "@shared/components/Button";
 
 export default function ResetPassword() {
     const [searchParams] = useSearchParams();
@@ -99,12 +100,11 @@ export default function ResetPassword() {
                                 expirou. Por favor, solicite um novo link.
                             </p>
                             <div className="pt-4">
-                                <Link
-                                    to={ROUTES.SYSTEM.FORGOT_PASSWORD}
-                                    className="inline-flex items-center justify-center gap-2 rounded-md bg-primary-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-primary-700"
-                                >
-                                    Solicitar novo link
-                                </Link>
+                                <Button asChild variant="primary" className="px-4 py-2.5">
+                                    <Link to={ROUTES.SYSTEM.FORGOT_PASSWORD}>
+                                        Solicitar novo link
+                                    </Link>
+                                </Button>
                             </div>
                         </div>
                     </div>
@@ -209,16 +209,17 @@ export default function ResetPassword() {
                                 />
                             </div>
 
-                            <button
+                            <Button
                                 type="submit"
+                                variant="primary"
                                 disabled={loading}
                                 className={cn(
-                                    "w-full rounded-md bg-primary-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors",
+                                    "w-full px-4 py-2.5",
                                     loading && "opacity-70 cursor-not-allowed",
                                 )}
                             >
                                 {loading ? "Redefinindo..." : "Redefinir senha"}
-                            </button>
+                            </Button>
                         </form>
 
                         <p className="text-center text-sm text-gray-500">

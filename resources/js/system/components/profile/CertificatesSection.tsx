@@ -8,6 +8,7 @@ import { Download, FileText, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Badge } from "../Badge";
+import { Button } from "@shared/components/Button";
 
 export function CertificatesSection() {
     const [page, setPage] = useState(1);
@@ -89,20 +90,25 @@ export function CertificatesSection() {
                                     </div>
                                 </div>
                                 <div className="ml-4">
-                                    <a
-                                        href={buildUrl(`/certificado/${certificate.certificate_code}`)}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        onClick={() =>
-                                            analytics.event("certificate_download", {
-                                                seminar_id: certificate.seminar.id,
-                                            })
-                                        }
-                                        className="inline-flex items-center gap-1.5 rounded-md bg-primary-600 px-3 py-1.5 text-sm font-medium text-white shadow-sm hover:bg-primary-700 transition-colors cursor-pointer"
+                                    <Button
+                                        asChild
+                                        variant="primary"
+                                        className="px-3 py-1.5"
                                     >
-                                        <Download className="h-3.5 w-3.5" />
-                                        Baixar
-                                    </a>
+                                        <a
+                                            href={buildUrl(`/certificado/${certificate.certificate_code}`)}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            onClick={() =>
+                                                analytics.event("certificate_download", {
+                                                    seminar_id: certificate.seminar.id,
+                                                })
+                                            }
+                                        >
+                                            <Download className="h-3.5 w-3.5" />
+                                            Baixar
+                                        </a>
+                                    </Button>
                                 </div>
                             </div>
                         ))}

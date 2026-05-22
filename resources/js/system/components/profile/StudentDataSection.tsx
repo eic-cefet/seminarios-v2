@@ -7,6 +7,7 @@ import { GraduationCap } from "lucide-react";
 import { useState } from "react";
 import { ErrorAlert, SuccessAlert } from "./FormAlerts";
 import { useProfileForm } from "./useProfileForm";
+import { Button } from "@shared/components/Button";
 
 interface StudentDataSectionProps {
     user: UserType;
@@ -205,17 +206,18 @@ export function StudentDataSection({ user, onUpdate }: StudentDataSectionProps) 
                             >
                                 Cancelar
                             </button>
-                            <button
+                            <Button
                                 type="submit"
+                                variant="primary"
                                 disabled={mutation.isPending}
                                 className={cn(
-                                    "flex-1 rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-primary-700 transition-colors cursor-pointer",
+                                    "flex-1 px-4 py-2",
                                     mutation.isPending &&
                                         "opacity-70 cursor-not-allowed",
                                 )}
                             >
                                 {mutation.isPending ? "Salvando..." : "Salvar"}
-                            </button>
+                            </Button>
                         </div>
                     </form>
                 ) : (

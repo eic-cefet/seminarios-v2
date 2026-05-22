@@ -16,6 +16,7 @@ import { getErrorMessage } from "@shared/lib/errors";
 import { coursesApi } from "@shared/api/client";
 import { analytics } from "@shared/lib/analytics";
 import { FormField } from "@shared/components/FormField";
+import { Button } from "@shared/components/Button";
 import { registerSchema, type RegisterFormValues } from "./Register.schema";
 
 export default function Register() {
@@ -326,14 +327,15 @@ export default function Register() {
                                 </label>
                             </div>
 
-                            <button
+                            <Button
                                 type="submit"
+                                variant="primary"
                                 disabled={
                                     isSubmitting ||
                                     (isRecaptchaEnabled() && !captchaToken)
                                 }
                                 className={cn(
-                                    "w-full rounded-md bg-primary-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors",
+                                    "w-full px-4 py-2.5",
                                     (isSubmitting ||
                                         (isRecaptchaEnabled() &&
                                             !captchaToken)) &&
@@ -341,7 +343,7 @@ export default function Register() {
                                 )}
                             >
                                 {isSubmitting ? "Criando conta..." : "Criar conta"}
-                            </button>
+                            </Button>
                         </form>
 
                         <p className="text-center text-sm text-gray-500">
