@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Api;
 
 use App\Enums\AuditEvent;
-use App\Enums\ConsentType;
 use App\Exceptions\ApiException;
 use App\Http\Controllers\Concerns\FormatsUserResponse;
 use App\Http\Controllers\Controller;
@@ -12,9 +11,8 @@ use App\Mail\AccountDeletionCancelled;
 use App\Mail\WelcomeUser;
 use App\Models\AuditLog;
 use App\Models\User;
-use App\Models\UserConsent;
-use App\Services\IpHasher;
 use App\Services\TwoFactorDeviceService;
+use App\Services\UserConsentService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -159,21 +157,7 @@ class AuthController extends Controller
             'course_id' => $validated['course_id'] ?? null,
         ]);
 
-        $hasher = app(IpHasher::class);
-        $ipHash = $hasher->hash($request->ip());
-        $uaHash = $hasher->hashOpaque((string) $request->userAgent());
-
-        foreach ([ConsentType::TermsOfService, ConsentType::PrivacyPolicy] as $type) {
-            UserConsent::create([
-                'user_id' => $user->id,
-                'type' => $type,
-                'granted' => true,
-                'version' => config('lgpd.versions.'.$type->value) ?? '1.0',
-                'ip_hash' => $ipHash,
-                'user_agent_hash' => $uaHash,
-                'source' => 'registration',
-            ]);
-        }
+        app(UserConsentService::class)->recordSignupConsents($user, $request, source: 'registration');
 
         Mail::to($user)->queue(new WelcomeUser($user));
 
