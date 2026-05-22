@@ -22,6 +22,12 @@ class RegistrationService
 
         $registration = Mutex::for(LockKey::seminarRegistration($seminar->id), ttlSeconds: 5, waitSeconds: 5)
             ->protect(function () use ($user, $seminar): Registration {
+                $location = $seminar->seminarLocation;
+                if ($location !== null
+                    && $seminar->registrations()->count() >= $location->max_vacancies) {
+                    throw ApiException::seminarFull();
+                }
+
                 try {
                     return $seminar->registrations()->create([
                         'user_id' => $user->id,
