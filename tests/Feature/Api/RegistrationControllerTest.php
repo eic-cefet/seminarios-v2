@@ -88,7 +88,7 @@ describe('POST /api/seminars/{slug}/register', function () {
         );
     });
 
-    it('allows overbooking when seminar capacity is exceeded', function () {
+    it('rejects registration when seminar location is at capacity', function () {
         $user = actingAsUser();
         $location = SeminarLocation::factory()->create(['max_vacancies' => 1]);
         $seminar = Seminar::factory()->upcoming()->create([
@@ -100,11 +100,12 @@ describe('POST /api/seminars/{slug}/register', function () {
 
         $response = $this->postJson("/api/seminars/{$seminar->slug}/register");
 
-        $response->assertStatus(201)
-            ->assertJsonPath('message', 'Inscrição realizada com sucesso');
+        $response->assertStatus(409)
+            ->assertJsonPath('error', 'seminar_full')
+            ->assertJsonPath('message', 'Esta apresentação atingiu sua capacidade máxima');
 
         expect(Registration::where('user_id', $user->id)->where('seminar_id', $seminar->id)->exists())
-            ->toBeTrue();
+            ->toBeFalse();
     });
 });
 
