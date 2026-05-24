@@ -13,6 +13,18 @@ use Illuminate\Support\ServiceProvider;
 class ScrambleServiceProvider extends ServiceProvider
 {
     /**
+     * Override the static `scramble.info.version` default with the live app
+     * version *before* Scramble snapshots its config in `bootingPackage()`.
+     * Set in register() (not boot()) because Scramble's own service provider
+     * reads `config('scramble')` once during its booting phase and never
+     * re-reads it — a later boot()-time mutation would be ignored.
+     */
+    public function register(): void
+    {
+        config()->set('scramble.info.version', $this->resolveAppVersion());
+    }
+
+    /**
      * Bootstrap any application services.
      */
     public function boot(): void
@@ -21,6 +33,25 @@ class ScrambleServiceProvider extends ServiceProvider
             $this->registerApiErrorSchema($openApi);
             $this->attachDefaultErrorResponseToExternalOperations($openApi);
         });
+    }
+
+    /**
+     * Resolve the API version from the repository VERSION file (owned by the
+     * release workflow). Mirrors App\Services\SystemInfoService::appVersion()
+     * so the OpenAPI doc advertises the same version reported on the admin
+     * system-info page.
+     */
+    private function resolveAppVersion(): string
+    {
+        $path = base_path('VERSION');
+
+        if (! is_file($path)) {
+            return 'dev';
+        }
+
+        $content = trim((string) @file_get_contents($path));
+
+        return $content === '' ? 'dev' : $content;
     }
 
     /**
