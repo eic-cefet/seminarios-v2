@@ -65,6 +65,68 @@ it('skips operations on /v1/ paths that already declare a default response', fun
         ->and($operation->responses[0])->toBe($existingDefault);
 });
 
+/**
+ * Helper that invokes the private `resolveAppVersion` method so each fallback
+ * branch (missing VERSION file, empty VERSION file, normal VERSION file) can
+ * be exercised without rebooting the framework — register() is called once
+ * during app boot so we can't easily re-trigger the integration path.
+ */
+function callResolveAppVersion(): string
+{
+    $provider = new ScrambleServiceProvider(app());
+    $reflection = new ReflectionMethod($provider, 'resolveAppVersion');
+
+    return $reflection->invoke($provider);
+}
+
+it('reads the VERSION file when resolving the app version', function () {
+    $path = base_path('VERSION');
+    $original = is_file($path) ? file_get_contents($path) : null;
+    file_put_contents($path, "v9.9.9\n");
+
+    try {
+        expect(callResolveAppVersion())->toBe('v9.9.9');
+    } finally {
+        if ($original === null) {
+            @unlink($path);
+        } else {
+            file_put_contents($path, $original);
+        }
+    }
+});
+
+it('falls back to "dev" when the VERSION file is missing', function () {
+    $path = base_path('VERSION');
+    $original = is_file($path) ? file_get_contents($path) : null;
+    if ($original !== null) {
+        unlink($path);
+    }
+
+    try {
+        expect(callResolveAppVersion())->toBe('dev');
+    } finally {
+        if ($original !== null) {
+            file_put_contents($path, $original);
+        }
+    }
+});
+
+it('falls back to "dev" when the VERSION file is blank', function () {
+    $path = base_path('VERSION');
+    $original = is_file($path) ? file_get_contents($path) : null;
+    file_put_contents($path, "   \n");
+
+    try {
+        expect(callResolveAppVersion())->toBe('dev');
+    } finally {
+        if ($original === null) {
+            @unlink($path);
+        } else {
+            file_put_contents($path, $original);
+        }
+    }
+});
+
 it('ignores paths that are not under the /v1/ prefix', function () {
     $operation = new Operation('get');
 

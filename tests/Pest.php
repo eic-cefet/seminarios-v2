@@ -33,6 +33,8 @@ pest()->extend(TestCase::class)->in('Unit/Support');
 
 pest()->extend(TestCase::class)->in('Unit/Http');
 
+pest()->extend(TestCase::class)->in('Unit/Providers');
+
 pest()->extend(TestCase::class)
     ->use(RefreshDatabase::class)
     ->beforeEach(function () {
