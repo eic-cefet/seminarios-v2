@@ -13,6 +13,7 @@ use App\Http\Resources\Admin\AdminSubjectResource;
 use App\Models\AuditLog;
 use App\Models\Subject;
 use App\Services\SlugService;
+use App\Services\SubjectMerger;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -25,7 +26,8 @@ class AdminSubjectController extends Controller
     use EscapesLikeWildcards;
 
     public function __construct(
-        private readonly SlugService $slugService
+        private readonly SlugService $slugService,
+        private readonly SubjectMerger $subjectMerger,
     ) {}
 
     public function index(Request $request): AnonymousResourceCollection
@@ -106,46 +108,23 @@ class AdminSubjectController extends Controller
 
         $targetId = $validated['target_id'];
         $sourceIds = $validated['source_ids'];
+        $newName = $validated['new_name'] ?? null;
 
         try {
-            $target = DB::transaction(function () use ($targetId, $sourceIds, $validated) {
+            $target = DB::transaction(function () use ($targetId, $sourceIds, $newName) {
                 $target = Subject::findOrFail($targetId);
 
-                if (! empty($validated['new_name'])) {
-                    $target->name = $validated['new_name'];
-                    $target->slug = $this->slugService->generateUnique(
-                        $validated['new_name'], Subject::class, 'slug', $target->id
-                    );
-                    $target->save();
-                }
+                $affectedSeminarIds = $this->subjectMerger->affectedSeminarIds($sourceIds);
 
-                $seminarIds = DB::table('seminar_subject')
-                    ->whereIn('subject_id', $sourceIds)
-                    ->pluck('seminar_id')
-                    ->unique();
-
-                $insertData = $seminarIds->map(fn ($seminarId) => [
-                    'seminar_id' => $seminarId,
-                    'subject_id' => $targetId,
-                ])->toArray();
-
-                if (! empty($insertData)) {
-                    DB::table('seminar_subject')->insertOrIgnore($insertData);
-                }
-
-                DB::table('seminar_subject')
-                    ->whereIn('subject_id', $sourceIds)
-                    ->delete();
-
-                Subject::whereIn('id', $sourceIds)->delete();
+                $target = $this->subjectMerger->merge($target, $sourceIds, $newName);
 
                 // Audit log is intentionally inside the transaction — if audit
                 // recording fails, the merge is rolled back to ensure auditability.
                 AuditLog::record(AuditEvent::SubjectsMerged, auditable: $target, eventData: [
                     'target_id' => $targetId,
                     'source_ids' => $sourceIds,
-                    'new_name' => $validated['new_name'] ?? null,
-                    'affected_seminar_ids' => $seminarIds->values()->toArray(),
+                    'new_name' => $newName,
+                    'affected_seminar_ids' => $affectedSeminarIds,
                 ]);
 
                 return $target;

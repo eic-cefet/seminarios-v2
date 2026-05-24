@@ -202,8 +202,8 @@ export default function SeminarDetails() {
         );
     }
 
-    const isExpired = seminar.isExpired;
-    const isToday = !isExpired && isTodayDate(seminar.scheduledAt);
+    const isExpired = seminar.is_expired;
+    const isToday = !isExpired && isTodayDate(seminar.scheduled_at);
 
     return (
         <>
@@ -225,11 +225,11 @@ export default function SeminarDetails() {
                         </Link>
 
                         <div className="flex flex-wrap items-center gap-2 mb-4">
-                            {seminar.seminarType && (
+                            {seminar.seminar_type && (
                                 <Badge
                                     variant={isExpired ? "expired" : "default"}
                                 >
-                                    {seminar.seminarType.name}
+                                    {seminar.seminar_type.name}
                                 </Badge>
                             )}
                             {isExpired && (
@@ -254,7 +254,7 @@ export default function SeminarDetails() {
                         <div className="mt-4 flex flex-wrap items-center gap-6 text-gray-500">
                             <span className="flex items-center gap-2">
                                 <Calendar className="h-5 w-5" />
-                                {formatDateTime(seminar.scheduledAt)}
+                                {formatDateTime(seminar.scheduled_at)}
                             </span>
                             {seminar.location && (
                                 <span className="flex items-center gap-2">
@@ -262,17 +262,17 @@ export default function SeminarDetails() {
                                     {seminar.location.name}
                                 </span>
                             )}
-                            {seminar.registrationsCount !== undefined && (
+                            {seminar.registrations_count !== undefined && (
                                 <span className="flex items-center gap-2">
                                     <Users className="h-5 w-5" />
-                                    {seminar.registrationsCount} inscritos
+                                    {seminar.registrations_count} inscritos
                                 </span>
                             )}
-                            {seminar.durationMinutes && (
+                            {seminar.duration_minutes && (
                                 <span className="flex items-center gap-2">
                                     <Clock className="h-5 w-5" />
                                     {formatDurationMinutes(
-                                        seminar.durationMinutes,
+                                        seminar.duration_minutes,
                                     )}
                                 </span>
                             )}
@@ -465,15 +465,15 @@ export default function SeminarDetails() {
                                     <CalendarMenu
                                         event={{
                                             title: seminar.name,
-                                            startsAt: seminar.scheduledAt,
-                                            endsAt: seminar.endsAt,
+                                            startsAt: seminar.scheduled_at,
+                                            endsAt: seminar.ends_at,
                                             description: seminar.description
                                                 ? stripMarkdown(
                                                       seminar.description,
                                                   )
                                                 : seminar.description,
                                             location: seminar.location?.name,
-                                            roomLink: seminar.roomLink,
+                                            roomLink: seminar.room_link,
                                             eventPath: ROUTES.SYSTEM.SEMINAR_DETAILS(seminar.slug),
                                             downloadPath: ROUTES.SYSTEM.SEMINAR_CALENDAR_ICS(seminar.slug),
                                         }}
@@ -482,9 +482,9 @@ export default function SeminarDetails() {
                                 </div>
                             </div>
 
-                            {seminar.roomLink && (
+                            {seminar.room_link && (
                                 <a
-                                    href={seminar.roomLink}
+                                    href={seminar.room_link}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="flex items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white p-4 text-sm font-medium text-primary-600 hover:bg-gray-50 transition-colors cursor-pointer"

@@ -2,27 +2,23 @@
 
 namespace App\Console\Commands;
 
-use App\Concerns\TracksAuditContext;
 use App\Enums\AuditEvent;
 use App\Models\AuditLog;
 use App\Models\Subject;
 use App\Services\AiService;
+use App\Services\SubjectMerger;
 use Illuminate\Console\Command;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 class AnalyzeSubjectMergesCommand extends Command
 {
-    use TracksAuditContext;
-
     protected $signature = 'subjects:ai-merge {--dry-run : Only show suggestions without merging}';
 
     protected $description = 'Use AI to identify and merge duplicate subjects';
 
     public function handle(): int
     {
-        $this->setAuditContext();
-
         $ai = app(AiService::class);
 
         if (! $ai) {
@@ -173,35 +169,18 @@ class AnalyzeSubjectMergesCommand extends Command
 
     private function mergeSubjects(Subject $target, array $sourceIds, string $newName): void
     {
-        DB::transaction(function () use ($target, $sourceIds, $newName) {
-            $target->name = $newName;
-            $target->save();
+        $merger = app(SubjectMerger::class);
 
-            $seminarIds = DB::table('seminar_subject')
-                ->whereIn('subject_id', $sourceIds)
-                ->pluck('seminar_id')
-                ->unique();
+        DB::transaction(function () use ($target, $sourceIds, $newName, $merger) {
+            $affectedSeminarIds = $merger->affectedSeminarIds($sourceIds);
 
-            $insertData = $seminarIds->map(fn ($seminarId) => [
-                'seminar_id' => $seminarId,
-                'subject_id' => $target->id,
-            ])->toArray();
-
-            if (! empty($insertData)) {
-                DB::table('seminar_subject')->insertOrIgnore($insertData);
-            }
-
-            DB::table('seminar_subject')
-                ->whereIn('subject_id', $sourceIds)
-                ->delete();
-
-            Subject::whereIn('id', $sourceIds)->each(fn (Subject $s) => $s->delete());
+            $target = $merger->merge($target, $sourceIds, $newName);
 
             AuditLog::record(AuditEvent::AiSubjectsMerged, auditable: $target, eventData: [
                 'target_id' => $target->id,
                 'source_ids' => $sourceIds,
                 'new_name' => $newName,
-                'affected_seminar_ids' => $seminarIds->values()->toArray(),
+                'affected_seminar_ids' => $affectedSeminarIds,
             ]);
         });
     }

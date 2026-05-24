@@ -2,7 +2,6 @@
 
 namespace App\Jobs;
 
-use App\Concerns\TracksAuditContext;
 use App\Enums\AuditEvent;
 use App\Enums\AuditEventType;
 use App\Mail\ReportReady;
@@ -20,7 +19,7 @@ use Illuminate\Support\Str;
 
 class ExportUserDataJob implements ShouldQueue
 {
-    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels, TracksAuditContext;
+    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     public int $tries = 3;
 
@@ -30,8 +29,6 @@ class ExportUserDataJob implements ShouldQueue
 
     public function handle(UserDataExportService $service): void
     {
-        $this->setAuditContext();
-
         $request = DataExportRequest::query()->findOrFail($this->dataExportRequestId);
         $request->markRunning();
         $user = $request->user;

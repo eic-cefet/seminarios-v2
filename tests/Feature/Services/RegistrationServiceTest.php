@@ -3,6 +3,7 @@
 use App\Exceptions\ApiException;
 use App\Models\Registration;
 use App\Models\Seminar;
+use App\Models\SeminarLocation;
 use App\Models\User;
 use App\Services\RegistrationService;
 
@@ -55,4 +56,35 @@ it('refuses cancellation when user is not registered', function () {
     $seminar = Seminar::factory()->create(['scheduled_at' => now()->addDays(7)]);
 
     expect(fn () => $this->service->unregister($user, $seminar))->toThrow(ApiException::class);
+});
+
+it('throws seminarFull when the seminar location is at capacity', function () {
+    $location = SeminarLocation::factory()->create(['max_vacancies' => 1]);
+    $seminar = Seminar::factory()->create([
+        'seminar_location_id' => $location->id,
+        'scheduled_at' => now()->addDays(7),
+    ]);
+    Registration::factory()->for($seminar)->create();
+
+    $newUser = User::factory()->create();
+
+    expect(fn () => $this->service->register($newUser, $seminar))
+        ->toThrow(
+            fn (ApiException $e) => expect($e->errorCode)->toBe('seminar_full')
+        );
+});
+
+it('allows registration when the seminar location still has vacancies', function () {
+    $location = SeminarLocation::factory()->create(['max_vacancies' => 100]);
+    $seminar = Seminar::factory()->create([
+        'seminar_location_id' => $location->id,
+        'scheduled_at' => now()->addDays(7),
+    ]);
+
+    $newUser = User::factory()->create();
+
+    $registration = $this->service->register($newUser, $seminar);
+
+    expect($registration->user_id)->toBe($newUser->id)
+        ->and($registration->seminar_id)->toBe($seminar->id);
 });

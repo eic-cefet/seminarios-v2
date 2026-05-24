@@ -12,60 +12,8 @@ if (!Element.prototype.releasePointerCapture) {
 
 vi.mock('../../components/ui/select', async () => {
     const React = await vi.importActual<typeof import('react')>('react');
-
-    const SelectContext = React.createContext<{
-        onValueChange?: (value: string) => void;
-        value?: string;
-    }>({});
-
-    function MockSelect({ children, value, onValueChange }: any) {
-        return React.createElement(
-            SelectContext.Provider,
-            { value: { onValueChange, value } },
-            React.createElement('div', null, children),
-        );
-    }
-
-    function MockSelectTrigger({ children, id }: any) {
-        return React.createElement('div', { role: 'combobox', id }, children);
-    }
-
-    function MockSelectValue({ placeholder }: any) {
-        return React.createElement('span', null, placeholder);
-    }
-
-    function MockSelectItem({ children, value }: any) {
-        return React.createElement('option', { value }, children);
-    }
-
-    function MockSelectContent({ children }: any) {
-        const ctx = React.useContext(SelectContext);
-        const options: any[] = [];
-
-        React.Children.forEach(children, (child: any) => {
-            if (child?.type === MockSelectItem) {
-                options.push(child);
-            }
-        });
-
-        return React.createElement(
-            'select',
-            {
-                'data-testid': 'mock-native-select',
-                value: ctx.value ?? 'all',
-                onChange: (event: any) => ctx.onValueChange?.(event.target.value),
-            },
-            options,
-        );
-    }
-
-    return {
-        Select: MockSelect,
-        SelectTrigger: MockSelectTrigger,
-        SelectValue: MockSelectValue,
-        SelectContent: MockSelectContent,
-        SelectItem: MockSelectItem,
-    };
+    const { createSelectMockModule } = await import('@/test/mocks/radixSelect');
+    return createSelectMockModule(React, { defaultValue: 'all' });
 });
 
 vi.mock('../../api/adminClient', () => ({

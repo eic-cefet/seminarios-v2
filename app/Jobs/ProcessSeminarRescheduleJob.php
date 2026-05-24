@@ -2,7 +2,6 @@
 
 namespace App\Jobs;
 
-use App\Concerns\TracksAuditContext;
 use App\Models\Seminar;
 use App\Services\SeminarRescheduleNotifier;
 use Illuminate\Bus\Queueable;
@@ -13,7 +12,7 @@ use Illuminate\Queue\SerializesModels;
 
 class ProcessSeminarRescheduleJob implements ShouldQueue
 {
-    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels, TracksAuditContext;
+    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     public int $tries = 3;
 
@@ -27,8 +26,6 @@ class ProcessSeminarRescheduleJob implements ShouldQueue
     public function handle(?SeminarRescheduleNotifier $notifier = null): void
     {
         $notifier ??= app(SeminarRescheduleNotifier::class);
-
-        $this->setAuditContext();
 
         $notifier->notify($this->seminar, $this->oldScheduledAt);
     }

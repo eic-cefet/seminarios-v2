@@ -11,6 +11,7 @@ import { cn } from "@shared/lib/utils";
 import { useAuth } from "@shared/contexts/AuthContext";
 import { getErrorMessage } from "@shared/lib/errors";
 import { bugReportApi } from "@shared/api/client";
+import { Button } from "@shared/components/Button";
 
 const MAX_FILES = 3;
 const MAX_FILE_SIZE = 1024 * 1024; // 1MB
@@ -152,12 +153,11 @@ export default function BugReport() {
                                 >
                                     Reportar outro bug
                                 </button>
-                                <Link
-                                    to={ROUTES.SYSTEM.HOME}
-                                    className="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-md hover:bg-primary-700"
-                                >
-                                    Voltar ao início
-                                </Link>
+                                <Button asChild variant="primary" className="px-4 py-2">
+                                    <Link to={ROUTES.SYSTEM.HOME}>
+                                        Voltar ao início
+                                    </Link>
+                                </Button>
                             </div>
                         </div>
                     </div>
@@ -337,14 +337,15 @@ export default function BugReport() {
                                 onExpire={() => setCaptchaToken(null)}
                             />
 
-                            <button
+                            <Button
                                 type="submit"
+                                variant="primary"
                                 disabled={
                                     loading ||
                                     (isRecaptchaEnabled() && !captchaToken)
                                 }
                                 className={cn(
-                                    "w-full rounded-md bg-primary-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors",
+                                    "w-full px-4 py-2.5",
                                     (loading ||
                                         (isRecaptchaEnabled() &&
                                             !captchaToken)) &&
@@ -352,7 +353,7 @@ export default function BugReport() {
                                 )}
                             >
                                 {loading ? "Enviando..." : "Enviar relatório"}
-                            </button>
+                            </Button>
                         </form>
 
                         <p className="text-center text-sm text-gray-500">

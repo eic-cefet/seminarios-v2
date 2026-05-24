@@ -4,6 +4,9 @@ namespace App\Providers;
 
 use App\Listeners\AuditEmailSent;
 use App\Listeners\AuditNotificationSent;
+use App\Listeners\CancelPendingDeletionOnLogin;
+use App\Listeners\SetAuditOriginForArtisanCommand;
+use App\Listeners\SetAuditOriginForQueuedJob;
 use App\Models\AuditLog;
 use App\Models\Registration;
 use App\Models\Seminar;
@@ -21,10 +24,13 @@ use App\Services\AiService;
 use Dedoc\Scramble\Scramble;
 use Dedoc\Scramble\Support\Generator\OpenApi;
 use Dedoc\Scramble\Support\Generator\SecurityScheme;
+use Illuminate\Auth\Events\Login;
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Console\Events\CommandStarting;
 use Illuminate\Http\Request;
 use Illuminate\Mail\Events\MessageSent;
 use Illuminate\Notifications\Events\NotificationSent;
+use Illuminate\Queue\Events\JobProcessing;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
@@ -51,7 +57,7 @@ class AppServiceProvider extends ServiceProvider
         }
 
         RateLimiter::for('login', function (Request $request) {
-            return Limit::perMinute((int) env('LOGIN_RATE_LIMIT', 5))
+            return Limit::perMinute((int) config('auth.login_rate_limit'))
                 ->by($request->input('email').'|'.$request->ip());
         });
 
@@ -71,6 +77,9 @@ class AppServiceProvider extends ServiceProvider
 
         Event::listen(MessageSent::class, AuditEmailSent::class);
         Event::listen(NotificationSent::class, AuditNotificationSent::class);
+        Event::listen(JobProcessing::class, SetAuditOriginForQueuedJob::class);
+        Event::listen(CommandStarting::class, SetAuditOriginForArtisanCommand::class);
+        Event::listen(Login::class, CancelPendingDeletionOnLogin::class);
 
         Seminar::observe(SeminarAlertObserver::class);
 

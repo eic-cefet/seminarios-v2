@@ -89,15 +89,8 @@ class AuditLog extends Model
     ): self {
         $origin = Context::get('audit.origin');
 
-        if ($origin === null) {
-            $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 5);
-            foreach ($trace as $frame) {
-                $class = $frame['class'] ?? null;
-                if ($class && $class !== self::class && ! str_starts_with($class, 'Illuminate\\')) {
-                    $origin = class_basename($class).'@'.($frame['function'] ?? 'unknown');
-                    break;
-                }
-            }
+        if (! is_string($origin) || $origin === '') {
+            $origin = 'unknown';
         }
 
         $ipHash = Context::get('audit.ip_hash');

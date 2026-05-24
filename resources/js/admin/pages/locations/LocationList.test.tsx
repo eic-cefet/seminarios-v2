@@ -280,8 +280,10 @@ describe('LocationList', () => {
         await waitFor(() => {
             expect(screen.getByText('Anterior')).toBeInTheDocument();
         });
-        expect(screen.getByText('Proxima')).toBeInTheDocument();
-        expect(screen.getByText('Pagina 1 de 3')).toBeInTheDocument();
+        expect(screen.getByText('Próxima')).toBeInTheDocument();
+        expect(
+            screen.getByText('Mostrando 1 a 10 de 25 locais'),
+        ).toBeInTheDocument();
     });
 
     it('submits create form and calls locationsApi.create', async () => {
@@ -404,9 +406,9 @@ describe('LocationList', () => {
         const user = userEvent.setup();
 
         await waitFor(() => {
-            expect(screen.getByText('Proxima')).toBeInTheDocument();
+            expect(screen.getByText('Próxima')).toBeInTheDocument();
         });
-        await user.click(screen.getByText('Proxima'));
+        await user.click(screen.getByText('Próxima'));
 
         await waitFor(() => {
             expect(locationsApi.list).toHaveBeenCalled();
@@ -516,9 +518,9 @@ describe('LocationList', () => {
 
         // Go to page 2 first
         await waitFor(() => {
-            expect(screen.getByText('Proxima')).toBeInTheDocument();
+            expect(screen.getByText('Próxima')).toBeInTheDocument();
         });
-        await user.click(screen.getByText('Proxima'));
+        await user.click(screen.getByText('Próxima'));
 
         // Now click Anterior
         await waitFor(() => {

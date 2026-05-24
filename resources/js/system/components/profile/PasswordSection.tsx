@@ -2,6 +2,7 @@ import { profileApi } from "@shared/api/client";
 import { cn } from "@shared/lib/utils";
 import { analytics } from "@shared/lib/analytics";
 import { FormField } from "@shared/components/FormField";
+import { Button } from "@shared/components/Button";
 import { useMutation } from "@tanstack/react-query";
 import { Lock } from "lucide-react";
 import { useState } from "react";
@@ -118,11 +119,12 @@ export function PasswordSection() {
                             >
                                 Cancelar
                             </button>
-                            <button
+                            <Button
                                 type="submit"
+                                variant="primary"
                                 disabled={mutation.isPending}
                                 className={cn(
-                                    "flex-1 rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-primary-700 transition-colors cursor-pointer",
+                                    "flex-1 px-4 py-2",
                                     mutation.isPending &&
                                         "opacity-70 cursor-not-allowed",
                                 )}
@@ -130,7 +132,7 @@ export function PasswordSection() {
                                 {mutation.isPending
                                     ? "Salvando..."
                                     : "Alterar senha"}
-                            </button>
+                            </Button>
                         </div>
                     </form>
                 ) : (

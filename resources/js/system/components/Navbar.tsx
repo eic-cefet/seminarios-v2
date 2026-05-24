@@ -18,6 +18,7 @@ import {
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { NotificationBell } from "@shared/components/NotificationBell";
+import { Button } from "@shared/components/Button";
 import { LoginModal } from "./LoginModal";
 
 const navigation = [
@@ -189,12 +190,9 @@ function AuthDropdown({ onLoginClick }: AuthDropdownProps) {
             >
                 Entrar
             </button>
-            <Link
-                to={ROUTES.SYSTEM.REGISTER}
-                className="inline-flex items-center justify-center rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-primary-700 transition-colors cursor-pointer"
-            >
-                Criar conta
-            </Link>
+            <Button asChild variant="primary">
+                <Link to={ROUTES.SYSTEM.REGISTER}>Criar conta</Link>
+            </Button>
         </div>
     );
 }

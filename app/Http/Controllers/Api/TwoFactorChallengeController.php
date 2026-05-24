@@ -4,23 +4,19 @@ namespace App\Http\Controllers\Api;
 
 use App\Enums\AuditEvent;
 use App\Exceptions\ApiException;
-use App\Http\Controllers\Concerns\FormatsUserResponse;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\TwoFactorChallengeRequest;
-use App\Mail\AccountDeletionCancelled;
+use App\Http\Resources\MeUserResource;
 use App\Models\AuditLog;
 use App\Models\User;
 use App\Services\TwoFactorDeviceService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Mail;
 use PragmaRX\Google2FA\Google2FA;
 
 class TwoFactorChallengeController extends Controller
 {
-    use FormatsUserResponse;
-
     private const MAX_ATTEMPTS_PER_TOKEN = 5;
 
     public function __invoke(TwoFactorChallengeRequest $request, TwoFactorDeviceService $devices): JsonResponse
@@ -86,13 +82,7 @@ class TwoFactorChallengeController extends Controller
         Auth::login($user, (bool) ($payload['remember'] ?? false));
         AuditLog::record(AuditEvent::UserLogin, auditable: $user);
 
-        if ($user->anonymization_requested_at !== null && $user->anonymized_at === null) {
-            $user->forceFill(['anonymization_requested_at' => null])->save();
-            AuditLog::record(event: AuditEvent::AccountDeletionCancelled, auditable: $user);
-            Mail::to($user->email)->queue(new AccountDeletionCancelled($user));
-        }
-
-        $response = response()->json(['user' => $this->formatUserResponse($user)]);
+        $response = response()->json(['user' => (new MeUserResource($user))->resolve()]);
 
         if ($request->boolean('remember_device')) {
             $token = $devices->issue($user, $request->userAgent(), $request->ip());

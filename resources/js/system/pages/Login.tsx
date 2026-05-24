@@ -9,6 +9,7 @@ import { buildUrl, cn, isSafeRedirect } from "@shared/lib/utils";
 import { analytics } from "@shared/lib/analytics";
 import { useAuth } from "@shared/contexts/AuthContext";
 import { getErrorMessage } from "@shared/lib/errors";
+import { Button } from "@shared/components/Button";
 
 export default function Login() {
     const navigate = useNavigate();
@@ -137,16 +138,17 @@ export default function Login() {
                                 />
                             </div>
 
-                            <button
+                            <Button
                                 type="submit"
+                                variant="primary"
                                 disabled={loading}
                                 className={cn(
-                                    "w-full rounded-md bg-primary-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors",
+                                    "w-full px-4 py-2.5",
                                     loading && "opacity-70 cursor-not-allowed",
                                 )}
                             >
                                 {loading ? "Entrando..." : "Entrar"}
-                            </button>
+                            </Button>
                         </form>
 
                         <p className="text-center text-sm text-gray-500">

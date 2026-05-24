@@ -3,22 +3,18 @@
 namespace App\Http\Controllers\Api;
 
 use App\Enums\AuditEvent;
-use App\Enums\ConsentType;
 use App\Exceptions\ApiException;
-use App\Http\Controllers\Concerns\FormatsUserResponse;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\UserRegistrationRequest;
-use App\Mail\AccountDeletionCancelled;
+use App\Http\Resources\MeUserResource;
 use App\Mail\WelcomeUser;
 use App\Models\AuditLog;
 use App\Models\User;
-use App\Models\UserConsent;
-use App\Services\IpHasher;
 use App\Services\TwoFactorDeviceService;
+use App\Services\UserConsentService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
@@ -28,8 +24,6 @@ use Illuminate\Validation\Rules\Password as PasswordRule;
 
 class AuthController extends Controller
 {
-    use FormatsUserResponse;
-
     public function login(Request $request): JsonResponse
     {
         $validated = $request->validate([
@@ -78,14 +72,7 @@ class AuthController extends Controller
                 Auth::login($user, $request->boolean('remember', false));
                 AuditLog::record(AuditEvent::UserLogin, auditable: $user, eventData: ['trusted_device' => true]);
 
-                if ($user->anonymization_requested_at !== null && $user->anonymized_at === null) {
-                    $user->forceFill(['anonymization_requested_at' => null])->save();
-                    Cache::forget('lgpd.deletion-pending:'.$user->id);
-                    AuditLog::record(event: AuditEvent::AccountDeletionCancelled, auditable: $user);
-                    Mail::to($user->email)->queue(new AccountDeletionCancelled($user));
-                }
-
-                return response()->json(['user' => $this->formatUserResponse($user)]);
+                return response()->json(['user' => (new MeUserResource($user))->resolve()]);
             }
 
             $challengeToken = Str::random(80);
@@ -102,15 +89,8 @@ class AuthController extends Controller
 
         AuditLog::record(AuditEvent::UserLogin, auditable: $user);
 
-        if ($user->anonymization_requested_at !== null && $user->anonymized_at === null) {
-            $user->forceFill(['anonymization_requested_at' => null])->save();
-            Cache::forget('lgpd.deletion-pending:'.$user->id);
-            AuditLog::record(event: AuditEvent::AccountDeletionCancelled, auditable: $user);
-            Mail::to($user->email)->queue(new AccountDeletionCancelled($user));
-        }
-
         return response()->json([
-            'user' => $this->formatUserResponse($user),
+            'user' => (new MeUserResource($user))->resolve(),
         ]);
     }
 
@@ -139,7 +119,7 @@ class AuthController extends Controller
         }
 
         return response()->json([
-            'user' => $this->formatUserResponse($user),
+            'user' => (new MeUserResource($user))->resolve(),
         ]);
     }
 
@@ -159,21 +139,7 @@ class AuthController extends Controller
             'course_id' => $validated['course_id'] ?? null,
         ]);
 
-        $hasher = app(IpHasher::class);
-        $ipHash = $hasher->hash($request->ip());
-        $uaHash = $hasher->hashOpaque((string) $request->userAgent());
-
-        foreach ([ConsentType::TermsOfService, ConsentType::PrivacyPolicy] as $type) {
-            UserConsent::create([
-                'user_id' => $user->id,
-                'type' => $type,
-                'granted' => true,
-                'version' => config('lgpd.versions.'.$type->value) ?? '1.0',
-                'ip_hash' => $ipHash,
-                'user_agent_hash' => $uaHash,
-                'source' => 'registration',
-            ]);
-        }
+        app(UserConsentService::class)->recordSignupConsents($user, $request, source: 'registration');
 
         Mail::to($user)->queue(new WelcomeUser($user));
 
@@ -182,7 +148,7 @@ class AuthController extends Controller
         AuditLog::record(AuditEvent::UserRegister, auditable: $user);
 
         return response()->json([
-            'user' => $this->formatUserResponse($user),
+            'user' => (new MeUserResource($user))->resolve(),
         ], 201);
     }
 

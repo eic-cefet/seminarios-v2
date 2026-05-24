@@ -10,6 +10,7 @@ import { Pagination } from "@shared/components/Pagination";
 import { profileApi } from "@shared/api/client";
 import { ROUTES } from "@shared/config/routes";
 import { buildUrl, formatDateTime } from "@shared/lib/utils";
+import { Button } from "@shared/components/Button";
 
 export default function Certificates() {
     const [page, setPage] = useState(1);
@@ -69,12 +70,11 @@ export default function Certificates() {
                                     Certificados são gerados após a confirmação
                                     de presença em uma apresentação.
                                 </p>
-                                <Link
-                                    to={ROUTES.SYSTEM.PRESENTATIONS}
-                                    className="mt-6 inline-flex items-center rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-primary-700 transition-colors cursor-pointer"
-                                >
-                                    Ver apresentações
-                                </Link>
+                                <Button asChild variant="primary" className="mt-6 px-4 py-2">
+                                    <Link to={ROUTES.SYSTEM.PRESENTATIONS}>
+                                        Ver apresentações
+                                    </Link>
+                                </Button>
                             </div>
                         ) : (
                             <>
@@ -114,15 +114,16 @@ export default function Certificates() {
                                                     )}
                                                 </div>
                                             </div>
-                                            <a
-                                                href={buildUrl(`/certificado/${certificate.certificate_code}`)}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="inline-flex items-center gap-1.5 rounded-md bg-primary-600 px-3 py-2 text-sm font-medium text-white shadow-sm hover:bg-primary-700 transition-colors cursor-pointer"
-                                            >
-                                                <Download className="h-4 w-4" />
-                                                Baixar PDF
-                                            </a>
+                                            <Button asChild variant="primary" className="px-3 py-2">
+                                                <a
+                                                    href={buildUrl(`/certificado/${certificate.certificate_code}`)}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                >
+                                                    <Download className="h-4 w-4" />
+                                                    Baixar PDF
+                                                </a>
+                                            </Button>
                                         </div>
                                     ))}
                                 </div>

@@ -1,20 +1,41 @@
 import { render, screen, waitFor, userEvent, act } from '@/test/test-utils';
 
-vi.mock('../../api/adminClient', () => ({
-    workshopsApi: {
-        list: vi.fn().mockResolvedValue({
-            data: [],
-            meta: { last_page: 1, current_page: 1, total: 0, from: 0, to: 0 },
-        }),
-        get: vi.fn().mockResolvedValue({ data: null }),
-        create: vi.fn(),
-        update: vi.fn(),
-        delete: vi.fn(),
-        announce: vi.fn(),
-        searchSeminars: vi.fn().mockResolvedValue({ data: [] }),
+const toastErrorMock = vi.fn();
+vi.mock('sonner', () => ({
+    toast: {
+        error: (...args: unknown[]) => toastErrorMock(...args),
+        success: vi.fn(),
     },
-    AdminApiError: class extends Error {},
 }));
+
+vi.mock('../../api/adminClient', () => {
+    class MockAdminApiError extends Error {
+        constructor(
+            public readonly code: string,
+            message: string,
+            public readonly status: number = 409,
+            public readonly errors?: Record<string, string[]>,
+        ) {
+            super(message);
+            this.name = 'AdminApiError';
+        }
+    }
+    return {
+        workshopsApi: {
+            list: vi.fn().mockResolvedValue({
+                data: [],
+                meta: { last_page: 1, current_page: 1, total: 0, from: 0, to: 0 },
+            }),
+            get: vi.fn().mockResolvedValue({ data: null }),
+            create: vi.fn(),
+            update: vi.fn(),
+            delete: vi.fn(),
+            announce: vi.fn(),
+            searchSeminars: vi.fn().mockResolvedValue({ data: [] }),
+        },
+        AdminApiError: MockAdminApiError,
+    };
+});
 
 // Capture mutation options for direct callback testing
 let capturedDeleteMutationOptions: any = null;
@@ -46,7 +67,7 @@ vi.mock('@shared/components/DropdownPortal', () => ({
 }));
 
 import WorkshopList from './WorkshopList';
-import { workshopsApi } from '../../api/adminClient';
+import { workshopsApi, AdminApiError as MockAdminApiError } from '../../api/adminClient';
 
 describe('WorkshopList', () => {
     beforeEach(() => {
@@ -55,6 +76,7 @@ describe('WorkshopList', () => {
         capturedUpdateMutationOptions = null;
         capturedAnnounceMutationOptions = null;
         wsMutationCallCount = 0;
+        toastErrorMock.mockClear();
     });
 
     it('renders the page heading', () => {
@@ -423,8 +445,7 @@ describe('WorkshopList', () => {
         await waitFor(() => {
             expect(screen.getByText('Anterior')).toBeInTheDocument();
         });
-        expect(screen.getByText('Proxima')).toBeInTheDocument();
-        expect(screen.getByText('Pagina 1 de 3')).toBeInTheDocument();
+        expect(screen.getByText('Próxima')).toBeInTheDocument();
         expect(screen.getByText('Mostrando 1 a 10 de 30 workshops')).toBeInTheDocument();
     });
 
@@ -455,9 +476,9 @@ describe('WorkshopList', () => {
         const user = userEvent.setup();
 
         await waitFor(() => {
-            expect(screen.getByText('Proxima')).toBeInTheDocument();
+            expect(screen.getByText('Próxima')).toBeInTheDocument();
         });
-        await user.click(screen.getByText('Proxima'));
+        await user.click(screen.getByText('Próxima'));
 
         await waitFor(() => {
             expect(workshopsApi.list).toHaveBeenCalled();
@@ -611,9 +632,9 @@ describe('WorkshopList', () => {
 
         // Go to page 2 first
         await waitFor(() => {
-            expect(screen.getByText('Proxima')).toBeInTheDocument();
+            expect(screen.getByText('Próxima')).toBeInTheDocument();
         });
-        await user.click(screen.getByText('Proxima'));
+        await user.click(screen.getByText('Próxima'));
 
         // Now click Anterior
         await waitFor(() => {
@@ -751,25 +772,51 @@ describe('WorkshopList', () => {
         expect(screen.queryByText(/Anunciado em/)).not.toBeInTheDocument();
     });
 
-    it('deleteMutation onError with associado message shows specific error', async () => {
+    it('deleteMutation onError with workshop_in_use code shows specific toast', async () => {
         render(<WorkshopList />);
 
         await act(() => {
-            capturedDeleteMutationOptions.onError(new Error('Este workshop possui seminários associado'));
+            capturedDeleteMutationOptions.onError(
+                new MockAdminApiError(
+                    'workshop_in_use',
+                    'Este workshop possui apresentações associadas e não pode ser excluído',
+                    409,
+                ),
+            );
         });
 
-        // Component continues to render
-        expect(screen.getByText('Workshops')).toBeInTheDocument();
+        expect(toastErrorMock).toHaveBeenCalledWith(
+            'Este workshop possui seminarios associados',
+        );
+        expect(toastErrorMock).not.toHaveBeenCalledWith('Erro ao excluir workshop');
     });
 
-    it('deleteMutation onError with generic error shows generic message', async () => {
+    it('deleteMutation onError with an unrelated AdminApiError code shows the generic toast', async () => {
+        render(<WorkshopList />);
+
+        await act(() => {
+            capturedDeleteMutationOptions.onError(
+                new MockAdminApiError('something_else', 'Some other error', 500),
+            );
+        });
+
+        expect(toastErrorMock).toHaveBeenCalledWith('Erro ao excluir workshop');
+        expect(toastErrorMock).not.toHaveBeenCalledWith(
+            'Este workshop possui seminarios associados',
+        );
+    });
+
+    it('deleteMutation onError with a non-AdminApiError shows the generic toast', async () => {
         render(<WorkshopList />);
 
         await act(() => {
             capturedDeleteMutationOptions.onError(new Error('Server error'));
         });
 
-        expect(screen.getByText('Workshops')).toBeInTheDocument();
+        expect(toastErrorMock).toHaveBeenCalledWith('Erro ao excluir workshop');
+        expect(toastErrorMock).not.toHaveBeenCalledWith(
+            'Este workshop possui seminarios associados',
+        );
     });
 
     it('createMutation onSuccess does not crash', async () => {
@@ -802,14 +849,22 @@ describe('WorkshopList', () => {
         expect(screen.getByText('Workshops')).toBeInTheDocument();
     });
 
-    it('covers deleteMutation onError with seminarios keyword showing specific toast', async () => {
+    it('deleteMutation onError ignores substring-only message match (regression for code-based dispatch)', async () => {
         render(<WorkshopList />);
 
         await act(() => {
-            capturedDeleteMutationOptions.onError(new Error('Não é possível excluir: existem seminarios vinculados'));
+            // Plain Error whose message contains "seminarios"/"associado" must
+            // NOT trigger the specific toast — only the typed AdminApiError
+            // with the proper code should.
+            capturedDeleteMutationOptions.onError(
+                new Error('Não é possível excluir: existem seminarios vinculados'),
+            );
         });
 
-        expect(screen.getByText('Workshops')).toBeInTheDocument();
+        expect(toastErrorMock).toHaveBeenCalledWith('Erro ao excluir workshop');
+        expect(toastErrorMock).not.toHaveBeenCalledWith(
+            'Este workshop possui seminarios associados',
+        );
     });
 
     it('covers MarkdownEditor onChange callback in dialog (lines 395-400)', async () => {

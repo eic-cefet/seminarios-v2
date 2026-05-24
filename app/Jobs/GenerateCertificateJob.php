@@ -2,7 +2,6 @@
 
 namespace App\Jobs;
 
-use App\Concerns\TracksAuditContext;
 use App\Enums\AuditEvent;
 use App\Enums\AuditEventType;
 use App\Enums\CommunicationCategory;
@@ -11,7 +10,6 @@ use App\Models\AuditLog;
 use App\Models\Registration;
 use App\Notifications\CertificateReadyNotification;
 use App\Services\CertificateService;
-use App\Services\CommunicationGate;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -22,7 +20,7 @@ use Illuminate\Support\Facades\Mail;
 
 class GenerateCertificateJob implements ShouldBeUnique, ShouldQueue
 {
-    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels, TracksAuditContext;
+    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     public int $tries = 3;
 
@@ -40,11 +38,8 @@ class GenerateCertificateJob implements ShouldBeUnique, ShouldQueue
         public bool $sendEmail = true
     ) {}
 
-    public function handle(CertificateService $certificateService, ?CommunicationGate $gate = null): void
+    public function handle(CertificateService $certificateService): void
     {
-        $gate ??= app(CommunicationGate::class);
-
-        $this->setAuditContext();
         $this->registration->load(['user', 'seminar.seminarType']);
 
         if (! $this->registration->present) {
@@ -64,7 +59,7 @@ class GenerateCertificateJob implements ShouldBeUnique, ShouldQueue
         }
 
         if ($this->sendEmail && ! $this->registration->certificate_sent) {
-            if ($gate->canEmail($this->registration->user, CommunicationCategory::CertificateReady)) {
+            if ($this->registration->user->wantsCommunication(CommunicationCategory::CertificateReady)) {
                 // Carry only the path on the queued mailable. Embedding the
                 // raw PDF bytes in the mailable's properties breaks the queue
                 // payload encoder (JSON_ERROR_UTF8 in Queue.php:130).

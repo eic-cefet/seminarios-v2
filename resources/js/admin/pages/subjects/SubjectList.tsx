@@ -3,7 +3,12 @@ import { Plus, Pencil, Trash2, Merge, Sparkles, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { analytics } from "@shared/lib/analytics";
-import { subjectsApi, aiApi, type AdminSubject } from "../../api/adminClient";
+import {
+    subjectsApi,
+    aiApi,
+    AdminApiError,
+    type AdminSubject,
+} from "../../api/adminClient";
 import { useCRUDListState } from "../../hooks/useCRUDListState";
 import { useDebouncedSearch } from "@shared/hooks/useDebouncedSearch";
 import { Button } from "../../components/ui/button";
@@ -52,6 +57,7 @@ import {
     SelectValue,
 } from "../../components/ui/select";
 import { PageTitle } from "@shared/components/PageTitle";
+import { Pagination } from "@shared/components/Pagination";
 
 const initialFormData = { name: "" };
 
@@ -144,12 +150,15 @@ export default function SubjectList() {
             analytics.event("admin_subject_delete", { subject_slug: slug });
             closeDeleteDialog();
         },
-        onError: (error: Error) => {
-            if (error.message.includes("associado")) {
+        onError: (error: unknown) => {
+            if (
+                error instanceof AdminApiError &&
+                error.code === "subject_in_use"
+            ) {
                 toast.error("Este tópico possui apresentações associadas");
-            } else {
-                toast.error("Erro ao excluir tópico");
+                return;
             }
+            toast.error("Erro ao excluir tópico");
         },
     });
 
@@ -399,46 +408,16 @@ export default function SubjectList() {
                                 </TableBody>
                             </Table>
 
-                            {/* Pagination */}
-                            {meta && meta.last_page > 1 && (
-                                <div className="flex items-center justify-between mt-4 pt-4 border-t border-border">
-                                    <div className="text-sm text-muted-foreground">
-                                        Mostrando {meta.from} a {meta.to} de{" "}
-                                        {meta.total} tópicos
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={() =>
-                                                setPage((p) =>
-                                                    Math.max(1, p - 1),
-                                                )
-                                            }
-                                            disabled={page === 1}
-                                        >
-                                            Anterior
-                                        </Button>
-                                        <span className="text-sm text-muted-foreground">
-                                            Pagina {page} de {meta.last_page}
-                                        </span>
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={() =>
-                                                setPage((p) =>
-                                                    Math.min(
-                                                        meta.last_page,
-                                                        p + 1,
-                                                    ),
-                                                )
-                                            }
-                                            disabled={page === meta.last_page}
-                                        >
-                                            Proxima
-                                        </Button>
-                                    </div>
-                                </div>
+                            {meta && (
+                                <Pagination
+                                    currentPage={meta.current_page}
+                                    lastPage={meta.last_page}
+                                    from={meta.from ?? 0}
+                                    to={meta.to ?? 0}
+                                    total={meta.total}
+                                    itemLabel="tópicos"
+                                    onPageChange={setPage}
+                                />
                             )}
                         </>
                     )}

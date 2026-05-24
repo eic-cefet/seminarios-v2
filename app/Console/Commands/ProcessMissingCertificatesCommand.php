@@ -2,7 +2,6 @@
 
 namespace App\Console\Commands;
 
-use App\Concerns\TracksAuditContext;
 use App\Enums\AuditEvent;
 use App\Enums\AuditEventType;
 use App\Jobs\GenerateCertificateJob;
@@ -14,8 +13,6 @@ use Illuminate\Support\Facades\Log;
 
 class ProcessMissingCertificatesCommand extends Command
 {
-    use TracksAuditContext;
-
     protected $signature = 'certificates:process-missing
                             {--send-email : Send email to users after generating certificate}
                             {--sync : Process synchronously instead of queuing}
@@ -31,7 +28,6 @@ class ProcessMissingCertificatesCommand extends Command
 
     public function handle(): int
     {
-        $this->setAuditContext();
         $this->info('Buscando registros com presença confirmada...');
 
         $query = Registration::query()

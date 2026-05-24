@@ -9,6 +9,7 @@ import { cn } from "@shared/lib/utils";
 import { authApi } from "@shared/api/client";
 import { getErrorMessage } from "@shared/lib/errors";
 import { analytics } from "@shared/lib/analytics";
+import { Button } from "@shared/components/Button";
 
 export default function ForgotPassword() {
     const [email, setEmail] = useState("");
@@ -114,16 +115,17 @@ export default function ForgotPassword() {
                                 />
                             </div>
 
-                            <button
+                            <Button
                                 type="submit"
+                                variant="primary"
                                 disabled={loading}
                                 className={cn(
-                                    "w-full rounded-md bg-primary-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors",
+                                    "w-full px-4 py-2.5",
                                     loading && "opacity-70 cursor-not-allowed",
                                 )}
                             >
                                 {loading ? "Enviando..." : "Enviar link de recuperação"}
-                            </button>
+                            </Button>
                         </form>
 
                         <p className="text-center text-sm text-gray-500">

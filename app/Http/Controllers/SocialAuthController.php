@@ -3,13 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Enums\AuditEvent;
-use App\Enums\ConsentType;
 use App\Exceptions\ApiException;
+use App\Http\Resources\MeUserResource;
 use App\Models\AuditLog;
 use App\Models\SocialIdentity;
 use App\Models\User;
-use App\Models\UserConsent;
-use App\Services\IpHasher;
+use App\Services\UserConsentService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -79,24 +78,12 @@ class SocialAuthController extends Controller
             throw ApiException::notFound('Usuário');
         }
 
-        $user->load('studentData');
-
         Auth::login($user, remember: true);
 
         AuditLog::record(AuditEvent::UserSocialLogin, auditable: $user);
 
         return response()->json([
-            'user' => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
-                'email_verified_at' => $user->email_verified_at?->toISOString(),
-                'student_data' => $user->studentData ? [
-                    'course_situation' => $user->studentData->course_situation,
-                    'course_role' => $user->studentData->course_role,
-                    'course_name' => $user->studentData->course->name,
-                ] : null,
-            ],
+            'user' => (new MeUserResource($user))->resolve(),
         ]);
     }
 
@@ -137,28 +124,9 @@ class SocialAuthController extends Controller
                 'email_verified_at' => now(),
             ]);
 
-            $this->recordSignupConsents($user, $request);
+            app(UserConsentService::class)->recordSignupConsents($user, $request, source: 'oauth');
 
             return $user;
         });
-    }
-
-    private function recordSignupConsents(User $user, Request $request): void
-    {
-        $hasher = app(IpHasher::class);
-        $ipHash = $hasher->hash($request->ip());
-        $uaHash = $hasher->hashOpaque((string) $request->userAgent());
-
-        foreach ([ConsentType::TermsOfService, ConsentType::PrivacyPolicy] as $type) {
-            UserConsent::create([
-                'user_id' => $user->id,
-                'type' => $type,
-                'granted' => true,
-                'version' => config('lgpd.versions.'.$type->value) ?? '1.0',
-                'ip_hash' => $ipHash,
-                'user_agent_hash' => $uaHash,
-                'source' => 'oauth',
-            ]);
-        }
     }
 }

@@ -442,7 +442,8 @@ describe('POST /api/auth/exchange', function () {
 
         $response->assertSuccessful()
             ->assertJsonPath('user.student_data.course_situation', 'studying')
-            ->assertJsonPath('user.student_data.course_name', $course->name);
+            ->assertJsonPath('user.student_data.course.id', $course->id)
+            ->assertJsonPath('user.student_data.course.name', $course->name);
     });
 
     it('rejects invalid code', function () {
