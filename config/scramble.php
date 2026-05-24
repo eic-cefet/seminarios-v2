@@ -20,9 +20,13 @@ return [
 
     'info' => [
         /*
-         * API version.
+         * API version. Overridden at runtime by ScrambleServiceProvider, which
+         * sources the value from the repository VERSION file so the docs
+         * always advertise the deployed app version. This default is used
+         * only when the provider hasn't run yet (e.g. during a cached config
+         * dump). Falls back to "dev" when VERSION is missing or empty.
          */
-        'version' => '1.0.0',
+        'version' => 'dev',
 
         /*
          * Description rendered on the home page of the API documentation (`/docs/api`).

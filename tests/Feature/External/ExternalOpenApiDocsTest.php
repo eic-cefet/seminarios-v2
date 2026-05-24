@@ -146,6 +146,24 @@ describe('GET /api/external/docs.json', function () {
         expect($operationIds)->toContain('users.speaker-data.show');
     });
 
+    it('advertises the current app version from the VERSION file (not a hardcoded literal)', function () {
+        // The config closure runs at boot, so we read the file once here and
+        // compare to what the endpoint serves. This guards against a future
+        // regression that re-hardcodes "1.0.0" — and against accidentally
+        // dropping the fallback so `info.version` becomes empty.
+        $path = base_path('VERSION');
+        $expected = is_file($path) && trim((string) file_get_contents($path)) !== ''
+            ? trim((string) file_get_contents($path))
+            : 'dev';
+
+        $response = $this->getJson('/api/external/docs.json');
+        $response->assertSuccessful();
+
+        expect($response->json('info.version'))
+            ->toBe($expected)
+            ->not->toBe('1.0.0');
+    });
+
     it('documents the presence-link endpoints with the expected verbs and operation IDs', function () {
         $doc = $this->getJson('/api/external/docs.json')->json();
 
