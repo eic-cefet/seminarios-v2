@@ -1,7 +1,9 @@
 <?php
 
 use App\Models\Registration;
+use App\Models\Seminar;
 use App\Services\CertificateService;
+use Illuminate\Support\Facades\Storage;
 
 describe('GET /certificado/{code}', function () {
     it('returns pdf redirect for valid certificate code', function () {
@@ -65,6 +67,37 @@ describe('GET /certificado/{code}', function () {
 
         $response->assertNotFound();
     });
+
+    it('redirects to a signed URL whose content-disposition uses the seminar slug for the PDF route', function () {
+        Storage::fake('s3');
+        Storage::disk('s3')->buildTemporaryUrlsUsing(function ($path, $expiration, array $options = []): string {
+            return 'https://s3.example.test/'.ltrim($path, '/').'?response-content-disposition='.rawurlencode($options['ResponseContentDisposition'] ?? '');
+        });
+
+        $seminar = Seminar::factory()->create([
+            'slug' => 'apresentacao-x',
+            'scheduled_at' => '2026-05-01 10:00:00',
+        ]);
+        $registration = Registration::factory()->for($seminar)->create([
+            'present' => true,
+            'certificate_code' => 'cert-pdf-slug',
+        ]);
+
+        Storage::disk('s3')->put(
+            "certificates/{$seminar->scheduled_at->year}/apresentacao-x/{$registration->certificate_code}.jpg",
+            'jpg'
+        );
+        Storage::disk('s3')->put(
+            "certificates/{$seminar->scheduled_at->year}/apresentacao-x/{$registration->certificate_code}.pdf",
+            'pdf'
+        );
+
+        $response = $this->get("/certificado/{$registration->certificate_code}");
+
+        $response->assertRedirect();
+        $target = $response->headers->get('Location');
+        expect($target)->toContain('certificado-apresentacao-x.pdf');
+    });
 });
 
 describe('GET /certificado/{code}/jpg', function () {
@@ -107,5 +140,32 @@ describe('GET /certificado/{code}/jpg', function () {
         $response = $this->get('/certificado/INVALID/jpg');
 
         $response->assertNotFound();
+    });
+
+    it('redirects to a signed URL whose content-disposition uses the seminar slug for the JPG route', function () {
+        Storage::fake('s3');
+        Storage::disk('s3')->buildTemporaryUrlsUsing(function ($path, $expiration, array $options = []): string {
+            return 'https://s3.example.test/'.ltrim($path, '/').'?response-content-disposition='.rawurlencode($options['ResponseContentDisposition'] ?? '');
+        });
+
+        $seminar = Seminar::factory()->create([
+            'slug' => 'apresentacao-y',
+            'scheduled_at' => '2026-05-01 10:00:00',
+        ]);
+        $registration = Registration::factory()->for($seminar)->create([
+            'present' => true,
+            'certificate_code' => 'cert-jpg-slug',
+        ]);
+
+        Storage::disk('s3')->put(
+            "certificates/{$seminar->scheduled_at->year}/apresentacao-y/{$registration->certificate_code}.jpg",
+            'jpg'
+        );
+
+        $response = $this->get("/certificado/{$registration->certificate_code}/jpg");
+
+        $response->assertRedirect();
+        $target = $response->headers->get('Location');
+        expect($target)->toContain('certificado-apresentacao-y.jpg');
     });
 });
