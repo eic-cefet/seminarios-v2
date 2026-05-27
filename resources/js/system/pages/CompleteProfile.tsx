@@ -50,7 +50,6 @@ export function CompleteProfile() {
                         type="text"
                         value={name}
                         onChange={(e) => setName(e.target.value)}
-                        autoFocus
                         autoComplete="name"
                         aria-invalid={error ? true : undefined}
                         aria-describedby={
