@@ -170,8 +170,6 @@ describe('ProfileInfoSection', () => {
 
         await user_action.click(screen.getByRole('button', { name: /editar/i }));
 
-        await user_action.clear(screen.getByLabelText(/nome/i));
-        await user_action.type(screen.getByLabelText(/nome/i), ' ');
         await user_action.click(screen.getByRole('button', { name: /salvar/i }));
 
         await waitFor(() => {
@@ -244,5 +242,23 @@ describe('ProfileInfoSection', () => {
 
         expect(screen.getByText('Nome')).toBeInTheDocument();
         expect(screen.getByText('E-mail')).toBeInTheDocument();
+    });
+
+    it('shows an error and does not submit when name is a single word', async () => {
+        vi.mocked(profileApi.update).mockClear();
+        const user_action = userEvent.setup();
+
+        render(<ProfileInfoSection user={user} onUpdate={onUpdate} />);
+
+        await user_action.click(screen.getByRole('button', { name: /editar/i }));
+
+        await user_action.clear(screen.getByLabelText(/nome/i));
+        await user_action.type(screen.getByLabelText(/nome/i), 'Maria');
+        await user_action.click(screen.getByRole('button', { name: /salvar/i }));
+
+        expect(
+            await screen.findByText(/Informe seu nome completo/i),
+        ).toBeInTheDocument();
+        expect(profileApi.update).not.toHaveBeenCalled();
     });
 });
