@@ -8,7 +8,7 @@ import { useNavigate } from "react-router-dom";
 export function CompleteProfile() {
     const navigate = useNavigate();
     const { user, refreshUser } = useAuth();
-    const [name, setName] = useState("");
+    const [name, setName] = useState(user?.name ?? "");
     const [error, setError] = useState<string | null>(null);
 
     const mutation = useMutation({

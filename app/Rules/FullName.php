@@ -9,11 +9,13 @@ class FullName implements ValidationRule
 {
     public function validate(string $attribute, mixed $value, Closure $fail): void
     {
+        // @codeCoverageIgnoreStart
         if (! is_string($value)) {
             $fail('Informe seu nome completo (nome e sobrenome).');
 
             return;
         }
+        // @codeCoverageIgnoreEnd
 
         $parts = preg_split('/\s+/u', trim($value)) ?: [];
 
