@@ -271,7 +271,13 @@ HTML;
     {
         $path = $format === 'pdf' ? $this->getPdfPath($registration) : $this->getJpgPath($registration);
 
-        return Storage::disk('s3')->temporaryUrl($path, now()->addMinutes(5));
+        $filename = "certificado-{$registration->seminar->slug}.{$format}";
+
+        return Storage::disk('s3')->temporaryUrl(
+            $path,
+            now()->addMinutes(5),
+            ['ResponseContentDisposition' => 'attachment; filename="'.$filename.'"'],
+        );
     }
 
     protected function formatName(string $name): string
