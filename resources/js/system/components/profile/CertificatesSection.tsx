@@ -90,7 +90,7 @@ export function CertificatesSection() {
                                 </div>
                                 <div className="ml-4">
                                     <a
-                                        href={buildUrl(`/certificado/${certificate.certificate_code}`)}
+                                        href={buildUrl(`/certificado/${certificate.certificate_code}/jpg`)}
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         onClick={() =>

@@ -81,34 +81,7 @@ describe('CertificatesSection', () => {
         expect(screen.getByText('Workshop de Docker')).toBeInTheDocument();
     });
 
-    it('renders download buttons for each certificate', async () => {
-        const certificates = [
-            createUserCertificate({
-                id: 1,
-                certificate_code: 'CERT-001',
-                seminar: {
-                    id: 10,
-                    name: 'Seminário de IA',
-                    slug: 'seminario-ia',
-                    scheduled_at: '2026-06-15T14:00:00Z',
-                    seminar_type: { id: 1, name: 'Palestra' },
-                },
-            }),
-        ];
-
-        vi.mocked(profileApi.certificates).mockResolvedValue({
-            data: certificates,
-            meta: { current_page: 1, last_page: 1, per_page: 10, total: 1 },
-        });
-
-        render(<CertificatesSection />);
-
-        await waitFor(() => {
-            expect(screen.getByText('Baixar')).toBeInTheDocument();
-        });
-    });
-
-    it('renders certificate download link with correct href', async () => {
+    it('renders a download link pointing to the JPG route for each certificate', async () => {
         const certificates = [
             createUserCertificate({
                 id: 1,
@@ -131,8 +104,8 @@ describe('CertificatesSection', () => {
         render(<CertificatesSection />);
 
         await waitFor(() => {
-            const link = screen.getByText('Baixar').closest('a');
-            expect(link).toHaveAttribute('href', '/certificado/CERT-ABC123');
+            const link = screen.getByRole('link', { name: /^Baixar$/i });
+            expect(link.getAttribute('href')).toBe('/certificado/CERT-ABC123/jpg');
         });
     });
 
@@ -250,12 +223,10 @@ describe('CertificatesSection', () => {
             expect(screen.getByText('Seminário Sem Meta')).toBeInTheDocument();
         });
 
-        // The Pagination component renders with fallback values (currentPage=1, lastPage=1)
-        // and since lastPage=1, no pagination controls should be shown
-        expect(screen.getByText('Baixar')).toBeInTheDocument();
+        expect(screen.getByRole('link', { name: /^Baixar$/i })).toBeInTheDocument();
     });
 
-    it('fires analytics event when download link is clicked', async () => {
+    it('fires analytics event when the download link is clicked', async () => {
         const { analytics } = await import('@shared/lib/analytics');
         const certificates = [
             createUserCertificate({
@@ -279,11 +250,10 @@ describe('CertificatesSection', () => {
         render(<CertificatesSection />);
 
         await waitFor(() => {
-            expect(screen.getByText('Baixar')).toBeInTheDocument();
+            expect(screen.getByRole('link', { name: /^Baixar$/i })).toBeInTheDocument();
         });
 
-        const downloadLink = screen.getByText('Baixar').closest('a')!;
-        downloadLink.click();
+        screen.getByRole('link', { name: /^Baixar$/i }).click();
 
         expect(analytics.event).toHaveBeenCalledWith('certificate_download', {
             seminar_id: 10,
