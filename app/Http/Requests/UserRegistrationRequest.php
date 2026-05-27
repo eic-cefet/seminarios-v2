@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use App\Enums\CourseRole;
 use App\Enums\CourseSituation;
+use App\Rules\FullName;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password as PasswordRule;
@@ -21,7 +22,7 @@ class UserRegistrationRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => ['required', 'string', 'max:255'],
+            'name' => ['required', 'string', 'max:255', new FullName],
             'email' => ['required', 'email', 'unique:users,email'],
             'password' => ['required', 'confirmed', PasswordRule::min(8)],
             'course_situation' => ['required', Rule::enum(CourseSituation::class)],
