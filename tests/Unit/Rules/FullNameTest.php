@@ -51,3 +51,15 @@ it('rejects numbers in name parts', function () {
 it('trims surrounding whitespace before validating', function () {
     expect(validateFullName('   Maria Silva   '))->toBeNull();
 });
+
+it('exposes a static passes() helper that mirrors the rule', function () {
+    expect(FullName::passes('Maria Silva'))->toBeTrue();
+    expect(FullName::passes('Maria'))->toBeFalse();
+    expect(FullName::passes(''))->toBeFalse();
+    expect(FullName::passes(null))->toBeFalse();
+    expect(FullName::passes(['array', 'value']))->toBeFalse();
+});
+
+it('uses the shared MESSAGE constant when validation fails', function () {
+    expect(validateFullName('Maria'))->toBe(FullName::MESSAGE);
+});
