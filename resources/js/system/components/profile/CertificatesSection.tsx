@@ -4,7 +4,7 @@ import { ROUTES } from "@shared/config/routes";
 import { buildUrl, formatDateTime } from "@shared/lib/utils";
 import { analytics } from "@shared/lib/analytics";
 import { useQuery } from "@tanstack/react-query";
-import { Download, FileText, Loader2 } from "lucide-react";
+import { Download, FileText, Image, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Badge } from "../Badge";
@@ -88,7 +88,7 @@ export function CertificatesSection() {
                                         )}
                                     </div>
                                 </div>
-                                <div className="ml-4">
+                                <div className="ml-4 flex items-center gap-2">
                                     <a
                                         href={buildUrl(`/certificado/${certificate.certificate_code}`)}
                                         target="_blank"
@@ -96,12 +96,28 @@ export function CertificatesSection() {
                                         onClick={() =>
                                             analytics.event("certificate_download", {
                                                 seminar_id: certificate.seminar.id,
+                                                format: "pdf",
                                             })
                                         }
                                         className="inline-flex items-center gap-1.5 rounded-md bg-primary-600 px-3 py-1.5 text-sm font-medium text-white shadow-sm hover:bg-primary-700 transition-colors cursor-pointer"
                                     >
                                         <Download className="h-3.5 w-3.5" />
-                                        Baixar
+                                        Baixar PDF
+                                    </a>
+                                    <a
+                                        href={buildUrl(`/certificado/${certificate.certificate_code}/jpg`)}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        onClick={() =>
+                                            analytics.event("certificate_download", {
+                                                seminar_id: certificate.seminar.id,
+                                                format: "jpg",
+                                            })
+                                        }
+                                        className="inline-flex items-center gap-1.5 rounded-md border border-primary-600 px-3 py-1.5 text-sm font-medium text-primary-700 hover:bg-primary-50 transition-colors cursor-pointer"
+                                    >
+                                        <Image className="h-3.5 w-3.5" />
+                                        Baixar imagem
                                     </a>
                                 </div>
                             </div>
