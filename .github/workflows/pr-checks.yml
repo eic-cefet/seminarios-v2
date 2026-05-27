@@ -196,6 +196,10 @@ jobs:
           wait
           php artisan key:generate
 
+      - name: Install Playwright browsers for Pest browser tests
+        if: steps.filter.outputs.backend == 'true'
+        run: pnpm exec playwright install --with-deps chromium
+
       - name: Run tests with coverage
         if: steps.filter.outputs.backend == 'true'
         run: php artisan test --compact --min=95 --coverage-clover=coverage/backend-clover.xml

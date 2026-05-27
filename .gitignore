@@ -38,3 +38,7 @@ guide/screenshots/
 
 docs/superpowers/
 .claude/scheduled_tasks.lock
+
+# Pest 4 browser test artefacts (Playwright screenshots on failure)
+/tests/Browser/Screenshots/
+/Tests/Browser/Screenshots/
