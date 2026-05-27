@@ -429,3 +429,23 @@ it('accepts registration with a full name', function () {
 
     $response->assertSuccessful();
 });
+
+it('returns needs_profile_completion=true for a single-word name in the user payload', function () {
+    $user = User::factory()->create(['name' => 'Maria']);
+    $this->actingAs($user);
+
+    $response = $this->getJson('/api/profile');
+
+    $response->assertSuccessful();
+    $response->assertJsonPath('user.needs_profile_completion', true);
+});
+
+it('returns needs_profile_completion=false for a full name in the user payload', function () {
+    $user = User::factory()->create(['name' => 'Maria Silva']);
+    $this->actingAs($user);
+
+    $response = $this->getJson('/api/profile');
+
+    $response->assertSuccessful();
+    $response->assertJsonPath('user.needs_profile_completion', false);
+});

@@ -6,6 +6,7 @@ use App\Enums\CommunicationCategory;
 use App\Enums\Role;
 use App\Models\Concerns\Auditable;
 use App\Notifications\ResetPassword;
+use App\Rules\FullName;
 use Illuminate\Contracts\Auth\CanResetPassword;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -120,6 +121,16 @@ class User extends Authenticatable implements CanResetPassword
     public function isAnonymized(): bool
     {
         return $this->anonymized_at !== null;
+    }
+
+    public function hasIncompleteProfile(): bool
+    {
+        $failed = false;
+        (new FullName)->validate('name', (string) $this->name, function () use (&$failed): void {
+            $failed = true;
+        });
+
+        return $failed;
     }
 
     /**

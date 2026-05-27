@@ -18,6 +18,7 @@ trait FormatsUserResponse
             'anonymization_requested_at' => $user->anonymization_requested_at?->toIso8601String(),
             'roles' => $user->getRoleNames()->toArray(),
             'two_factor_enabled' => $user->two_factor_confirmed_at !== null,
+            'needs_profile_completion' => $user->hasIncompleteProfile(),
             'student_data' => $user->studentData ? [
                 'course_situation' => $user->studentData->course_situation,
                 'course_role' => $user->studentData->course_role,
