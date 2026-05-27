@@ -1,4 +1,4 @@
-import { StrictMode } from "react";
+import { StrictMode, type ReactElement } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -34,7 +34,9 @@ import DataRights from "./pages/DataRights";
 import CookiePreferences from "./pages/CookiePreferences";
 import DeletionConfirm from "./pages/DeletionConfirm";
 import NotFound from "./pages/NotFound";
+import { CompleteProfile } from "./pages/CompleteProfile";
 import { CookieConsentBanner } from "./components/CookieConsentBanner";
+import { RequireCompleteProfile } from "./components/RequireCompleteProfile";
 
 const queryClient = new QueryClient({
     defaultOptions: {
@@ -45,30 +47,35 @@ const queryClient = new QueryClient({
     },
 });
 
+function withCompleteProfile(element: ReactElement) {
+    return <RequireCompleteProfile>{element}</RequireCompleteProfile>;
+}
+
 function AppRoutes() {
     usePageTracking();
 
     return (
         <Routes>
-            <Route path={ROUTES.SYSTEM.HOME} element={<Home />} />
+            <Route path={ROUTES.SYSTEM.HOME} element={withCompleteProfile(<Home />)} />
             <Route path={ROUTES.SYSTEM.LOGIN} element={<Login />} />
             <Route path={ROUTES.SYSTEM.TWO_FACTOR_CHALLENGE} element={<TwoFactorChallenge />} />
             <Route path={ROUTES.SYSTEM.REGISTER} element={<Register />} />
             <Route path={ROUTES.SYSTEM.FORGOT_PASSWORD} element={<ForgotPassword />} />
             <Route path={ROUTES.SYSTEM.RESET_PASSWORD} element={<ResetPassword />} />
             <Route path={ROUTES.SYSTEM.AUTH_CALLBACK} element={<AuthCallback />} />
-            <Route path={ROUTES.SYSTEM.PROFILE} element={<Profile />} />
-            <Route path={ROUTES.SYSTEM.CERTIFICATES} element={<Certificates />} />
-            <Route path={ROUTES.SYSTEM.ALERT_PREFERENCES} element={<AlertPreferences />} />
-            <Route path={ROUTES.SYSTEM.SUBJECTS} element={<Subjects />} />
-            <Route path={ROUTES.SYSTEM.SUBJECT_DETAILS_PATTERN} element={<SubjectSeminars />} />
-            <Route path={ROUTES.SYSTEM.PRESENTATIONS} element={<Presentations />} />
-            <Route path={ROUTES.SYSTEM.SEMINAR_DETAILS_PATTERN} element={<SeminarDetails />} />
-            <Route path={ROUTES.SYSTEM.WORKSHOPS} element={<Workshops />} />
-            <Route path={ROUTES.SYSTEM.WORKSHOP_DETAILS_PATTERN} element={<WorkshopDetails />} />
-            <Route path={ROUTES.SYSTEM.PRESENCE_PATTERN} element={<Presence />} />
-            <Route path={ROUTES.SYSTEM.EVALUATIONS} element={<Evaluations />} />
-            <Route path={ROUTES.SYSTEM.BUG_REPORT} element={<BugReport />} />
+            <Route path={ROUTES.SYSTEM.COMPLETE_PROFILE} element={<CompleteProfile />} />
+            <Route path={ROUTES.SYSTEM.PROFILE} element={withCompleteProfile(<Profile />)} />
+            <Route path={ROUTES.SYSTEM.CERTIFICATES} element={withCompleteProfile(<Certificates />)} />
+            <Route path={ROUTES.SYSTEM.ALERT_PREFERENCES} element={withCompleteProfile(<AlertPreferences />)} />
+            <Route path={ROUTES.SYSTEM.SUBJECTS} element={withCompleteProfile(<Subjects />)} />
+            <Route path={ROUTES.SYSTEM.SUBJECT_DETAILS_PATTERN} element={withCompleteProfile(<SubjectSeminars />)} />
+            <Route path={ROUTES.SYSTEM.PRESENTATIONS} element={withCompleteProfile(<Presentations />)} />
+            <Route path={ROUTES.SYSTEM.SEMINAR_DETAILS_PATTERN} element={withCompleteProfile(<SeminarDetails />)} />
+            <Route path={ROUTES.SYSTEM.WORKSHOPS} element={withCompleteProfile(<Workshops />)} />
+            <Route path={ROUTES.SYSTEM.WORKSHOP_DETAILS_PATTERN} element={withCompleteProfile(<WorkshopDetails />)} />
+            <Route path={ROUTES.SYSTEM.PRESENCE_PATTERN} element={withCompleteProfile(<Presence />)} />
+            <Route path={ROUTES.SYSTEM.EVALUATIONS} element={withCompleteProfile(<Evaluations />)} />
+            <Route path={ROUTES.SYSTEM.BUG_REPORT} element={withCompleteProfile(<BugReport />)} />
             <Route path={ROUTES.SYSTEM.PRIVACY_POLICY} element={<PrivacyPolicy />} />
             <Route path={ROUTES.SYSTEM.TERMS} element={<TermsOfService />} />
             <Route path={ROUTES.SYSTEM.DATA_RIGHTS} element={<DataRights />} />
