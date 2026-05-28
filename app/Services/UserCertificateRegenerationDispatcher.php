@@ -5,9 +5,11 @@ namespace App\Services;
 use App\Jobs\RegenerateUserCertificatesJob;
 use App\Models\User;
 use App\Support\Locking\LockKey;
+use App\Support\Locking\LockTimeoutException;
 use App\Support\Locking\Mutex;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 
 /**
  * Debounces certificate-regeneration fan-outs so a flurry of name
@@ -43,35 +45,48 @@ class UserCertificateRegenerationDispatcher
         // 5s lock TTL, 2s block timeout: name updates are driven by HTTP
         // requests, so contention beyond a couple of seconds means
         // something is wrong upstream — fail fast rather than hang.
-        Mutex::for(LockKey::userCertificateRegeneration($user->id), ttlSeconds: 5, waitSeconds: 2)
-            ->protect(function () use ($user, $cacheKey): void {
-                $nextDispatchAt = Cache::get($cacheKey);
+        //
+        // Swallowing LockTimeoutException is deliberate: this dispatcher
+        // runs from User::updated() inside the save transaction, and a
+        // missed debounce dispatch is acceptable (the next save will
+        // pick it up) but propagating the exception would 500 the
+        // user's profile update.
+        try {
+            Mutex::for(LockKey::userCertificateRegeneration($user->id), ttlSeconds: 5, waitSeconds: 2)
+                ->protect(function () use ($user, $cacheKey): void {
+                    $nextDispatchAt = Cache::get($cacheKey);
 
-                if ($nextDispatchAt === null) {
-                    $this->dispatchNow($user, $cacheKey);
+                    if ($nextDispatchAt === null) {
+                        $this->dispatchNow($user, $cacheKey);
 
-                    return;
-                }
+                        return;
+                    }
 
-                $nextDispatchAt = Carbon::parse($nextDispatchAt);
+                    $nextDispatchAt = Carbon::parse($nextDispatchAt);
 
-                if ($nextDispatchAt->isFuture()) {
-                    // Already-scheduled fan-out will reload the user from
-                    // the DB at process time and see the latest name.
-                    return;
-                }
+                    if ($nextDispatchAt->isFuture()) {
+                        // Already-scheduled fan-out will reload the user from
+                        // the DB at process time and see the latest name.
+                        return;
+                    }
 
-                $cooldownEndsAt = $nextDispatchAt->copy()->addMinutes(self::COOLDOWN_MINUTES);
+                    $cooldownEndsAt = $nextDispatchAt->copy()->addMinutes(self::COOLDOWN_MINUTES);
 
-                if (Carbon::now()->gte($cooldownEndsAt)) {
-                    $this->dispatchNow($user, $cacheKey);
+                    if (Carbon::now()->gte($cooldownEndsAt)) {
+                        $this->dispatchNow($user, $cacheKey);
 
-                    return;
-                }
+                        return;
+                    }
 
-                RegenerateUserCertificatesJob::dispatch($user)->delay($cooldownEndsAt);
-                Cache::put($cacheKey, $cooldownEndsAt, $cooldownEndsAt->copy()->addMinutes(5));
-            });
+                    RegenerateUserCertificatesJob::dispatch($user)->delay($cooldownEndsAt);
+                    Cache::put($cacheKey, $cooldownEndsAt, $cooldownEndsAt->copy()->addMinutes(5));
+                });
+        } catch (LockTimeoutException $e) {
+            Log::warning('Certificate regeneration dispatch lock contended; skipping debounce decision for this save.', [
+                'user_id' => $user->id,
+                'exception' => $e->getMessage(),
+            ]);
+        }
     }
 
     public static function cacheKey(User $user): string

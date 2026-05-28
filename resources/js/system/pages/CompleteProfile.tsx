@@ -1,4 +1,4 @@
-import { profileApi } from "@shared/api/client";
+import { ApiRequestError, profileApi } from "@shared/api/client";
 import { ROUTES } from "@shared/config/routes";
 import { useAuth } from "@shared/contexts/AuthContext";
 import { FULL_NAME_MESSAGE, isFullName } from "@shared/lib/fullName";
@@ -18,6 +18,18 @@ export function CompleteProfile() {
         onSuccess: async () => {
             await refreshUser();
             navigate(ROUTES.SYSTEM.HOME, { replace: true });
+        },
+        onError: (err) => {
+            if (err instanceof ApiRequestError && err.errors?.name?.[0]) {
+                setError(err.errors.name[0]);
+
+                return;
+            }
+            const message =
+                err instanceof Error
+                    ? err.message
+                    : "Não foi possível salvar. Tente novamente.";
+            setError(message);
         },
     });
 

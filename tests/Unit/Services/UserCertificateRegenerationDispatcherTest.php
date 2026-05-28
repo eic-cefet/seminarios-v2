@@ -3,9 +3,11 @@
 use App\Jobs\RegenerateUserCertificatesJob;
 use App\Models\User;
 use App\Services\UserCertificateRegenerationDispatcher;
+use App\Support\Locking\LockKey;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 
 describe('UserCertificateRegenerationDispatcher', function () {
     beforeEach(function () {
@@ -102,6 +104,28 @@ describe('UserCertificateRegenerationDispatcher', function () {
             return true;
         });
         expect($immediate)->toBe(2);
+    });
+
+    it('swallows lock timeouts without propagating them up the save', function () {
+        $user = User::factory()->create();
+
+        // Hold the underlying lock for longer than the Mutex's 2s wait window
+        // so the dispatcher's Mutex::for(...)->protect(...) throws
+        // LockTimeoutException internally — which the dispatcher must catch
+        // (otherwise the user's profile-save HTTP request would 500).
+        $heldLock = Cache::lock(LockKey::userCertificateRegeneration($user->id), 30);
+        expect($heldLock->get())->toBeTrue();
+        Log::spy();
+
+        try {
+            // Must not throw.
+            app(UserCertificateRegenerationDispatcher::class)->dispatchFor($user);
+        } finally {
+            $heldLock->release();
+        }
+
+        Bus::assertNotDispatched(RegenerateUserCertificatesJob::class);
+        Log::shouldHaveReceived('warning')->once();
     });
 
     it('isolates the debounce state per user', function () {
