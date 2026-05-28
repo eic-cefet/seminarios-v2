@@ -16,12 +16,17 @@ class RegistrationService
 {
     public function register(User $user, Seminar $seminar): Registration
     {
+        logger()->info('REG_TRACE enter', ['seminar' => $seminar->id, 'user' => $user->id]);
+
         if ($seminar->scheduled_at->isPast()) {
             throw ApiException::seminarExpired();
         }
 
+        logger()->info('REG_TRACE before mutex');
+
         $registration = Mutex::for(LockKey::seminarRegistration($seminar->id), ttlSeconds: 5, waitSeconds: 5)
             ->protect(function () use ($user, $seminar): Registration {
+                logger()->info('REG_TRACE inside mutex');
                 try {
                     return $seminar->registrations()->create([
                         'user_id' => $user->id,
@@ -32,7 +37,11 @@ class RegistrationService
                 }
             });
 
+        logger()->info('REG_TRACE after mutex, before mail', ['registration' => $registration->id]);
+
         Mail::to($user)->queue(new SeminarRegistrationConfirmation($user, $seminar));
+
+        logger()->info('REG_TRACE after mail, returning');
 
         return $registration;
     }
