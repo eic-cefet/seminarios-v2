@@ -31,7 +31,7 @@ it('lets an authenticated user register for and unregister from a seminar', func
         ->toBeTrue();
 
     $page->click('Cancelar inscrição')
-        ->assertSee('Inscreva-se neste seminário');
+        ->assertSee('Realizar inscrição');
 
     expect(Registration::where('user_id', $user->id)->where('seminar_id', $seminar->id)->exists())
         ->toBeFalse();
