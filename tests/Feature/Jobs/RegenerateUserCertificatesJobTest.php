@@ -4,6 +4,7 @@ use App\Jobs\RegenerateCertificateJob;
 use App\Jobs\RegenerateUserCertificatesJob;
 use App\Models\Registration;
 use App\Models\User;
+use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Support\Facades\Bus;
 
 describe('RegenerateUserCertificatesJob', function () {
@@ -53,11 +54,13 @@ describe('RegenerateUserCertificatesJob', function () {
         Bus::assertNotDispatched(RegenerateCertificateJob::class);
     });
 
-    it('uses a unique job id scoped to the user', function () {
-        $user = User::factory()->create();
-        $job = new RegenerateUserCertificatesJob($user);
+    it('is not ShouldBeUnique so the dispatcher fully controls fan-out frequency', function () {
+        // Debouncing lives in UserCertificateRegenerationDispatcher (cache+lock).
+        // Layering an additional uniqueness lock here would silently drop the
+        // delayed fan-out the dispatcher scheduled and leave certificates stale.
+        $job = new RegenerateUserCertificatesJob(User::factory()->create());
 
-        expect($job->uniqueId())->toBe((string) $user->id);
+        expect($job)->not->toBeInstanceOf(ShouldBeUnique::class);
     });
 
     it('ignores certificates that belong to other users', function () {

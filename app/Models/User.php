@@ -4,10 +4,10 @@ namespace App\Models;
 
 use App\Enums\CommunicationCategory;
 use App\Enums\Role;
-use App\Jobs\RegenerateUserCertificatesJob;
 use App\Models\Concerns\Auditable;
 use App\Notifications\ResetPassword;
 use App\Rules\FullName;
+use App\Services\UserCertificateRegenerationDispatcher;
 use Illuminate\Contracts\Auth\CanResetPassword;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -53,9 +53,11 @@ class User extends Authenticatable implements CanResetPassword
     {
         static::updated(function (User $user): void {
             // Refresh certificates so the printed name reflects the new
-            // value. No-op when the user has no certificates yet.
+            // value. Debounced via UserCertificateRegenerationDispatcher
+            // so a flurry of saves collapses into at most one fan-out
+            // per cooldown window.
             if ($user->wasChanged('name')) {
-                RegenerateUserCertificatesJob::dispatch($user);
+                app(UserCertificateRegenerationDispatcher::class)->dispatchFor($user);
             }
         });
     }
