@@ -22,7 +22,7 @@ class UserFactory extends Factory
     public function definition(): array
     {
         return [
-            'name' => fake()->name(),
+            'name' => fake()->firstName().' '.fake()->lastName(),
             'email' => fake()->unique()->safeEmail(),
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
@@ -63,5 +63,17 @@ class UserFactory extends Factory
         return $this->afterCreating(function ($user) {
             UserStudentData::factory()->create(['user_id' => $user->id]);
         });
+    }
+
+    public function withTwoFactor(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'two_factor_secret' => encrypt('JBSWY3DPEHPK3PXP'),
+            'two_factor_recovery_codes' => encrypt(json_encode([
+                'recovery-code-one',
+                'recovery-code-two',
+            ])),
+            'two_factor_confirmed_at' => now(),
+        ]);
     }
 }

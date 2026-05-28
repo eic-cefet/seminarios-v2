@@ -2,6 +2,7 @@
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Pest\Browser\Playwright\Playwright;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
@@ -33,6 +34,14 @@ pest()->extend(TestCase::class)
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
         Role::findOrCreate('admin');
         Role::findOrCreate('teacher');
+
+        // CI runs the browser suite with --coverage, whose Xdebug/PCOV
+        // instrumentation slows every backend request several-fold. The
+        // default 5s Playwright wait is too tight for multi-request flows
+        // (register → invalidate → refetch) under that load, which flaked on
+        // CI while passing locally. A larger ceiling only extends how long an
+        // assertion may wait — passing assertions still resolve immediately.
+        Playwright::setTimeout(20_000);
     })
     ->in('Browser');
 
@@ -72,6 +81,15 @@ pest()->extend(TestCase::class)
         Role::findOrCreate('teacher');
     })
     ->in('Unit/Policies');
+
+pest()->extend(TestCase::class)
+    ->use(RefreshDatabase::class)
+    ->beforeEach(function () {
+        app()[PermissionRegistrar::class]->forgetCachedPermissions();
+        Role::findOrCreate('admin');
+        Role::findOrCreate('teacher');
+    })
+    ->in('Unit/Factories');
 
 /*
 |--------------------------------------------------------------------------
@@ -132,4 +150,24 @@ function actingAsTeacher(?User $user = null): User
     test()->actingAs($user, 'sanctum');
 
     return $user;
+}
+
+/**
+ * Poll a server-side condition from a browser test while yielding to the
+ * Playwright event loop via $page->wait().
+ *
+ * Browser tests are served by an in-process amphp server on a single event
+ * loop. A blocking sleep/usleep would starve it, so the server could never
+ * handle the request we are waiting on. $page->wait() yields cooperatively,
+ * letting the server process in-flight requests between checks. Use this to
+ * await committed state after a fire-and-forget POST whose HTTP response the
+ * single-event-loop server may drop under load.
+ */
+function waitForServer(object $page, callable $condition, float $timeoutSeconds = 15.0): void
+{
+    $deadline = microtime(true) + $timeoutSeconds;
+
+    while (! $condition() && microtime(true) < $deadline) {
+        $page->wait(0.2);
+    }
 }
