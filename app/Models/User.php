@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\CommunicationCategory;
 use App\Enums\Role;
+use App\Jobs\RegenerateUserCertificatesJob;
 use App\Models\Concerns\Auditable;
 use App\Notifications\ResetPassword;
 use App\Rules\FullName;
@@ -46,6 +47,17 @@ class User extends Authenticatable implements CanResetPassword
             'anonymization_requested_at' => 'datetime',
             'anonymized_at' => 'datetime',
         ];
+    }
+
+    protected static function booted(): void
+    {
+        static::updated(function (User $user): void {
+            // Refresh certificates so the printed name reflects the new
+            // value. No-op when the user has no certificates yet.
+            if ($user->wasChanged('name')) {
+                RegenerateUserCertificatesJob::dispatch($user);
+            }
+        });
     }
 
     public function studentData(): HasOne
