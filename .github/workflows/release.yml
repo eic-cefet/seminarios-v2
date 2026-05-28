@@ -67,7 +67,7 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: "8.3"
-          extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, pdo_mysql, bcmath, intl, gd, exif, iconv
+          extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, pdo_mysql, bcmath, intl, gd, exif, iconv, sockets
           coverage: pcov
 
       - name: Setup Node.js
@@ -113,6 +113,9 @@ jobs:
           cp .env.example .env
           wait
           php artisan key:generate
+
+      - name: Install Playwright browsers for Pest browser tests
+        run: pnpm exec playwright install --with-deps chromium
 
       - name: Run tests with coverage
         run: php artisan test --compact --coverage-clover=coverage/backend-clover.xml
