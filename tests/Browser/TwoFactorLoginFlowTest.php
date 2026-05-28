@@ -1,7 +1,6 @@
 <?php
 
 use App\Models\User;
-use Illuminate\Support\Carbon;
 use PragmaRX\Google2FA\Google2FA;
 
 beforeEach(function () {
@@ -46,23 +45,28 @@ it('rejects an invalid 2FA code and stays on the challenge page', function () {
 });
 
 it('accepts a valid TOTP code and completes login', function () {
-    Carbon::setTestNow(Carbon::now());
-
     $user = User::factory()->withTwoFactor()->create([
         'email' => 'mfa@example.com',
         'password' => bcrypt('secret-pass-123'),
         'name' => 'Maria Lopes',
     ]);
 
-    $validCode = app(Google2FA::class)
-        ->getCurrentOtp(decrypt($user->two_factor_secret));
-
     $page = visit('/login');
 
     $page->fill('email', 'mfa@example.com')
         ->fill('password', 'secret-pass-123')
         ->click('button[type="submit"]')
-        ->fill('code', $validCode)
+        ->assertPathIs('/login/two-factor');
+
+    // Generate the OTP immediately before submitting to keep the gap before
+    // verification tiny. The backend's verifyKey() reads real time() (not
+    // Carbon, so test-now pinning is useless here) with Google2FA's default
+    // window=1, which tolerates a single 30s rollover between generation and
+    // verification — so this is robust without freezing the clock.
+    $validCode = app(Google2FA::class)
+        ->getCurrentOtp(decrypt($user->two_factor_secret));
+
+    $page->fill('code', $validCode)
         ->click('button[type="submit"]')
         ->assertPathIs('/')
         ->assertSee('Maria');
