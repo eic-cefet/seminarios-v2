@@ -193,6 +193,11 @@ jobs:
         run: |
           pnpm run build &
           cp .env.example .env
+          # The browser-test server boots from .env. Force test-safe drivers so
+          # the seminar/presence register POSTs don't hit the database cache
+          # lock or a real SMTP host (SESSION stays database so browser auth
+          # persists across requests).
+          sed -i 's/^CACHE_STORE=.*/CACHE_STORE=array/; s/^QUEUE_CONNECTION=.*/QUEUE_CONNECTION=sync/; s/^MAIL_MAILER=.*/MAIL_MAILER=log/' .env
           wait
           php artisan key:generate
 
@@ -210,14 +215,6 @@ jobs:
           DB_DATABASE: testing
           DB_USERNAME: root
           DB_PASSWORD: password
-          # Browser tests are served by a process that reads these (OS env wins
-          # over .env). Force test-safe drivers so the seminar register flow
-          # (Cache::lock Mutex + queued mail) doesn't hit the database cache
-          # lock or a real SMTP host and fail with "Failed to fetch".
-          CACHE_STORE: array
-          SESSION_DRIVER: array
-          QUEUE_CONNECTION: sync
-          MAIL_MAILER: array
 
       - name: Upload browser screenshots on failure (diagnostic)
         if: failure()
