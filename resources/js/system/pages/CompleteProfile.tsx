@@ -1,4 +1,5 @@
 import { profileApi } from "@shared/api/client";
+import { ROUTES } from "@shared/config/routes";
 import { useAuth } from "@shared/contexts/AuthContext";
 import { FULL_NAME_MESSAGE, isFullName } from "@shared/lib/fullName";
 import { useMutation } from "@tanstack/react-query";
@@ -16,7 +17,7 @@ export function CompleteProfile() {
             profileApi.update({ name: fullName, email: user?.email ?? "" }),
         onSuccess: async () => {
             await refreshUser();
-            navigate("/", { replace: true });
+            navigate(ROUTES.SYSTEM.HOME, { replace: true });
         },
     });
 
