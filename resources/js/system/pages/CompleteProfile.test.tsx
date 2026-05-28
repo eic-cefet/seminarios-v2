@@ -148,4 +148,25 @@ describe("CompleteProfile", () => {
 
         expect(await screen.findByText(/Network down/)).toBeInTheDocument();
     });
+
+    it("shows a localized fallback when the rejection isn't an Error instance", async () => {
+        const { profileApi } = await import("@shared/api/client");
+        vi.mocked(profileApi.update).mockClear();
+        // TanStack Query passes the raw rejection through to onError, so a
+        // non-Error throw (anything wrapped via `Promise.reject("string")`)
+        // exercises the fallback branch.
+        vi.mocked(profileApi.update).mockRejectedValueOnce("boom" as never);
+        renderPage();
+
+        fireEvent.change(screen.getByLabelText(/nome completo/i), {
+            target: { value: "Maria Silva" },
+        });
+        fireEvent.click(
+            screen.getByRole("button", { name: /continuar|salvar/i }),
+        );
+
+        expect(
+            await screen.findByText(/Não foi possível salvar\. Tente novamente\./),
+        ).toBeInTheDocument();
+    });
 });
