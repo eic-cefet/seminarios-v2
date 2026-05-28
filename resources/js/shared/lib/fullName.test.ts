@@ -29,4 +29,15 @@ describe("isFullName", () => {
     it("trims surrounding whitespace before validating", () => {
         expect(isFullName("   Maria Silva   ")).toBe(true);
     });
+
+    it("accepts academic honorifics with a trailing period", () => {
+        expect(isFullName("Dra. Mariana Costa Silva")).toBe(true);
+        expect(isFullName("Dr. João Silva")).toBe(true);
+        expect(isFullName("Prof. Maria Souza")).toBe(true);
+        expect(isFullName("Profa. Ana Lima")).toBe(true);
+    });
+
+    it("still rejects single-letter initials with a period", () => {
+        expect(isFullName("Maria C. Silva")).toBe(false);
+    });
 });

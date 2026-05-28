@@ -27,7 +27,12 @@ class FullName implements ValidationRule
         }
 
         foreach ($parts as $part) {
-            if (! preg_match("/^[\p{L}'\-]{2,}$/u", $part)) {
+            // [letters/apostrophes/hyphens] of length 2+, optionally followed
+            // by a single trailing period to allow academic honorifics like
+            // "Dr.", "Dra.", "Prof.", "Profa." which are common on Brazilian
+            // certificates. Single-letter initials with a period ("C.") still
+            // fail because the {2,} count applies to the letter run.
+            if (! preg_match("/^[\p{L}'\-]{2,}\.?$/u", $part)) {
                 return false;
             }
         }

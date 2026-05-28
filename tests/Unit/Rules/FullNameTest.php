@@ -63,3 +63,20 @@ it('exposes a static passes() helper that mirrors the rule', function () {
 it('uses the shared MESSAGE constant when validation fails', function () {
     expect(validateFullName('Maria'))->toBe(FullName::MESSAGE);
 });
+
+it('accepts academic honorifics with a trailing period', function () {
+    expect(validateFullName('Dra. Mariana Costa Silva'))->toBeNull();
+    expect(validateFullName('Dr. João Silva'))->toBeNull();
+    expect(validateFullName('Prof. Maria Souza'))->toBeNull();
+    expect(validateFullName('Profa. Ana Lima'))->toBeNull();
+});
+
+it('still rejects single-letter initials with a period', function () {
+    // {2,} applies to the letter run; "C." has only 1 letter so it fails.
+    expect(validateFullName('Maria C. Silva'))->not->toBeNull();
+});
+
+it('still rejects empty parts and stray punctuation', function () {
+    expect(validateFullName('Maria .. Silva'))->not->toBeNull();
+    expect(validateFullName('M. S.'))->not->toBeNull();
+});
