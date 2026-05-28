@@ -13,7 +13,7 @@ beforeEach(function () {
 });
 
 it('lets an authenticated user register for and unregister from a seminar', function () {
-    $user = User::factory()->student()->create();
+    $user = User::factory()->student()->create(['name' => 'Mariana Estudante']);
     $this->actingAs($user);
 
     $seminar = Seminar::factory()->create([
@@ -23,7 +23,12 @@ it('lets an authenticated user register for and unregister from a seminar', func
 
     $page = visit("/seminario/{$seminar->slug}");
 
+    // Wait for the authenticated user to load (the navbar renders their name)
+    // before clicking. handleRegisterClick() opens the login modal when `user`
+    // is still null, so clicking before /auth/me resolves silently fails to
+    // register — a race that only surfaces under CI load.
     $page->assertSee('Inteligência Artificial Aplicada')
+        ->assertSee('Mariana Estudante')
         ->click('Realizar inscrição')
         ->assertSee('Você está inscrito!');
 
