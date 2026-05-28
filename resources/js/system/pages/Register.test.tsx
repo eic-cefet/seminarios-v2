@@ -367,7 +367,7 @@ describe('Register', () => {
 
         render(<Register />);
 
-        await user.type(screen.getByLabelText(/nome completo/i), 'Test');
+        await user.type(screen.getByLabelText(/nome completo/i), 'Test User');
         await user.type(screen.getByLabelText(/e-mail/i), 'test@example.com');
         await user.selectOptions(screen.getByLabelText(/situação/i), 'studying');
         await user.selectOptions(screen.getByLabelText(/vínculo/i), 'Aluno');

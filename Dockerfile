@@ -27,7 +27,8 @@ RUN install-php-extensions \
     gd \
     zip \
     intl \
-    opcache
+    opcache \
+    sockets
 
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer

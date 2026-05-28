@@ -55,6 +55,7 @@ enum AuditEvent: string
 
     // System (jobs/commands)
     case CertificateGenerated = 'certificate.generated';
+    case CertificateRegenerated = 'certificate.regenerated';
     case SentimentAnalysisCompleted = 'sentiment_analysis.completed';
     case CertificatesProcessed = 'command.certificates_processed';
     case MissingCertificatesProcessed = 'command.missing_certificates_processed';

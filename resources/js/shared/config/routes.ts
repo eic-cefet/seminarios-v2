@@ -19,6 +19,7 @@ export const ROUTES = {
         FORGOT_PASSWORD: "/recuperar-senha",
         RESET_PASSWORD: "/redefinir-senha",
         AUTH_CALLBACK: "/auth/callback",
+        COMPLETE_PROFILE: "/completar-perfil",
         PROFILE: "/perfil",
         CERTIFICATES: "/certificados",
         ALERT_PREFERENCES: "/perfil/preferencias/alertas",

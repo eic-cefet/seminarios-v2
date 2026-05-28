@@ -27,6 +27,15 @@ pest()->extend(TestCase::class)
     })
     ->in('Feature');
 
+pest()->extend(TestCase::class)
+    ->use(RefreshDatabase::class)
+    ->beforeEach(function () {
+        app()[PermissionRegistrar::class]->forgetCachedPermissions();
+        Role::findOrCreate('admin');
+        Role::findOrCreate('teacher');
+    })
+    ->in('Browser');
+
 pest()->extend(TestCase::class)->in('Unit/Config');
 
 pest()->extend(TestCase::class)->in('Unit/Support');
@@ -34,6 +43,8 @@ pest()->extend(TestCase::class)->in('Unit/Support');
 pest()->extend(TestCase::class)->in('Unit/Http');
 
 pest()->extend(TestCase::class)->in('Unit/Providers');
+
+pest()->extend(TestCase::class)->in('Unit/Rules');
 
 pest()->extend(TestCase::class)
     ->use(RefreshDatabase::class)

@@ -1,3 +1,4 @@
+import { FULL_NAME_MESSAGE, isFullName } from "@shared/lib/fullName";
 import { z } from "zod";
 
 export const COURSE_SITUATION_OPTIONS = ["studying", "graduated"] as const;
@@ -9,7 +10,10 @@ const COURSE_REQUIRED_MESSAGE = "Preencha todos os campos obrigatórios";
 
 export const registerSchema = z
     .object({
-        name: z.string().min(1, "Nome é obrigatório"),
+        name: z
+            .string()
+            .min(1, "Nome é obrigatório")
+            .refine((v) => isFullName(v), { message: FULL_NAME_MESSAGE }),
         email: z
             .string()
             .min(1, "E-mail é obrigatório")

@@ -6,6 +6,8 @@ use App\Enums\CommunicationCategory;
 use App\Enums\Role;
 use App\Models\Concerns\Auditable;
 use App\Notifications\ResetPassword;
+use App\Rules\FullName;
+use App\Services\UserCertificateRegenerationDispatcher;
 use Illuminate\Contracts\Auth\CanResetPassword;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -45,6 +47,19 @@ class User extends Authenticatable implements CanResetPassword
             'anonymization_requested_at' => 'datetime',
             'anonymized_at' => 'datetime',
         ];
+    }
+
+    protected static function booted(): void
+    {
+        static::updated(function (User $user): void {
+            // Refresh certificates so the printed name reflects the new
+            // value. Debounced via UserCertificateRegenerationDispatcher
+            // so a flurry of saves collapses into at most one fan-out
+            // per cooldown window.
+            if ($user->wasChanged('name')) {
+                app(UserCertificateRegenerationDispatcher::class)->dispatchFor($user);
+            }
+        });
     }
 
     public function studentData(): HasOne
@@ -120,6 +135,11 @@ class User extends Authenticatable implements CanResetPassword
     public function isAnonymized(): bool
     {
         return $this->anonymized_at !== null;
+    }
+
+    public function hasIncompleteProfile(): bool
+    {
+        return ! FullName::passes($this->name);
     }
 
     /**

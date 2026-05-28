@@ -65,6 +65,7 @@ describe('PUT /api/profile', function () {
 
     it('clears email verification when email changes', function () {
         $user = actingAsUser();
+        $user->name = 'Maria Silva';
         $user->email_verified_at = now();
         $user->save();
 

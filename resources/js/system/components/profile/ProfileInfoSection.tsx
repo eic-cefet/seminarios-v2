@@ -1,6 +1,7 @@
 import { profileApi } from "@shared/api/client";
 import { cn } from "@shared/lib/utils";
 import { analytics } from "@shared/lib/analytics";
+import { FULL_NAME_MESSAGE, isFullName } from "@shared/lib/fullName";
 import { FormField } from "@shared/components/FormField";
 import { useMutation } from "@tanstack/react-query";
 import { Mail, User } from "lucide-react";
@@ -16,6 +17,7 @@ interface ProfileInfoSectionProps {
 export function ProfileInfoSection({ user, onUpdate }: ProfileInfoSectionProps) {
     const [name, setName] = useState(user.name);
     const [email, setEmail] = useState(user.email);
+    const [nameError, setNameError] = useState<string | null>(null);
 
     const { isEditing, startEditing, error, fieldErrors, success, mutationCallbacks, handleCancel } =
         useProfileForm({
@@ -26,6 +28,7 @@ export function ProfileInfoSection({ user, onUpdate }: ProfileInfoSectionProps) 
             onCancel: () => {
                 setName(user.name);
                 setEmail(user.email);
+                setNameError(null);
             },
         });
 
@@ -36,6 +39,11 @@ export function ProfileInfoSection({ user, onUpdate }: ProfileInfoSectionProps) 
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+        if (!isFullName(name)) {
+            setNameError(FULL_NAME_MESSAGE);
+            return;
+        }
+        setNameError(null);
         mutation.mutate();
     };
 
@@ -77,7 +85,7 @@ export function ProfileInfoSection({ user, onUpdate }: ProfileInfoSectionProps) 
                             required
                             value={name}
                             onChange={(e) => setName(e.target.value)}
-                            error={fieldErrors.name}
+                            error={nameError ?? fieldErrors.name}
                         />
                         <FormField
                             id="email"

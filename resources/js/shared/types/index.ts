@@ -7,6 +7,7 @@ export interface User {
     student_data?: UserStudentData;
     roles?: string[];
     two_factor_enabled?: boolean;
+    needs_profile_completion?: boolean;
 }
 
 export interface TwoFactorChallenge {

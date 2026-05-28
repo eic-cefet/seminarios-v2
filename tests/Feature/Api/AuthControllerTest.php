@@ -398,3 +398,54 @@ describe('POST /api/auth/reset-password', function () {
             ->assertJsonValidationErrors(['token', 'email', 'password']);
     });
 });
+
+it('rejects registration when the name is a single word', function () {
+    $response = $this->postJson('/api/auth/register', [
+        'name' => 'Maria',
+        'email' => 'maria@example.test',
+        'password' => 'Password!1234',
+        'password_confirmation' => 'Password!1234',
+        'course_situation' => 'studying',
+        'course_role' => 'Aluno',
+        'accepted_terms' => true,
+        'accepted_privacy_policy' => true,
+    ]);
+
+    $response->assertUnprocessable();
+    $response->assertJsonValidationErrors('name');
+});
+
+it('accepts registration with a full name', function () {
+    $response = $this->postJson('/api/auth/register', [
+        'name' => 'Maria Silva',
+        'email' => 'maria.silva@example.test',
+        'password' => 'Password!1234',
+        'password_confirmation' => 'Password!1234',
+        'course_situation' => 'studying',
+        'course_role' => 'Aluno',
+        'accepted_terms' => true,
+        'accepted_privacy_policy' => true,
+    ]);
+
+    $response->assertSuccessful();
+});
+
+it('returns needs_profile_completion=true for a single-word name in the user payload', function () {
+    $user = User::factory()->create(['name' => 'Maria']);
+    $this->actingAs($user);
+
+    $response = $this->getJson('/api/profile');
+
+    $response->assertSuccessful();
+    $response->assertJsonPath('user.needs_profile_completion', true);
+});
+
+it('returns needs_profile_completion=false for a full name in the user payload', function () {
+    $user = User::factory()->create(['name' => 'Maria Silva']);
+    $this->actingAs($user);
+
+    $response = $this->getJson('/api/profile');
+
+    $response->assertSuccessful();
+    $response->assertJsonPath('user.needs_profile_completion', false);
+});
