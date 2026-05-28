@@ -111,6 +111,30 @@ describe('Certificates', () => {
         });
     });
 
+    it('renders a "Baixar" link that points to the JPG route for each certificate', async () => {
+        vi.mocked(useAuth).mockReturnValue({
+            user: createUser({ name: 'Test User' }), isLoading: false, isAuthenticated: true,
+            login: vi.fn(), register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(), completeTwoFactor: vi.fn(),
+        });
+
+        vi.mocked(profileApi.certificates).mockResolvedValue({
+            data: [createUserCertificate({
+                certificate_code: 'CERT-ABC123',
+                seminar: { id: 1, name: 'Test Cert', slug: 'test-cert', scheduled_at: '2026-06-15T14:00:00Z', seminar_type: null },
+            })],
+            meta: { current_page: 1, last_page: 1, per_page: 10, total: 1 },
+        });
+
+        render(<Certificates />);
+
+        await waitFor(() => {
+            const link = screen.getByRole('link', { name: /^Baixar$/i });
+            expect(link.getAttribute('href')).toBe('/certificado/CERT-ABC123/jpg');
+        });
+
+        expect(screen.queryByRole('link', { name: /Baixar PDF/i })).not.toBeInTheDocument();
+    });
+
     it('renders pagination with fallback values when meta is undefined', async () => {
         vi.mocked(useAuth).mockReturnValue({
             user: createUser({ name: 'Test User' }), isLoading: false, isAuthenticated: true,
