@@ -28,7 +28,7 @@ it('walks a user through requesting and confirming account deletion', function (
     $page->assertSee('Excluir minha conta')
         ->click('button:has-text("Excluir minha conta")')
         ->fill('[role="dialog"] input[type="password"]', 'secret-pass-123')
-        ->click('button:has-text("Confirmar exclusão")')
+        ->click('Confirmar exclusão')
         ->assertSee('Enviamos um link de confirmação');
 
     $token = null;
@@ -67,18 +67,13 @@ it('rejects deletion request with a wrong password', function () {
 
     $page->click('button:has-text("Excluir minha conta")')
         ->fill('[role="dialog"] input[type="password"]', 'wrong-password')
-        ->click('button:has-text("Confirmar exclusão")')
+        ->click('Confirmar exclusão')
         ->assertSee('incorretos');
 
     expect($user->fresh()->anonymization_requested_at)->toBeNull();
 });
 
 it('rejects an expired or invalid confirmation token', function () {
-    $user = User::factory()->create([
-        'name' => 'Carlos Mendes',
-    ]);
-    $this->actingAs($user);
-
     $page = visit('/confirmar-exclusao/'.str_repeat('a', 64));
 
     $page->assertSee('Não foi possível confirmar');
