@@ -127,6 +127,15 @@ jobs:
           DB_USERNAME: root
           DB_PASSWORD: password
 
+      - name: Upload browser screenshots on failure (diagnostic)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-screenshots
+          path: tests/Browser/Screenshots/
+          if-no-files-found: ignore
+          retention-days: 3
+
       - name: Upload backend coverage to Codecov
         uses: codecov/codecov-action@v5
         with:
