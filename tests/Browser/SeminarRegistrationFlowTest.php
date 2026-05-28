@@ -24,9 +24,8 @@ it('lets an authenticated user register for and unregister from a seminar', func
     $page = visit("/seminario/{$seminar->slug}");
 
     // Wait for the authenticated user to load (the navbar renders their name)
-    // before clicking. handleRegisterClick() opens the login modal when `user`
-    // is still null, so clicking before /auth/me resolves silently fails to
-    // register — a race that only surfaces under CI load.
+    // before clicking: handleRegisterClick() opens the login modal when `user`
+    // is still null, so a click before /auth/me resolves would fail to register.
     $page->assertSee('Inteligência Artificial Aplicada')
         ->assertSee('Mariana Estudante')
         ->click('Realizar inscrição')

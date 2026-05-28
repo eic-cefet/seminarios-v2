@@ -2,6 +2,7 @@
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Pest\Browser\Playwright\Playwright;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
@@ -33,6 +34,14 @@ pest()->extend(TestCase::class)
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
         Role::findOrCreate('admin');
         Role::findOrCreate('teacher');
+
+        // CI runs the browser suite with --coverage, whose Xdebug/PCOV
+        // instrumentation slows every backend request several-fold. The
+        // default 5s Playwright wait is too tight for multi-request flows
+        // (register → invalidate → refetch) under that load, which flaked on
+        // CI while passing locally. A larger ceiling only extends how long an
+        // assertion may wait — passing assertions still resolve immediately.
+        Playwright::setTimeout(20_000);
     })
     ->in('Browser');
 
