@@ -4,6 +4,8 @@ namespace App\Services;
 
 use App\Jobs\RegenerateUserCertificatesJob;
 use App\Models\User;
+use App\Support\Locking\LockKey;
+use App\Support\Locking\Mutex;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 
@@ -41,44 +43,40 @@ class UserCertificateRegenerationDispatcher
         // 5s lock TTL, 2s block timeout: name updates are driven by HTTP
         // requests, so contention beyond a couple of seconds means
         // something is wrong upstream — fail fast rather than hang.
-        Cache::lock(self::lockKey($user), 5)->block(2, function () use ($user, $cacheKey): void {
-            $nextDispatchAt = Cache::get($cacheKey);
+        Mutex::for(LockKey::userCertificateRegeneration($user->id), ttlSeconds: 5, waitSeconds: 2)
+            ->protect(function () use ($user, $cacheKey): void {
+                $nextDispatchAt = Cache::get($cacheKey);
 
-            if ($nextDispatchAt === null) {
-                $this->dispatchNow($user, $cacheKey);
+                if ($nextDispatchAt === null) {
+                    $this->dispatchNow($user, $cacheKey);
 
-                return;
-            }
+                    return;
+                }
 
-            $nextDispatchAt = Carbon::parse($nextDispatchAt);
+                $nextDispatchAt = Carbon::parse($nextDispatchAt);
 
-            if ($nextDispatchAt->isFuture()) {
-                // Already-scheduled fan-out will reload the user from
-                // the DB at process time and see the latest name.
-                return;
-            }
+                if ($nextDispatchAt->isFuture()) {
+                    // Already-scheduled fan-out will reload the user from
+                    // the DB at process time and see the latest name.
+                    return;
+                }
 
-            $cooldownEndsAt = $nextDispatchAt->copy()->addMinutes(self::COOLDOWN_MINUTES);
+                $cooldownEndsAt = $nextDispatchAt->copy()->addMinutes(self::COOLDOWN_MINUTES);
 
-            if (Carbon::now()->gte($cooldownEndsAt)) {
-                $this->dispatchNow($user, $cacheKey);
+                if (Carbon::now()->gte($cooldownEndsAt)) {
+                    $this->dispatchNow($user, $cacheKey);
 
-                return;
-            }
+                    return;
+                }
 
-            RegenerateUserCertificatesJob::dispatch($user)->delay($cooldownEndsAt);
-            Cache::put($cacheKey, $cooldownEndsAt, $cooldownEndsAt->copy()->addMinutes(5));
-        });
+                RegenerateUserCertificatesJob::dispatch($user)->delay($cooldownEndsAt);
+                Cache::put($cacheKey, $cooldownEndsAt, $cooldownEndsAt->copy()->addMinutes(5));
+            });
     }
 
     public static function cacheKey(User $user): string
     {
         return 'regen_certs:user:'.$user->id.':next_dispatch_at';
-    }
-
-    private static function lockKey(User $user): string
-    {
-        return 'regen_certs:user:'.$user->id.':lock';
     }
 
     private function dispatchNow(User $user, string $cacheKey): void
