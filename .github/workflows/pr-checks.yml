@@ -210,6 +210,14 @@ jobs:
           DB_DATABASE: testing
           DB_USERNAME: root
           DB_PASSWORD: password
+          # Browser tests are served by a process that reads these (OS env wins
+          # over .env). Force test-safe drivers so the seminar register flow
+          # (Cache::lock Mutex + queued mail) doesn't hit the database cache
+          # lock or a real SMTP host and fail with "Failed to fetch".
+          CACHE_STORE: array
+          SESSION_DRIVER: array
+          QUEUE_CONNECTION: sync
+          MAIL_MAILER: array
 
       - name: Upload browser screenshots on failure (diagnostic)
         if: failure()
