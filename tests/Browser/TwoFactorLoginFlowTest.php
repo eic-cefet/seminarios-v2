@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\User;
+use Illuminate\Support\Carbon;
 use PragmaRX\Google2FA\Google2FA;
 
 beforeEach(function () {
@@ -45,6 +46,8 @@ it('rejects an invalid 2FA code and stays on the challenge page', function () {
 });
 
 it('accepts a valid TOTP code and completes login', function () {
+    Carbon::setTestNow(Carbon::now());
+
     $user = User::factory()->withTwoFactor()->create([
         'email' => 'mfa@example.com',
         'password' => bcrypt('secret-pass-123'),
