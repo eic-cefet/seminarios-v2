@@ -151,3 +151,23 @@ function actingAsTeacher(?User $user = null): User
 
     return $user;
 }
+
+/**
+ * Poll a server-side condition from a browser test while yielding to the
+ * Playwright event loop via $page->wait().
+ *
+ * Browser tests are served by an in-process amphp server on a single event
+ * loop. A blocking sleep/usleep would starve it, so the server could never
+ * handle the request we are waiting on. $page->wait() yields cooperatively,
+ * letting the server process in-flight requests between checks. Use this to
+ * await committed state after a fire-and-forget POST whose HTTP response the
+ * single-event-loop server may drop under load.
+ */
+function waitForServer(object $page, callable $condition, float $timeoutSeconds = 15.0): void
+{
+    $deadline = microtime(true) + $timeoutSeconds;
+
+    while (! $condition() && microtime(true) < $deadline) {
+        $page->wait(0.2);
+    }
+}

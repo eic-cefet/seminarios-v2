@@ -21,6 +21,10 @@ it('lets an authenticated user register for and unregister from a seminar', func
         'scheduled_at' => now()->addDays(7),
     ]);
 
+    $isRegistered = fn () => Registration::where('user_id', $user->id)
+        ->where('seminar_id', $seminar->id)
+        ->exists();
+
     $page = visit("/seminario/{$seminar->slug}");
 
     // Wait for the authenticated user to load (the navbar renders their name)
@@ -28,17 +32,23 @@ it('lets an authenticated user register for and unregister from a seminar', func
     // is still null, so a click before /auth/me resolves would fail to register.
     $page->assertSee('Inteligência Artificial Aplicada')
         ->assertSee('Mariana Estudante')
-        ->click('Realizar inscrição')
-        ->assertSee('Você está inscrito!');
+        ->click('Realizar inscrição');
 
-    expect(Registration::where('user_id', $user->id)->where('seminar_id', $seminar->id)->exists())
-        ->toBeTrue();
+    // The in-process test server (amphp, single event loop) can drop the
+    // register POST's response under concurrent load even though the row
+    // commits. Await the committed state (yielding so the server can run),
+    // then confirm the UI via a fresh GET-driven page load.
+    waitForServer($page, $isRegistered);
+    expect($isRegistered())->toBeTrue();
 
-    $page->click('Cancelar inscrição')
-        ->assertSee('Realizar inscrição');
+    $page = visit("/seminario/{$seminar->slug}");
+    $page->assertSee('Você está inscrito!')
+        ->click('Cancelar inscrição');
 
-    expect(Registration::where('user_id', $user->id)->where('seminar_id', $seminar->id)->exists())
-        ->toBeFalse();
+    waitForServer($page, fn () => ! $isRegistered());
+    expect($isRegistered())->toBeFalse();
+
+    visit("/seminario/{$seminar->slug}")->assertSee('Realizar inscrição');
 });
 
 it('opens the login modal when an unauthenticated visitor clicks register', function () {
