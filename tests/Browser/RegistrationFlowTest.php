@@ -1,5 +1,7 @@
 <?php
 
+use App\Enums\CourseRole;
+use App\Enums\CourseSituation;
 use App\Models\Course;
 use App\Models\User;
 
@@ -18,8 +20,8 @@ it('blocks submission when consent checkboxes are unchecked', function () {
 
     $page->fill('name', 'João Silva')
         ->fill('email', 'joao@example.com')
-        ->select('courseSituation', 'studying')
-        ->select('courseRole', 'Aluno')
+        ->select('courseSituation', CourseSituation::Studying->value)
+        ->select('courseRole', CourseRole::Aluno->value)
         ->fill('password', 'secret-pass-123')
         ->fill('passwordConfirmation', 'secret-pass-123')
         ->click('button[type="submit"]')
@@ -37,8 +39,8 @@ it('rejects duplicate emails server-side', function () {
 
     $page->fill('name', 'João Silva')
         ->fill('email', 'taken@example.com')
-        ->select('courseSituation', 'studying')
-        ->select('courseRole', 'Aluno')
+        ->select('courseSituation', CourseSituation::Studying->value)
+        ->select('courseRole', CourseRole::Aluno->value)
         ->fill('password', 'secret-pass-123')
         ->fill('passwordConfirmation', 'secret-pass-123')
         ->check('acceptedTerms')
@@ -57,8 +59,8 @@ it('creates a user and signs them in on a fully valid submission', function () {
 
     $page->fill('name', 'João Silva')
         ->fill('email', 'joao@example.com')
-        ->select('courseSituation', 'studying')
-        ->select('courseRole', 'Aluno')
+        ->select('courseSituation', CourseSituation::Studying->value)
+        ->select('courseRole', CourseRole::Aluno->value)
         ->fill('password', 'secret-pass-123')
         ->fill('passwordConfirmation', 'secret-pass-123')
         ->check('acceptedTerms')
