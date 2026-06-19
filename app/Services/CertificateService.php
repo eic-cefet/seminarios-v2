@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Registration;
+use App\Support\CertificatePresentationClause;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -165,14 +166,15 @@ class CertificateService
             $font->align('center');
         });
 
-        // Presentation date — uses the gender-neutral "à apresentação" so that
-        // any feminine seminar type (e.g. "Dissertação") agrees grammatically
-        // without needing per-type article selection. The seminar's name is
-        // rendered on the next line and continues to identify the work.
+        // Presentation date — names the real presentation type with the correct
+        // Portuguese article via CertificatePresentationClause (e.g. "ao seminário",
+        // "à dissertação"). Seminars with no type fall back to the neutral
+        // "à apresentação". The seminar's name is rendered on the next line.
         $date = $registration->seminar->scheduled_at->format('d/m/Y').' às '.$registration->seminar->scheduled_at->format('H:i');
+        $clause = CertificatePresentationClause::for($registration->seminar->seminarType?->name);
 
         $certificate->text(
-            "Compareceu, no dia {$date}, à apresentação",
+            "Compareceu, no dia {$date}, {$clause}",
             $centerW,
             $positions['seminary_date'],
             function (FontFactory $font) use ($cp) {
