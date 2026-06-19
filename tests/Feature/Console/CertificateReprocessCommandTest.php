@@ -114,7 +114,7 @@ it('dispatches nothing on --dry-run but reports the count', function () {
     typedReg();
 
     $this->artisan('certificates:reprocess', ['--dry-run' => true])
-        ->expectsOutputToContain('1')
+        ->expectsOutputToContain('1 certificate(s) would be reprocessed')
         ->assertSuccessful();
 
     Queue::assertNothingPushed();

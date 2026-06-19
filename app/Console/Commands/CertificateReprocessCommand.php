@@ -11,10 +11,13 @@ use App\Models\Registration;
 use App\Services\CertificateService;
 use Illuminate\Console\Command;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 
 class CertificateReprocessCommand extends Command
 {
     use TracksAuditContext;
+
+    private const CHUNK_SIZE = 200;
 
     protected $signature = 'certificates:reprocess
                             {--since= : Only seminars scheduled on/after this date (YYYY-MM-DD)}
@@ -49,7 +52,7 @@ class CertificateReprocessCommand extends Command
         $sync = (bool) $this->option('sync');
         $dispatched = 0;
 
-        $query->chunkById(200, function ($registrations) use ($sync, &$dispatched) {
+        $query->chunkById(self::CHUNK_SIZE, function (Collection $registrations) use ($sync, &$dispatched): void {
             foreach ($registrations as $registration) {
                 if ($sync) {
                     (new RegenerateCertificateJob($registration))->handle(app(CertificateService::class));
