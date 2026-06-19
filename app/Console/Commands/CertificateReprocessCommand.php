@@ -33,24 +33,47 @@ class CertificateReprocessCommand extends Command
     {
         $this->setAuditContext();
 
+        $sync = (bool) $this->option('sync');
+        $dryRun = (bool) $this->option('dry-run');
+        $filters = array_filter([
+            'since' => $this->option('since'),
+            'type' => $this->option('type'),
+            'seminar' => $this->option('seminar'),
+        ]);
+
+        Log::info('certificates:reprocess: started', [
+            'mode' => $sync ? 'sync' : 'queued',
+            'dry_run' => $dryRun,
+            'filters' => $filters,
+        ]);
+
         $query = $this->buildQuery();
         $count = (clone $query)->count();
 
+        Log::info('certificates:reprocess: matched certificates', [
+            'count' => $count,
+            'filters' => $filters,
+        ]);
+
         if ($count === 0) {
             $this->info('No certificates match the given filters. Nothing to reprocess.');
+            Log::info('certificates:reprocess: nothing to reprocess', ['filters' => $filters]);
 
             return self::SUCCESS;
         }
 
-        if ($this->option('dry-run')) {
+        if ($dryRun) {
             $this->info("Dry run: {$count} certificate(s) would be reprocessed.");
+            Log::info('certificates:reprocess: dry run — nothing dispatched', [
+                'count' => $count,
+                'filters' => $filters,
+            ]);
 
             return self::SUCCESS;
         }
 
         $this->info("Reprocessing {$count} certificate(s)...");
 
-        $sync = (bool) $this->option('sync');
         $dispatched = 0;
         $failed = 0;
 
@@ -59,11 +82,16 @@ class CertificateReprocessCommand extends Command
                 if ($sync) {
                     try {
                         (new RegenerateCertificateJob($registration))->handle(app(CertificateService::class));
+                        Log::info('certificates:reprocess: reprocessed registration inline', [
+                            'registration_id' => $registration->id,
+                            'seminar_id' => $registration->seminar_id,
+                        ]);
                     } catch (\Throwable $e) {
                         $failed++;
                         $this->error("Failed to reprocess registration {$registration->id}: {$e->getMessage()}");
-                        Log::error('certificates:reprocess failed for a registration', [
+                        Log::error('certificates:reprocess: failed for a registration', [
                             'registration_id' => $registration->id,
+                            'seminar_id' => $registration->seminar_id,
                             'exception' => $e->getMessage(),
                         ]);
 
@@ -71,6 +99,10 @@ class CertificateReprocessCommand extends Command
                     }
                 } else {
                     RegenerateCertificateJob::dispatch($registration);
+                    Log::info('certificates:reprocess: dispatched regenerate job', [
+                        'registration_id' => $registration->id,
+                        'seminar_id' => $registration->seminar_id,
+                    ]);
                 }
 
                 $dispatched++;
@@ -83,16 +115,20 @@ class CertificateReprocessCommand extends Command
 
         $this->info("Dispatched {$dispatched} regenerate job(s).");
 
+        Log::info('certificates:reprocess: completed', [
+            'mode' => $sync ? 'sync' : 'queued',
+            'matched' => $count,
+            'dispatched' => $dispatched,
+            'failed' => $failed,
+            'filters' => $filters,
+        ]);
+
         AuditLog::record(AuditEvent::CertificatesProcessed, AuditEventType::System, eventData: [
             'action' => 'reprocess',
             'mode' => $sync ? 'sync' : 'queued',
             'dispatched' => $dispatched,
             'failed' => $failed,
-            'filters' => array_filter([
-                'since' => $this->option('since'),
-                'type' => $this->option('type'),
-                'seminar' => $this->option('seminar'),
-            ]),
+            'filters' => $filters,
         ]);
 
         return self::SUCCESS;

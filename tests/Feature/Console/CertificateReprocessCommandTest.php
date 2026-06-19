@@ -5,6 +5,7 @@ use App\Models\Registration;
 use App\Models\Seminar;
 use App\Models\SeminarType;
 use App\Services\CertificateService;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -150,4 +151,29 @@ it('continues past a sync failure and reports it', function () {
         ->assertSuccessful();
 
     Queue::assertNothingPushed();
+});
+
+it('logs lifecycle events with the matched count and dispatch result', function () {
+    Log::spy();
+    $reg = typedReg();
+
+    $this->artisan('certificates:reprocess')->assertSuccessful();
+
+    Log::shouldHaveReceived('info')
+        ->withArgs(fn (string $message, array $context = []) => str_contains($message, 'started')
+            && $context['mode'] === 'queued')
+        ->once();
+    Log::shouldHaveReceived('info')
+        ->withArgs(fn (string $message, array $context = []) => str_contains($message, 'matched certificates')
+            && $context['count'] === 1)
+        ->once();
+    Log::shouldHaveReceived('info')
+        ->withArgs(fn (string $message, array $context = []) => str_contains($message, 'dispatched regenerate job')
+            && $context['registration_id'] === $reg->id)
+        ->once();
+    Log::shouldHaveReceived('info')
+        ->withArgs(fn (string $message, array $context = []) => str_contains($message, 'completed')
+            && $context['dispatched'] === 1
+            && $context['failed'] === 0)
+        ->once();
 });

@@ -14,6 +14,8 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Log;
+use Throwable;
 
 /**
  * Re-render an already-issued certificate's JPG + PDF artefacts at the
@@ -46,7 +48,20 @@ class RegenerateCertificateJob implements ShouldBeUnique, ShouldQueue
         $this->setAuditContext();
         $this->registration->load(['user', 'seminar.seminarType']);
 
+        Log::info('RegenerateCertificateJob: starting', [
+            'registration_id' => $this->registration->id,
+            'seminar_id' => $this->registration->seminar_id,
+            'seminar_type' => $this->registration->seminar?->seminarType?->name,
+            'certificate_code' => $this->registration->certificate_code,
+        ]);
+
         if (! $this->registration->present || empty($this->registration->certificate_code)) {
+            Log::warning('RegenerateCertificateJob: skipped — registration not present or missing certificate code', [
+                'registration_id' => $this->registration->id,
+                'present' => (bool) $this->registration->present,
+                'has_certificate_code' => ! empty($this->registration->certificate_code),
+            ]);
+
             return;
         }
 
@@ -54,8 +69,16 @@ class RegenerateCertificateJob implements ShouldBeUnique, ShouldQueue
         // none of which depend on the user's name. Re-running the
         // generators overwrites the JPG and PDF at the exact same S3
         // keys, so existing /certificado/{code} links keep working.
-        $certificateService->generateJpg($this->registration);
-        $certificateService->generatePdf($this->registration);
+        $jpgPath = $certificateService->generateJpg($this->registration);
+        $pdfPath = $certificateService->generatePdf($this->registration);
+
+        Log::info('RegenerateCertificateJob: regenerated certificate artefacts', [
+            'registration_id' => $this->registration->id,
+            'seminar_id' => $this->registration->seminar_id,
+            'seminar_type' => $this->registration->seminar?->seminarType?->name,
+            'jpg_path' => $jpgPath,
+            'pdf_path' => $pdfPath,
+        ]);
 
         AuditLog::record(
             AuditEvent::CertificateRegenerated,
@@ -63,5 +86,15 @@ class RegenerateCertificateJob implements ShouldBeUnique, ShouldQueue
             $this->registration,
             ['registration_id' => $this->registration->id],
         );
+    }
+
+    public function failed(Throwable $exception): void
+    {
+        Log::error('RegenerateCertificateJob: failed permanently after retries', [
+            'registration_id' => $this->registration->id,
+            'seminar_id' => $this->registration->seminar_id,
+            'certificate_code' => $this->registration->certificate_code,
+            'exception' => $exception->getMessage(),
+        ]);
     }
 }
