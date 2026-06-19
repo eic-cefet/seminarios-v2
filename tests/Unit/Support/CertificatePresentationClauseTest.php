@@ -26,6 +26,16 @@ it('returns the plural clause for each known type', function (string $type, stri
     ['TCC', 'aos TCCs'],
 ]);
 
+it('matches type names case- and accent-insensitively', function (string $type) {
+    expect(CertificatePresentationClause::for($type))->toBe('ao seminário');
+    expect(CertificatePresentationClause::for($type, plural: true))->toBe('aos seminários');
+})->with([
+    'lowercase' => 'seminário',
+    'uppercase' => 'SEMINÁRIO',
+    'no accent' => 'Seminario',
+    'surrounding whitespace' => '  Seminário  ',
+]);
+
 it('falls back to "à apresentação" for null, unknown, or custom names', function () {
     expect(CertificatePresentationClause::for(null))->toBe('à apresentação');
     expect(CertificatePresentationClause::for('Workshop'))->toBe('à apresentação');
