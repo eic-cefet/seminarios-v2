@@ -2,6 +2,7 @@
 
 use App\Models\Registration;
 use App\Models\Seminar;
+use App\Models\SeminarType;
 use App\Services\CertificateService;
 use Illuminate\Support\Facades\Storage;
 
@@ -67,4 +68,33 @@ it('returns a signed S3 URL that forces the download filename for the PDF', func
     );
     expect($url)->toContain('response-content-disposition')
         ->and($url)->toContain('certificado-apresentacao-teste.pdf');
+});
+
+it('generates a JPG for a typed seminar', function () {
+    $type = SeminarType::factory()->create(['name' => 'Seminário']);
+    $seminar = Seminar::factory()->create([
+        'slug' => 'sem-tipado',
+        'scheduled_at' => '2026-05-20 10:00:00',
+        'seminar_type_id' => $type->id,
+    ]);
+    $registration = Registration::factory()->create(['seminar_id' => $seminar->id]);
+
+    $path = app(CertificateService::class)->generateJpg($registration);
+
+    Storage::disk('s3')->assertExists($path);
+    expect($path)->toEndWith('.jpg');
+});
+
+it('generates a JPG for a seminar with no type (neutral fallback)', function () {
+    $seminar = Seminar::factory()->create([
+        'slug' => 'sem-sem-tipo',
+        'scheduled_at' => '2026-05-20 10:00:00',
+        'seminar_type_id' => null,
+    ]);
+    $registration = Registration::factory()->create(['seminar_id' => $seminar->id]);
+
+    $path = app(CertificateService::class)->generateJpg($registration);
+
+    Storage::disk('s3')->assertExists($path);
+    expect($path)->toEndWith('.jpg');
 });
