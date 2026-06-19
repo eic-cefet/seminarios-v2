@@ -12,6 +12,7 @@ use App\Services\CertificateService;
 use Illuminate\Console\Command;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\Log;
 
 class CertificateReprocessCommand extends Command
 {
@@ -51,11 +52,23 @@ class CertificateReprocessCommand extends Command
 
         $sync = (bool) $this->option('sync');
         $dispatched = 0;
+        $failed = 0;
 
-        $query->chunkById(self::CHUNK_SIZE, function (Collection $registrations) use ($sync, &$dispatched): void {
+        $query->chunkById(self::CHUNK_SIZE, function (Collection $registrations) use ($sync, &$dispatched, &$failed): void {
             foreach ($registrations as $registration) {
                 if ($sync) {
-                    (new RegenerateCertificateJob($registration))->handle(app(CertificateService::class));
+                    try {
+                        (new RegenerateCertificateJob($registration))->handle(app(CertificateService::class));
+                    } catch (\Throwable $e) {
+                        $failed++;
+                        $this->error("Failed to reprocess registration {$registration->id}: {$e->getMessage()}");
+                        Log::error('certificates:reprocess failed for a registration', [
+                            'registration_id' => $registration->id,
+                            'exception' => $e->getMessage(),
+                        ]);
+
+                        continue;
+                    }
                 } else {
                     RegenerateCertificateJob::dispatch($registration);
                 }
@@ -64,11 +77,17 @@ class CertificateReprocessCommand extends Command
             }
         });
 
+        if ($failed > 0) {
+            $this->warn("Completed with {$failed} failure(s).");
+        }
+
         $this->info("Dispatched {$dispatched} regenerate job(s).");
 
         AuditLog::record(AuditEvent::CertificatesProcessed, AuditEventType::System, eventData: [
             'action' => 'reprocess',
+            'mode' => $sync ? 'sync' : 'queued',
             'dispatched' => $dispatched,
+            'failed' => $failed,
             'filters' => array_filter([
                 'since' => $this->option('since'),
                 'type' => $this->option('type'),

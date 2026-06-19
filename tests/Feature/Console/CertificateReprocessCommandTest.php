@@ -4,6 +4,7 @@ use App\Jobs\RegenerateCertificateJob;
 use App\Models\Registration;
 use App\Models\Seminar;
 use App\Models\SeminarType;
+use App\Services\CertificateService;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -132,6 +133,20 @@ it('runs jobs inline with --sync', function () {
 it('reports when nothing matches', function () {
     $this->artisan('certificates:reprocess')
         ->expectsOutputToContain('No certificates')
+        ->assertSuccessful();
+
+    Queue::assertNothingPushed();
+});
+
+it('continues past a sync failure and reports it', function () {
+    typedReg();
+
+    $this->mock(CertificateService::class)
+        ->shouldReceive('generateJpg')
+        ->andThrow(new RuntimeException('render boom'));
+
+    $this->artisan('certificates:reprocess', ['--sync' => true])
+        ->expectsOutputToContain('Failed to reprocess')
         ->assertSuccessful();
 
     Queue::assertNothingPushed();
