@@ -3,7 +3,7 @@
 
 Olá, **{{ $userName }}**!
 
-Sua inscrição na apresentação abaixo foi confirmada:
+Sua inscrição {{ \App\Support\PresentationTypeGrammar::for($seminar->seminarType?->name)->withEm() }} abaixo foi confirmada:
 
 <x-mail::panel>
 **{{ $seminar->name }}**
