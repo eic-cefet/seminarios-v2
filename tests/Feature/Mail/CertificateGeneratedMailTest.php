@@ -3,6 +3,7 @@
 use App\Mail\CertificateGenerated;
 use App\Models\Registration;
 use App\Models\Seminar;
+use App\Models\SeminarType;
 use App\Models\User;
 use Illuminate\Support\Facades\Storage;
 
@@ -79,9 +80,41 @@ describe('CertificateGenerated Mail', function () {
 
         expect($rendered)
             ->toContain('Parabéns por sua participação na apresentação')
-            ->toContain('realizada em 15/06/2024')
+            ->toContain('que ocorreu em 15/06/2024')
             ->not->toContain('participação no seminário')
-            ->not->toContain('realizado em');
+            ->not->toContain('realizada em');
+    });
+
+    it('names a masculine presentation type with em-contraction', function () {
+        Storage::fake('s3');
+        Storage::disk('s3')->put('certificates/x.pdf', '%PDF-1.4 stub');
+
+        $type = SeminarType::factory()->create(['name' => 'Seminário']);
+        $registration = Registration::factory()->create([
+            'seminar_id' => Seminar::factory()->create(['seminar_type_id' => $type->id])->id,
+            'certificate_code' => 'CODE-M',
+        ]);
+
+        $rendered = (new CertificateGenerated($registration, 'certificates/x.pdf'))->render();
+
+        expect($rendered)
+            ->toContain('no seminário')
+            ->toContain('que ocorreu em')
+            ->not->toContain('realizada em');
+    });
+
+    it('falls back to the neutral feminine for an untyped seminar', function () {
+        Storage::fake('s3');
+        Storage::disk('s3')->put('certificates/x.pdf', '%PDF-1.4 stub');
+
+        $registration = Registration::factory()->create([
+            'seminar_id' => Seminar::factory()->create(['seminar_type_id' => null])->id,
+            'certificate_code' => 'CODE-N',
+        ]);
+
+        $rendered = (new CertificateGenerated($registration, 'certificates/x.pdf'))->render();
+
+        expect($rendered)->toContain('na apresentação')->toContain('que ocorreu em');
     });
 
     it('passes formatted seminar date to template', function () {

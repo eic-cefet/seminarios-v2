@@ -3,6 +3,7 @@
 namespace App\Mail;
 
 use App\Models\Registration;
+use App\Support\PresentationTypeGrammar;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Attachment;
@@ -51,6 +52,7 @@ class CertificateGenerated extends Mailable
             with: [
                 'userName' => $this->registration->user->name,
                 'seminarName' => $this->registration->seminar->name,
+                'presentation' => PresentationTypeGrammar::for($this->registration->seminar->seminarType?->name)->withEm(),
                 'seminarDate' => $this->registration->seminar->scheduled_at->format('d/m/Y'),
                 'certificateCode' => $this->registration->certificate_code,
                 'certificateUrl' => url("/certificado/{$this->registration->certificate_code}"),
