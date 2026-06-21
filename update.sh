@@ -275,17 +275,6 @@ pnpm run build
 print_status "Assets built" "ok"
 
 #######################################
-# STEP 7.1: One-time certificate reprocess — REMOVE after the cut drains.
-# Re-renders every issued certificate (no date filter) so they print the real
-# presentation type instead of the neutral "à apresentação" template.
-# Dispatches queued jobs and returns immediately — does not block the deploy.
-#######################################
-print_section "Reprocessing affected certificates (one-time)"
-
-php artisan certificates:reprocess
-print_status "Certificate reprocess dispatched" "ok"
-
-#######################################
 # STEP 8: Clear and Rebuild Caches
 #######################################
 print_section "Optimizing application"
