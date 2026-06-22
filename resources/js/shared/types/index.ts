@@ -50,6 +50,8 @@ export interface Subject {
 export interface SeminarType {
     id: number;
     name: string;
+    gender?: 'm' | 'f';
+    noun?: string;
 }
 
 export interface Speaker {
