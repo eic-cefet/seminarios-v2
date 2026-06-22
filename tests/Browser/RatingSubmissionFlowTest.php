@@ -40,6 +40,7 @@ it('submits a rating with comment and persists it', function () {
     $seminar = Seminar::factory()->create([
         'name' => 'Arquitetura de Microsserviços',
         'scheduled_at' => now()->subDays(5),
+        'seminar_type_id' => null,
     ]);
     Registration::factory()->create([
         'user_id' => $user->id,
@@ -51,7 +52,7 @@ it('submits a rating with comment and persists it', function () {
 
     $page->assertSee('Arquitetura de Microsserviços')
         ->click('Avaliar')
-        ->assertSee('Como voce avalia este seminario?')
+        ->assertSee('Como você avalia esta apresentação?')
         ->click('fieldset button:nth-of-type(5)')
         ->fill('textarea[maxlength="1000"]', 'Excelente conteúdo e didática.')
         ->check('input[type="checkbox"]')
