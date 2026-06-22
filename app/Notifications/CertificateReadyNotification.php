@@ -3,6 +3,7 @@
 namespace App\Notifications;
 
 use App\Models\Seminar;
+use App\Support\PresentationTypeGrammar;
 
 class CertificateReadyNotification extends InAppNotification
 {
@@ -23,7 +24,7 @@ class CertificateReadyNotification extends InAppNotification
 
     protected function body(): string
     {
-        return "O certificado da apresentação \"{$this->seminar->name}\" já está disponível.";
+        return 'O certificado '.PresentationTypeGrammar::for($this->seminar->seminarType?->name)->withDe()." \"{$this->seminar->name}\" já está disponível.";
     }
 
     protected function actionUrl(): ?string
