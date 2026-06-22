@@ -21,7 +21,7 @@ it('renders subject, addressee and seminar info', function () {
 
 it('uses gender-neutral feminine "apresentação" in body', function () {
     $user = User::factory()->create(['name' => 'Ana']);
-    $seminar = Seminar::factory()->create(['name' => 'IA na Prática']);
+    $seminar = Seminar::factory()->create(['name' => 'IA na Prática', 'seminar_type_id' => null]);
 
     $mailable = new SeminarRegistrationConfirmation($user, $seminar);
 

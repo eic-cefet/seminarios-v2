@@ -70,7 +70,7 @@ describe('CertificateGenerated Mail', function () {
         Storage::fake('s3');
         Storage::disk('s3')->put('certs/body-test.pdf', '%PDF-1.4 stub');
 
-        $seminar = Seminar::factory()->create(['name' => 'Web Workshop', 'scheduled_at' => '2024-06-15 14:00:00']);
+        $seminar = Seminar::factory()->create(['name' => 'Web Workshop', 'scheduled_at' => '2024-06-15 14:00:00', 'seminar_type_id' => null]);
         $registration = Registration::factory()->create([
             'seminar_id' => $seminar->id,
             'certificate_code' => 'BODY-TEST',
