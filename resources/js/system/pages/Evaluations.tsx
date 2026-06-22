@@ -2,6 +2,7 @@ import { PendingEvaluation, profileApi } from "@shared/api/client";
 import { PageTitle } from "@shared/components/PageTitle";
 import { ROUTES } from "@shared/config/routes";
 import { getErrorMessage } from "@shared/lib/errors";
+import { presentationGrammar } from "@shared/lib/presentationGrammar";
 import { cn, formatDateTime } from "@shared/lib/utils";
 import { analytics } from "@shared/lib/analytics";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -131,6 +132,7 @@ function EvaluationItem({ evaluation, onRated }: EvaluationItemProps) {
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState(false);
     const queryClient = useQueryClient();
+    const grammar = presentationGrammar(evaluation.seminar.seminar_type);
 
     const mutation = useMutation({
         mutationFn: () =>
@@ -241,7 +243,7 @@ function EvaluationItem({ evaluation, onRated }: EvaluationItemProps) {
 
                     <fieldset>
                         <legend className="block text-sm font-medium text-gray-700 mb-2">
-                            Como voce avalia este seminario?
+                            Como você avalia {grammar.demonstrative}?
                         </legend>
                         <div className="flex items-center gap-1">
                             {[1, 2, 3, 4, 5].map((value) => (
@@ -300,7 +302,7 @@ function EvaluationItem({ evaluation, onRated }: EvaluationItemProps) {
                             placeholder={
                                 score > 0 && score <= 3
                                     ? "Conte-nos o que podemos melhorar..."
-                                    : "Deixe um comentario sobre o seminario..."
+                                    : `Deixe um comentário sobre ${grammar.definite}...`
                             }
                             className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
                             maxLength={1000}

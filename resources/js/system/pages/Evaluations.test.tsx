@@ -164,7 +164,34 @@ describe('Evaluations', () => {
 
         await user.click(screen.getByRole('button', { name: /^avaliar$/i }));
 
-        expect(screen.getByText(/como voce avalia este seminario/i)).toBeInTheDocument();
+        expect(screen.getByText(/como você avalia/i)).toBeInTheDocument();
+    });
+
+    it('names the real presentation type in the rating legend and placeholder', async () => {
+        const evaluations = [
+            createPendingEvaluation({
+                id: 1,
+                seminar: {
+                    id: 10, name: 'Test Seminar', slug: 'test-seminar',
+                    scheduled_at: '2026-06-15T14:00:00Z',
+                    seminar_type: { id: 1, name: 'Seminário', gender: 'm', noun: 'seminário' },
+                    location: { id: 1, name: 'Room 101' },
+                },
+            }),
+        ];
+        vi.mocked(profileApi.pendingEvaluations).mockResolvedValue({ data: evaluations });
+        const user = userEvent.setup();
+
+        render(<Evaluations />);
+
+        await waitFor(() => {
+            expect(screen.getByRole('button', { name: /^avaliar$/i })).toBeInTheDocument();
+        });
+
+        await user.click(screen.getByRole('button', { name: /^avaliar$/i }));
+
+        expect(screen.getByText('Como você avalia este seminário?')).toBeInTheDocument();
+        expect(screen.getByPlaceholderText('Deixe um comentário sobre o seminário...')).toBeInTheDocument();
     });
 
     it('shows "Cancelar" button after expanding the form', async () => {
@@ -193,10 +220,10 @@ describe('Evaluations', () => {
         });
 
         await user.click(screen.getByRole('button', { name: /^avaliar$/i }));
-        expect(screen.getByText(/como voce avalia este seminario/i)).toBeInTheDocument();
+        expect(screen.getByText(/como você avalia/i)).toBeInTheDocument();
 
         await user.click(screen.getByRole('button', { name: /cancelar/i }));
-        expect(screen.queryByText(/como voce avalia este seminario/i)).not.toBeInTheDocument();
+        expect(screen.queryByText(/como você avalia/i)).not.toBeInTheDocument();
     });
 
     it('shows error when submitting without selecting a score', async () => {
@@ -230,7 +257,7 @@ describe('Evaluations', () => {
 
         // Star buttons are inside a div following the label "Como voce avalia este seminario?"
         // They have class "p-1 cursor-pointer" and type="button"
-        const starsContainer = screen.getByText(/como voce avalia este seminario/i).nextElementSibling!;
+        const starsContainer = screen.getByText(/como você avalia/i).nextElementSibling!;
         const starButtons = starsContainer.querySelectorAll('button');
         expect(starButtons.length).toBe(5);
 
@@ -250,7 +277,7 @@ describe('Evaluations', () => {
 
         await user.click(screen.getByRole('button', { name: /^avaliar$/i }));
 
-        const starsContainer = screen.getByText(/como voce avalia este seminario/i).nextElementSibling!;
+        const starsContainer = screen.getByText(/como você avalia/i).nextElementSibling!;
         const starButtons = starsContainer.querySelectorAll('button');
         await user.click(starButtons[4]); // score = 5
         expect(screen.getByText('(opcional)')).toBeInTheDocument();
@@ -268,7 +295,7 @@ describe('Evaluations', () => {
 
         await user.click(screen.getByRole('button', { name: /^avaliar$/i }));
 
-        const starsContainer = screen.getByText(/como voce avalia este seminario/i).nextElementSibling!;
+        const starsContainer = screen.getByText(/como você avalia/i).nextElementSibling!;
         const starButtons = starsContainer.querySelectorAll('button');
         await user.click(starButtons[1]); // score = 2
         expect(screen.getByText('(obrigatorio)')).toBeInTheDocument();
@@ -286,7 +313,7 @@ describe('Evaluations', () => {
 
         await user.click(screen.getByRole('button', { name: /^avaliar$/i }));
 
-        const starsContainer = screen.getByText(/como voce avalia este seminario/i).nextElementSibling!;
+        const starsContainer = screen.getByText(/como você avalia/i).nextElementSibling!;
         const starButtons = starsContainer.querySelectorAll('button');
         await user.click(starButtons[1]); // score = 2
 
@@ -311,7 +338,7 @@ describe('Evaluations', () => {
 
         await user.click(screen.getByRole('button', { name: /^avaliar$/i }));
 
-        const starsContainer = screen.getByText(/como voce avalia este seminario/i).nextElementSibling!;
+        const starsContainer = screen.getByText(/como você avalia/i).nextElementSibling!;
         const starButtons = starsContainer.querySelectorAll('button');
         await user.click(starButtons[4]); // score = 5
 
@@ -335,7 +362,7 @@ describe('Evaluations', () => {
 
         await user.click(screen.getByRole('button', { name: /^avaliar$/i }));
 
-        const starsContainer = screen.getByText(/como voce avalia este seminario/i).nextElementSibling!;
+        const starsContainer = screen.getByText(/como você avalia/i).nextElementSibling!;
         const starButtons = starsContainer.querySelectorAll('button');
         await user.click(starButtons[4]); // score = 5
 
@@ -362,7 +389,7 @@ describe('Evaluations', () => {
 
         await user.click(screen.getByRole('button', { name: /^avaliar$/i }));
 
-        const starsContainer = screen.getByText(/como voce avalia este seminario/i).nextElementSibling!;
+        const starsContainer = screen.getByText(/como você avalia/i).nextElementSibling!;
         const starButtons = starsContainer.querySelectorAll('button');
         await user.click(starButtons[4]); // score = 5
 
@@ -488,7 +515,7 @@ describe('Evaluations', () => {
 
         await user.click(screen.getByRole('button', { name: /^avaliar$/i }));
 
-        const starsContainer = screen.getByText(/como voce avalia este seminario/i).nextElementSibling!;
+        const starsContainer = screen.getByText(/como você avalia/i).nextElementSibling!;
         const starButtons = starsContainer.querySelectorAll('button');
         await user.click(starButtons[1]); // score = 2
 
@@ -524,7 +551,7 @@ describe('Evaluations', () => {
 
         await user.click(screen.getByRole('button', { name: /^avaliar$/i }));
 
-        const starsContainer = screen.getByText(/como voce avalia este seminario/i).nextElementSibling!;
+        const starsContainer = screen.getByText(/como você avalia/i).nextElementSibling!;
         const starButtons = starsContainer.querySelectorAll('button');
         await user.click(starButtons[4]); // score = 5
 
@@ -561,7 +588,7 @@ describe('Evaluations', () => {
 
         await user.click(screen.getByRole('button', { name: /^avaliar$/i }));
 
-        const starsContainer = screen.getByText(/como voce avalia este seminario/i).nextElementSibling!;
+        const starsContainer = screen.getByText(/como você avalia/i).nextElementSibling!;
         const starButtons = starsContainer.querySelectorAll('button');
         await user.click(starButtons[4]); // score = 5
 
@@ -584,7 +611,7 @@ describe('Evaluations', () => {
 
         await user.click(screen.getByRole('button', { name: /^avaliar$/i }));
 
-        const starsContainer = screen.getByText(/como voce avalia este seminario/i).nextElementSibling!;
+        const starsContainer = screen.getByText(/como você avalia/i).nextElementSibling!;
         const starButtons = starsContainer.querySelectorAll('button');
 
         await user.click(starButtons[0]); // score = 1
@@ -610,7 +637,7 @@ describe('Evaluations', () => {
 
         await user.click(screen.getByRole('button', { name: /^avaliar$/i }));
 
-        const starsContainer = screen.getByText(/como voce avalia este seminario/i).nextElementSibling!;
+        const starsContainer = screen.getByText(/como você avalia/i).nextElementSibling!;
         const starButtons = starsContainer.querySelectorAll('button');
         await user.click(starButtons[4]); // score = 5
 

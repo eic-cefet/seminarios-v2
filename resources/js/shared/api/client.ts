@@ -425,7 +425,12 @@ export interface PendingEvaluation {
         name: string;
         slug: string;
         scheduled_at: string | null;
-        seminar_type: { id: number; name: string } | null;
+        seminar_type: {
+            id: number;
+            name: string;
+            gender?: "m" | "f";
+            noun?: string;
+        } | null;
         location: { id: number; name: string } | null;
     };
 }
