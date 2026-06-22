@@ -2,6 +2,7 @@
 
 use App\Mail\NewSeminarAlert;
 use App\Models\Seminar;
+use App\Models\SeminarType;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -18,7 +19,10 @@ it('sets subject to the seminar name', function () {
 
 it('uses gender-neutral feminine "apresentação" in subject and body', function () {
     $user = User::factory()->create();
-    $seminar = Seminar::factory()->create(['name' => 'Palestra sobre IA']);
+    $seminar = Seminar::factory()->create([
+        'name' => 'Palestra sobre IA',
+        'seminar_type_id' => null,
+    ]);
 
     $mail = new NewSeminarAlert($user, $seminar);
 
@@ -34,6 +38,24 @@ it('uses gender-neutral feminine "apresentação" in subject and body', function
         ->not->toContain('novo seminário')
         ->not->toContain('Detalhes do Seminário')
         ->not->toContain('novos seminários');
+});
+
+it('agrees the heading and intro with a masculine type', function () {
+    $user = User::factory()->create();
+    $type = SeminarType::factory()->create(['name' => 'Seminário']);
+    $seminar = Seminar::factory()->create([
+        'name' => 'AI',
+        'seminar_type_id' => $type->id,
+    ]);
+
+    $mail = new NewSeminarAlert($user, $seminar);
+
+    $rendered = $mail->render();
+    expect($rendered)
+        ->toContain('Novo Seminário Disponível')
+        ->toContain('Um novo seminário combina')
+        ->not->toContain('Nova Apresentação Disponível')
+        ->not->toContain('Uma nova apresentação combina');
 });
 
 it('includes the audit headers', function () {

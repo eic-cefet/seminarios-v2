@@ -418,6 +418,58 @@ describe('SeminarDetails', () => {
         });
     });
 
+    it('names the real presentation type in the description heading', async () => {
+        const seminarType = createSeminarType({ id: 1, name: 'Seminário', gender: 'm', noun: 'seminário' });
+        const seminar = createSeminar({ name: 'Test', description: 'Conteúdo', seminarType });
+        vi.mocked(seminarsApi.get).mockResolvedValue({ data: seminar });
+
+        render(<SeminarDetails />);
+
+        await waitFor(() => {
+            expect(screen.getByText('Sobre o seminário')).toBeInTheDocument();
+        });
+    });
+
+    it('falls back to "apresentação" wording when seminar has no type', async () => {
+        const seminar = createSeminar({ name: 'Test', description: 'Conteúdo', seminarType: undefined });
+        vi.mocked(seminarsApi.get).mockResolvedValue({ data: seminar });
+
+        render(<SeminarDetails />);
+
+        await waitFor(() => {
+            expect(screen.getByText('Sobre a apresentação')).toBeInTheDocument();
+        });
+    });
+
+    it('names the real presentation type in the register heading', async () => {
+        const seminarType = createSeminarType({ id: 1, name: 'Seminário', gender: 'm', noun: 'seminário' });
+        const seminar = createSeminar({ name: 'Test', isExpired: false, seminarType });
+        vi.mocked(seminarsApi.get).mockResolvedValue({ data: seminar });
+        vi.mocked(registrationApi.status).mockResolvedValue({ registered: false });
+        vi.mocked(useAuth).mockReturnValue({
+            user: createUser(), isLoading: false, isAuthenticated: true,
+            login: vi.fn(), register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(), completeTwoFactor: vi.fn(),
+        });
+
+        render(<SeminarDetails />);
+
+        await waitFor(() => {
+            expect(screen.getByText('Inscreva-se neste seminário')).toBeInTheDocument();
+        });
+    });
+
+    it('names the real presentation type in the expired state heading', async () => {
+        const seminarType = createSeminarType({ id: 1, name: 'Seminário', gender: 'm', noun: 'seminário' });
+        const seminar = createSeminar({ name: 'Old', isExpired: true, seminarType });
+        vi.mocked(seminarsApi.get).mockResolvedValue({ data: seminar });
+
+        render(<SeminarDetails />);
+
+        await waitFor(() => {
+            expect(screen.getByText('Este seminário já foi realizado')).toBeInTheDocument();
+        });
+    });
+
     it('renders markdown description when not HTML', async () => {
         const seminar = createSeminar({ name: 'Test', description: 'Simple text description' });
         vi.mocked(seminarsApi.get).mockResolvedValue({ data: seminar });

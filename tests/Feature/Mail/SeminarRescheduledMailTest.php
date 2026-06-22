@@ -2,6 +2,7 @@
 
 use App\Mail\SeminarRescheduled;
 use App\Models\Seminar;
+use App\Models\SeminarType;
 use App\Models\User;
 use Illuminate\Contracts\Queue\ShouldQueue;
 
@@ -22,6 +23,7 @@ describe('SeminarRescheduled Mail', function () {
         $seminar = Seminar::factory()->create([
             'name' => 'AI Workshop',
             'scheduled_at' => now()->addDays(7),
+            'seminar_type_id' => null,
         ]);
         $oldDate = now()->addDay();
 
@@ -39,6 +41,29 @@ describe('SeminarRescheduled Mail', function () {
             ->not->toContain('O seminário')
             ->not->toContain('foi reagendado:')
             ->not->toContain('Detalhes do Seminário');
+    });
+
+    it('agrees the title and body with a masculine type', function () {
+        $user = User::factory()->create(['name' => 'Joana']);
+        $type = SeminarType::factory()->create(['name' => 'Seminário']);
+        $seminar = Seminar::factory()->create([
+            'name' => 'AI',
+            'scheduled_at' => now()->addDays(7),
+            'seminar_type_id' => $type->id,
+        ]);
+        $oldDate = now()->addDay();
+
+        $mail = new SeminarRescheduled($user, $seminar, $oldDate);
+
+        $rendered = $mail->render();
+        expect($rendered)
+            ->toContain('Seminário Reagendado')
+            ->toContain('O seminário')
+            ->toContain('foi reagendado')
+            ->toContain('AI')
+            ->not->toContain('Apresentação Reagendada')
+            ->not->toContain('A apresentação')
+            ->not->toContain('foi reagendada');
     });
 
     it('uses markdown template', function () {

@@ -3,6 +3,7 @@
 namespace App\Notifications;
 
 use App\Models\Seminar;
+use App\Support\PresentationTypeGrammar;
 
 class EvaluationDueNotification extends InAppNotification
 {
@@ -20,7 +21,7 @@ class EvaluationDueNotification extends InAppNotification
 
     protected function body(): string
     {
-        return "Avalie a apresentação \"{$this->seminar->name}\".";
+        return 'Avalie '.PresentationTypeGrammar::for($this->seminar->seminarType?->name)->definite().' "'.$this->seminar->name.'".';
     }
 
     protected function actionUrl(): ?string

@@ -31,6 +31,7 @@ import {
     stripMarkdown,
 } from "@shared/lib/utils";
 import { ROUTES } from "@shared/config/routes";
+import { presentationGrammar } from "@shared/lib/presentationGrammar";
 import { getErrorMessage } from "@shared/lib/errors";
 import { useAuth } from "@shared/contexts/AuthContext";
 import { analytics } from "@shared/lib/analytics";
@@ -204,6 +205,8 @@ export default function SeminarDetails() {
 
     const isExpired = seminar.isExpired;
     const isToday = !isExpired && isTodayDate(seminar.scheduledAt);
+    const grammar = presentationGrammar(seminar.seminarType);
+    const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
     return (
         <>
@@ -286,7 +289,7 @@ export default function SeminarDetails() {
                             {seminar.description && (
                                 <section>
                                     <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                                        Sobre a apresentação
+                                        Sobre {grammar.definite}
                                     </h2>
                                     {containsHTML(seminar.description) ? (
                                         <div
@@ -429,7 +432,12 @@ export default function SeminarDetails() {
                                     ) : (
                                         <>
                                             <h3 className="font-semibold text-gray-900 mb-4">
-                                                Inscreva-se nesta apresentação
+                                                Inscreva-se{" "}
+                                                {grammar.agree(
+                                                    "neste",
+                                                    "nesta",
+                                                )}{" "}
+                                                {grammar.noun}
                                             </h3>
                                             {registrationError && (
                                                 <div className="mb-4 rounded-md bg-red-50 p-3 text-sm text-red-700">
@@ -452,7 +460,12 @@ export default function SeminarDetails() {
                                 ) : (
                                     <>
                                         <h3 className="font-semibold text-gray-500 mb-2">
-                                            Esta apresentação já foi realizada
+                                            {capitalize(grammar.demonstrative)} já
+                                            foi{" "}
+                                            {grammar.agree(
+                                                "realizado",
+                                                "realizada",
+                                            )}
                                         </h3>
                                         <p className="text-sm text-gray-600">
                                             Confira outras apresentações

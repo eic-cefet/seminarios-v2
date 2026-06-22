@@ -1,9 +1,10 @@
 <x-mail::message>
-# Apresentação Reagendada
+@php($g = \App\Support\PresentationTypeGrammar::for($seminar->seminarType?->name))
+# {{ \Illuminate\Support\Str::ucfirst($g->noun()) }} {{ $g->agree('Reagendado', 'Reagendada') }}
 
 Olá, **{{ $userName }}**!
 
-A apresentação **{{ $seminar->name }}** foi reagendada:
+{{ \Illuminate\Support\Str::ucfirst($g->definite()) }} **{{ $seminar->name }}** foi {{ $g->agree('reagendado', 'reagendada') }}:
 
 <x-mail::panel>
 **Data anterior:** <del>{{ $oldScheduledAt->format('d/m/Y') }} às {{ $oldScheduledAt->format('H:i') }}</del>
