@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Seminar;
+use App\Models\SeminarType;
 use App\Models\User;
 use App\Notifications\SeminarRescheduledNotification;
 use Illuminate\Support\Facades\Notification;
@@ -25,11 +26,28 @@ it('records a notification with seminar context', function () {
 });
 
 it('uses gender-neutral feminine title and body', function () {
-    $seminar = Seminar::factory()->create(['name' => 'Quantum Computing']);
+    $seminar = Seminar::factory()->create([
+        'name' => 'Quantum Computing',
+        'seminar_type_id' => null,
+    ]);
     $notification = new SeminarRescheduledNotification($seminar, previousStartsAt: '2026-05-05 14:00:00');
 
     $data = $notification->toDatabase(User::factory()->make());
 
     expect($data['title'])->toBe('Apresentação reagendada');
-    expect($data['body'])->toBe('"Quantum Computing" foi reagendada. Confira a nova data.');
+    expect($data['body'])->toBe('A apresentação "Quantum Computing" foi reagendada. Confira a nova data.');
+});
+
+it('agrees the title and body with a masculine type', function () {
+    $type = SeminarType::factory()->create(['name' => 'Seminário']);
+    $seminar = Seminar::factory()->create([
+        'name' => 'AI',
+        'seminar_type_id' => $type->id,
+    ]);
+    $notification = new SeminarRescheduledNotification($seminar, previousStartsAt: '2026-05-05 14:00:00');
+
+    $data = $notification->toDatabase(User::factory()->make());
+
+    expect($data['title'])->toBe('Seminário reagendado');
+    expect($data['body'])->toBe('O seminário "AI" foi reagendado. Confira a nova data.');
 });

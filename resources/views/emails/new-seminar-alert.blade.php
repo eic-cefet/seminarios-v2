@@ -1,9 +1,10 @@
 <x-mail::message>
-# Nova Apresentação Disponível
+@php($g = \App\Support\PresentationTypeGrammar::for($seminar->seminarType?->name))
+# {{ $g->agree('Novo', 'Nova') }} {{ \Illuminate\Support\Str::ucfirst($g->noun()) }} Disponível
 
 Olá, **{{ $userName }}**!
 
-Uma nova apresentação combina com suas preferências de alerta.
+{{ $g->agree('Um novo', 'Uma nova') }} {{ $g->noun() }} combina com suas preferências de alerta.
 
 <x-mail::panel>
 **{{ $seminar->name }}**
