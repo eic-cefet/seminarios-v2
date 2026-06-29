@@ -4,6 +4,7 @@ namespace App\Mail;
 
 use App\Models\Seminar;
 use App\Models\User;
+use App\Support\PresentationTypeGrammar;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
@@ -23,8 +24,10 @@ class NewSeminarAlert extends Mailable implements ShouldQueue
 
     public function envelope(): Envelope
     {
+        $type = PresentationTypeGrammar::for($this->seminar->seminarType?->name);
+
         return new Envelope(
-            subject: 'Nova apresentação: '.$this->seminar->name.' - '.config('mail.name'),
+            subject: $type->agree('Novo', 'Nova').' '.$type->noun().': '.$this->seminar->name.' - '.config('mail.name'),
         );
     }
 
