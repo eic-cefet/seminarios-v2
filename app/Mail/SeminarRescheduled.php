@@ -5,6 +5,7 @@ namespace App\Mail;
 use App\Models\Seminar;
 use App\Models\User;
 use App\Services\IcsGenerationService;
+use App\Support\PersonName;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Attachment;
@@ -45,7 +46,7 @@ class SeminarRescheduled extends Mailable
         return new Content(
             markdown: 'emails.seminar-rescheduled',
             with: [
-                'userName' => $this->user->name,
+                'userName' => PersonName::first($this->user->name),
                 'seminar' => $this->seminar,
                 'oldScheduledAt' => $this->oldScheduledAt,
                 'newScheduledAt' => $this->seminar->scheduled_at,

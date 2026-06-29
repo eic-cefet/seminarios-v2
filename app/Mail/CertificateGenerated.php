@@ -3,6 +3,7 @@
 namespace App\Mail;
 
 use App\Models\Registration;
+use App\Support\PersonName;
 use App\Support\PresentationTypeGrammar;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
@@ -50,7 +51,7 @@ class CertificateGenerated extends Mailable
         return new Content(
             markdown: 'emails.certificate-generated',
             with: [
-                'userName' => $this->registration->user->name,
+                'userName' => PersonName::first($this->registration->user->name),
                 'seminarName' => $this->registration->seminar->name,
                 'presentation' => PresentationTypeGrammar::for($this->registration->seminar->seminarType?->name)->withEm(),
                 'seminarDate' => $this->registration->seminar->scheduled_at->format('d/m/Y'),

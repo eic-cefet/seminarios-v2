@@ -73,7 +73,7 @@ describe('SeminarReminder Mail', function () {
         $mail = new SeminarReminder($user, collect([$seminar]));
         $content = $mail->content();
 
-        expect($content->with['userName'])->toBe('Roberto Lima');
+        expect($content->with['userName'])->toBe('Roberto');
     });
 
     it('passes seminars collection to template', function () {

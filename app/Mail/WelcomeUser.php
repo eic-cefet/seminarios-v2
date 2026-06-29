@@ -3,6 +3,7 @@
 namespace App\Mail;
 
 use App\Models\User;
+use App\Support\PersonName;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
@@ -41,7 +42,7 @@ class WelcomeUser extends Mailable implements ShouldQueue
         return new Content(
             markdown: 'emails.welcome',
             with: [
-                'userName' => $this->user->name,
+                'userName' => PersonName::first($this->user->name),
                 'loginUrl' => url('/'),
             ],
         );

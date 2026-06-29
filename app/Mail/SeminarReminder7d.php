@@ -5,6 +5,7 @@ namespace App\Mail;
 use App\Models\Seminar;
 use App\Models\User;
 use App\Services\IcsGenerationService;
+use App\Support\PersonName;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
@@ -54,7 +55,7 @@ class SeminarReminder7d extends Mailable implements ShouldQueue
         return new Content(
             markdown: 'emails.seminar-reminder-7d',
             with: [
-                'userName' => $this->user->name,
+                'userName' => PersonName::first($this->user->name),
                 'seminars' => $this->seminars,
             ],
         );

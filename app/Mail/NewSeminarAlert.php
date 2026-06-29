@@ -4,6 +4,7 @@ namespace App\Mail;
 
 use App\Models\Seminar;
 use App\Models\User;
+use App\Support\PersonName;
 use App\Support\PresentationTypeGrammar;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -46,7 +47,7 @@ class NewSeminarAlert extends Mailable implements ShouldQueue
         return new Content(
             markdown: 'emails.new-seminar-alert',
             with: [
-                'userName' => $this->user->name,
+                'userName' => PersonName::first($this->user->name),
                 'seminar' => $this->seminar,
             ],
         );

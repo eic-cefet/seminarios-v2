@@ -3,6 +3,7 @@
 namespace App\Mail;
 
 use App\Models\User;
+use App\Support\PersonName;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
@@ -44,7 +45,7 @@ class AccountDeletionConfirmation extends Mailable
         return new Content(
             markdown: 'emails.account-deletion-confirmation',
             with: [
-                'userName' => $this->user->name,
+                'userName' => PersonName::first($this->user->name),
                 'confirmUrl' => $this->confirmUrl,
                 'expiresAtFormatted' => $this->expiresAt->format('d/m/Y H:i'),
             ],

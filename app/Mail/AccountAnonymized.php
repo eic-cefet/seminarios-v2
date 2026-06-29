@@ -2,6 +2,7 @@
 
 namespace App\Mail;
 
+use App\Support\PersonName;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
@@ -34,7 +35,7 @@ class AccountAnonymized extends Mailable
     {
         return new Content(
             markdown: 'emails.account-anonymized',
-            with: ['userName' => $this->originalName],
+            with: ['userName' => PersonName::first($this->originalName)],
         );
     }
 }

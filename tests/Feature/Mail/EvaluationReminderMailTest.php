@@ -82,7 +82,7 @@ describe('EvaluationReminder Mail', function () {
         $mail = new EvaluationReminder($user, collect([$seminar]));
         $content = $mail->content();
 
-        expect($content->with['userName'])->toBe('Ana Paula');
+        expect($content->with['userName'])->toBe('Ana');
     });
 
     it('passes seminars collection to template', function () {
