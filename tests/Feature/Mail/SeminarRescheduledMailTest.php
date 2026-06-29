@@ -85,7 +85,7 @@ describe('SeminarRescheduled Mail', function () {
         $mail = new SeminarRescheduled($user, $seminar, $oldDate);
         $content = $mail->content();
 
-        expect($content->with['userName'])->toBe('Maria Santos');
+        expect($content->with['userName'])->toBe('Maria');
         expect($content->with['seminar']->id)->toBe($seminar->id);
         expect($content->with['oldScheduledAt'])->toBe($oldDate);
         expect($content->with['newScheduledAt']->equalTo($seminar->scheduled_at))->toBeTrue();

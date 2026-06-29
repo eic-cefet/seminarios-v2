@@ -30,7 +30,7 @@ describe('WelcomeUser Mail', function () {
         $mail = new WelcomeUser($user);
         $content = $mail->content();
 
-        expect($content->with['userName'])->toBe('Maria Silva');
+        expect($content->with['userName'])->toBe('Maria');
     });
 
     it('passes login url to template', function () {

@@ -5,6 +5,7 @@ namespace App\Mail;
 use App\Models\Seminar;
 use App\Models\User;
 use App\Services\IcsGenerationService;
+use App\Support\PersonName;
 use Carbon\Carbon;
 use DateTimeInterface;
 use Illuminate\Bus\Queueable;
@@ -48,7 +49,7 @@ class SpeakerSeminarRescheduled extends Mailable implements ShouldQueue
         return new Content(
             markdown: 'emails.speaker-seminar-rescheduled',
             with: [
-                'speakerName' => $this->speaker->name,
+                'speakerName' => PersonName::first($this->speaker->name),
                 'seminar' => $this->seminar,
                 'previousStartsAt' => $this->oldScheduledAt instanceof Carbon
                     ? $this->oldScheduledAt

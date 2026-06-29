@@ -50,6 +50,8 @@ it('agrees the heading and intro with a masculine type', function () {
 
     $mail = new NewSeminarAlert($user, $seminar);
 
+    expect($mail->envelope()->subject)->toStartWith('Novo seminário: AI');
+
     $rendered = $mail->render();
     expect($rendered)
         ->toContain('Novo Seminário Disponível')

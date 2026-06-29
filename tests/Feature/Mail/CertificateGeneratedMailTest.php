@@ -48,7 +48,7 @@ describe('CertificateGenerated Mail', function () {
         $mail = new CertificateGenerated($registration, 'pdf-content');
         $content = $mail->content();
 
-        expect($content->with['userName'])->toBe('Carlos Santos');
+        expect($content->with['userName'])->toBe('Carlos');
     });
 
     it('passes seminar name to template', function () {

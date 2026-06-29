@@ -19,7 +19,7 @@ describe('AccountAnonymized', function () {
         $content = $mail->content();
 
         expect($content->markdown)->toBe('emails.account-anonymized')
-            ->and($content->with['userName'])->toBe('Maria Silva');
+            ->and($content->with['userName'])->toBe('Maria');
     });
 
     it('includes anti-threading headers', function () {
@@ -46,7 +46,7 @@ describe('AccountDeletionCancelled', function () {
         $content = $mail->content();
 
         expect($content->markdown)->toBe('emails.account-deletion-cancelled')
-            ->and($content->with['userName'])->toBe('João Costa');
+            ->and($content->with['userName'])->toBe('João');
     });
 
     it('includes anti-threading headers with user id', function () {
@@ -75,7 +75,7 @@ describe('AccountDeletionConfirmation', function () {
         $content = $mail->content();
 
         expect($content->markdown)->toBe('emails.account-deletion-confirmation')
-            ->and($content->with['userName'])->toBe('Carlos Lima')
+            ->and($content->with['userName'])->toBe('Carlos')
             ->and($content->with['confirmUrl'])->toBe('https://example.com/confirmar-exclusao/abc')
             ->and($content->with['expiresAtFormatted'])->toBe('23/04/2026 15:30');
     });
@@ -108,7 +108,7 @@ describe('AccountDeletionScheduled', function () {
         $content = $mail->content();
 
         expect($content->markdown)->toBe('emails.account-deletion-scheduled')
-            ->and($content->with['userName'])->toBe('Ana Pereira')
+            ->and($content->with['userName'])->toBe('Ana')
             ->and($content->with['scheduledFor'])->toBe('23/05/2026');
     });
 

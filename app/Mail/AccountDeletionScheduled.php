@@ -3,6 +3,7 @@
 namespace App\Mail;
 
 use App\Models\User;
+use App\Support\PersonName;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
@@ -37,7 +38,7 @@ class AccountDeletionScheduled extends Mailable
         return new Content(
             markdown: 'emails.account-deletion-scheduled',
             with: [
-                'userName' => $this->user->name,
+                'userName' => PersonName::first($this->user->name),
                 'scheduledFor' => $this->scheduledFor->format('d/m/Y'),
             ],
         );

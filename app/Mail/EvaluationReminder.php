@@ -4,6 +4,7 @@ namespace App\Mail;
 
 use App\Models\Seminar;
 use App\Models\User;
+use App\Support\PersonName;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
@@ -52,7 +53,7 @@ class EvaluationReminder extends Mailable implements ShouldQueue
         return new Content(
             markdown: 'emails.evaluation-reminder',
             with: [
-                'userName' => $this->user->name,
+                'userName' => PersonName::first($this->user->name),
                 'seminars' => $this->seminars,
                 'evaluationUrl' => url('/avaliar'),
             ],
