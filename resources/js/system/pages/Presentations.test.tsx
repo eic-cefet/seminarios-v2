@@ -1,3 +1,4 @@
+import { useLocation } from 'react-router-dom';
 import { render, screen, waitFor, userEvent } from '@/test/test-utils';
 import { createSeminar, createPaginatedResponse } from '@/test/factories';
 import Presentations from './Presentations';
@@ -259,6 +260,55 @@ describe('Presentations', () => {
 
         expect(screen.queryByRole('button', { name: /mês anterior/i })).not.toBeInTheDocument();
         expect(screen.getByText('Talk 1')).toBeInTheDocument();
+    });
+
+    it('opens directly in calendar view when the URL has ?view=calendar', async () => {
+        const seminars = [
+            createSeminar({
+                name: 'Deep Link Talk',
+                scheduledAt: '2026-06-15T14:00:00Z',
+            }),
+        ];
+        vi.mocked(seminarsApi.list).mockResolvedValue(createPaginatedResponse(seminars));
+
+        render(<Presentations />, {
+            routerProps: { initialEntries: ['/apresentacoes?view=calendar'] },
+        });
+
+        await waitFor(() => {
+            expect(seminarsApi.list).toHaveBeenCalledWith(
+                expect.objectContaining({ page: 1, per_page: 200 })
+            );
+        });
+
+        expect(await screen.findByText('Deep Link Talk')).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /mês anterior/i })).toBeInTheDocument();
+    });
+
+    it('syncs the view mode with the ?view query param when toggling', async () => {
+        function LocationSearch() {
+            const location = useLocation();
+            return <div data-testid="location-search">{location.search}</div>;
+        }
+
+        const seminars = [createSeminar({ name: 'Talk 1' })];
+        vi.mocked(seminarsApi.list).mockResolvedValue(createPaginatedResponse(seminars));
+        const user = userEvent.setup();
+
+        render(
+            <>
+                <Presentations />
+                <LocationSearch />
+            </>,
+        );
+
+        expect(screen.getByTestId('location-search')).toHaveTextContent('');
+
+        await user.click(screen.getByRole('button', { name: /vista em calendário/i }));
+        expect(screen.getByTestId('location-search')).toHaveTextContent('?view=calendar');
+
+        await user.click(screen.getByRole('button', { name: /vista em lista/i }));
+        expect(screen.getByTestId('location-search').textContent).toBe('');
     });
 
     it('requests the calendar feed with expired and type filters applied', async () => {
