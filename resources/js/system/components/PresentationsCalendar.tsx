@@ -1,4 +1,6 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
+import * as Dialog from "@radix-ui/react-dialog";
 import {
     addMonths,
     eachDayOfInterval,
@@ -12,7 +14,7 @@ import {
     subMonths,
 } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import type { Seminar } from "@shared/types";
 import { ROUTES } from "@shared/config/routes";
 import { cn, toSaoPaulo } from "@shared/lib/utils";
@@ -33,6 +35,45 @@ function formatMonthLabel(month: Date): string {
     return label.charAt(0).toUpperCase() + label.slice(1);
 }
 
+function formatDayLabel(day: Date): string {
+    const label = format(day, "EEEE, d 'de' MMMM 'de' yyyy", { locale: ptBR });
+    return label.charAt(0).toUpperCase() + label.slice(1);
+}
+
+interface CalendarSeminarCardProps {
+    seminar: Seminar;
+    onNavigate?: () => void;
+}
+
+function CalendarSeminarCard({ seminar, onNavigate }: CalendarSeminarCardProps) {
+    return (
+        <Link
+            to={ROUTES.SYSTEM.SEMINAR_DETAILS(seminar.slug)}
+            onClick={onNavigate}
+            className={cn(
+                "block rounded-xl border px-3 py-2 text-sm transition",
+                seminar.isExpired
+                    ? "border-gray-200 bg-gray-50 text-gray-500 hover:border-gray-300"
+                    : "border-primary-100 bg-primary-50/70 text-gray-800 hover:border-primary-300 hover:bg-primary-50",
+            )}
+        >
+            <div className="flex items-center justify-between gap-3">
+                <span className="font-semibold line-clamp-2">
+                    {seminar.name}
+                </span>
+                <span className="shrink-0 text-xs font-medium uppercase tracking-wide text-primary-700">
+                    {format(toSaoPaulo(seminar.scheduledAt), "HH:mm")}
+                </span>
+            </div>
+            {seminar.seminarType && (
+                <p className="mt-1 text-xs text-gray-500">
+                    {seminar.seminarType.name}
+                </p>
+            )}
+        </Link>
+    );
+}
+
 export function PresentationsCalendar({
     seminars,
     month,
@@ -40,6 +81,7 @@ export function PresentationsCalendar({
     isLoading = false,
     onMonthChange,
 }: PresentationsCalendarProps) {
+    const [selectedDay, setSelectedDay] = useState<Date | null>(null);
     const monthStart = startOfMonth(month);
     const monthEnd = endOfMonth(monthStart);
     const intervalStart = startOfWeek(monthStart);
@@ -69,6 +111,10 @@ export function PresentationsCalendar({
     const monthlySeminars = seminars.filter((seminar) =>
         isSameMonth(toSaoPaulo(seminar.scheduledAt), monthStart),
     );
+
+    const selectedDaySeminars = selectedDay
+        ? (seminarsByDay[format(selectedDay, "yyyy-MM-dd")] ?? [])
+        : [];
 
     const totalLabel =
         typeof total === "number" && total > seminars.length
@@ -170,42 +216,23 @@ export function PresentationsCalendar({
 
                                     <div className="mt-3 space-y-2">
                                         {daySeminars.slice(0, 3).map((seminar) => (
-                                            <Link
+                                            <CalendarSeminarCard
                                                 key={seminar.id}
-                                                to={ROUTES.SYSTEM.SEMINAR_DETAILS(seminar.slug)}
-                                                className={cn(
-                                                    "block rounded-xl border px-3 py-2 text-sm transition",
-                                                    seminar.isExpired
-                                                        ? "border-gray-200 bg-gray-50 text-gray-500 hover:border-gray-300"
-                                                        : "border-primary-100 bg-primary-50/70 text-gray-800 hover:border-primary-300 hover:bg-primary-50",
-                                                )}
-                                            >
-                                                <div className="flex items-center justify-between gap-3">
-                                                    <span className="font-semibold line-clamp-2">
-                                                        {seminar.name}
-                                                    </span>
-                                                    <span className="shrink-0 text-xs font-medium uppercase tracking-wide text-primary-700">
-                                                        {format(
-                                                            toSaoPaulo(
-                                                                seminar.scheduledAt,
-                                                            ),
-                                                            "HH:mm",
-                                                        )}
-                                                    </span>
-                                                </div>
-                                                {seminar.seminarType && (
-                                                    <p className="mt-1 text-xs text-gray-500">
-                                                        {seminar.seminarType.name}
-                                                    </p>
-                                                )}
-                                            </Link>
+                                                seminar={seminar}
+                                            />
                                         ))}
 
                                         {daySeminars.length > 3 && (
-                                            <p className="px-1 text-xs font-medium text-gray-500">
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    setSelectedDay(day)
+                                                }
+                                                className="px-1 text-left text-xs font-medium text-primary-600 transition hover:text-primary-700 hover:underline cursor-pointer"
+                                            >
                                                 +{daySeminars.length - 3} outras
                                                 apresentações
-                                            </p>
+                                            </button>
                                         )}
                                     </div>
                                 </div>
@@ -230,6 +257,42 @@ export function PresentationsCalendar({
                     {monthlySeminars.length === 1 ? "" : "ões"} neste mês com
                     os filtros atuais.
                 </div>
+            )}
+
+            {selectedDay !== null && (
+                <Dialog.Root open onOpenChange={() => setSelectedDay(null)}>
+                    <Dialog.Portal>
+                        <Dialog.Overlay className="fixed inset-0 bg-black/50 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
+                        <Dialog.Content className="fixed left-1/2 top-1/2 max-h-[85vh] w-full max-w-lg -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-lg bg-white p-6 shadow-xl data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%]">
+                            <Dialog.Close asChild>
+                                <button
+                                    className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-white transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-primary-400 focus:ring-offset-2 cursor-pointer"
+                                    aria-label="Fechar"
+                                >
+                                    <X className="h-4 w-4" />
+                                </button>
+                            </Dialog.Close>
+
+                            <Dialog.Title className="pr-8 text-xl font-semibold text-gray-900">
+                                {formatDayLabel(selectedDay)}
+                            </Dialog.Title>
+                            <Dialog.Description className="mt-1 text-sm text-gray-500">
+                                {selectedDaySeminars.length} apresentações
+                                neste dia.
+                            </Dialog.Description>
+
+                            <div className="mt-4 space-y-2">
+                                {selectedDaySeminars.map((seminar) => (
+                                    <CalendarSeminarCard
+                                        key={seminar.id}
+                                        seminar={seminar}
+                                        onNavigate={() => setSelectedDay(null)}
+                                    />
+                                ))}
+                            </div>
+                        </Dialog.Content>
+                    </Dialog.Portal>
+                </Dialog.Root>
             )}
         </div>
     );

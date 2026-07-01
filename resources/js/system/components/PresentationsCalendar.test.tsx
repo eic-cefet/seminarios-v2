@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@/test/test-utils';
+import { fireEvent, render, screen, within } from '@/test/test-utils';
 import { createSeminar } from '@/test/factories';
 import { PresentationsCalendar } from './PresentationsCalendar';
 
@@ -64,6 +64,127 @@ describe('PresentationsCalendar', () => {
         expect(seminarLinks[1]).toHaveTextContent('Early Talk');
         expect(seminarLinks[2]).toHaveTextContent('Late Talk');
         expect(screen.getByText('+2 outras apresentações')).toBeInTheDocument();
+    });
+
+    it('opens a modal with the full day schedule when clicking the overflow button', () => {
+        render(
+            <PresentationsCalendar
+                seminars={[
+                    createSeminar({
+                        id: 1,
+                        name: 'Talk One',
+                        slug: 'talk-one',
+                        scheduledAt: '2026-06-15T13:00:00Z',
+                    }),
+                    createSeminar({
+                        id: 2,
+                        name: 'Talk Two',
+                        slug: 'talk-two',
+                        scheduledAt: '2026-06-15T14:00:00Z',
+                    }),
+                    createSeminar({
+                        id: 3,
+                        name: 'Talk Three',
+                        slug: 'talk-three',
+                        scheduledAt: '2026-06-15T15:00:00Z',
+                    }),
+                    createSeminar({
+                        id: 4,
+                        name: 'Talk Four',
+                        slug: 'talk-four',
+                        scheduledAt: '2026-06-15T16:00:00Z',
+                    }),
+                    createSeminar({
+                        id: 5,
+                        name: 'Talk Five',
+                        slug: 'talk-five',
+                        scheduledAt: '2026-06-15T17:00:00Z',
+                    }),
+                ]}
+                month={new Date('2026-06-01T12:00:00Z')}
+                onMonthChange={vi.fn()}
+            />,
+        );
+
+        expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+
+        fireEvent.click(
+            screen.getByRole('button', { name: '+2 outras apresentações' }),
+        );
+
+        const dialog = screen.getByRole('dialog');
+        expect(dialog).toHaveTextContent('Segunda-feira, 15 de junho de 2026');
+        expect(dialog).toHaveTextContent('5 apresentações neste dia.');
+        expect(dialog).toHaveTextContent('Talk Four');
+        expect(dialog).toHaveTextContent('Talk Five');
+
+        fireEvent.click(screen.getByRole('button', { name: 'Fechar' }));
+        expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    });
+
+    it('keeps the day schedule modal stable when the seminars change while it is open', () => {
+        const seminars = Array.from({ length: 4 }, (_, index) =>
+            createSeminar({
+                id: index + 1,
+                name: `Talk ${index + 1}`,
+                slug: `talk-${index + 1}`,
+                scheduledAt: `2026-06-15T1${index + 3}:00:00Z`,
+            }),
+        );
+
+        const { rerender } = render(
+            <PresentationsCalendar
+                seminars={seminars}
+                month={new Date('2026-06-01T12:00:00Z')}
+                onMonthChange={vi.fn()}
+            />,
+        );
+
+        fireEvent.click(
+            screen.getByRole('button', { name: '+1 outras apresentações' }),
+        );
+        expect(screen.getByRole('dialog')).toHaveTextContent(
+            '4 apresentações neste dia.',
+        );
+
+        rerender(
+            <PresentationsCalendar
+                seminars={[]}
+                month={new Date('2026-06-01T12:00:00Z')}
+                onMonthChange={vi.fn()}
+            />,
+        );
+
+        expect(screen.getByRole('dialog')).toHaveTextContent(
+            '0 apresentações neste dia.',
+        );
+    });
+
+    it('closes the day schedule modal when a seminar link is clicked', () => {
+        render(
+            <PresentationsCalendar
+                seminars={Array.from({ length: 4 }, (_, index) =>
+                    createSeminar({
+                        id: index + 1,
+                        name: `Talk ${index + 1}`,
+                        slug: `talk-${index + 1}`,
+                        scheduledAt: `2026-06-15T1${index + 3}:00:00Z`,
+                    }),
+                )}
+                month={new Date('2026-06-01T12:00:00Z')}
+                onMonthChange={vi.fn()}
+            />,
+        );
+
+        fireEvent.click(
+            screen.getByRole('button', { name: '+1 outras apresentações' }),
+        );
+
+        const dialog = screen.getByRole('dialog');
+        expect(dialog).toHaveTextContent('4 apresentações neste dia.');
+
+        fireEvent.click(within(dialog).getByRole('link', { name: /Talk 4/ }));
+        expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     });
 
     it('navigates between previous month, current month, and next month', async () => {
