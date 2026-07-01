@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import * as Tabs from "@radix-ui/react-tabs";
 import * as Select from "@radix-ui/react-select";
@@ -34,9 +35,27 @@ function tabTriggerClass(active: boolean): string {
 export default function Presentations() {
     const [timeFilter, setTimeFilter] = useState<TimeFilter>("all");
     const [typeFilter, setTypeFilter] = useState<string>("all");
-    const [viewMode, setViewMode] = useState<ViewMode>("list");
+    const [searchParams, setSearchParams] = useSearchParams();
     const [page, setPage] = useState(1);
     const [calendarMonth, setCalendarMonth] = useState<Date>(new Date());
+
+    const viewMode: ViewMode =
+        searchParams.get("view") === "calendar" ? "calendar" : "list";
+
+    const setViewMode = (mode: ViewMode) => {
+        setSearchParams(
+            (params) => {
+                const next = new URLSearchParams(params);
+                if (mode === "calendar") {
+                    next.set("view", "calendar");
+                } else {
+                    next.delete("view");
+                }
+                return next;
+            },
+            { replace: true },
+        );
+    };
 
     const direction = timeFilter === "upcoming" ? "asc" : "desc";
 
