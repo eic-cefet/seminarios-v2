@@ -28,6 +28,8 @@ class SeminarSlugHistory extends Model
 
     public static function seminarIdFor(string $slug): ?int
     {
-        return self::query()->where('slug', $slug)->value('seminar_id');
+        $seminarId = self::query()->where('slug', $slug)->value('seminar_id');
+
+        return $seminarId === null ? null : (int) $seminarId;
     }
 }

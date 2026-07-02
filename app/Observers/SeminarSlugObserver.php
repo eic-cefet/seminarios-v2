@@ -4,6 +4,7 @@ namespace App\Observers;
 
 use App\Models\Seminar;
 use App\Models\SeminarSlugHistory;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Records every slug a seminar stops using, so old links keep resolving.
@@ -18,17 +19,19 @@ class SeminarSlugObserver
             return;
         }
 
-        SeminarSlugHistory::query()->where('slug', $seminar->slug)->delete();
-
         $oldSlug = $seminar->getOriginal('slug');
 
-        if ($oldSlug === null || $oldSlug === $seminar->slug) {
-            return;
-        }
+        DB::transaction(function () use ($seminar, $oldSlug): void {
+            SeminarSlugHistory::query()->where('slug', $seminar->slug)->delete();
 
-        SeminarSlugHistory::query()->updateOrCreate(
-            ['slug' => $oldSlug],
-            ['seminar_id' => $seminar->id],
-        );
+            if ($oldSlug === null || $oldSlug === $seminar->slug) {
+                return;
+            }
+
+            SeminarSlugHistory::query()->updateOrCreate(
+                ['slug' => $oldSlug],
+                ['seminar_id' => $seminar->id],
+            );
+        });
     }
 }

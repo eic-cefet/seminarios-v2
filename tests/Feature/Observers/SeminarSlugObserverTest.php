@@ -50,4 +50,22 @@ describe('SeminarSlugObserver', function () {
         expect(SeminarSlugHistory::query()->where('slug', 'compartilhado')->value('seminar_id'))
             ->toBe($second->id);
     });
+
+    it('rolls back the reclaim delete when recording the old slug fails', function () {
+        $seminar = Seminar::factory()->create(['slug' => 'reservado']);
+        $reclaimed = SeminarSlugHistory::factory()->create([
+            'seminar_id' => $seminar->id,
+            'slug' => 'novo-slug',
+        ]);
+
+        SeminarSlugHistory::saving(function (): void {
+            throw new RuntimeException('boom');
+        });
+
+        expect(fn () => $seminar->update(['slug' => 'novo-slug']))
+            ->toThrow(RuntimeException::class);
+
+        expect(SeminarSlugHistory::query()->whereKey($reclaimed->id)->exists())->toBeTrue()
+            ->and(SeminarSlugHistory::query()->where('slug', 'reservado')->exists())->toBeFalse();
+    });
 });
