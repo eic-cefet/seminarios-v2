@@ -78,14 +78,14 @@ it('fails visibly when enabled by config but the loader cannot be built from the
 });
 
 it('resolves the loader from the container when the environment is configured', function () {
-    $_ENV['AWS_ENV_SECRET_ID'] = 'my-secret';
-    $_ENV['AWS_ENV_SECRET_REGION'] = 'us-east-1';
+    $_ENV['AWS_ENV_SECRET_ID'] = $_SERVER['AWS_ENV_SECRET_ID'] = 'my-secret';
+    $_ENV['AWS_ENV_SECRET_REGION'] = $_SERVER['AWS_ENV_SECRET_REGION'] = 'us-east-1';
 
     try {
         expect(app(AwsSecretEnvLoader::class))->toBeInstanceOf(AwsSecretEnvLoader::class);
     } finally {
-        $_ENV['AWS_ENV_SECRET_ID'] = '';
-        unset($_ENV['AWS_ENV_SECRET_REGION']);
+        $_ENV['AWS_ENV_SECRET_ID'] = $_SERVER['AWS_ENV_SECRET_ID'] = '';
+        unset($_ENV['AWS_ENV_SECRET_REGION'], $_SERVER['AWS_ENV_SECRET_REGION']);
     }
 });
 
