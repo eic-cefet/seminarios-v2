@@ -8,6 +8,7 @@
  * Intentionally does NOT boot Laravel: it must run before config:cache and
  * must not depend on env values that the secret itself may provide.
  */
+ini_set('display_errors', 'stderr');
 
 require __DIR__.'/../vendor/autoload.php';
 
