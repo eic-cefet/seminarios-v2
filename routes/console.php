@@ -96,6 +96,20 @@ Schedule::command('cache:prune-expired')
     ->timezone('America/Sao_Paulo')
     ->onOneServer();
 
+// Back up the full database to S3 daily at 2:00 AM (one hour before update.sh runs at 3:00)
+Schedule::command('backup:run --only-db')
+    ->dailyAt('02:00')
+    ->timezone('America/Sao_Paulo')
+    ->withoutOverlapping()
+    ->onOneServer();
+
+// Prune database backups older than 90 days, daily at 2:30 AM
+Schedule::command('backup:clean')
+    ->dailyAt('02:30')
+    ->timezone('America/Sao_Paulo')
+    ->withoutOverlapping()
+    ->onOneServer();
+
 // Clear scheduler mutex cache files weekly on Sunday at 4:00 AM
 Schedule::command('schedule:clear-cache')
     ->weeklyOn(0, '04:00')
