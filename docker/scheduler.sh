@@ -1,8 +1,11 @@
 #!/bin/bash
 set -e
 
-# Load env overrides from AWS Secrets Manager (no-op unless AWS_ENV_SECRET_ID is set)
-source /app/docker/load-env-secrets.sh
+# Cache configuration for production (bakes AWS secret env overrides in once;
+# the bootstrap loader in bootstrap/app.php fetches during this boot)
+if [ "$APP_ENV" = "production" ]; then
+    php artisan config:cache
+fi
 
 # Run migrations before anything else (scheduler is single-instance, safe from races)
 if [ "$AUTO_MIGRATE" = "true" ]; then

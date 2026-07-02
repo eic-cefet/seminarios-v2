@@ -6,10 +6,10 @@ use Aws\SecretsManager\SecretsManagerClient;
 use RuntimeException;
 
 /**
- * Fetches a JSON key/value secret from AWS Secrets Manager and renders it
- * as shell `export` lines. Used by docker/load-env-secrets.php at container
- * startup to append/override the process environment before the server,
- * worker, or scheduler boots.
+ * Fetches a JSON key/value secret from AWS Secrets Manager as a map of
+ * environment variable names to values. Consumed by AwsSecretEnvLoader
+ * during application bootstrap (before configuration is loaded) to
+ * append/override the process environment.
  */
 class AwsSecretEnvService
 {
@@ -54,20 +54,5 @@ class AwsSecretEnvService
         }
 
         return $envVars;
-    }
-
-    /**
-     * @param  array<string, string>  $envVars
-     */
-    public function toShellExports(array $envVars): string
-    {
-        $lines = '';
-
-        foreach ($envVars as $key => $value) {
-            $quoted = "'".str_replace("'", "'\\''", $value)."'";
-            $lines .= "export {$key}={$quoted}\n";
-        }
-
-        return $lines;
     }
 }

@@ -106,29 +106,3 @@ describe('fetchEnvVars', function () {
         makeService($handler)->fetchEnvVars('my-secret');
     })->throws(AwsException::class);
 });
-
-describe('toShellExports', function () {
-    it('renders one export line per variable with single-quoted values', function () {
-        $service = makeService(new MockHandler);
-
-        $output = $service->toShellExports([
-            'APP_KEY' => 'base64:abc123',
-            'MAIL_PORT' => '2525',
-        ]);
-
-        expect($output)->toBe("export APP_KEY='base64:abc123'\nexport MAIL_PORT='2525'\n");
-    });
-
-    it('escapes single quotes inside values', function () {
-        $service = makeService(new MockHandler);
-
-        expect($service->toShellExports(['GREETING' => "it's fine"]))
-            ->toBe("export GREETING='it'\\''s fine'\n");
-    });
-
-    it('returns an empty string for an empty map', function () {
-        $service = makeService(new MockHandler);
-
-        expect($service->toShellExports([]))->toBe('');
-    });
-});
