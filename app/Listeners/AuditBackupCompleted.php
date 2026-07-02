@@ -29,6 +29,10 @@ class AuditBackupCompleted
             // dispatch twice. The unique index on `audit_logs.ref_id` absorbs
             // the duplicate. Mirrors the AuditEmailSent / AuditNotificationSent
             // guards for the same double-dispatch behaviour.
+            // The Y-m-d granularity in the refId means at most one success row
+            // per disk/backup per day — acceptable since the scheduler runs once
+            // daily and a finer timestamp would not be shared across the two
+            // synchronous dispatches.
         }
     }
 }

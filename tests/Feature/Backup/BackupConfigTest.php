@@ -1,5 +1,7 @@
 <?php
 
+use Spatie\Backup\Notifications\Notifications\BackupHasFailedNotification;
+use Spatie\Backup\Notifications\Notifications\BackupWasSuccessfulNotification;
 use Spatie\DbDumper\Compressors\GzipCompressor;
 
 describe('backup configuration', function () {
@@ -21,5 +23,11 @@ describe('backup configuration', function () {
 
     it('retains backups for 90 days', function () {
         expect(config('backup.cleanup.default_strategy.keep_all_backups_for_days'))->toBe(90);
+    });
+
+    it('emails on failures but not on successful runs', function () {
+        $channels = config('backup.notifications.notifications');
+        expect($channels[BackupHasFailedNotification::class])->toBe(['mail']);
+        expect($channels[BackupWasSuccessfulNotification::class])->toBe([]);
     });
 });

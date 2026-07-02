@@ -32,3 +32,11 @@ it('records an audit log when a backup fails', function () {
     $log = AuditLog::where('event_name', 'command.database_backup_failed')->firstOrFail();
     expect($log->event_data['error'])->toBe('disk unreachable');
 });
+
+it('records the disk name when a failed backup carries one', function () {
+    event(new BackupHasFailed(new Exception('s3 upload timed out'), 's3', 'Seminarios'));
+
+    $log = AuditLog::where('event_name', 'command.database_backup_failed')->firstOrFail();
+    expect($log->event_data['disk'])->toBe('s3');
+    expect($log->event_data['error'])->toBe('s3 upload timed out');
+});

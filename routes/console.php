@@ -103,7 +103,7 @@ Schedule::command('backup:run --only-db')
     ->withoutOverlapping()
     ->onOneServer();
 
-// Prune database backups older than 90 days, daily at 2:30 AM
+// Prune old database backups per the retention policy in config/backup.php, daily at 2:30 AM
 Schedule::command('backup:clean')
     ->dailyAt('02:30')
     ->timezone('America/Sao_Paulo')
