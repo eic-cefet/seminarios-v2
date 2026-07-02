@@ -14,6 +14,7 @@ use App\Models\Subject;
 use App\Models\User;
 use App\Observers\SeminarAlertObserver;
 use App\Observers\SeminarCertificateObserver;
+use App\Observers\SeminarSlugObserver;
 use App\Policies\AuditLogPolicy;
 use App\Policies\RegistrationPolicy;
 use App\Policies\SeminarLocationPolicy;
@@ -91,6 +92,7 @@ class AppServiceProvider extends ServiceProvider
 
         Seminar::observe(SeminarAlertObserver::class);
         Seminar::observe(SeminarCertificateObserver::class);
+        Seminar::observe(SeminarSlugObserver::class);
 
         Scramble::registerUiRoute('api/external/docs');
         Scramble::registerJsonSpecificationRoute('api/external/docs.json');
