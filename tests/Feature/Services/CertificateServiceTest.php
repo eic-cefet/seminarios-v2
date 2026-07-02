@@ -26,7 +26,7 @@ describe('CertificateService path methods', function () {
         $service = new CertificateService;
         $path = $service->getCertificatePath($registration);
 
-        expect($path)->toBe('certificates/2024/test-seminar/test-certificate-code-123');
+        expect($path)->toBe('certificates/test-certificate-code-123');
     });
 
     it('generates correct JPG path', function () {
@@ -43,7 +43,7 @@ describe('CertificateService path methods', function () {
         $service = new CertificateService;
         $path = $service->getJpgPath($registration);
 
-        expect($path)->toBe('certificates/2024/test-seminar/test-code.jpg');
+        expect($path)->toBe('certificates/test-code.jpg');
     });
 
     it('generates correct PDF path', function () {
@@ -60,7 +60,7 @@ describe('CertificateService path methods', function () {
         $service = new CertificateService;
         $path = $service->getPdfPath($registration);
 
-        expect($path)->toBe('certificates/2024/test-seminar/test-code.pdf');
+        expect($path)->toBe('certificates/test-code.pdf');
     });
 });
 
@@ -127,7 +127,7 @@ describe('CertificateService existence checks', function () {
         expect($service->jpgExists($registration))->toBeFalse();
 
         // Create the file
-        Storage::disk('s3')->put('certificates/2024/test-seminar/cached-code.jpg', 'fake-content');
+        Storage::disk('s3')->put('certificates/cached-code.jpg', 'fake-content');
         Cache::flush(); // Clear cache to check again
 
         expect($service->jpgExists($registration))->toBeTrue();
@@ -150,7 +150,7 @@ describe('CertificateService existence checks', function () {
         expect($service->pdfExists($registration))->toBeFalse();
 
         // Create the file
-        Storage::disk('s3')->put('certificates/2024/test-seminar/cached-code.pdf', 'fake-content');
+        Storage::disk('s3')->put('certificates/cached-code.pdf', 'fake-content');
         Cache::flush();
 
         expect($service->pdfExists($registration))->toBeTrue();
@@ -354,7 +354,7 @@ describe('CertificateService signed URLs', function () {
         ]);
 
         // Create files in fake storage
-        Storage::disk('s3')->put('certificates/2024/test/signed-url-code.pdf', 'content');
+        Storage::disk('s3')->put('certificates/signed-url-code.pdf', 'content');
 
         $service = new CertificateService;
         $url = $service->getSignedUrl($registration, 'pdf');
@@ -367,7 +367,7 @@ describe('CertificateService signed URLs', function () {
             'certificate_code' => 'signed-url-jpg',
         ]);
 
-        Storage::disk('s3')->put('certificates/2024/test/signed-url-jpg.jpg', 'content');
+        Storage::disk('s3')->put('certificates/signed-url-jpg.jpg', 'content');
 
         $service = new CertificateService;
         $url = $service->getSignedUrl($registration, 'jpg');

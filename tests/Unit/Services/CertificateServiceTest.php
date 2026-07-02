@@ -18,7 +18,7 @@ it('returns a signed S3 URL that forces the download filename for the JPG', func
     $registration = Registration::factory()->create(['seminar_id' => $seminar->id]);
 
     Storage::disk('s3')->put(
-        "certificates/2026/apresentacao-teste/{$registration->certificate_code}.jpg",
+        "certificates/{$registration->certificate_code}.jpg",
         'fake-jpg-bytes'
     );
 
@@ -48,7 +48,7 @@ it('returns a signed S3 URL that forces the download filename for the PDF', func
     $registration = Registration::factory()->create(['seminar_id' => $seminar->id]);
 
     Storage::disk('s3')->put(
-        "certificates/2026/apresentacao-teste/{$registration->certificate_code}.pdf",
+        "certificates/{$registration->certificate_code}.pdf",
         'fake-pdf-bytes'
     );
 
@@ -97,4 +97,52 @@ it('generates a JPG for a seminar with no type (neutral fallback)', function () 
 
     Storage::disk('s3')->assertExists($path);
     expect($path)->toEndWith('.jpg');
+});
+
+it('stores new certificates under the immutable code-keyed path', function () {
+    Storage::fake('s3');
+
+    $registration = Registration::factory()->create([
+        'present' => true,
+        'certificate_code' => 'test-code-immutable',
+    ]);
+
+    $service = app(CertificateService::class);
+
+    expect($service->getJpgPath($registration))->toBe('certificates/test-code-immutable.jpg')
+        ->and($service->getPdfPath($registration))->toBe('certificates/test-code-immutable.pdf');
+});
+
+it('lazily moves a legacy-path certificate to the immutable path on existence check', function () {
+    Storage::fake('s3');
+
+    $seminar = Seminar::factory()->create([
+        'name' => 'Apresentação Teste',
+        'slug' => 'apresentacao-teste',
+        'scheduled_at' => now()->setYear(2026),
+    ]);
+    $registration = Registration::factory()->create([
+        'seminar_id' => $seminar->id,
+        'present' => true,
+        'certificate_code' => 'legacy-code',
+    ]);
+
+    Storage::disk('s3')->put('certificates/2026/apresentacao-teste/legacy-code.jpg', 'jpg-bytes');
+
+    $service = app(CertificateService::class);
+
+    expect($service->jpgExists($registration))->toBeTrue();
+    Storage::disk('s3')->assertExists('certificates/legacy-code.jpg');
+    Storage::disk('s3')->assertMissing('certificates/2026/apresentacao-teste/legacy-code.jpg');
+});
+
+it('reports missing when the certificate exists at neither path', function () {
+    Storage::fake('s3');
+
+    $registration = Registration::factory()->create([
+        'present' => true,
+        'certificate_code' => 'nowhere-code',
+    ]);
+
+    expect(app(CertificateService::class)->pdfExists($registration))->toBeFalse();
 });

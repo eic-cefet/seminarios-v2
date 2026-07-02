@@ -65,10 +65,11 @@ class RegenerateCertificateJob implements ShouldBeUnique, ShouldQueue
             return;
         }
 
-        // Paths are derived from {year, seminar.slug, certificate_code} —
-        // none of which depend on the user's name. Re-running the
-        // generators overwrites the JPG and PDF at the exact same S3
-        // keys, so existing /certificado/{code} links keep working.
+        // The S3 key is derived only from the immutable certificate_code
+        // (CertificateService::getCertificatePath), so re-running the
+        // generators overwrites the JPG and PDF in place and existing
+        // /certificado/{code} links keep working — regardless of any
+        // seminar rename/reschedule or user rename since issuance.
         $jpgPath = $certificateService->generateJpg($this->registration);
         $pdfPath = $certificateService->generatePdf($this->registration);
 

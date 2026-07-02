@@ -54,4 +54,9 @@ final class LockKey
     {
         return self::PREFIX.':certificate:regeneration:user:'.$userId;
     }
+
+    public static function seminarCertificateRegeneration(int $seminarId): string
+    {
+        return self::PREFIX.':certificate:regeneration:seminar:'.$seminarId;
+    }
 }
