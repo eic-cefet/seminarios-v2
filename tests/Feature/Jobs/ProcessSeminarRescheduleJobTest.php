@@ -198,4 +198,21 @@ describe('ProcessSeminarRescheduleJob presence link expiry sync', function () {
 
         expect(PresenceLink::query()->count())->toBe(0);
     });
+
+    it('gives an active never-expiring link a computed expiry on reschedule', function () {
+        Mail::fake();
+        $this->freezeTime();
+
+        $seminar = Seminar::factory()->create(['scheduled_at' => now()->addDays(14)]);
+        $link = PresenceLink::factory()->create([
+            'seminar_id' => $seminar->id,
+            'active' => true,
+            'expires_at' => null,
+        ]);
+
+        (new ProcessSeminarRescheduleJob($seminar, now()->addDay()))->handle();
+
+        expect($link->fresh()->expires_at->timestamp)
+            ->toBe(now()->addDays(14)->addHours(4)->timestamp);
+    });
 });
