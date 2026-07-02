@@ -69,11 +69,16 @@ class PresenceLink extends Model
     /**
      * Realign expires_at after the seminar's scheduled_at changed.
      * Deactivated links (expires_at already null) are left untouched;
-     * activation recomputes their expiry anyway.
+     * activation recomputes their expiry anyway. The null-schedule guard
+     * is defensive only: seminars.scheduled_at is a non-nullable column.
      */
     public function syncExpiryWithSchedule(): void
     {
         $this->loadMissing('seminar');
+
+        if ($this->seminar->scheduled_at === null) {
+            return; // @codeCoverageIgnore
+        }
 
         if ($this->active) {
             $this->update(['expires_at' => self::computeActivationExpiry($this->seminar->scheduled_at)]);
@@ -82,7 +87,7 @@ class PresenceLink extends Model
         }
 
         if ($this->expires_at !== null) {
-            $this->update(['expires_at' => $this->seminar->scheduled_at?->copy()->addHours(4)]);
+            $this->update(['expires_at' => $this->seminar->scheduled_at->copy()->addHours(4)]);
         }
     }
 }
