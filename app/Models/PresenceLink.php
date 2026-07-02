@@ -6,6 +6,7 @@ use App\Models\Concerns\Auditable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 
 class PresenceLink extends Model
@@ -49,5 +50,39 @@ class PresenceLink extends Model
     public function isValid(): bool
     {
         return $this->active && ! $this->isExpired();
+    }
+
+    /**
+     * Expiry applied whenever a link becomes (or stays) active:
+     * the later of scheduled_at + 4h and now + 1h.
+     */
+    public static function computeActivationExpiry(?Carbon $scheduledAt): Carbon
+    {
+        $scheduledExpiry = $scheduledAt?->copy()->addHours(4);
+        $minimumExpiry = now()->addHour();
+
+        return $scheduledExpiry && $scheduledExpiry->gt($minimumExpiry)
+            ? $scheduledExpiry
+            : $minimumExpiry;
+    }
+
+    /**
+     * Realign expires_at after the seminar's scheduled_at changed.
+     * Deactivated links (expires_at already null) are left untouched;
+     * activation recomputes their expiry anyway.
+     */
+    public function syncExpiryWithSchedule(): void
+    {
+        $this->loadMissing('seminar');
+
+        if ($this->active) {
+            $this->update(['expires_at' => self::computeActivationExpiry($this->seminar->scheduled_at)]);
+
+            return;
+        }
+
+        if ($this->expires_at !== null) {
+            $this->update(['expires_at' => $this->seminar->scheduled_at?->addHours(4)]);
+        }
     }
 }
