@@ -1,6 +1,9 @@
 #!/bin/bash
 set -e
 
+# Load env overrides from AWS Secrets Manager (no-op unless AWS_ENV_SECRET_ID is set)
+source /app/docker/load-env-secrets.sh
+
 # Graceful shutdown: stop the loop and let the current job finish
 SHUTDOWN=false
 trap 'SHUTDOWN=true; echo "Received shutdown signal, waiting for current job to finish..."' SIGTERM SIGINT

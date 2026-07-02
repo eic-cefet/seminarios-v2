@@ -1,6 +1,9 @@
 #!/bin/bash
 set -e
 
+# Load env overrides from AWS Secrets Manager (no-op unless AWS_ENV_SECRET_ID is set)
+source /app/docker/load-env-secrets.sh
+
 # Run migrations before anything else (scheduler is single-instance, safe from races)
 if [ "$AUTO_MIGRATE" = "true" ]; then
     echo "Running database migrations..."

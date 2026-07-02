@@ -1,6 +1,9 @@
 #!/bin/bash
 set -e
 
+# Load env overrides from AWS Secrets Manager (no-op unless AWS_ENV_SECRET_ID is set)
+source /app/docker/load-env-secrets.sh
+
 # Cache configuration for production
 if [ "$APP_ENV" = "production" ]; then
     php artisan config:cache
