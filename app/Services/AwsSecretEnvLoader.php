@@ -44,11 +44,19 @@ class AwsSecretEnvLoader
 
     public function load(): void
     {
-        foreach ($this->service->fetchEnvVars($this->secretId) as $key => $value) {
+        foreach ($this->fetchEnvVars() as $key => $value) {
             $_ENV[$key] = $value;
             $_SERVER[$key] = $value;
             putenv("{$key}={$value}");
         }
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function fetchEnvVars(): array
+    {
+        return $this->service->fetchEnvVars($this->secretId);
     }
 
     private static function makeClient(): SecretsManagerClient

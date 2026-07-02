@@ -132,6 +132,15 @@ describe('load', function () {
 
         $loader->load();
     })->throws(RuntimeException::class, 'must be a JSON object');
+
+    it('exposes the fetched env vars for the refresh command', function () {
+        $loader = new AwsSecretEnvLoader(
+            new AwsSecretEnvService(loaderClientReturning(['LOADER_TEST_FOO' => 'value'])),
+            'my-secret',
+        );
+
+        expect($loader->fetchEnvVars())->toBe(['LOADER_TEST_FOO' => 'value']);
+    });
 });
 
 describe('bootIfNeeded', function () {
