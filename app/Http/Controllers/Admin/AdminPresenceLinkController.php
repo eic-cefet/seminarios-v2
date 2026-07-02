@@ -37,7 +37,7 @@ class AdminPresenceLinkController extends Controller
             ], 409);
         }
 
-        $expiresAt = $seminar->scheduled_at?->addHours(4);
+        $expiresAt = PresenceLink::computeScheduledExpiry($seminar->scheduled_at);
 
         $presenceLink = PresenceLink::create([
             'seminar_id' => $seminar->id,

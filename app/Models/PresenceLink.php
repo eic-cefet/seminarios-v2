@@ -53,6 +53,17 @@ class PresenceLink extends Model
     }
 
     /**
+     * Schedule-aligned expiry for links that are not being activated
+     * (creation defaults and inactive-link resyncs): scheduled_at + 4h,
+     * with no now()+1h clamp — an inactive link is unusable until
+     * activation, which recomputes the expiry via computeActivationExpiry.
+     */
+    public static function computeScheduledExpiry(?Carbon $scheduledAt): ?Carbon
+    {
+        return $scheduledAt?->copy()->addHours(4);
+    }
+
+    /**
      * Expiry applied whenever a link becomes (or stays) active:
      * the later of scheduled_at + 4h and now + 1h.
      */
@@ -87,7 +98,7 @@ class PresenceLink extends Model
         }
 
         if ($this->expires_at !== null) {
-            $this->update(['expires_at' => $this->seminar->scheduled_at->copy()->addHours(4)]);
+            $this->update(['expires_at' => self::computeScheduledExpiry($this->seminar->scheduled_at)]);
         }
     }
 }
