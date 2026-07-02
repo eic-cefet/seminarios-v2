@@ -47,3 +47,21 @@ describe('seminar lookup via historical slug', function () {
         $response->assertHeader('Content-Type', 'text/calendar; charset=UTF-8');
     });
 });
+
+describe('Seminar::resolveRouteBinding', function () {
+    it('does not consult slug history when binding on a non-slug field', function () {
+        $seminar = Seminar::factory()->create(['slug' => 'campo-nao-slug']);
+        $seminar->update(['slug' => 'campo-nao-slug-novo']);
+
+        $binder = new Seminar;
+
+        expect($binder->resolveRouteBinding($seminar->id, 'id')->id)->toBe($seminar->id)
+            ->and($binder->resolveRouteBinding('campo-nao-slug', 'id'))->toBeNull();
+    });
+
+    it('returns the live seminar without touching history when the slug is current', function () {
+        $seminar = Seminar::factory()->create(['slug' => 'ainda-atual']);
+
+        expect((new Seminar)->resolveRouteBinding('ainda-atual', 'slug')->id)->toBe($seminar->id);
+    });
+});
