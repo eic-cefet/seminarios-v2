@@ -18,6 +18,9 @@ HEALTH_SERVICE=worker php -q -S 0.0.0.0:2019 /app/docker/health.php &
 # --max-time=3600 causes a graceful exit after 1 hour to free memory;
 # the loop restarts it automatically within the same container.
 while [ "$SHUTDOWN" = false ]; do
+    # Pick up rotated AWS secret values between hourly worker restarts
+    # (no-op when disabled or unchanged; never blocks the worker on failure)
+    php artisan env-secrets:refresh || echo "env-secrets:refresh failed; continuing with current config" >&2
     php artisan queue:work --sleep=3 --tries=3 --max-time=3600 --verbose 2>&1 || {
         echo "Queue worker exited with code $?, restarting in 5s..." >&2
         sleep 5

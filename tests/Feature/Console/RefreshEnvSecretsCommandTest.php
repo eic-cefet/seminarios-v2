@@ -7,6 +7,7 @@ use App\Services\ConfigCacheRefresher;
 use Aws\MockHandler;
 use Aws\Result;
 use Aws\SecretsManager\SecretsManagerClient;
+use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Facades\Cache;
 
 function refreshLoaderWithPayload(string $secretString): AwsSecretEnvLoader
@@ -86,4 +87,13 @@ it('resolves the loader from the container when the environment is configured', 
         $_ENV['AWS_ENV_SECRET_ID'] = '';
         unset($_ENV['AWS_ENV_SECRET_REGION']);
     }
+});
+
+it('is scheduled hourly', function () {
+    $events = collect(app(Schedule::class)->events());
+
+    $event = $events->first(fn ($event) => str_contains((string) $event->command, 'env-secrets:refresh'));
+
+    expect($event)->not->toBeNull()
+        ->and($event->expression)->toBe('0 * * * *');
 });

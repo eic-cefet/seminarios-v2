@@ -96,6 +96,13 @@ Schedule::command('cache:prune-expired')
     ->timezone('America/Sao_Paulo')
     ->onOneServer();
 
+// Refresh AWS secret env overrides hourly — re-caches config only when the secret content changed
+Schedule::command('env-secrets:refresh')
+    ->hourly()
+    ->timezone('America/Sao_Paulo')
+    ->withoutOverlapping()
+    ->onOneServer();
+
 // Clear scheduler mutex cache files weekly on Sunday at 4:00 AM
 Schedule::command('schedule:clear-cache')
     ->weeklyOn(0, '04:00')
