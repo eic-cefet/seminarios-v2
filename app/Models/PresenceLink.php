@@ -82,7 +82,7 @@ class PresenceLink extends Model
         }
 
         if ($this->expires_at !== null) {
-            $this->update(['expires_at' => $this->seminar->scheduled_at?->addHours(4)]);
+            $this->update(['expires_at' => $this->seminar->scheduled_at?->copy()->addHours(4)]);
         }
     }
 }
