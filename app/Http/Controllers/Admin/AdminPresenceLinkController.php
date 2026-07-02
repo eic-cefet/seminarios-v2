@@ -64,14 +64,9 @@ class AdminPresenceLinkController extends Controller
         }
 
         // When activating, expire at the later of: scheduled_at + 4h OR now + 1h
-        $expiresAt = null;
-        if (! $presenceLink->active) {
-            $scheduledExpiry = $seminar->scheduled_at?->addHours(4);
-            $minimumExpiry = now()->addHour();
-            $expiresAt = $scheduledExpiry && $scheduledExpiry->gt($minimumExpiry)
-                ? $scheduledExpiry
-                : $minimumExpiry;
-        }
+        $expiresAt = $presenceLink->active
+            ? null
+            : PresenceLink::computeActivationExpiry($seminar->scheduled_at);
 
         $presenceLink->update([
             'active' => ! $presenceLink->active,
