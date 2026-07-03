@@ -6,6 +6,7 @@ use Aws\SecretsManager\SecretsManagerClient;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Env;
 use RuntimeException;
+use Throwable;
 
 /**
  * Boot-time environment overrides from AWS Secrets Manager.
@@ -28,7 +29,18 @@ class AwsSecretEnvLoader
             return;
         }
 
-        static::fromEnvironment($client)?->load();
+        try {
+            static::fromEnvironment($client)?->load();
+        } catch (Throwable $e) {
+            /*
+             * This runs before the config binding exists, so the framework's
+             * exception reporter fatals with a misleading "Target class
+             * [config] does not exist" — surface the real cause first.
+             */
+            error_log("env-secrets: failed to load AWS secret env overrides: {$e->getMessage()}");
+
+            throw $e;
+        }
     }
 
     public static function fromEnvironment(?SecretsManagerClient $client = null): ?self
@@ -59,7 +71,14 @@ class AwsSecretEnvLoader
         return $this->service->fetchEnvVars($this->secretId);
     }
 
-    private static function makeClient(): SecretsManagerClient
+    /**
+     * Credentials resolve in three tiers: the dedicated
+     * AWS_ENV_SECRET_ACCESS_KEY_ID / AWS_ENV_SECRET_SECRET_ACCESS_KEY pair
+     * (so the secret fetch can use different credentials than S3/MinIO),
+     * then the standard AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY pair,
+     * then the SDK default provider chain (IAM role, etc.).
+     */
+    public static function makeClient(): SecretsManagerClient
     {
         $region = Env::get('AWS_ENV_SECRET_REGION')
             ?: Env::get('AWS_REGION')
@@ -70,10 +89,19 @@ class AwsSecretEnvLoader
             throw new RuntimeException('AWS_ENV_SECRET_ID is set but no AWS region is available (set AWS_ENV_SECRET_REGION, AWS_REGION, or AWS_DEFAULT_REGION).');
         }
 
-        return new SecretsManagerClient([
+        $config = [
             'version' => 'latest',
             'region' => $region,
             'http' => ['connect_timeout' => 5, 'timeout' => 15],
-        ]);
+        ];
+
+        $key = Env::get('AWS_ENV_SECRET_ACCESS_KEY_ID') ?: Env::get('AWS_ACCESS_KEY_ID') ?: null;
+        $secret = Env::get('AWS_ENV_SECRET_SECRET_ACCESS_KEY') ?: Env::get('AWS_SECRET_ACCESS_KEY') ?: null;
+
+        if ($key !== null && $secret !== null) {
+            $config['credentials'] = ['key' => $key, 'secret' => $secret];
+        }
+
+        return new SecretsManagerClient($config);
     }
 }

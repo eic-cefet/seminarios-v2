@@ -31,6 +31,8 @@ function loaderClientReturning(array $payload): SecretsManagerClient
  */
 const LOADER_ENV_KEYS = [
     'AWS_ENV_SECRET_ID', 'AWS_ENV_SECRET_REGION', 'AWS_REGION', 'AWS_DEFAULT_REGION',
+    'AWS_ENV_SECRET_ACCESS_KEY_ID', 'AWS_ENV_SECRET_SECRET_ACCESS_KEY',
+    'AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY',
     'LOADER_TEST_FOO', 'LOADER_TEST_BAR',
 ];
 
@@ -90,6 +92,38 @@ describe('fromEnvironment', function () {
         $loader = AwsSecretEnvLoader::fromEnvironment(loaderClientReturning([]));
 
         expect($loader)->toBeInstanceOf(AwsSecretEnvLoader::class);
+    });
+});
+
+describe('makeClient', function () {
+    it('prefers the dedicated override credentials over the standard AWS pair', function () {
+        setLoaderEnv('AWS_ENV_SECRET_REGION', 'us-east-1');
+        setLoaderEnv('AWS_ENV_SECRET_ACCESS_KEY_ID', 'override-key');
+        setLoaderEnv('AWS_ENV_SECRET_SECRET_ACCESS_KEY', 'override-secret');
+        setLoaderEnv('AWS_ACCESS_KEY_ID', 'standard-key');
+        setLoaderEnv('AWS_SECRET_ACCESS_KEY', 'standard-secret');
+
+        $credentials = AwsSecretEnvLoader::makeClient()->getCredentials()->wait();
+
+        expect($credentials->getAccessKeyId())->toBe('override-key')
+            ->and($credentials->getSecretKey())->toBe('override-secret');
+    });
+
+    it('falls back to the standard AWS credentials when no override is set', function () {
+        setLoaderEnv('AWS_ENV_SECRET_REGION', 'us-east-1');
+        setLoaderEnv('AWS_ACCESS_KEY_ID', 'standard-key');
+        setLoaderEnv('AWS_SECRET_ACCESS_KEY', 'standard-secret');
+
+        $credentials = AwsSecretEnvLoader::makeClient()->getCredentials()->wait();
+
+        expect($credentials->getAccessKeyId())->toBe('standard-key')
+            ->and($credentials->getSecretKey())->toBe('standard-secret');
+    });
+
+    it('leaves credential resolution to the SDK default chain when no pair is set', function () {
+        setLoaderEnv('AWS_ENV_SECRET_REGION', 'us-east-1');
+
+        expect(AwsSecretEnvLoader::makeClient())->toBeInstanceOf(SecretsManagerClient::class);
     });
 });
 
@@ -173,4 +207,21 @@ describe('bootIfNeeded', function () {
         expect($_ENV['LOADER_TEST_BAR'])->toBe('loaded')
             ->and(getenv('LOADER_TEST_BAR'))->toBe('loaded');
     });
+
+    it('logs the real cause and rethrows when loading fails pre-config', function () {
+        setLoaderEnv('AWS_ENV_SECRET_ID', 'my-secret');
+        $app = Mockery::mock(Application::class);
+        $app->shouldReceive('configurationIsCached')->once()->andReturn(false);
+
+        $handler = new MockHandler;
+        $handler->append(new Result(['SecretString' => 'not-json']));
+
+        $previousErrorLog = ini_set('error_log', '/dev/null');
+
+        try {
+            AwsSecretEnvLoader::bootIfNeeded($app, makeLoaderClient($handler));
+        } finally {
+            ini_set('error_log', $previousErrorLog);
+        }
+    })->throws(RuntimeException::class, 'must be a JSON object');
 });
