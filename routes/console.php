@@ -96,16 +96,16 @@ Schedule::command('cache:prune-expired')
     ->timezone('America/Sao_Paulo')
     ->onOneServer();
 
-// Back up the full database to S3 daily at 5:00 AM
+// Back up the full database to S3 daily at 2:00 AM (one hour before update.sh runs at 3:00)
 Schedule::command('backup:run --only-db')
-    ->dailyAt('05:00')
+    ->dailyAt('02:00')
     ->timezone('America/Sao_Paulo')
     ->withoutOverlapping()
     ->onOneServer();
 
-// Prune old database backups per the retention policy in config/backup.php, daily at 5:30 AM
+// Prune old database backups per the retention policy in config/backup.php, daily at 2:30 AM
 Schedule::command('backup:clean')
-    ->dailyAt('05:30')
+    ->dailyAt('02:30')
     ->timezone('America/Sao_Paulo')
     ->withoutOverlapping()
     ->onOneServer();
