@@ -107,11 +107,11 @@ it('throws from the container binding when the baked secret id is empty', functi
         ->toThrow(RuntimeException::class, 'not configured');
 });
 
-it('is scheduled hourly', function () {
+it('is scheduled every five minutes', function () {
     $events = collect(app(Schedule::class)->events());
 
     $event = $events->first(fn ($event) => str_contains((string) $event->command, 'env-secrets:refresh'));
 
     expect($event)->not->toBeNull()
-        ->and($event->expression)->toBe('0 * * * *');
+        ->and($event->expression)->toBe('*/5 * * * *');
 });
