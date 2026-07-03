@@ -21,6 +21,7 @@ use App\Policies\SeminarPolicy;
 use App\Policies\SubjectPolicy;
 use App\Policies\UserPolicy;
 use App\Services\AiService;
+use App\Services\AwsSecretEnvLoader;
 use Dedoc\Scramble\Scramble;
 use Dedoc\Scramble\Support\Generator\OpenApi;
 use Dedoc\Scramble\Support\Generator\SecurityScheme;
@@ -33,6 +34,7 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
+use RuntimeException;
 use Spatie\Backup\Events\BackupHasFailed;
 use Spatie\Backup\Events\BackupWasSuccessful;
 
@@ -44,6 +46,11 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->singleton(AiService::class, fn () => AiService::fromConfig());
+
+        $this->app->bind(AwsSecretEnvLoader::class, function (): AwsSecretEnvLoader {
+            return AwsSecretEnvLoader::fromEnvironment()
+                ?? throw new RuntimeException('AWS secret env loading is not configured (AWS_ENV_SECRET_ID is empty).');
+        });
     }
 
     /**

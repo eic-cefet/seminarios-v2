@@ -1,6 +1,12 @@
 #!/bin/bash
 set -e
 
+# Cache configuration for production (bakes AWS secret env overrides in once;
+# the bootstrap loader in bootstrap/app.php fetches during this boot)
+if [ "$APP_ENV" = "production" ]; then
+    php artisan config:cache
+fi
+
 # Run migrations before anything else (scheduler is single-instance, safe from races)
 if [ "$AUTO_MIGRATE" = "true" ]; then
     echo "Running database migrations..."

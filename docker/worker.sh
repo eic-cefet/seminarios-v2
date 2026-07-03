@@ -1,6 +1,12 @@
 #!/bin/bash
 set -e
 
+# Cache configuration for production (bakes AWS secret env overrides in once;
+# the bootstrap loader in bootstrap/app.php fetches during this boot)
+if [ "$APP_ENV" = "production" ]; then
+    php artisan config:cache
+fi
+
 # Graceful shutdown: stop the loop and let the current job finish
 SHUTDOWN=false
 trap 'SHUTDOWN=true; echo "Received shutdown signal, waiting for current job to finish..."' SIGTERM SIGINT

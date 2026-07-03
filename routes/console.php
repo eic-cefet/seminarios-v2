@@ -96,6 +96,13 @@ Schedule::command('cache:prune-expired')
     ->timezone('America/Sao_Paulo')
     ->onOneServer();
 
+// Refresh AWS secret env overrides hourly — re-caches config only when the secret content changed
+Schedule::command('env-secrets:refresh')
+    ->hourly()
+    ->timezone('America/Sao_Paulo')
+    ->withoutOverlapping()
+    ->onOneServer();
+
 // Back up the full database to S3 daily at 2:00 AM (one hour before update.sh runs at 3:00)
 Schedule::command('backup:run --only-db')
     ->dailyAt('02:00')
