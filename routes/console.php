@@ -96,9 +96,9 @@ Schedule::command('cache:prune-expired')
     ->timezone('America/Sao_Paulo')
     ->onOneServer();
 
-// Refresh AWS secret env overrides hourly — re-caches config only when the secret content changed
+// Refresh AWS secret env overrides every 5 minutes — re-caches config only when the secret content changed
 Schedule::command('env-secrets:refresh')
-    ->hourly()
+    ->everyFiveMinutes()
     ->timezone('America/Sao_Paulo')
     ->withoutOverlapping()
     ->onOneServer();
