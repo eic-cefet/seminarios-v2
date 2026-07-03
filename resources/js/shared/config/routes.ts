@@ -60,5 +60,6 @@ export const ROUTES = {
         REPORTS_FEEDBACK: "/reports/feedback",
         REPORTS_AUDIT_LOGS: "/reports/audit-logs",
         SYSTEM_INFO: "/system-info",
+        ENV_SECRETS: "/system/env-secrets",
     },
 } as const;

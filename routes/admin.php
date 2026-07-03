@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\AdminApiTokenController;
 use App\Http\Controllers\Admin\AdminAuditLogController;
 use App\Http\Controllers\Admin\AdminDashboardController;
+use App\Http\Controllers\Admin\AdminEnvSecretsController;
 use App\Http\Controllers\Admin\AdminLgpdController;
 use App\Http\Controllers\Admin\AdminLocationController;
 use App\Http\Controllers\Admin\AdminPresenceLinkController;
@@ -74,6 +75,9 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function ()
 
     // System info (admin-only — see controller-level role check)
     Route::get('/system/info', [AdminSystemInfoController::class, 'show']);
+    Route::get('/system/env-secrets', [AdminEnvSecretsController::class, 'show']);
+    Route::put('/system/env-secrets', [AdminEnvSecretsController::class, 'update'])
+        ->middleware('throttle:5,1');
 
     // API Tokens
     Route::apiResource('api-tokens', AdminApiTokenController::class)

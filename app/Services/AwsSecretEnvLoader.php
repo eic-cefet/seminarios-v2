@@ -54,6 +54,23 @@ class AwsSecretEnvLoader
         return new self(new AwsSecretEnvService($client ?? self::makeClient()), $secretId);
     }
 
+    /**
+     * Build from the baked config('env-secrets') array — the only reliable
+     * source on cached-config deployments, where .env is never loaded.
+     *
+     * @param  array{secret_id?: ?string, region?: ?string, access_key_id?: ?string, secret_access_key?: ?string}  $settings
+     */
+    public static function fromConfig(array $settings, ?SecretsManagerClient $client = null): ?self
+    {
+        $secretId = ($settings['secret_id'] ?? '') ?: null;
+
+        if ($secretId === null) {
+            return null;
+        }
+
+        return new self(new AwsSecretEnvService($client ?? self::makeClient($settings)), $secretId);
+    }
+
     public function load(): void
     {
         foreach ($this->fetchEnvVars() as $key => $value) {
@@ -72,15 +89,19 @@ class AwsSecretEnvLoader
     }
 
     /**
-     * Credentials resolve in three tiers: the dedicated
-     * AWS_ENV_SECRET_ACCESS_KEY_ID / AWS_ENV_SECRET_SECRET_ACCESS_KEY pair
-     * (so the secret fetch can use different credentials than S3/MinIO),
-     * then the standard AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY pair,
-     * then the SDK default provider chain (IAM role, etc.).
+     * Region and credentials resolve settings-first (baked config values on
+     * cached deployments), then the dedicated AWS_ENV_SECRET_ACCESS_KEY_ID /
+     * AWS_ENV_SECRET_SECRET_ACCESS_KEY pair (so the secret fetch can use
+     * different credentials than S3/MinIO), then the standard
+     * AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY pair, then the SDK default
+     * provider chain (IAM role, etc.).
+     *
+     * @param  array{region?: ?string, access_key_id?: ?string, secret_access_key?: ?string}  $settings
      */
-    public static function makeClient(): SecretsManagerClient
+    public static function makeClient(array $settings = []): SecretsManagerClient
     {
-        $region = Env::get('AWS_ENV_SECRET_REGION')
+        $region = ($settings['region'] ?? '')
+            ?: Env::get('AWS_ENV_SECRET_REGION')
             ?: Env::get('AWS_REGION')
             ?: Env::get('AWS_DEFAULT_REGION')
             ?: null;
@@ -95,8 +116,14 @@ class AwsSecretEnvLoader
             'http' => ['connect_timeout' => 5, 'timeout' => 15],
         ];
 
-        $key = Env::get('AWS_ENV_SECRET_ACCESS_KEY_ID') ?: Env::get('AWS_ACCESS_KEY_ID') ?: null;
-        $secret = Env::get('AWS_ENV_SECRET_SECRET_ACCESS_KEY') ?: Env::get('AWS_SECRET_ACCESS_KEY') ?: null;
+        $key = ($settings['access_key_id'] ?? '')
+            ?: Env::get('AWS_ENV_SECRET_ACCESS_KEY_ID')
+            ?: Env::get('AWS_ACCESS_KEY_ID')
+            ?: null;
+        $secret = ($settings['secret_access_key'] ?? '')
+            ?: Env::get('AWS_ENV_SECRET_SECRET_ACCESS_KEY')
+            ?: Env::get('AWS_SECRET_ACCESS_KEY')
+            ?: null;
 
         if ($key !== null && $secret !== null) {
             $config['credentials'] = ['key' => $key, 'secret' => $secret];
