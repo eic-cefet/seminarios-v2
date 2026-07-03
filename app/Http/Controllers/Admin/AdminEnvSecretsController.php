@@ -11,7 +11,7 @@ use App\Services\FeatureFlags;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Env;
-use Throwable;
+use RuntimeException;
 
 class AdminEnvSecretsController extends Controller
 {
@@ -40,7 +40,7 @@ class AdminEnvSecretsController extends Controller
 
         try {
             $fetchedEnvVars = $this->setupService->validate($input);
-        } catch (Throwable $e) {
+        } catch (RuntimeException $e) {
             throw ApiException::validation(['secret_id' => [$e->getMessage()]]);
         }
 

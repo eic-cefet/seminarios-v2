@@ -95,6 +95,19 @@ describe('PUT /admin/system/env-secrets', function () {
         $this->putJson('/api/admin/system/env-secrets', ['secret_id' => 'x'])->assertForbidden();
     });
 
+    it('returns 404 for invalid payloads when the feature flag is disabled', function () {
+        config(['features.env_secrets_setup.enabled' => false]);
+        actingAsAdmin();
+
+        $this->putJson('/api/admin/system/env-secrets', [])->assertNotFound();
+    });
+
+    it('returns 403 for teachers even with an invalid payload', function () {
+        actingAsTeacher();
+
+        $this->putJson('/api/admin/system/env-secrets', [])->assertForbidden();
+    });
+
     it('rejects invalid payloads', function (array $payload, string $errorField) {
         actingAsAdmin();
 

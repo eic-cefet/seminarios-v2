@@ -2,12 +2,23 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Enums\Role;
+use App\Exceptions\ApiException;
+use App\Services\FeatureFlags;
 use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateEnvSecretsRequest extends FormRequest
 {
     public function authorize(): bool
     {
+        if (FeatureFlags::disabled('env_secrets_setup')) {
+            throw ApiException::notFound();
+        }
+
+        if (! $this->user()?->hasRole(Role::Admin)) {
+            throw ApiException::forbidden();
+        }
+
         return true;
     }
 
