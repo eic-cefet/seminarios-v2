@@ -12,7 +12,7 @@ use RuntimeException;
  */
 class EnvFileWriter
 {
-    private const BARE_VALUE_PATTERN = '/^[A-Za-z0-9_@:+=,.\/-]*$/';
+    private const BARE_VALUE_PATTERN = '/^[A-Za-z0-9_@:+=,.\/-]*$/D';
 
     public function __construct(private string $path) {}
 
@@ -21,7 +21,7 @@ class EnvFileWriter
      */
     public function setValues(array $values): void
     {
-        $contents = is_file($this->path) ? file_get_contents($this->path) : '';
+        $contents = is_file($this->path) ? @file_get_contents($this->path) : '';
 
         if ($contents === false) {
             throw new RuntimeException("Unable to read {$this->path}.");
@@ -33,7 +33,9 @@ class EnvFileWriter
 
         $temp = $this->path.'.tmp';
 
-        if (file_put_contents($temp, $contents) === false || ! rename($temp, $this->path)) {
+        if (@file_put_contents($temp, $contents) !== strlen($contents) || ! @rename($temp, $this->path)) {
+            @unlink($temp);
+
             throw new RuntimeException("Unable to write {$this->path}.");
         }
     }
@@ -63,6 +65,10 @@ class EnvFileWriter
     {
         if (str_contains($value, "'")) {
             throw new RuntimeException('Env values containing a single quote are not supported.');
+        }
+
+        if (str_contains($value, "\n") || str_contains($value, "\r")) {
+            throw new RuntimeException('Env values containing a newline are not supported.');
         }
 
         if (preg_match(self::BARE_VALUE_PATTERN, $value) === 1) {
