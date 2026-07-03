@@ -11,4 +11,7 @@ return [
     'notification_audit' => [
         'enabled' => env('FEATURE_NOTIFICATION_AUDIT', true),
     ],
+    'env_secrets_setup' => [
+        'enabled' => env('FEATURE_ENV_SECRETS_SETUP', true),
+    ],
 ];
