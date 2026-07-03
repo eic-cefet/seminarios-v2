@@ -97,4 +97,7 @@ enum AuditEvent: string
     case AccountDeletionExecuted = 'lgpd.account_deletion_executed';
     case AccountAnonymized = 'lgpd.account_anonymized';
     case LgpdRetentionPurged = 'lgpd.retention_purged';
+
+    // System configuration
+    case EnvSecretsUpdated = 'system.env_secrets.updated';
 }
