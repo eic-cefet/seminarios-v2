@@ -66,6 +66,8 @@ enum AuditEvent: string
     case AiSubjectsMerged = 'command.ai_subjects_merged';
     case AiSubjectsNormalized = 'command.ai_subjects_normalized';
     case OrphanSubjectsCleanedUp = 'command.orphan_subjects_cleaned_up';
+    case DatabaseBackupCompleted = 'command.database_backup_completed';
+    case DatabaseBackupFailed = 'command.database_backup_failed';
     case SeminarRescheduled = 'seminar.rescheduled';
     case SeminarAlertDispatched = 'seminar_alert.dispatched';
     case S3FileDeleted = 's3.file_deleted';
