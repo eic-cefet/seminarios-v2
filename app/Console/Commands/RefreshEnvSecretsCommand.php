@@ -27,6 +27,7 @@ class RefreshEnvSecretsCommand extends Command
 
         try {
             $envVars = $this->laravel->make(AwsSecretEnvLoader::class)->fetchEnvVars();
+            $hash = hash('sha256', json_encode($envVars, JSON_THROW_ON_ERROR));
         } catch (Throwable $e) {
             Log::warning('env-secrets:refresh could not fetch the secret; keeping the current config cache.', [
                 'error' => $e->getMessage(),
@@ -35,8 +36,6 @@ class RefreshEnvSecretsCommand extends Command
 
             return self::FAILURE;
         }
-
-        $hash = hash('sha256', json_encode($envVars));
 
         if (Cache::get(self::LAST_HASH_CACHE_KEY) === $hash) {
             $this->info('Secret unchanged; config cache left as-is.');
