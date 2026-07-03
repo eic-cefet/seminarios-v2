@@ -15,7 +15,9 @@ use Spatie\DbDumper\Compressors\GzipCompressor;
 return [
 
     'backup' => [
-        'name' => env('APP_NAME', 'laravel-backup'),
+        // Destination folder for the backups on the disk, i.e. backups land at
+        // s3://<bucket>/backups/database/<timestamp>.zip.
+        'name' => 'backups/database',
 
         'source' => [
             // Database-only backups — no filesystem paths are included.
@@ -93,7 +95,7 @@ return [
      */
     'monitor_backups' => [
         [
-            'name' => env('APP_NAME', 'laravel-backup'),
+            'name' => 'backups/database',
             'disks' => ['s3'],
             'health_checks' => [
                 MaximumAgeInDays::class => 1,

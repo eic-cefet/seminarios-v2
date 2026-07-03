@@ -21,6 +21,11 @@ describe('backup configuration', function () {
         expect(config('backup.backup.destination.disks'))->toBe(['s3']);
     });
 
+    it('stores backups under the backups/database path', function () {
+        expect(config('backup.backup.name'))->toBe('backups/database');
+        expect(config('backup.monitor_backups.0.name'))->toBe('backups/database');
+    });
+
     it('retains backups for 90 days', function () {
         expect(config('backup.cleanup.default_strategy.keep_all_backups_for_days'))->toBe(90);
     });
