@@ -137,12 +137,14 @@ export default function EnvSecrets() {
     }
 
     const onSubmit = (formData: EnvSecretsFormData) => {
+        updateMutation.reset();
         setResult(null);
         setPendingData(formData);
         setConfirming(true);
     };
 
     const confirm = () => {
+        /* v8 ignore next -- @preserve defensive guard: confirming is only reachable with pendingData set */
         if (pendingData) {
             updateMutation.mutate(toPayload(pendingData));
         }

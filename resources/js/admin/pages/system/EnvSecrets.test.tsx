@@ -133,6 +133,130 @@ describe('EnvSecrets', () => {
         });
     });
 
+    it('requires access key and secret access key together', async () => {
+        vi.mocked(envSecretsApi.get).mockResolvedValue(statusPayload);
+
+        render(<EnvSecrets />);
+        await waitFor(() => expect(screen.getByLabelText(/Secret ID/)).toBeInTheDocument());
+
+        await userEvent.type(screen.getByLabelText(/Access Key ID/), 'AKIAEXAMPLE');
+        await userEvent.click(screen.getByRole('button', { name: /Validar e aplicar/ }));
+
+        await waitFor(() => {
+            expect(
+                screen.getByText(/Informe a access key e a secret access key juntas/),
+            ).toBeInTheDocument();
+        });
+        expect(envSecretsApi.update).not.toHaveBeenCalled();
+    });
+
+    it('falls back to the error message when the API error has no field errors', async () => {
+        vi.mocked(envSecretsApi.get).mockResolvedValue(statusPayload);
+        vi.mocked(envSecretsApi.update).mockRejectedValue(
+            new AdminApiError('aws_error', 'Falha ao validar o secret na AWS', 502),
+        );
+
+        render(<EnvSecrets />);
+        await waitFor(() => expect(screen.getByLabelText(/Secret ID/)).toBeInTheDocument());
+
+        await userEvent.click(screen.getByRole('button', { name: /Validar e aplicar/ }));
+        await userEvent.click(screen.getByRole('button', { name: /Confirmar/ }));
+
+        await waitFor(() => {
+            expect(screen.getByText(/Falha ao validar o secret na AWS/)).toBeInTheDocument();
+        });
+    });
+
+    it('shows a generic message when the update fails with an unknown error', async () => {
+        vi.mocked(envSecretsApi.get).mockResolvedValue(statusPayload);
+        vi.mocked(envSecretsApi.update).mockRejectedValue(new Error('network down'));
+
+        render(<EnvSecrets />);
+        await waitFor(() => expect(screen.getByLabelText(/Secret ID/)).toBeInTheDocument());
+
+        await userEvent.click(screen.getByRole('button', { name: /Validar e aplicar/ }));
+        await userEvent.click(screen.getByRole('button', { name: /Confirmar/ }));
+
+        await waitFor(() => {
+            expect(
+                screen.getByText(/Não foi possível aplicar as configurações\./),
+            ).toBeInTheDocument();
+        });
+    });
+
+    it('clears a previous error when the form is resubmitted', async () => {
+        vi.mocked(envSecretsApi.get).mockResolvedValue(statusPayload);
+        vi.mocked(envSecretsApi.update).mockRejectedValue(
+            new AdminApiError('aws_error', 'Falha ao validar o secret na AWS', 502),
+        );
+
+        render(<EnvSecrets />);
+        await waitFor(() => expect(screen.getByLabelText(/Secret ID/)).toBeInTheDocument());
+
+        await userEvent.click(screen.getByRole('button', { name: /Validar e aplicar/ }));
+        await userEvent.click(screen.getByRole('button', { name: /Confirmar/ }));
+        await waitFor(() => {
+            expect(screen.getByText(/Falha ao validar o secret na AWS/)).toBeInTheDocument();
+        });
+
+        await userEvent.click(screen.getByRole('button', { name: /Cancelar/ }));
+        await userEvent.click(screen.getByRole('button', { name: /Validar e aplicar/ }));
+
+        await waitFor(() => {
+            expect(screen.getByText(/reescrever o \.env/)).toBeInTheDocument();
+        });
+        expect(
+            screen.queryByText(/Falha ao validar o secret na AWS/),
+        ).not.toBeInTheDocument();
+    });
+
+    it('shows field validation errors for invalid region and access key', async () => {
+        vi.mocked(envSecretsApi.get).mockResolvedValue(statusPayload);
+
+        render(<EnvSecrets />);
+        await waitFor(() => expect(screen.getByLabelText(/Secret ID/)).toBeInTheDocument());
+
+        await userEvent.type(screen.getByLabelText(/Região/), 'US_EAST!');
+        await userEvent.type(screen.getByLabelText(/Access Key ID/), 'bad key!');
+        await userEvent.click(screen.getByRole('button', { name: /Validar e aplicar/ }));
+
+        await waitFor(() => {
+            expect(screen.getByText(/Região inválida/)).toBeInTheDocument();
+        });
+        expect(screen.getByText(/Access key inválida/)).toBeInTheDocument();
+        expect(envSecretsApi.update).not.toHaveBeenCalled();
+    });
+
+    it('shows the not-applied state, empty credential hints and a pending label', async () => {
+        vi.mocked(envSecretsApi.get).mockResolvedValue({
+            data: {
+                ...statusPayload.data,
+                applied: false,
+                access_key_id_set: false,
+                secret_access_key_set: true,
+            },
+        });
+        vi.mocked(envSecretsApi.update).mockReturnValue(new Promise(() => {}));
+
+        render(<EnvSecrets />);
+        await waitFor(() => expect(screen.getByLabelText(/Secret ID/)).toBeInTheDocument());
+
+        expect(screen.getByText(/ainda não refletida no cache/)).toBeInTheDocument();
+        expect(screen.getByText(/Nenhuma access key dedicada/)).toBeInTheDocument();
+        expect(screen.getByText(/Secret access key configurada/)).toBeInTheDocument();
+
+        await userEvent.clear(screen.getByLabelText(/Região/));
+        await userEvent.click(screen.getByRole('button', { name: /Validar e aplicar/ }));
+        await userEvent.click(screen.getByRole('button', { name: /Confirmar/ }));
+
+        await waitFor(() => {
+            expect(screen.getByText(/Aplicando…/)).toBeInTheDocument();
+        });
+        expect(envSecretsApi.update).toHaveBeenCalledWith(
+            expect.objectContaining({ secret_id: 'current-secret', region: undefined }),
+        );
+    });
+
     it('lets the user cancel the confirmation step', async () => {
         vi.mocked(envSecretsApi.get).mockResolvedValue(statusPayload);
 

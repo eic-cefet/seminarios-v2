@@ -1,5 +1,5 @@
-import { AdminApiError, dashboardApi, usersApi, locationsApi, subjectsApi, workshopsApi, registrationsApi, seminarsApi, presenceLinkApi, aiApi, apiTokensApi, dropdownApi, auditLogsApi, adminLgpdApi, systemInfoApi } from './adminClient';
-import { getCookie } from '@shared/api/httpUtils';
+import { AdminApiError, dashboardApi, usersApi, locationsApi, subjectsApi, workshopsApi, registrationsApi, seminarsApi, presenceLinkApi, aiApi, apiTokensApi, dropdownApi, auditLogsApi, adminLgpdApi, systemInfoApi, envSecretsApi } from './adminClient';
+import { getCookie, getCsrfCookie } from '@shared/api/httpUtils';
 
 vi.mock('@shared/api/httpUtils', async (importOriginal) => {
     const actual = await importOriginal<typeof import('@shared/api/httpUtils')>();
@@ -970,6 +970,42 @@ describe('Admin API endpoints', () => {
             expect(fetchSpy).toHaveBeenCalledWith(
                 expect.stringContaining('/system/info'),
                 expect.any(Object),
+            );
+        });
+    });
+
+    describe('envSecretsApi', () => {
+        it('get calls GET /system/env-secrets', async () => {
+            mockSuccess({ data: { secret_id: 'app/env', region: 'us-east-1', access_key_id_set: false, secret_access_key_set: false, applied: true } });
+
+            const result = await envSecretsApi.get();
+
+            expect(result.data.secret_id).toBe('app/env');
+            expect(fetchSpy).toHaveBeenCalledWith(
+                expect.stringContaining('/system/env-secrets'),
+                expect.any(Object),
+            );
+        });
+
+        it('update fetches the CSRF cookie and sends PUT with the JSON body', async () => {
+            mockSuccess({ data: { applied: true, keys: ['APP_KEY'], count: 1 } });
+            const payload = {
+                secret_id: 'app/env',
+                region: 'us-east-1',
+                access_key_id: 'AKIAEXAMPLE',
+                secret_access_key: 'secret/Key+1=',
+            };
+
+            const result = await envSecretsApi.update(payload);
+
+            expect(getCsrfCookie).toHaveBeenCalled();
+            expect(result.data.count).toBe(1);
+            expect(fetchSpy).toHaveBeenCalledWith(
+                expect.stringContaining('/system/env-secrets'),
+                expect.objectContaining({
+                    method: 'PUT',
+                    body: JSON.stringify(payload),
+                }),
             );
         });
     });
