@@ -259,6 +259,21 @@ pnpm install --frozen-lockfile
 print_status "Node.js dependencies installed" "ok"
 
 #######################################
+# STEP 5.1: Seed AWS_ENV_SECRET_ID into .env
+# TEMPORARY bootstrap — removed in the follow-up cleanup PR once deployed.
+# Must run before any artisan command boots the app (migrate, config:cache),
+# since env overrides are loaded from Secrets Manager at app bootstrap.
+#######################################
+print_section "Ensuring AWS_ENV_SECRET_ID in .env"
+
+if [ -f .env ] && ! grep -q '^AWS_ENV_SECRET_ID=' .env; then
+    printf '\nAWS_ENV_SECRET_ID=eic-seminarios/env-production\n' >> .env
+    print_status "AWS_ENV_SECRET_ID added to .env" "ok"
+else
+    print_status "AWS_ENV_SECRET_ID already present (or .env missing) — skipping" "warn"
+fi
+
+#######################################
 # STEP 6: Run Migrations
 #######################################
 print_section "Running database migrations"
