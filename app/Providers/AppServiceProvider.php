@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Listeners\AuditBackupCompleted;
+use App\Listeners\AuditBackupFailed;
 use App\Listeners\AuditEmailSent;
 use App\Listeners\AuditNotificationSent;
 use App\Models\AuditLog;
@@ -11,6 +13,7 @@ use App\Models\SeminarLocation;
 use App\Models\Subject;
 use App\Models\User;
 use App\Observers\SeminarAlertObserver;
+use App\Observers\SeminarCertificateObserver;
 use App\Policies\AuditLogPolicy;
 use App\Policies\RegistrationPolicy;
 use App\Policies\SeminarLocationPolicy;
@@ -32,6 +35,8 @@ use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 use RuntimeException;
+use Spatie\Backup\Events\BackupHasFailed;
+use Spatie\Backup\Events\BackupWasSuccessful;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -78,8 +83,11 @@ class AppServiceProvider extends ServiceProvider
 
         Event::listen(MessageSent::class, AuditEmailSent::class);
         Event::listen(NotificationSent::class, AuditNotificationSent::class);
+        Event::listen(BackupWasSuccessful::class, AuditBackupCompleted::class);
+        Event::listen(BackupHasFailed::class, AuditBackupFailed::class);
 
         Seminar::observe(SeminarAlertObserver::class);
+        Seminar::observe(SeminarCertificateObserver::class);
 
         Scramble::registerUiRoute('api/external/docs');
         Scramble::registerJsonSpecificationRoute('api/external/docs.json');

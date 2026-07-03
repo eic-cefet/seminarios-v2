@@ -20,7 +20,25 @@ class CertificateService
         $this->assetsPath = resource_path('assets/certificates');
     }
 
+    /**
+     * Certificates are keyed ONLY by their immutable certificate_code so
+     * the S3 object never moves when the seminar is renamed (slug change)
+     * or rescheduled across a year boundary. RegenerateCertificateJob
+     * depends on this: overwriting "the same path" must stay true across
+     * seminar edits.
+     */
     public function getCertificatePath(Registration $registration): string
+    {
+        return "certificates/{$registration->certificate_code}";
+    }
+
+    /**
+     * Key scheme used before certificates were pinned to an immutable
+     * path: certificates/{year}/{slug}/{code}. Derived from the seminar's
+     * CURRENT slug/year, so it only resolves while those haven't changed
+     * since the object was written. Kept solely for lazy migration.
+     */
+    protected function getLegacyCertificatePath(Registration $registration): string
     {
         $seminar = $registration->seminar;
         $year = $seminar->scheduled_at->year;
@@ -43,7 +61,10 @@ class CertificateService
         $cacheKey = "certificate_exists_jpg:{$registration->certificate_code}";
 
         return Cache::remember($cacheKey, now()->addDay(), function () use ($registration) {
-            return Storage::disk('s3')->exists($this->getJpgPath($registration));
+            return $this->existsOrMigrateLegacy(
+                $this->getJpgPath($registration),
+                $this->getLegacyCertificatePath($registration).'.jpg',
+            );
         });
     }
 
@@ -52,8 +73,33 @@ class CertificateService
         $cacheKey = "certificate_exists_pdf:{$registration->certificate_code}";
 
         return Cache::remember($cacheKey, now()->addDay(), function () use ($registration) {
-            return Storage::disk('s3')->exists($this->getPdfPath($registration));
+            return $this->existsOrMigrateLegacy(
+                $this->getPdfPath($registration),
+                $this->getLegacyCertificatePath($registration).'.pdf',
+            );
         });
+    }
+
+    protected function existsOrMigrateLegacy(string $path, string $legacyPath): bool
+    {
+        $disk = Storage::disk('s3');
+
+        if ($disk->exists($path)) {
+            return true;
+        }
+
+        if ($disk->exists($legacyPath)) {
+            $disk->move($legacyPath, $path);
+
+            Log::info('Certificate artefact migrated from legacy path', [
+                'from' => $legacyPath,
+                'to' => $path,
+            ]);
+
+            return true;
+        }
+
+        return false;
     }
 
     public function markJpgExists(Registration $registration): void
@@ -220,7 +266,7 @@ class CertificateService
     {
         $jpgPath = $this->getJpgPath($registration);
 
-        if (! Storage::disk('s3')->exists($jpgPath)) {
+        if (! $this->existsOrMigrateLegacy($jpgPath, $this->getLegacyCertificatePath($registration).'.jpg')) {
             $this->generateJpg($registration);
         }
 

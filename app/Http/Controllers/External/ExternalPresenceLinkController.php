@@ -96,16 +96,10 @@ class ExternalPresenceLinkController extends Controller
                     return [$existing, false];
                 }
 
-                $scheduledExpiry = $seminar->scheduled_at?->addHours(4);
-                $minimumExpiry = now()->addHour();
-                $expiresAt = $scheduledExpiry && $scheduledExpiry->gt($minimumExpiry)
-                    ? $scheduledExpiry
-                    : $minimumExpiry;
-
                 $link = PresenceLink::create([
                     'seminar_id' => $seminar->id,
                     'active' => true,
-                    'expires_at' => $expiresAt,
+                    'expires_at' => PresenceLink::computeActivationExpiry($seminar->scheduled_at),
                 ]);
 
                 return [$link, true];
@@ -159,15 +153,9 @@ class ExternalPresenceLinkController extends Controller
             $updates['active'] = $newActive;
 
             if (! $request->has('expires_at')) {
-                if ($newActive) {
-                    $scheduledExpiry = $seminar->scheduled_at?->addHours(4);
-                    $minimumExpiry = now()->addHour();
-                    $updates['expires_at'] = $scheduledExpiry && $scheduledExpiry->gt($minimumExpiry)
-                        ? $scheduledExpiry
-                        : $minimumExpiry;
-                } else {
-                    $updates['expires_at'] = null;
-                }
+                $updates['expires_at'] = $newActive
+                    ? PresenceLink::computeActivationExpiry($seminar->scheduled_at)
+                    : null;
             }
         }
 

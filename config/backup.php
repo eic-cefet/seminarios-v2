@@ -1,0 +1,127 @@
+<?php
+
+use Spatie\Backup\Notifications\Notifiable;
+use Spatie\Backup\Notifications\Notifications\BackupHasFailedNotification;
+use Spatie\Backup\Notifications\Notifications\BackupWasSuccessfulNotification;
+use Spatie\Backup\Notifications\Notifications\CleanupHasFailedNotification;
+use Spatie\Backup\Notifications\Notifications\CleanupWasSuccessfulNotification;
+use Spatie\Backup\Notifications\Notifications\HealthyBackupWasFoundNotification;
+use Spatie\Backup\Notifications\Notifications\UnhealthyBackupWasFoundNotification;
+use Spatie\Backup\Tasks\Cleanup\Strategies\DefaultStrategy;
+use Spatie\Backup\Tasks\Monitor\HealthChecks\MaximumAgeInDays;
+use Spatie\Backup\Tasks\Monitor\HealthChecks\MaximumStorageInMegabytes;
+use Spatie\DbDumper\Compressors\GzipCompressor;
+
+return [
+
+    'backup' => [
+        // Destination folder for the backups on the disk, i.e. backups land at
+        // s3://<bucket>/backups/database/<timestamp>.zip.
+        'name' => 'backups/database',
+
+        'source' => [
+            // Database-only backups — no filesystem paths are included.
+            'files' => [
+                'include' => [],
+                'exclude' => [],
+                'follow_links' => false,
+                'ignore_unreadable_directories' => false,
+                'relative_path' => null,
+            ],
+
+            'databases' => [
+                'mysql',
+            ],
+        ],
+
+        // Gzip-compress the SQL dump before it is packaged into the zip archive.
+        'database_dump_compressor' => GzipCompressor::class,
+        'database_dump_file_timestamp_format' => null,
+        'database_dump_filename_base' => 'database',
+        'database_dump_file_extension' => '',
+
+        'destination' => [
+            'compression_method' => ZipArchive::CM_DEFAULT,
+            'compression_level' => 9,
+            'filename_prefix' => '',
+
+            // Stored on the shared S3 disk (see config/filesystems.php).
+            'disks' => [
+                's3',
+            ],
+
+            'continue_on_failure' => false,
+        ],
+
+        'temporary_directory' => storage_path('app/backup-temp'),
+        'password' => env('BACKUP_ARCHIVE_PASSWORD'),
+        'encryption' => 'default',
+        'verify_backup' => false,
+        'tries' => 1,
+        'retry_delay' => 0,
+    ],
+
+    /*
+     * Only failures are emailed. Successful runs are recorded in the AuditLog
+     * (App\Listeners\AuditBackupCompleted), so success mail would just be noise.
+     */
+    'notifications' => [
+        'notifications' => [
+            BackupHasFailedNotification::class => ['mail'],
+            UnhealthyBackupWasFoundNotification::class => ['mail'],
+            CleanupHasFailedNotification::class => ['mail'],
+            BackupWasSuccessfulNotification::class => [],
+            HealthyBackupWasFoundNotification::class => [],
+            CleanupWasSuccessfulNotification::class => [],
+        ],
+
+        'notifiable' => Notifiable::class,
+
+        'mail' => [
+            'to' => env('BACKUP_NOTIFICATION_MAIL', env('MAIL_FROM_ADDRESS', 'hello@example.com')),
+
+            'from' => [
+                'address' => env('MAIL_FROM_ADDRESS', 'hello@example.com'),
+                'name' => env('MAIL_FROM_NAME', 'Example'),
+            ],
+        ],
+    ],
+
+    'log_channel' => null,
+
+    /*
+     * A backup is flagged unhealthy once the newest one on S3 is older than a
+     * day, or the stored backups exceed the size limit.
+     */
+    'monitor_backups' => [
+        [
+            'name' => 'backups/database',
+            'disks' => ['s3'],
+            'health_checks' => [
+                MaximumAgeInDays::class => 1,
+                MaximumStorageInMegabytes::class => 5000,
+            ],
+        ],
+    ],
+
+    /*
+     * Keep every backup for 90 days, then delete it. The daily/weekly/monthly/
+     * yearly thinning tiers are disabled so retention is a flat 90-day window.
+     */
+    'cleanup' => [
+        'strategy' => DefaultStrategy::class,
+
+        'default_strategy' => [
+            'keep_all_backups_for_days' => 90,
+            'keep_daily_backups_for_days' => 90,
+            'keep_weekly_backups_for_weeks' => 0,
+            'keep_monthly_backups_for_months' => 0,
+            'keep_yearly_backups_for_years' => 0,
+            'delete_oldest_backups_when_using_more_megabytes_than' => 50000,
+        ],
+
+        'tries' => 1,
+        'retry_delay' => 0,
+    ],
+
+];

@@ -29,6 +29,8 @@ class SeminarRescheduleNotifier
                 ->where('seminar_id', $seminar->id)
                 ->update(['reminder_24h_sent_at' => null]);
 
+            $seminar->presenceLink?->syncExpiryWithSchedule();
+
             $registrations = $seminar->registrations()->with('user.alertPreference')->get();
 
             AuditLog::record(AuditEvent::SeminarRescheduled, AuditEventType::System, $seminar, [

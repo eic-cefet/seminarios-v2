@@ -30,6 +30,12 @@ RUN install-php-extensions \
     opcache \
     sockets
 
+# Install the MySQL client — provides the `mysqldump` binary that
+# spatie/laravel-backup shells out to when creating database backups.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends default-mysql-client \
+    && rm -rf /var/lib/apt/lists/*
+
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 

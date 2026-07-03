@@ -4,6 +4,7 @@ use App\Enums\AuditEvent;
 use App\Jobs\ProcessSeminarRescheduleJob;
 use App\Mail\SeminarRescheduled;
 use App\Models\AuditLog;
+use App\Models\PresenceLink;
 use App\Models\Registration;
 use App\Models\Seminar;
 use App\Models\User;
@@ -120,5 +121,98 @@ describe('ProcessSeminarRescheduleJob', function () {
         (new ProcessSeminarRescheduleJob($seminar, $oldDate))->handle();
 
         Notification::assertSentTo([$user1, $user2, $user3], SeminarRescheduledNotification::class);
+    });
+});
+
+describe('ProcessSeminarRescheduleJob presence link expiry sync', function () {
+    it('moves an active presence link expiry to the new date plus 4 hours', function () {
+        Mail::fake();
+        $this->freezeTime();
+
+        $seminar = Seminar::factory()->create(['scheduled_at' => now()->addDays(14)]);
+        $link = PresenceLink::factory()->create([
+            'seminar_id' => $seminar->id,
+            'active' => true,
+            'expires_at' => now()->addDay()->addHours(4),
+        ]);
+
+        (new ProcessSeminarRescheduleJob($seminar, now()->addDay()))->handle();
+
+        expect($link->fresh()->expires_at->timestamp)
+            ->toBe(now()->addDays(14)->addHours(4)->timestamp);
+    });
+
+    it('clamps an active link expiry to one hour from now when the new date is too soon', function () {
+        Mail::fake();
+        $this->freezeTime();
+
+        $seminar = Seminar::factory()->create(['scheduled_at' => now()->subHours(6)]);
+        $link = PresenceLink::factory()->create([
+            'seminar_id' => $seminar->id,
+            'active' => true,
+            'expires_at' => now()->addDays(2),
+        ]);
+
+        (new ProcessSeminarRescheduleJob($seminar, now()->addDays(2)))->handle();
+
+        expect($link->fresh()->expires_at->timestamp)
+            ->toBe(now()->addHour()->timestamp);
+    });
+
+    it('moves an inactive link expiry to the new date plus 4 hours when it had one', function () {
+        Mail::fake();
+        $this->freezeTime();
+
+        $seminar = Seminar::factory()->create(['scheduled_at' => now()->addDays(10)]);
+        $link = PresenceLink::factory()->inactive()->create([
+            'seminar_id' => $seminar->id,
+            'expires_at' => now()->addDay()->addHours(4),
+        ]);
+
+        (new ProcessSeminarRescheduleJob($seminar, now()->addDay()))->handle();
+
+        expect($link->fresh()->expires_at->timestamp)
+            ->toBe(now()->addDays(10)->addHours(4)->timestamp);
+    });
+
+    it('keeps a deactivated link expiry null', function () {
+        Mail::fake();
+
+        $seminar = Seminar::factory()->create(['scheduled_at' => now()->addDays(10)]);
+        $link = PresenceLink::factory()->inactive()->create([
+            'seminar_id' => $seminar->id,
+            'expires_at' => null,
+        ]);
+
+        (new ProcessSeminarRescheduleJob($seminar, now()->addDay()))->handle();
+
+        expect($link->fresh()->expires_at)->toBeNull();
+    });
+
+    it('runs cleanly when the seminar has no presence link', function () {
+        Mail::fake();
+
+        $seminar = Seminar::factory()->create(['scheduled_at' => now()->addDays(10)]);
+
+        (new ProcessSeminarRescheduleJob($seminar, now()->addDay()))->handle();
+
+        expect(PresenceLink::query()->count())->toBe(0);
+    });
+
+    it('gives an active never-expiring link a computed expiry on reschedule', function () {
+        Mail::fake();
+        $this->freezeTime();
+
+        $seminar = Seminar::factory()->create(['scheduled_at' => now()->addDays(14)]);
+        $link = PresenceLink::factory()->create([
+            'seminar_id' => $seminar->id,
+            'active' => true,
+            'expires_at' => null,
+        ]);
+
+        (new ProcessSeminarRescheduleJob($seminar, now()->addDay()))->handle();
+
+        expect($link->fresh()->expires_at->timestamp)
+            ->toBe(now()->addDays(14)->addHours(4)->timestamp);
     });
 });
