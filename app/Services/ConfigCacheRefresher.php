@@ -3,29 +3,36 @@
 namespace App\Services;
 
 use Illuminate\Support\Facades\Artisan;
-use Illuminate\Support\Facades\Process;
-use RuntimeException;
 
 /**
  * Re-bakes the configuration cache and signals queue workers to restart so
- * every runtime picks up refreshed AWS secret env overrides. config:cache
- * runs in a SUBPROCESS: an in-process Artisan::call would boot against this
- * worker's immutable, putenv-polluted env (Dotenv cannot overwrite values
- * loaded earlier in the same process), which could silently re-bake stale
- * secret values on a second apply in the same worker.
+ * every runtime picks up refreshed AWS secret env overrides: config:cache
+ * performs a fresh boot (which re-runs AwsSecretEnvLoader), web requests read
+ * the new cache on their next boot, and restarted workers re-boot against it.
+ *
+ * The managed AWS_ENV_SECRET_* keys are cleared from the process env first:
+ * Dotenv's immutable repository refuses to overwrite keys already present in
+ * a long-lived worker (loaded by a previous in-process re-cache), which would
+ * silently re-bake stale values on a second apply. Clearing them makes the
+ * fresh boot inside config:cache re-read the just-written .env.
  */
 class ConfigCacheRefresher
 {
+    public const MANAGED_ENV_KEYS = [
+        'AWS_ENV_SECRET_ID',
+        'AWS_ENV_SECRET_REGION',
+        'AWS_ENV_SECRET_ACCESS_KEY_ID',
+        'AWS_ENV_SECRET_SECRET_ACCESS_KEY',
+    ];
+
     public function refresh(): void
     {
-        $result = Process::path(base_path())
-            ->timeout(120)
-            ->run([PHP_BINARY, 'artisan', 'config:cache']);
-
-        if (! $result->successful()) {
-            throw new RuntimeException('config:cache failed: '.trim($result->errorOutput() ?: $result->output()));
+        foreach (self::MANAGED_ENV_KEYS as $key) {
+            unset($_ENV[$key], $_SERVER[$key]);
+            putenv($key);
         }
 
+        Artisan::call('config:cache');
         Artisan::call('queue:restart');
     }
 }

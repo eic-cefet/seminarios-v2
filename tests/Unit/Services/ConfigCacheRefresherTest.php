@@ -2,32 +2,47 @@
 
 use App\Services\ConfigCacheRefresher;
 use Illuminate\Support\Facades\Artisan;
-use Illuminate\Support\Facades\Process;
 
-it('re-caches configuration in a subprocess, then signals a queue restart', function () {
-    Process::fake();
+beforeEach(function () {
+    $this->refresherEnvBackup = [];
+    foreach (ConfigCacheRefresher::MANAGED_ENV_KEYS as $key) {
+        $this->refresherEnvBackup[$key] = $_ENV[$key] ?? null;
+    }
+});
+
+afterEach(function () {
+    foreach (ConfigCacheRefresher::MANAGED_ENV_KEYS as $key) {
+        $value = $this->refresherEnvBackup[$key];
+        if ($value === null) {
+            unset($_ENV[$key], $_SERVER[$key]);
+            putenv($key);
+        } else {
+            $_ENV[$key] = $value;
+            $_SERVER[$key] = $value;
+            putenv("{$key}={$value}");
+        }
+    }
+});
+
+it('re-caches configuration and signals a queue restart, in that order', function () {
+    Artisan::shouldReceive('call')->once()->ordered()->with('config:cache');
+    Artisan::shouldReceive('call')->once()->ordered()->with('queue:restart');
+
+    (new ConfigCacheRefresher)->refresh();
+});
+
+it('clears the managed env keys before re-caching so the fresh boot re-reads .env', function () {
+    $_ENV['AWS_ENV_SECRET_ID'] = $_SERVER['AWS_ENV_SECRET_ID'] = 'stale-secret';
+    putenv('AWS_ENV_SECRET_ID=stale-secret');
+
+    Artisan::shouldReceive('call')->once()->with('config:cache')->andReturnUsing(function (): int {
+        expect($_ENV)->not->toHaveKey('AWS_ENV_SECRET_ID')
+            ->and($_SERVER)->not->toHaveKey('AWS_ENV_SECRET_ID')
+            ->and(getenv('AWS_ENV_SECRET_ID'))->toBeFalse();
+
+        return 0;
+    });
     Artisan::shouldReceive('call')->once()->with('queue:restart');
 
     (new ConfigCacheRefresher)->refresh();
-
-    Process::assertRan(function ($process) {
-        return $process->path === base_path()
-            && $process->command === [PHP_BINARY, 'artisan', 'config:cache'];
-    });
-});
-
-it('throws and skips the queue restart when config:cache fails', function () {
-    Process::fake(['*' => Process::result(exitCode: 1, errorOutput: 'boom')]);
-    Artisan::shouldReceive('call')->never();
-
-    expect(fn () => (new ConfigCacheRefresher)->refresh())
-        ->toThrow(RuntimeException::class, 'config:cache failed: boom');
-});
-
-it('falls back to stdout in the failure message when stderr is empty', function () {
-    Process::fake(['*' => Process::result(output: 'stdout says no', exitCode: 1)]);
-    Artisan::shouldReceive('call')->never();
-
-    expect(fn () => (new ConfigCacheRefresher)->refresh())
-        ->toThrow(RuntimeException::class, 'config:cache failed: stdout says no');
 });
