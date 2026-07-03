@@ -51,6 +51,12 @@ beforeEach(function () {
         $this->setupEnvBackup[$key] = $_ENV[$key] ?? null;
         setupEnv($key, null);
     }
+
+    config([
+        'env-secrets.region' => null,
+        'env-secrets.access_key_id' => null,
+        'env-secrets.secret_access_key' => null,
+    ]);
 });
 
 afterEach(function () {
@@ -109,6 +115,22 @@ describe('makeClient', function () {
         expect($client->getRegion())->toBe('us-east-1')
             ->and($credentials->getAccessKeyId())->toBe('input-key')
             ->and($credentials->getSecretKey())->toBe('input-secret');
+    });
+
+    it('falls back to the baked config region and credentials when input and env are empty', function () {
+        config([
+            'env-secrets.region' => 'ca-central-1',
+            'env-secrets.access_key_id' => 'baked-key',
+            'env-secrets.secret_access_key' => 'baked-secret',
+        ]);
+
+        $client = makeSetupService()->makeClient(['secret_id' => 'my-secret']);
+
+        $credentials = $client->getCredentials()->wait();
+
+        expect($client->getRegion())->toBe('ca-central-1')
+            ->and($credentials->getAccessKeyId())->toBe('baked-key')
+            ->and($credentials->getSecretKey())->toBe('baked-secret');
     });
 
     it('falls back to the dedicated env credentials and region', function () {

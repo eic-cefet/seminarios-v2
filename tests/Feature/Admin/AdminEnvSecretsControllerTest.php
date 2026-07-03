@@ -2,35 +2,8 @@
 
 use App\Services\EnvSecretsSetupService;
 
-function envSecretsSetEnv(string $key, ?string $value): void
-{
-    if ($value === null) {
-        unset($_ENV[$key], $_SERVER[$key]);
-        putenv($key);
-    } else {
-        $_ENV[$key] = $value;
-        $_SERVER[$key] = $value;
-        putenv("{$key}={$value}");
-    }
-}
-
-const ENV_SECRETS_TEST_KEYS = [
-    'AWS_ENV_SECRET_ID', 'AWS_ENV_SECRET_REGION',
-    'AWS_ENV_SECRET_ACCESS_KEY_ID', 'AWS_ENV_SECRET_SECRET_ACCESS_KEY',
-];
-
 beforeEach(function () {
     config(['features.env_secrets_setup.enabled' => true]);
-    $this->envSecretsBackup = [];
-    foreach (ENV_SECRETS_TEST_KEYS as $key) {
-        $this->envSecretsBackup[$key] = $_ENV[$key] ?? null;
-    }
-});
-
-afterEach(function () {
-    foreach (ENV_SECRETS_TEST_KEYS as $key) {
-        envSecretsSetEnv($key, $this->envSecretsBackup[$key]);
-    }
 });
 
 describe('GET /admin/system/env-secrets', function () {
@@ -51,33 +24,42 @@ describe('GET /admin/system/env-secrets', function () {
         $this->getJson('/api/admin/system/env-secrets')->assertUnauthorized();
     });
 
-    it('returns the current live state with masked credentials', function () {
+    it('returns the baked configuration with masked credentials', function () {
         actingAsAdmin();
-        envSecretsSetEnv('AWS_ENV_SECRET_ID', 'live-secret');
-        envSecretsSetEnv('AWS_ENV_SECRET_REGION', 'us-east-1');
-        envSecretsSetEnv('AWS_ENV_SECRET_ACCESS_KEY_ID', 'a-key');
-        envSecretsSetEnv('AWS_ENV_SECRET_SECRET_ACCESS_KEY', null);
-        config(['env-secrets.secret_id' => 'live-secret']);
+        config([
+            'env-secrets.secret_id' => 'baked-secret',
+            'env-secrets.region' => 'us-east-1',
+            'env-secrets.access_key_id' => 'a-key',
+            'env-secrets.secret_access_key' => null,
+        ]);
 
         $this->getJson('/api/admin/system/env-secrets')
             ->assertSuccessful()
             ->assertExactJson(['data' => [
-                'secret_id' => 'live-secret',
+                'secret_id' => 'baked-secret',
                 'region' => 'us-east-1',
                 'access_key_id_set' => true,
                 'secret_access_key_set' => false,
-                'applied' => true,
             ]]);
     });
 
-    it('reports applied=false when the baked config lags the live env', function () {
+    it('normalizes empty baked values to null and false', function () {
         actingAsAdmin();
-        envSecretsSetEnv('AWS_ENV_SECRET_ID', 'new-secret');
-        config(['env-secrets.secret_id' => 'old-secret']);
+        config([
+            'env-secrets.secret_id' => '',
+            'env-secrets.region' => '',
+            'env-secrets.access_key_id' => '',
+            'env-secrets.secret_access_key' => '',
+        ]);
 
         $this->getJson('/api/admin/system/env-secrets')
             ->assertSuccessful()
-            ->assertJsonPath('data.applied', false);
+            ->assertExactJson(['data' => [
+                'secret_id' => null,
+                'region' => null,
+                'access_key_id_set' => false,
+                'secret_access_key_set' => false,
+            ]]);
     });
 });
 

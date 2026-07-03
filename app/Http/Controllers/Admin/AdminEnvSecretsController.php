@@ -10,7 +10,6 @@ use App\Services\EnvSecretsSetupService;
 use App\Services\FeatureFlags;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Env;
 use RuntimeException;
 
 class AdminEnvSecretsController extends Controller
@@ -21,14 +20,11 @@ class AdminEnvSecretsController extends Controller
     {
         $this->authorizeAccess($request);
 
-        $liveSecretId = Env::get('AWS_ENV_SECRET_ID') ?: null;
-
         return response()->json(['data' => [
-            'secret_id' => $liveSecretId,
-            'region' => Env::get('AWS_ENV_SECRET_REGION') ?: null,
-            'access_key_id_set' => (bool) (Env::get('AWS_ENV_SECRET_ACCESS_KEY_ID') ?: null),
-            'secret_access_key_set' => (bool) (Env::get('AWS_ENV_SECRET_SECRET_ACCESS_KEY') ?: null),
-            'applied' => $liveSecretId !== null && $liveSecretId === (config('env-secrets.secret_id') ?: null),
+            'secret_id' => config('env-secrets.secret_id') ?: null,
+            'region' => config('env-secrets.region') ?: null,
+            'access_key_id_set' => (bool) (config('env-secrets.access_key_id') ?: null),
+            'secret_access_key_set' => (bool) (config('env-secrets.secret_access_key') ?: null),
         ]]);
     }
 

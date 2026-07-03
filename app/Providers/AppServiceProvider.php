@@ -49,7 +49,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(AiService::class, fn () => AiService::fromConfig());
 
         $this->app->bind(AwsSecretEnvLoader::class, function (): AwsSecretEnvLoader {
-            return AwsSecretEnvLoader::fromEnvironment()
+            return AwsSecretEnvLoader::fromConfig(config('env-secrets') ?? [])
                 ?? throw new RuntimeException('AWS secret env loading is not configured (AWS_ENV_SECRET_ID is empty).');
         });
 

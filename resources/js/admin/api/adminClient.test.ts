@@ -976,7 +976,7 @@ describe('Admin API endpoints', () => {
 
     describe('envSecretsApi', () => {
         it('get calls GET /system/env-secrets', async () => {
-            mockSuccess({ data: { secret_id: 'app/env', region: 'us-east-1', access_key_id_set: false, secret_access_key_set: false, applied: true } });
+            mockSuccess({ data: { secret_id: 'app/env', region: 'us-east-1', access_key_id_set: false, secret_access_key_set: false } });
 
             const result = await envSecretsApi.get();
 

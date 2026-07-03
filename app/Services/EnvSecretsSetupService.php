@@ -74,14 +74,17 @@ class EnvSecretsSetupService
     }
 
     /**
-     * Region and credentials resolve input-first, then the same env fallback
-     * chains AwsSecretEnvLoader uses, then the SDK default provider chain.
+     * Region and credentials resolve input-first, then the baked
+     * config('env-secrets') copies (the only reliable source on cached-config
+     * deployments), then the same env fallback chains AwsSecretEnvLoader
+     * uses, then the SDK default provider chain.
      *
      * @param  array{secret_id: string, region?: ?string, access_key_id?: ?string, secret_access_key?: ?string}  $input
      */
     public function makeClient(array $input): SecretsManagerClient
     {
         $region = ($input['region'] ?? '')
+            ?: (config('env-secrets.region') ?? '')
             ?: Env::get('AWS_ENV_SECRET_REGION')
             ?: Env::get('AWS_REGION')
             ?: Env::get('AWS_DEFAULT_REGION')
@@ -98,10 +101,12 @@ class EnvSecretsSetupService
         ];
 
         $key = ($input['access_key_id'] ?? '')
+            ?: (config('env-secrets.access_key_id') ?? '')
             ?: Env::get('AWS_ENV_SECRET_ACCESS_KEY_ID')
             ?: Env::get('AWS_ACCESS_KEY_ID')
             ?: null;
         $secret = ($input['secret_access_key'] ?? '')
+            ?: (config('env-secrets.secret_access_key') ?? '')
             ?: Env::get('AWS_ENV_SECRET_SECRET_ACCESS_KEY')
             ?: Env::get('AWS_SECRET_ACCESS_KEY')
             ?: null;

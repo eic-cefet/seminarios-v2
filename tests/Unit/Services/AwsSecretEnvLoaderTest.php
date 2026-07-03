@@ -95,7 +95,50 @@ describe('fromEnvironment', function () {
     });
 });
 
+describe('fromConfig', function () {
+    it('returns null when the settings have no secret id', function (array $settings) {
+        expect(AwsSecretEnvLoader::fromConfig($settings))->toBeNull();
+    })->with([
+        'missing key' => [[]],
+        'null secret id' => [['secret_id' => null]],
+        'empty secret id' => [['secret_id' => '']],
+    ]);
+
+    it('builds a loader from baked settings alone, with no process env at all', function () {
+        $loader = AwsSecretEnvLoader::fromConfig([
+            'secret_id' => 'my-secret',
+            'region' => 'us-east-1',
+        ]);
+
+        expect($loader)->toBeInstanceOf(AwsSecretEnvLoader::class);
+    });
+
+    it('builds a loader from an injected client without needing a region', function () {
+        $loader = AwsSecretEnvLoader::fromConfig(['secret_id' => 'my-secret'], loaderClientReturning([]));
+
+        expect($loader)->toBeInstanceOf(AwsSecretEnvLoader::class);
+    });
+});
+
 describe('makeClient', function () {
+    it('prefers settings over env for region and credentials', function () {
+        setLoaderEnv('AWS_ENV_SECRET_REGION', 'sa-east-1');
+        setLoaderEnv('AWS_ENV_SECRET_ACCESS_KEY_ID', 'env-key');
+        setLoaderEnv('AWS_ENV_SECRET_SECRET_ACCESS_KEY', 'env-secret');
+
+        $client = AwsSecretEnvLoader::makeClient([
+            'region' => 'us-east-1',
+            'access_key_id' => 'settings-key',
+            'secret_access_key' => 'settings-secret',
+        ]);
+
+        $credentials = $client->getCredentials()->wait();
+
+        expect($client->getRegion())->toBe('us-east-1')
+            ->and($credentials->getAccessKeyId())->toBe('settings-key')
+            ->and($credentials->getSecretKey())->toBe('settings-secret');
+    });
+
     it('prefers the dedicated override credentials over the standard AWS pair', function () {
         setLoaderEnv('AWS_ENV_SECRET_REGION', 'us-east-1');
         setLoaderEnv('AWS_ENV_SECRET_ACCESS_KEY_ID', 'override-key');

@@ -70,23 +70,41 @@ it('keeps the current cache and stored hash when the fetch fails', function () {
     expect(Cache::get(RefreshEnvSecretsCommand::LAST_HASH_CACHE_KEY))->toBe('previous-hash');
 });
 
-it('fails visibly when enabled by config but the loader cannot be built from the environment', function () {
-    config(['env-secrets.secret_id' => 'my-secret']);
+it('fails visibly when enabled by config but no region is available anywhere', function () {
+    config(['env-secrets.secret_id' => 'my-secret', 'env-secrets.region' => null]);
     $this->mock(ConfigCacheRefresher::class)->shouldNotReceive('refresh');
 
-    $this->artisan('env-secrets:refresh')->assertFailed();
-});
-
-it('resolves the loader from the container when the environment is configured', function () {
-    $_ENV['AWS_ENV_SECRET_ID'] = $_SERVER['AWS_ENV_SECRET_ID'] = 'my-secret';
-    $_ENV['AWS_ENV_SECRET_REGION'] = $_SERVER['AWS_ENV_SECRET_REGION'] = 'us-east-1';
+    $regionKeys = ['AWS_ENV_SECRET_REGION', 'AWS_REGION', 'AWS_DEFAULT_REGION'];
+    $backup = [];
+    foreach ($regionKeys as $key) {
+        $backup[$key] = $_ENV[$key] ?? null;
+        unset($_ENV[$key], $_SERVER[$key]);
+        putenv($key);
+    }
 
     try {
-        expect(app(AwsSecretEnvLoader::class))->toBeInstanceOf(AwsSecretEnvLoader::class);
+        $this->artisan('env-secrets:refresh')->assertFailed();
     } finally {
-        $_ENV['AWS_ENV_SECRET_ID'] = $_SERVER['AWS_ENV_SECRET_ID'] = '';
-        unset($_ENV['AWS_ENV_SECRET_REGION'], $_SERVER['AWS_ENV_SECRET_REGION']);
+        foreach ($regionKeys as $key) {
+            if ($backup[$key] !== null) {
+                $_ENV[$key] = $_SERVER[$key] = $backup[$key];
+                putenv("{$key}={$backup[$key]}");
+            }
+        }
     }
+});
+
+it('resolves the loader from the container when the baked config is set', function () {
+    config(['env-secrets.secret_id' => 'my-secret', 'env-secrets.region' => 'us-east-1']);
+
+    expect(app(AwsSecretEnvLoader::class))->toBeInstanceOf(AwsSecretEnvLoader::class);
+});
+
+it('throws from the container binding when the baked secret id is empty', function () {
+    config(['env-secrets.secret_id' => null]);
+
+    expect(fn () => app(AwsSecretEnvLoader::class))
+        ->toThrow(RuntimeException::class, 'not configured');
 });
 
 it('is scheduled hourly', function () {

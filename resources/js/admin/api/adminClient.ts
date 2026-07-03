@@ -958,7 +958,6 @@ export interface AdminEnvSecretsStatus {
     region: string | null;
     access_key_id_set: boolean;
     secret_access_key_set: boolean;
-    applied: boolean;
 }
 
 export interface AdminEnvSecretsUpdatePayload {

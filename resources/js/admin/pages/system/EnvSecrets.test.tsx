@@ -22,7 +22,6 @@ const statusPayload = {
         region: 'us-east-1',
         access_key_id_set: true,
         secret_access_key_set: false,
-        applied: true,
     },
 };
 
@@ -227,11 +226,10 @@ describe('EnvSecrets', () => {
         expect(envSecretsApi.update).not.toHaveBeenCalled();
     });
 
-    it('shows the not-applied state, empty credential hints and a pending label', async () => {
+    it('shows empty credential hints and a pending label', async () => {
         vi.mocked(envSecretsApi.get).mockResolvedValue({
             data: {
                 ...statusPayload.data,
-                applied: false,
                 access_key_id_set: false,
                 secret_access_key_set: true,
             },
@@ -241,7 +239,6 @@ describe('EnvSecrets', () => {
         render(<EnvSecrets />);
         await waitFor(() => expect(screen.getByLabelText(/Secret ID/)).toBeInTheDocument());
 
-        expect(screen.getByText(/ainda não refletida no cache/)).toBeInTheDocument();
         expect(screen.getByText(/Nenhuma access key dedicada/)).toBeInTheDocument();
         expect(screen.getByText(/Secret access key configurada/)).toBeInTheDocument();
 
@@ -268,5 +265,23 @@ describe('EnvSecrets', () => {
 
         expect(screen.queryByText(/reescrever o \.env/)).not.toBeInTheDocument();
         expect(envSecretsApi.update).not.toHaveBeenCalled();
+    });
+
+    it('disables the form fields while the confirmation box is open', async () => {
+        vi.mocked(envSecretsApi.get).mockResolvedValue(statusPayload);
+
+        render(<EnvSecrets />);
+        await waitFor(() => expect(screen.getByLabelText(/Secret ID/)).toBeInTheDocument());
+
+        await userEvent.click(screen.getByRole('button', { name: /Validar e aplicar/ }));
+
+        expect(screen.getByLabelText(/Secret ID/)).toBeDisabled();
+        expect(screen.getByLabelText(/Região/)).toBeDisabled();
+        expect(screen.getByLabelText(/Access Key ID/)).toBeDisabled();
+        expect(screen.getByLabelText(/Secret Access Key/)).toBeDisabled();
+
+        await userEvent.click(screen.getByRole('button', { name: /Cancelar/ }));
+
+        expect(screen.getByLabelText(/Secret ID/)).toBeEnabled();
     });
 });

@@ -76,6 +76,7 @@ export default function EnvSecrets() {
         queryKey: ["admin", "env-secrets"],
         queryFn: () => envSecretsApi.get(),
         retry: false,
+        refetchOnWindowFocus: false,
     });
 
     const status = data?.data;
@@ -162,11 +163,6 @@ export default function EnvSecrets() {
                     variáveis de ambiente. A validação busca o secret antes de
                     aplicar qualquer mudança.
                 </p>
-                <p className="mt-1 text-sm text-muted-foreground">
-                    {status.applied
-                        ? "A configuração atual já está aplicada no cache de config."
-                        : "Há configuração no .env ainda não refletida no cache de config."}
-                </p>
             </div>
 
             <form
@@ -174,72 +170,77 @@ export default function EnvSecrets() {
                 noValidate
                 className="space-y-4"
             >
-                <div className="space-y-1">
-                    <Label htmlFor="secret_id">Secret ID (nome ou ARN) *</Label>
-                    <Input id="secret_id" type="text" {...register("secret_id")} />
-                    {errors.secret_id && (
-                        <p className="text-sm text-destructive">
-                            {errors.secret_id.message}
-                        </p>
-                    )}
-                </div>
+                <fieldset
+                    disabled={confirming}
+                    className="space-y-4 border-0 p-0 m-0 min-w-0"
+                >
+                    <div className="space-y-1">
+                        <Label htmlFor="secret_id">Secret ID (nome ou ARN) *</Label>
+                        <Input id="secret_id" type="text" {...register("secret_id")} />
+                        {errors.secret_id && (
+                            <p className="text-sm text-destructive">
+                                {errors.secret_id.message}
+                            </p>
+                        )}
+                    </div>
 
-                <div className="space-y-1">
-                    <Label htmlFor="region">Região (opcional)</Label>
-                    <Input
-                        id="region"
-                        type="text"
-                        placeholder="us-east-1"
-                        {...register("region")}
-                    />
-                    {errors.region && (
-                        <p className="text-sm text-destructive">
-                            {errors.region.message}
-                        </p>
-                    )}
-                </div>
+                    <div className="space-y-1">
+                        <Label htmlFor="region">Região (opcional)</Label>
+                        <Input
+                            id="region"
+                            type="text"
+                            placeholder="us-east-1"
+                            {...register("region")}
+                        />
+                        {errors.region && (
+                            <p className="text-sm text-destructive">
+                                {errors.region.message}
+                            </p>
+                        )}
+                    </div>
 
-                <div className="space-y-1">
-                    <Label htmlFor="access_key_id">Access Key ID (opcional)</Label>
-                    <Input
-                        id="access_key_id"
-                        type="text"
-                        autoComplete="off"
-                        {...register("access_key_id")}
-                    />
-                    <p className="text-xs text-muted-foreground">
-                        {status.access_key_id_set
-                            ? "Access key configurada no servidor (não exibida). Deixe em branco para removê-la ao aplicar."
-                            : "Nenhuma access key dedicada configurada."}
-                    </p>
-                    {errors.access_key_id && (
-                        <p className="text-sm text-destructive">
-                            {errors.access_key_id.message}
+                    <div className="space-y-1">
+                        <Label htmlFor="access_key_id">Access Key ID (opcional)</Label>
+                        <Input
+                            id="access_key_id"
+                            type="text"
+                            autoComplete="off"
+                            {...register("access_key_id")}
+                        />
+                        <p className="text-xs text-muted-foreground">
+                            {status.access_key_id_set
+                                ? "Access key configurada no servidor (não exibida). Deixe em branco para removê-la ao aplicar."
+                                : "Nenhuma access key dedicada configurada."}
                         </p>
-                    )}
-                </div>
+                        {errors.access_key_id && (
+                            <p className="text-sm text-destructive">
+                                {errors.access_key_id.message}
+                            </p>
+                        )}
+                    </div>
 
-                <div className="space-y-1">
-                    <Label htmlFor="secret_access_key">
-                        Secret Access Key (opcional)
-                    </Label>
-                    <Input
-                        id="secret_access_key"
-                        type="password"
-                        autoComplete="off"
-                        {...register("secret_access_key")}
-                    />
-                    <p className="text-xs text-muted-foreground">
-                        {status.secret_access_key_set
-                            ? "Secret access key configurada no servidor (não exibida)."
-                            : "Nenhuma secret access key dedicada configurada."}
-                    </p>
-                    {errors.secret_access_key && (
-                        <p className="text-sm text-destructive">
-                            {errors.secret_access_key.message}
+                    <div className="space-y-1">
+                        <Label htmlFor="secret_access_key">
+                            Secret Access Key (opcional)
+                        </Label>
+                        <Input
+                            id="secret_access_key"
+                            type="password"
+                            autoComplete="off"
+                            {...register("secret_access_key")}
+                        />
+                        <p className="text-xs text-muted-foreground">
+                            {status.secret_access_key_set
+                                ? "Secret access key configurada no servidor (não exibida)."
+                                : "Nenhuma secret access key dedicada configurada."}
                         </p>
-                    )}
-                </div>
+                        {errors.secret_access_key && (
+                            <p className="text-sm text-destructive">
+                                {errors.secret_access_key.message}
+                            </p>
+                        )}
+                    </div>
+                </fieldset>
 
                 {!confirming && <Button type="submit">Validar e aplicar</Button>}
             </form>
