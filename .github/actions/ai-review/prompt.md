@@ -27,11 +27,24 @@ ONLY flag: **bugs** (demonstrably wrong / breaks at runtime), **security** (inje
 
 Do NOT comment on: style/formatting/naming (Pint + ESLint own this), "consider X instead of Y" unless Y is broken, missing docblocks/comments/type hints, test-structure preferences, hypothetical edge cases the suite already covers, valid patterns that merely differ from your preference, optional error handling that isn't needed, or refactors beyond the PR scope. If the PR is clean, a short "LGTM" is perfect. No praise or filler.
 
-## Post once, via the `github` MCP server
+## Post your results — you MUST complete BOTH actions below
 
-Owner/repo come from ${GITHUB_REPOSITORY}; pull number is ${PR_NUMBER}.
+Owner/repo come from ${GITHUB_REPOSITORY}; pull number is ${PR_NUMBER}. These are TWO separate, independent actions. Posting the review is NOT the whole job — the label step is mandatory and the easiest one to forget. **Do not end your turn until BOTH have been done and confirmed.**
 
-1. **Submit ONE pull request review**: a short markdown summary body headed `## AI Code Review`; **at most 5 inline comments** (only for confirmed bugs/security/data-loss — an empty set is the expected result for most PRs; if unsure, mention it in the summary, not inline); event **APPROVE** when clean (most PRs — minor/subjective differences do not block) or **COMMENT** when there is at least one confirmed blocking issue. Any inline comments force COMMENT. When in doubt, APPROVE.
-2. **Sync category labels**: choose ≥1 of feature, bugfix, documentation, tests, frontend, backend, config, refactor, dependencies (multiple allowed). Add the applicable ones; remove any of these category labels no longer applicable. Do not touch non-category labels (e.g. `automerge`).
+### Action 1 (required) — submit ONE pull request review
 
-Do NOT clean up previous reviews or comments — the pipeline already hid your prior reviews before this run. Just post the new one. If the GitHub MCP tools cannot post the review, fall back to `gh` CLI.
+A short markdown body headed `## AI Code Review`; **at most 5 inline comments** (only for confirmed bugs/security/data-loss — an empty set is expected for most PRs; if unsure, mention it in the summary, not inline); event **APPROVE** when clean (most PRs — minor/subjective differences do not block) or **COMMENT** when there is at least one confirmed blocking issue. Any inline comments force COMMENT. When in doubt, APPROVE. Use the `github` MCP tool, or `gh` CLI if the tool is unavailable.
+
+### Action 2 (required — do NOT skip) — apply category labels
+
+Every PR gets at least one label. Choose one or more from: feature, bugfix, documentation, tests, frontend, backend, config, refactor, dependencies. Apply them to the PR and remove any of these category labels that no longer apply. Do NOT touch non-category labels (e.g. `automerge`).
+
+Apply them with the `github` MCP label tool. If that tool is unavailable or fails, run this exact command (substitute your chosen comma-separated labels):
+
+```
+gh pr edit ${PR_NUMBER} --repo ${GITHUB_REPOSITORY} --add-label "backend,refactor"
+```
+
+After applying, confirm the labels are present on the PR before you finish. If Action 2 did not happen, the review is incomplete.
+
+Do NOT clean up previous reviews or comments — the pipeline already hid your prior reviews before this run.
