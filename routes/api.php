@@ -103,6 +103,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Profile - Registrations & Certificates
     Route::get('/profile/registrations', [ProfileRegistrationController::class, 'registrations']);
     Route::get('/profile/certificates', [ProfileRegistrationController::class, 'certificates']);
+    Route::get('/profile/schedule', [ProfileRegistrationController::class, 'schedule']);
 
     // Profile - Calendar Feed
     Route::get('/profile/calendar-feed', [ProfileCalendarFeedController::class, 'show']);

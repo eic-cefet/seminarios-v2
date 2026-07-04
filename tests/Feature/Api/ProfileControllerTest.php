@@ -613,3 +613,50 @@ describe('POST /api/profile/calendar-feed/rotate', function () {
         $this->postJson('/api/profile/calendar-feed/rotate')->assertUnauthorized();
     });
 });
+
+describe('GET /api/profile/schedule', function () {
+    it('returns only upcoming active registrations ordered by date ascending', function () {
+        $user = actingAsUser();
+
+        $later = Seminar::factory()->create(['active' => true, 'scheduled_at' => now()->addDays(10)]);
+        $sooner = Seminar::factory()->create(['active' => true, 'scheduled_at' => now()->addDays(2)]);
+        $past = Seminar::factory()->past()->create(['active' => true]);
+        $inactive = Seminar::factory()->create(['active' => false, 'scheduled_at' => now()->addDays(5)]);
+
+        foreach ([$later, $sooner, $past, $inactive] as $seminar) {
+            Registration::factory()->create(['user_id' => $user->id, 'seminar_id' => $seminar->id]);
+        }
+
+        $response = $this->getJson('/api/profile/schedule');
+
+        $response->assertSuccessful()
+            ->assertJsonCount(2, 'data')
+            ->assertJsonPath('data.0.seminar.id', $sooner->id)
+            ->assertJsonPath('data.1.seminar.id', $later->id);
+    });
+
+    it('excludes other users registrations', function () {
+        actingAsUser();
+        $other = User::factory()->create();
+        Registration::factory()->create(['user_id' => $other->id]);
+
+        $this->getJson('/api/profile/schedule')
+            ->assertSuccessful()
+            ->assertJsonCount(0, 'data');
+    });
+
+    it('returns paginated results', function () {
+        $user = actingAsUser();
+        Registration::factory()->count(15)->create(['user_id' => $user->id]);
+
+        $response = $this->getJson('/api/profile/schedule?per_page=10');
+
+        $response->assertSuccessful()
+            ->assertJsonCount(10, 'data')
+            ->assertJsonPath('meta.total', 15);
+    });
+
+    it('returns 401 for unauthenticated user', function () {
+        $this->getJson('/api/profile/schedule')->assertUnauthorized();
+    });
+});
