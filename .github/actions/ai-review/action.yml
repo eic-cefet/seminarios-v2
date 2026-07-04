@@ -138,10 +138,9 @@ runs:
         PROMPT="$(envsubst '${BASE_REF} ${PR_NUMBER} ${GITHUB_REPOSITORY}' < "${{ github.action_path }}/prompt.md")"
 
         # Feed the agent its OWN prior reviews (archived into hidden HTML comments by the
-        # cleanup step) so it has continuity across runs. Strip the wrapper for readability.
+        # cleanup step) so it has continuity across runs.
         PRIOR="$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER/reviews" \
-          --jq '[.[] | select(.body != null and (.body | contains("AI_REVIEW_ARCHIVED"))) | .body] | join("\n\n----\n\n")' 2>/dev/null \
-          | sed -E 's/<!-- AI_REVIEW_ARCHIVED[^\n]*//; s/^-->$//' || true)"
+          --jq '[.[] | select(.body != null and (.body | contains("AI_REVIEW_ARCHIVED"))) | .body] | join("\n\n----\n\n")' 2>/dev/null || true)"
         if [ -n "$PRIOR" ]; then
           PROMPT="${PROMPT}"$'\n\n## Your prior reviews on this PR (context from earlier runs; humans do not see these)\n'"${PRIOR}"
         fi
