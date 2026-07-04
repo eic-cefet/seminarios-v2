@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\AuditEvent;
 use App\Exceptions\ApiException;
+use App\Http\Resources\MeUserResource;
 use App\Models\AuditLog;
 use App\Models\SocialIdentity;
 use App\Models\User;
@@ -77,24 +78,12 @@ class SocialAuthController extends Controller
             throw ApiException::notFound('Usuário');
         }
 
-        $user->load('studentData');
-
         Auth::login($user, remember: true);
 
         AuditLog::record(AuditEvent::UserSocialLogin, auditable: $user);
 
         return response()->json([
-            'user' => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
-                'email_verified_at' => $user->email_verified_at?->toISOString(),
-                'student_data' => $user->studentData ? [
-                    'course_situation' => $user->studentData->course_situation,
-                    'course_role' => $user->studentData->course_role,
-                    'course_name' => $user->studentData->course->name,
-                ] : null,
-            ],
+            'user' => (new MeUserResource($user))->resolve(),
         ]);
     }
 
