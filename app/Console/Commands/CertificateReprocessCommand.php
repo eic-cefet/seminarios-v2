@@ -2,7 +2,6 @@
 
 namespace App\Console\Commands;
 
-use App\Concerns\TracksAuditContext;
 use App\Enums\AuditEvent;
 use App\Enums\AuditEventType;
 use App\Jobs\RegenerateCertificateJob;
@@ -16,8 +15,6 @@ use Illuminate\Support\Facades\Log;
 
 class CertificateReprocessCommand extends Command
 {
-    use TracksAuditContext;
-
     private const CHUNK_SIZE = 200;
 
     protected $signature = 'certificates:reprocess
@@ -31,8 +28,6 @@ class CertificateReprocessCommand extends Command
 
     public function handle(): int
     {
-        $this->setAuditContext();
-
         $sync = (bool) $this->option('sync');
         $dryRun = (bool) $this->option('dry-run');
         $filters = array_filter([

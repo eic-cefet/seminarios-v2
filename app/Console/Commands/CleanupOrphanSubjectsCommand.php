@@ -2,7 +2,6 @@
 
 namespace App\Console\Commands;
 
-use App\Concerns\TracksAuditContext;
 use App\Enums\AuditEvent;
 use App\Models\AuditLog;
 use App\Models\Subject;
@@ -10,16 +9,12 @@ use Illuminate\Console\Command;
 
 class CleanupOrphanSubjectsCommand extends Command
 {
-    use TracksAuditContext;
-
     protected $signature = 'subjects:cleanup-orphans {--dry-run : Only show orphan subjects without deleting}';
 
     protected $description = 'Soft-delete subjects that have no seminars attached';
 
     public function handle(): int
     {
-        $this->setAuditContext();
-
         $orphans = Subject::doesntHave('seminars')->orderBy('name')->get();
 
         if ($orphans->isEmpty()) {

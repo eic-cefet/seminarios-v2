@@ -2,7 +2,6 @@
 
 namespace App\Console\Commands;
 
-use App\Concerns\TracksAuditContext;
 use App\Enums\AuditEvent;
 use App\Enums\AuditEventType;
 use App\Jobs\GenerateCertificateJob;
@@ -13,8 +12,6 @@ use Illuminate\Console\Command;
 
 class ProcessPendingCertificatesCommand extends Command
 {
-    use TracksAuditContext;
-
     protected $signature = 'certificates:process-pending
                             {--sync : Process synchronously instead of queuing}
                             {--no-email : Skip sending emails}';
@@ -23,7 +20,6 @@ class ProcessPendingCertificatesCommand extends Command
 
     public function handle(): int
     {
-        $this->setAuditContext();
         $this->info('Finding registrations with pending certificates...');
 
         // Find registrations where:

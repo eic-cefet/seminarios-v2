@@ -2,7 +2,6 @@
 
 namespace App\Jobs;
 
-use App\Concerns\TracksAuditContext;
 use App\Models\User;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -26,7 +25,7 @@ use Illuminate\Queue\SerializesModels;
  */
 class RegenerateUserCertificatesJob implements ShouldQueue
 {
-    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels, TracksAuditContext;
+    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     public int $tries = 3;
 
@@ -36,8 +35,6 @@ class RegenerateUserCertificatesJob implements ShouldQueue
 
     public function handle(): void
     {
-        $this->setAuditContext();
-
         $this->user->registrations()
             ->whereNotNull('certificate_code')
             ->where('present', true)

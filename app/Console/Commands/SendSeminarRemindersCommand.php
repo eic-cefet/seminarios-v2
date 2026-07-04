@@ -2,7 +2,6 @@
 
 namespace App\Console\Commands;
 
-use App\Concerns\TracksAuditContext;
 use App\Console\Commands\Concerns\DispatchesGroupedJobs;
 use App\Enums\AuditEvent;
 use App\Enums\AuditEventType;
@@ -21,7 +20,7 @@ use Illuminate\Support\Facades\DB;
 
 class SendSeminarRemindersCommand extends Command
 {
-    use DispatchesGroupedJobs, TracksAuditContext;
+    use DispatchesGroupedJobs;
 
     protected $signature = 'reminders:seminars
                             {--days=1 : Reminder window in days (1 or 7)}
@@ -31,8 +30,6 @@ class SendSeminarRemindersCommand extends Command
 
     public function handle(): int
     {
-        $this->setAuditContext();
-
         $days = (int) $this->option('days');
         if (! in_array($days, [1, 7], true)) {
             $this->error('--days must be 1 or 7');
