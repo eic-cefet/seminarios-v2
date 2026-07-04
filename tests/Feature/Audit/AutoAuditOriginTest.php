@@ -2,16 +2,20 @@
 
 use App\Console\Commands\CleanupOrphanSubjectsCommand;
 use App\Jobs\GenerateCertificateJob;
+use App\Listeners\SetAuditOriginForArtisanCommand;
 use App\Models\AuditLog;
 use App\Models\Registration;
 use App\Models\Seminar;
 use App\Models\Subject;
 use App\Services\CertificateService;
+use Illuminate\Console\Events\CommandStarting;
 use Illuminate\Foundation\Testing\WithConsoleEvents;
 use Illuminate\Support\Facades\Context;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
+use Symfony\Component\Console\Input\ArrayInput;
+use Symfony\Component\Console\Output\NullOutput;
 
 uses(WithConsoleEvents::class);
 
@@ -67,4 +71,13 @@ it('sets audit.origin to the command class when an artisan command runs', functi
 
     expect($row)->not->toBeNull();
     expect($row->origin)->toBe(CleanupOrphanSubjectsCommand::class);
+});
+
+it('does not set audit.origin when the command name is missing', function () {
+    Context::forget('audit.origin');
+
+    $listener = new SetAuditOriginForArtisanCommand;
+    $listener->handle(new CommandStarting('', new ArrayInput([]), new NullOutput));
+
+    expect(Context::get('audit.origin'))->toBeNull();
 });
