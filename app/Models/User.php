@@ -24,7 +24,7 @@ class User extends Authenticatable implements CanResetPassword
 {
     use Auditable, HasApiTokens, HasFactory, HasRoles, Notifiable, SoftDeletes, TwoFactorAuthenticatable;
 
-    protected array $auditExclude = ['password', 'remember_token', 'two_factor_secret', 'two_factor_recovery_codes'];
+    protected array $auditExclude = ['password', 'remember_token', 'two_factor_secret', 'two_factor_recovery_codes', 'calendar_feed_token'];
 
     protected $fillable = [
         'name',
@@ -37,6 +37,7 @@ class User extends Authenticatable implements CanResetPassword
         'remember_token',
         'two_factor_secret',
         'two_factor_recovery_codes',
+        'calendar_feed_token',
     ];
 
     protected function casts(): array
