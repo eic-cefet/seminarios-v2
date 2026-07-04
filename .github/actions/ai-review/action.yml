@@ -52,23 +52,26 @@ runs:
         # Use `gh api --jq` throughout so jq runs on the raw response bytes;
         # storing multi-line JSON bodies in a shell var and re-parsing corrupts them.
         MARKER='## AI Code Review'
+        ARCHIVE_TAG='AI_REVIEW_ARCHIVED'
 
         # Capture the bot login from our own prior reviews (marker-matched — portable).
         BOT_LOGIN="$(gh api "repos/$REPO/pulls/$PR_NUMBER/reviews" \
           --jq "[.[] | select(.body != null and (.body | contains(\"$MARKER\"))) | .user.login] | last // empty" 2>/dev/null || true)"
 
         # Prior reviews can't be deleted or minimized, and dismissing alone leaves the
-        # full body rendered in the timeline. So OVERWRITE each prior marker review's
-        # body with a one-line note (kept for context) and dismiss it. Idempotent: once
-        # trimmed, the body no longer contains the marker, so later runs skip it.
+        # full body rendered in the timeline. So wrap each prior review's body in an
+        # HTML comment: hidden from humans, but RETAINED so the AI reviewer can read its
+        # own prior context on later runs (see the "prior reviews" block in the run step).
+        # Idempotent: already-archived reviews carry ARCHIVE_TAG and are skipped.
         gh api "repos/$REPO/pulls/$PR_NUMBER/reviews" \
-          --jq ".[] | select(.body != null and (.body | contains(\"$MARKER\"))) | .id" 2>/dev/null | while read -r id; do
+          --jq ".[] | select(.body != null and (.body | contains(\"$MARKER\")) and ((.body | contains(\"$ARCHIVE_TAG\")) | not)) | .id" 2>/dev/null | while read -r id; do
           [ -n "$id" ] || continue
-          gh api --method PUT "repos/$REPO/pulls/$PR_NUMBER/reviews/$id" \
-            -f body="_Superseded by a newer AI review._" >/dev/null 2>&1 || true
+          ORIG="$(gh api "repos/$REPO/pulls/$PR_NUMBER/reviews/$id" --jq '.body' | sed 's/-->/--\&gt;/g')"
+          NEWBODY="$(printf '<!-- %s (hidden from humans; retained so the AI reviewer keeps prior context)\n%s\n-->' "$ARCHIVE_TAG" "$ORIG")"
+          gh api --method PUT "repos/$REPO/pulls/$PR_NUMBER/reviews/$id" -f body="$NEWBODY" >/dev/null 2>&1 || true
           gh api --method PUT "repos/$REPO/pulls/$PR_NUMBER/reviews/$id/dismissals" \
             -f message="Superseded by a newer AI review" -f event="DISMISS" >/dev/null 2>&1 || true
-          echo "superseded prior review $id"
+          echo "archived prior review $id"
         done
 
         # Minimize our prior inline review-comment threads (OUTDATED) — hidden, still readable.
@@ -133,6 +136,16 @@ runs:
         DIFF_CONTENT="$(git diff "origin/$BASE_REF...HEAD" | head -c 120000)"
 
         PROMPT="$(envsubst '${BASE_REF} ${PR_NUMBER} ${GITHUB_REPOSITORY}' < "${{ github.action_path }}/prompt.md")"
+
+        # Feed the agent its OWN prior reviews (archived into hidden HTML comments by the
+        # cleanup step) so it has continuity across runs. Strip the wrapper for readability.
+        PRIOR="$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER/reviews" \
+          --jq '[.[] | select(.body != null and (.body | contains("AI_REVIEW_ARCHIVED"))) | .body] | join("\n\n----\n\n")' 2>/dev/null \
+          | sed -E 's/<!-- AI_REVIEW_ARCHIVED[^\n]*//; s/^-->$//' || true)"
+        if [ -n "$PRIOR" ]; then
+          PROMPT="${PROMPT}"$'\n\n## Your prior reviews on this PR (context from earlier runs; humans do not see these)\n'"${PRIOR}"
+        fi
+
         PROMPT="${PROMPT}"$'\n\n## Changed files\n'"${NAMES}"$'\n\n## Diffstat\n'"${STAT}"$'\n\n## Full diff\n```diff\n'"${DIFF_CONTENT}"$'\n```'
 
         opencode run --auto --model "$MODEL" "$PROMPT"
