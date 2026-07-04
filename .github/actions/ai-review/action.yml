@@ -1,0 +1,150 @@
+name: "AI Code Review"
+description: "Agentic PR review via opencode + OpenRouter, posting through the GitHub MCP server."
+
+inputs:
+  openrouter-api-key:
+    description: "OpenRouter API key"
+    required: true
+  openrouter-model:
+    description: "Model id in provider/model form (e.g. openrouter/anthropic/claude-sonnet-4)"
+    required: false
+    default: "openrouter/anthropic/claude-sonnet-4"
+  github-token:
+    description: "GitHub token used to post the review, labels, and minimize threads"
+    required: true
+  pr-number:
+    description: "Pull request number to review"
+    required: true
+  base-ref:
+    description: "Base branch to diff against"
+    required: false
+    default: "main"
+  reasoning-effort:
+    description: "Reasoning effort for the model (minimal, low, medium, high, xhigh). Use 'off' to leave the model at its base effort. Injected as the OpenRouter model's reasoningEffort."
+    required: false
+    default: "low"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Install opencode
+      shell: bash
+      run: |
+        curl -fsSL https://opencode.ai/install | bash
+        echo "$HOME/.opencode/bin" >> "$GITHUB_PATH"
+
+    - name: Fetch base branch
+      shell: bash
+      env:
+        BASE_REF: ${{ inputs.base-ref }}
+      run: git fetch origin "$BASE_REF"
+
+    - name: Hide prior AI reviews
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+        PR_NUMBER: ${{ inputs.pr-number }}
+        REPO: ${{ github.repository }}
+      run: |
+        set -euo pipefail
+        OWNER="${REPO%/*}"; NAME="${REPO#*/}"
+
+        # Use `gh api --jq` throughout so jq runs on the raw response bytes;
+        # storing multi-line JSON bodies in a shell var and re-parsing corrupts them.
+        MARKER='## AI Code Review'
+        ARCHIVE_TAG='AI_REVIEW_ARCHIVED'
+
+        # Capture the bot login from our own prior reviews (marker-matched — portable).
+        BOT_LOGIN="$(gh api "repos/$REPO/pulls/$PR_NUMBER/reviews" \
+          --jq "[.[] | select(.body != null and (.body | contains(\"$MARKER\"))) | .user.login] | last // empty" 2>/dev/null || true)"
+
+        # Prior reviews can't be deleted or minimized, and dismissing alone leaves the
+        # full body rendered in the timeline. So wrap each prior review's body in an
+        # HTML comment: hidden from humans, but RETAINED so the AI reviewer can read its
+        # own prior context on later runs (see the "prior reviews" block in the run step).
+        # Idempotent: already-archived reviews carry ARCHIVE_TAG and are skipped.
+        gh api "repos/$REPO/pulls/$PR_NUMBER/reviews" \
+          --jq ".[] | select(.body != null and (.body | contains(\"$MARKER\")) and ((.body | contains(\"$ARCHIVE_TAG\")) | not)) | .id" 2>/dev/null | while read -r id; do
+          [ -n "$id" ] || continue
+          ORIG="$(gh api "repos/$REPO/pulls/$PR_NUMBER/reviews/$id" --jq '.body' | sed 's/-->/--\&gt;/g')"
+          NEWBODY="$(printf '<!-- %s (hidden from humans; retained so the AI reviewer keeps prior context)\n%s\n-->' "$ARCHIVE_TAG" "$ORIG")"
+          gh api --method PUT "repos/$REPO/pulls/$PR_NUMBER/reviews/$id" -f body="$NEWBODY" >/dev/null 2>&1 || true
+          gh api --method PUT "repos/$REPO/pulls/$PR_NUMBER/reviews/$id/dismissals" \
+            -f message="Superseded by a newer AI review" -f event="DISMISS" >/dev/null 2>&1 || true
+          echo "archived prior review $id"
+        done
+
+        # Minimize our prior inline review-comment threads (OUTDATED) — hidden, still readable.
+        if [ -n "$BOT_LOGIN" ]; then
+          gh api graphql -F o="$OWNER" -F n="$NAME" -F p="$PR_NUMBER" \
+            -f query='query($o:String!,$n:String!,$p:Int!){repository(owner:$o,name:$n){pullRequest(number:$p){reviewThreads(first:100){nodes{comments(first:1){nodes{id isMinimized author{login}}}}}}}}' \
+            --jq ".data.repository.pullRequest.reviewThreads.nodes[]?.comments.nodes[0] | select(.isMinimized==false and .author.login==\"$BOT_LOGIN\") | .id" 2>/dev/null | while read -r cid; do
+            [ -n "$cid" ] || continue
+            gh api graphql -F id="$cid" \
+              -f query='mutation($id:ID!){minimizeComment(input:{subjectId:$id,classifier:OUTDATED}){minimizedComment{isMinimized}}}' >/dev/null 2>&1 \
+              && echo "minimized comment $cid" || echo "could not minimize $cid (non-fatal)"
+          done
+        fi
+
+    - name: Run AI review
+      shell: bash
+      env:
+        OPENROUTER_API_KEY: ${{ inputs.openrouter-api-key }}
+        GH_MCP_TOKEN: ${{ inputs.github-token }}
+        GH_TOKEN: ${{ inputs.github-token }}
+        PR_NUMBER: ${{ inputs.pr-number }}
+        BASE_REF: ${{ inputs.base-ref }}
+        GITHUB_REPOSITORY: ${{ github.repository }}
+        OPENCODE_MODEL_INPUT: ${{ inputs.openrouter-model }}
+        REASONING_EFFORT: ${{ inputs.reasoning-effort }}
+        CONFIG_TEMPLATE: ${{ github.action_path }}/opencode.json
+      run: |
+        set -euo pipefail
+        MODEL="${OPENCODE_MODEL_INPUT:-openrouter/anthropic/claude-sonnet-4}"
+        # opencode expects a provider/model id; only the openrouter provider is
+        # configured here, so prepend it when the caller passes a bare model id.
+        case "$MODEL" in
+          openrouter/*) : ;;
+          *) MODEL="openrouter/$MODEL" ;;
+        esac
+        BARE_MODEL="${MODEL#openrouter/}"
+        EFFORT="${REASONING_EFFORT:-low}"
+
+        # Generate the runtime config from the template, injecting the reasoning
+        # effort into the selected model's options (keyed by the bare model id).
+        # 'off'/'none'/'default' leaves the model at its base effort.
+        GENERATED_CONFIG="$RUNNER_TEMP/opencode.json"
+        case "$EFFORT" in
+          off|none|default|"")
+            cp "$CONFIG_TEMPLATE" "$GENERATED_CONFIG"
+            ;;
+          *)
+            jq --arg m "$BARE_MODEL" --arg e "$EFFORT" \
+              '.provider.openrouter.models[$m].options.reasoningEffort = $e' \
+              "$CONFIG_TEMPLATE" > "$GENERATED_CONFIG"
+            ;;
+        esac
+        export OPENCODE_CONFIG="$GENERATED_CONFIG"
+        echo "Model: $MODEL | reasoning effort: ${EFFORT:-off}"
+
+        cd "$GITHUB_WORKSPACE"
+
+        # Pre-compute the diff so the agent never spends turns rediscovering it,
+        # and embed it directly in the prompt (truncated to keep context bounded).
+        NAMES="$(git diff "origin/$BASE_REF...HEAD" --name-only)"
+        STAT="$(git diff "origin/$BASE_REF...HEAD" --stat)"
+        DIFF_CONTENT="$(git diff "origin/$BASE_REF...HEAD" | head -c 120000)"
+
+        PROMPT="$(envsubst '${BASE_REF} ${PR_NUMBER} ${GITHUB_REPOSITORY}' < "${{ github.action_path }}/prompt.md")"
+
+        # Feed the agent its OWN prior reviews (archived into hidden HTML comments by the
+        # cleanup step) so it has continuity across runs.
+        PRIOR="$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER/reviews" \
+          --jq '[.[] | select(.body != null and (.body | contains("AI_REVIEW_ARCHIVED"))) | .body] | join("\n\n----\n\n")' 2>/dev/null || true)"
+        if [ -n "$PRIOR" ]; then
+          PROMPT="${PROMPT}"$'\n\n## Your prior reviews on this PR (context from earlier runs; humans do not see these)\n'"${PRIOR}"
+        fi
+
+        PROMPT="${PROMPT}"$'\n\n## Changed files\n'"${NAMES}"$'\n\n## Diffstat\n'"${STAT}"$'\n\n## Full diff\n```diff\n'"${DIFF_CONTENT}"$'\n```'
+
+        opencode run --auto --model "$MODEL" "$PROMPT"
