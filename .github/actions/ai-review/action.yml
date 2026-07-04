@@ -90,12 +90,6 @@ runs:
         STAT="$(git diff "origin/$BASE_REF...HEAD" --stat)"
 
         PROMPT="$(envsubst '${BASE_REF} ${PR_NUMBER} ${GITHUB_REPOSITORY}' < "${{ github.action_path }}/prompt.md")"
-        PROMPT="${PROMPT}
-
-## Changed files
-${NAMES}
-
-## Diffstat
-${STAT}"
+        PROMPT="${PROMPT}"$'\n\n## Changed files\n'"${NAMES}"$'\n\n## Diffstat\n'"${STAT}"
 
         opencode run --auto --model "$MODEL" --file "$DIFF_FILE" "$PROMPT"
