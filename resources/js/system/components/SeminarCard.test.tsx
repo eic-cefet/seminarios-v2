@@ -37,7 +37,7 @@ describe('SeminarCard', () => {
     });
 
     it('shows registration count with "inscritos"', () => {
-        const seminar = createSeminar({ registrationsCount: 42 });
+        const seminar = createSeminar({ registrations_count: 42 });
         render(<SeminarCard seminar={seminar} />);
 
         expect(screen.getByText('42 inscritos')).toBeInTheDocument();
@@ -45,8 +45,8 @@ describe('SeminarCard', () => {
 
     it('shows "Encerrado" badge when expired', () => {
         const seminar = createSeminar({
-            scheduledAt: '2020-01-01T00:00:00Z',
-            isExpired: true
+            scheduled_at: '2020-01-01T00:00:00Z',
+            is_expired: true
         });
         render(<SeminarCard seminar={seminar} />);
 

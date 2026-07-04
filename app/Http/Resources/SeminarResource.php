@@ -17,15 +17,15 @@ class SeminarResource extends JsonResource
             'name' => $this->name,
             'slug' => $this->slug,
             'description' => $this->description,
-            'scheduledAt' => $this->scheduled_at?->toIso8601String(),
-            'endsAt' => $endsAt?->toIso8601String(),
-            'durationMinutes' => $durationMinutes,
-            'roomLink' => $this->room_link,
+            'scheduled_at' => $this->scheduled_at?->toIso8601String(),
+            'ends_at' => $endsAt?->toIso8601String(),
+            'duration_minutes' => $durationMinutes,
+            'room_link' => $this->room_link,
             'active' => $this->active,
-            'isExpired' => $this->scheduled_at?->isPast() ?? false,
+            'is_expired' => $this->scheduled_at?->isPast() ?? false,
 
             // Relationships
-            'seminarType' => new SeminarTypeResource($this->whenLoaded('seminarType')),
+            'seminar_type' => new SeminarTypeResource($this->whenLoaded('seminarType')),
             'workshop' => new WorkshopResource($this->whenLoaded('workshop')),
             'subjects' => SubjectResource::collection($this->whenLoaded('subjects')),
             'speakers' => SpeakerResource::collection($this->whenLoaded('speakers')),
@@ -35,10 +35,10 @@ class SeminarResource extends JsonResource
             ]),
 
             // Counts
-            'registrationsCount' => $this->whenCounted('registrations'),
+            'registrations_count' => $this->whenCounted('registrations'),
 
             // Aggregations
-            'averageRating' => $this->whenHas(
+            'average_rating' => $this->whenHas(
                 'ratings_avg_score',
                 fn ($value) => $value === null ? null : round((float) $value, 1),
             ),

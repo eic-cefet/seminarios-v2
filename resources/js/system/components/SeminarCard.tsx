@@ -22,7 +22,7 @@ export function SeminarCard({
     showSubject = true,
     className,
 }: SeminarCardProps) {
-    const expired = isExpired(seminar.scheduledAt);
+    const expired = isExpired(seminar.scheduled_at);
 
     return (
         <Link
@@ -38,9 +38,9 @@ export function SeminarCard({
             <div className="flex items-start justify-between gap-4">
                 <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                        {seminar.seminarType && (
+                        {seminar.seminar_type && (
                             <Badge variant={expired ? "expired" : "default"}>
-                                {seminar.seminarType.name}
+                                {seminar.seminar_type.name}
                             </Badge>
                         )}
                         {expired && <Badge variant="expired">Encerrado</Badge>}
@@ -66,12 +66,12 @@ export function SeminarCard({
                     <div className="mt-4 flex items-center gap-4 text-sm text-gray-500">
                         <span className="flex items-center gap-1">
                             <Calendar className="h-4 w-4" />
-                            {formatDateTime(seminar.scheduledAt)}
+                            {formatDateTime(seminar.scheduled_at)}
                         </span>
-                        {seminar.registrationsCount !== undefined && (
+                        {seminar.registrations_count !== undefined && (
                             <span className="flex items-center gap-1">
                                 <Users className="h-4 w-4" />
-                                {seminar.registrationsCount} inscritos
+                                {seminar.registrations_count} inscritos
                             </span>
                         )}
                     </div>

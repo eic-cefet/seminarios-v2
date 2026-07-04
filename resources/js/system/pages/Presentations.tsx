@@ -104,7 +104,7 @@ export default function Presentations() {
         const firstSeminar = calendarSeminarsData?.data[0];
         setCalendarMonth(
             firstSeminar
-                ? toSaoPaulo(firstSeminar.scheduledAt)
+                ? toSaoPaulo(firstSeminar.scheduled_at)
                 : new Date(),
         );
     }, [
