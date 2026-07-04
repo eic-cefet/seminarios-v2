@@ -17,7 +17,11 @@ class ProfileCalendarFeedController extends Controller
         $user = $request->user();
 
         if (! $user->calendar_feed_token) {
-            $user->forceFill(['calendar_feed_token' => Str::random(48)])->save();
+            User::query()
+                ->whereKey($user->id)
+                ->whereNull('calendar_feed_token')
+                ->update(['calendar_feed_token' => Str::random(48)]);
+            $user->refresh();
         }
 
         return response()->json([

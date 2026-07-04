@@ -649,6 +649,11 @@ describe('GET /api/profile/schedule', function () {
         $user = actingAsUser();
         Registration::factory()->count(15)->create(['user_id' => $user->id]);
 
+        $past = Seminar::factory()->past()->create(['active' => true]);
+        $inactive = Seminar::factory()->create(['active' => false, 'scheduled_at' => now()->addDays(5)]);
+        Registration::factory()->create(['user_id' => $user->id, 'seminar_id' => $past->id]);
+        Registration::factory()->create(['user_id' => $user->id, 'seminar_id' => $inactive->id]);
+
         $response = $this->getJson('/api/profile/schedule?per_page=10');
 
         $response->assertSuccessful()

@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Check, Copy, ExternalLink, Loader2, RefreshCw } from "lucide-react";
 import { profileApi } from "@shared/api/client";
 import { Button } from "@shared/components/Button";
@@ -7,12 +7,17 @@ import { googleCalendarSubscribeUrl, toWebcalUrl } from "@shared/lib/calendar";
 
 function CopyField({ label, value }: { label: string; value: string }) {
     const [copied, setCopied] = useState(false);
+    const timerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+    useEffect(() => {
+        return () => clearTimeout(timerRef.current);
+    }, []);
 
     const copy = async () => {
         try {
             await navigator.clipboard.writeText(value);
             setCopied(true);
-            setTimeout(() => setCopied(false), 2000);
+            timerRef.current = setTimeout(() => setCopied(false), 2000);
         } catch {
             // Clipboard unavailable — the URL stays visible in the input for manual copy.
         }
@@ -20,11 +25,12 @@ function CopyField({ label, value }: { label: string; value: string }) {
 
     return (
         <div>
-            <label className="text-xs font-medium text-gray-500">
+            <label htmlFor={label} className="text-xs font-medium text-gray-500">
                 {label}
             </label>
             <div className="mt-1 flex items-center gap-2">
                 <input
+                    id={label}
                     type="text"
                     readOnly
                     value={value}
