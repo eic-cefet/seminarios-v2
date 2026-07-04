@@ -113,3 +113,13 @@ export function createCalendarLinks(
         ics: buildUrl(event.downloadPath),
     };
 }
+
+export function toWebcalUrl(url: string): string {
+    return url.replace(/^https?:/, "webcal:");
+}
+
+export function googleCalendarSubscribeUrl(feedUrl: string): string {
+    const url = new URL("https://calendar.google.com/calendar/render");
+    url.searchParams.set("cid", toWebcalUrl(feedUrl));
+    return url.toString();
+}

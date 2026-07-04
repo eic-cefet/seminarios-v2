@@ -1,4 +1,4 @@
-import { createCalendarLinks } from "./calendar";
+import { createCalendarLinks, googleCalendarSubscribeUrl, toWebcalUrl } from "./calendar";
 
 describe("createCalendarLinks", () => {
     it("builds Google, Outlook, and ICS links with event details", () => {
@@ -111,5 +111,38 @@ describe("createCalendarLinks", () => {
             });
             app.ROUTER_BASE = originalRouterBase;
         }
+    });
+});
+
+describe("toWebcalUrl", () => {
+    it("swaps https scheme for webcal", () => {
+        expect(toWebcalUrl("https://example.com/calendar/personal/abc.ics")).toBe(
+            "webcal://example.com/calendar/personal/abc.ics",
+        );
+    });
+
+    it("swaps http scheme for webcal", () => {
+        expect(toWebcalUrl("http://localhost/calendar/seminars.ics")).toBe(
+            "webcal://localhost/calendar/seminars.ics",
+        );
+    });
+
+    it("leaves non-http schemes untouched", () => {
+        expect(toWebcalUrl("webcal://example.com/feed.ics")).toBe(
+            "webcal://example.com/feed.ics",
+        );
+    });
+});
+
+describe("googleCalendarSubscribeUrl", () => {
+    it("builds a render link with the webcal url as cid", () => {
+        const url = new URL(
+            googleCalendarSubscribeUrl("https://example.com/calendar/personal/abc.ics"),
+        );
+
+        expect(url.origin).toBe("https://calendar.google.com");
+        expect(url.searchParams.get("cid")).toBe(
+            "webcal://example.com/calendar/personal/abc.ics",
+        );
     });
 });

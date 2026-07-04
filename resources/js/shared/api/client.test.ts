@@ -359,6 +359,47 @@ describe('fetchApi (via API namespaces)', () => {
         });
     });
 
+    describe('profileApi calendar feed and schedule', () => {
+        it('schedule fetches paginated upcoming registrations', async () => {
+            mockFetchSuccess({ data: [], meta: { current_page: 1, last_page: 1, per_page: 10, total: 0 } });
+            const result = await profileApi.schedule({ page: 1, per_page: 10 });
+            expect(result.data).toEqual([]);
+            expect(fetchSpy).toHaveBeenCalledWith(
+                expect.stringContaining('/profile/schedule'),
+                expect.any(Object),
+            );
+        });
+
+        it('schedule with no params produces no query string', async () => {
+            mockFetchSuccess({ data: [], meta: { current_page: 1, last_page: 1, per_page: 15, total: 0 } });
+            await profileApi.schedule();
+            expect(fetchSpy).toHaveBeenCalledWith(
+                expect.stringMatching(/\/profile\/schedule$/),
+                expect.any(Object),
+            );
+        });
+
+        it('calendarFeed fetches feed urls', async () => {
+            mockFetchSuccess({ data: { personal_url: 'https://x.test/calendar/personal/tok.ics', public_url: 'https://x.test/calendar/seminars.ics' } });
+            const result = await profileApi.calendarFeed();
+            expect(result.data.personal_url).toContain('/calendar/personal/');
+            expect(fetchSpy).toHaveBeenCalledWith(
+                expect.stringContaining('/profile/calendar-feed'),
+                expect.any(Object),
+            );
+        });
+
+        it('rotateCalendarFeed sends POST', async () => {
+            mockFetchSuccess({ message: 'ok', data: { personal_url: 'https://x.test/calendar/personal/new.ics', public_url: 'https://x.test/calendar/seminars.ics' } });
+            const result = await profileApi.rotateCalendarFeed();
+            expect(result.data.personal_url).toContain('/calendar/personal/');
+            expect(fetchSpy).toHaveBeenCalledWith(
+                expect.stringContaining('/profile/calendar-feed/rotate'),
+                expect.objectContaining({ method: 'POST' }),
+            );
+        });
+    });
+
     describe('alertPreferencesApi', () => {
         it('get fetches alert preferences', async () => {
             mockFetchSuccess({ data: { newSeminarAlert: true, seminarTypeIds: [1], subjectIds: [2] } });
