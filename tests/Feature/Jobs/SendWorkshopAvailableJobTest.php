@@ -5,16 +5,15 @@ use App\Mail\WorkshopAvailable;
 use App\Models\AlertPreference;
 use App\Models\User;
 use App\Models\Workshop;
-use App\Services\CommunicationGate;
 use Illuminate\Support\Facades\Mail;
 
-it('queues the workshop available mail when the gate allows', function () {
+it('queues the workshop available mail when the user opted in', function () {
     Mail::fake();
     $user = User::factory()->create();
     AlertPreference::factory()->for($user)->create(['workshop_announcements' => true]);
     $workshop = Workshop::factory()->create();
 
-    (new SendWorkshopAvailableJob($user, $workshop->id))->handle(app(CommunicationGate::class));
+    (new SendWorkshopAvailableJob($user, $workshop->id))->handle();
 
     Mail::assertQueued(WorkshopAvailable::class, fn ($m) => $m->user->is($user) && $m->workshop->is($workshop));
 });
@@ -25,7 +24,7 @@ it('skips when the user opted out', function () {
     AlertPreference::factory()->for($user)->create(['workshop_announcements' => false]);
     $workshop = Workshop::factory()->create();
 
-    (new SendWorkshopAvailableJob($user, $workshop->id))->handle(app(CommunicationGate::class));
+    (new SendWorkshopAvailableJob($user, $workshop->id))->handle();
 
     Mail::assertNothingQueued();
 });
@@ -36,7 +35,7 @@ it('queues the mail for users without an AlertPreference row (default-on)', func
     expect($user->alertPreference)->toBeNull();
     $workshop = Workshop::factory()->create();
 
-    (new SendWorkshopAvailableJob($user, $workshop->id))->handle(app(CommunicationGate::class));
+    (new SendWorkshopAvailableJob($user, $workshop->id))->handle();
 
     Mail::assertQueued(WorkshopAvailable::class);
 });
@@ -45,7 +44,7 @@ it('skips when the workshop no longer exists', function () {
     Mail::fake();
     $user = User::factory()->create();
 
-    (new SendWorkshopAvailableJob($user, 99999))->handle(app(CommunicationGate::class));
+    (new SendWorkshopAvailableJob($user, 99999))->handle();
 
     Mail::assertNothingQueued();
 });

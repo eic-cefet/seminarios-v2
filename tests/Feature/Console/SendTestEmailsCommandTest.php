@@ -108,4 +108,21 @@ describe('SendTestEmailsCommand', function () {
             ->expectsOutputToContain('Error: Mail server unavailable')
             ->assertExitCode(1);
     });
+
+    it('creates the test user with a usable password during execution', function () {
+        // Spy on User creation by partial-mocking the WelcomeUser mailable resolution.
+        // We assert against the user that the command creates by hooking into the Mail fake.
+        $this->artisan('mail:send-tests', ['--to' => 'qa@example.test', '--only' => 'welcome'])
+            ->assertExitCode(0);
+
+        Mail::assertQueued(WelcomeUser::class, function (WelcomeUser $mail) {
+            $user = $mail->user;
+
+            return $user->exists
+                && $user->email !== null
+                && ! empty($user->password)
+                && ! array_key_exists('provider', $user->getAttributes())
+                && ! array_key_exists('provider_id', $user->getAttributes());
+        });
+    });
 });

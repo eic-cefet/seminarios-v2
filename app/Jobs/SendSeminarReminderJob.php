@@ -6,7 +6,6 @@ use App\Enums\CommunicationCategory;
 use App\Mail\SeminarReminder;
 use App\Models\Registration;
 use App\Models\User;
-use App\Services\CommunicationGate;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -34,11 +33,9 @@ class SendSeminarReminderJob implements ShouldQueue
         public string $mailableClass = SeminarReminder::class,
     ) {}
 
-    public function handle(?CommunicationGate $gate = null): void
+    public function handle(): void
     {
-        $gate ??= app(CommunicationGate::class);
-
-        if (! $gate->canEmail($this->user, $this->category)) {
+        if (! $this->user->wantsCommunication($this->category)) {
             return;
         }
 

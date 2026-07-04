@@ -114,4 +114,17 @@ return [
 
     'password_timeout' => env('AUTH_PASSWORD_TIMEOUT', 10800),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Login Rate Limit
+    |--------------------------------------------------------------------------
+    |
+    | The maximum number of login attempts allowed per minute, per email/IP
+    | combination. Reading this from config (rather than env() directly in
+    | AppServiceProvider) ensures the value survives `php artisan config:cache`.
+    |
+    */
+
+    'login_rate_limit' => (int) env('LOGIN_RATE_LIMIT', 5),
+
 ];
