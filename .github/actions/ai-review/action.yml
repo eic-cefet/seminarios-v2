@@ -39,6 +39,45 @@ runs:
         BASE_REF: ${{ inputs.base-ref }}
       run: git fetch origin "$BASE_REF"
 
+    - name: Hide prior AI reviews
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+        PR_NUMBER: ${{ inputs.pr-number }}
+        REPO: ${{ github.repository }}
+      run: |
+        set -euo pipefail
+        OWNER="${REPO%/*}"; NAME="${REPO#*/}"
+
+        # Use `gh api --jq` throughout so jq runs on the raw response bytes;
+        # storing multi-line JSON bodies in a shell var and re-parsing corrupts them.
+        MARKER='## AI Code Review'
+
+        # Capture the bot login from our own prior reviews (marker-matched — portable).
+        BOT_LOGIN="$(gh api "repos/$REPO/pulls/$PR_NUMBER/reviews" \
+          --jq "[.[] | select(.body != null and (.body | contains(\"$MARKER\"))) | .user.login] | last // empty" 2>/dev/null || true)"
+
+        # Dismiss active prior reviews — collapses them but keeps them for context.
+        gh api "repos/$REPO/pulls/$PR_NUMBER/reviews" \
+          --jq ".[] | select(.body != null and (.body | contains(\"$MARKER\"))) | select(.state==\"APPROVED\" or .state==\"CHANGES_REQUESTED\") | .id" 2>/dev/null | while read -r id; do
+          [ -n "$id" ] || continue
+          gh api --method PUT "repos/$REPO/pulls/$PR_NUMBER/reviews/$id/dismissals" \
+            -f message="Superseded by a newer AI review" -f event="DISMISS" >/dev/null 2>&1 \
+            && echo "dismissed review $id" || echo "could not dismiss review $id (non-fatal)"
+        done
+
+        # Minimize our prior inline review-comment threads (OUTDATED) — hidden, still readable.
+        if [ -n "$BOT_LOGIN" ]; then
+          gh api graphql -F o="$OWNER" -F n="$NAME" -F p="$PR_NUMBER" \
+            -f query='query($o:String!,$n:String!,$p:Int!){repository(owner:$o,name:$n){pullRequest(number:$p){reviewThreads(first:100){nodes{comments(first:1){nodes{id isMinimized author{login}}}}}}}}' \
+            --jq ".data.repository.pullRequest.reviewThreads.nodes[]?.comments.nodes[0] | select(.isMinimized==false and .author.login==\"$BOT_LOGIN\") | .id" 2>/dev/null | while read -r cid; do
+            [ -n "$cid" ] || continue
+            gh api graphql -F id="$cid" \
+              -f query='mutation($id:ID!){minimizeComment(input:{subjectId:$id,classifier:OUTDATED}){minimizedComment{isMinimized}}}' >/dev/null 2>&1 \
+              && echo "minimized comment $cid" || echo "could not minimize $cid (non-fatal)"
+          done
+        fi
+
     - name: Run AI review
       shell: bash
       env:
