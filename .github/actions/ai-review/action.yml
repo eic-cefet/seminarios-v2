@@ -31,7 +31,9 @@ runs:
 
     - name: Fetch base branch
       shell: bash
-      run: git fetch origin "${{ inputs.base-ref }}"
+      env:
+        BASE_REF: ${{ inputs.base-ref }}
+      run: git fetch origin "$BASE_REF"
 
     - name: Run AI review
       shell: bash
