@@ -65,3 +65,7 @@ it('returns the affected seminar ids', function () {
 
     expect($affectedSeminarIds)->toEqualCanonicalizing([$seminarA->id, $seminarB->id]);
 });
+
+it('returns no affected seminar ids for an empty subject list', function () {
+    expect(app(SubjectMerger::class)->affectedSeminarIds([]))->toBe([]);
+});
