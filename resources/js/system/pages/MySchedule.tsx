@@ -12,6 +12,7 @@ import { profileApi } from "@shared/api/client";
 import { ROUTES } from "@shared/config/routes";
 import { formatDateTime } from "@shared/lib/utils";
 import { Button } from "@shared/components/Button";
+import { CalendarSubscribeCard } from "../components/CalendarSubscribeCard";
 
 export default function MySchedule() {
     const [page, setPage] = useState(1);
@@ -55,6 +56,7 @@ export default function MySchedule() {
                 </div>
 
                 <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8 space-y-6">
+                    <CalendarSubscribeCard />
                     <div className="rounded-lg border border-gray-200 bg-white">
                         {isLoading ? (
                             <div className="flex items-center justify-center py-12">
