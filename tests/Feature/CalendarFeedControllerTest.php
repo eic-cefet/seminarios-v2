@@ -1,6 +1,8 @@
 <?php
 
+use App\Models\Registration;
 use App\Models\Seminar;
+use App\Models\User;
 use Illuminate\Support\Facades\Route;
 
 describe('GET /calendar/seminars.ics', function () {
@@ -63,5 +65,66 @@ describe('GET /calendar/seminars.ics', function () {
 
     it('returns 404 for unmatched calendar paths instead of serving the SPA', function () {
         $this->get('/calendar/nao-existe')->assertNotFound();
+    });
+});
+
+describe('GET /calendar/personal/{token}.ics', function () {
+    it('downloads the personal feed with registered seminars, past included', function () {
+        $user = User::factory()->create(['calendar_feed_token' => str_repeat('a', 48)]);
+        $future = Seminar::factory()->create(['active' => true, 'name' => 'MeuEventoFuturo', 'scheduled_at' => now()->addDays(2)]);
+        $past = Seminar::factory()->create(['active' => true, 'name' => 'MeuEventoPassado', 'scheduled_at' => now()->subMonths(3)]);
+        Registration::factory()->create(['user_id' => $user->id, 'seminar_id' => $future->id]);
+        Registration::factory()->create(['user_id' => $user->id, 'seminar_id' => $past->id]);
+
+        $response = $this->get('/calendar/personal/'.str_repeat('a', 48).'.ics');
+
+        $response->assertOk()
+            ->assertHeader('Content-Disposition', 'attachment; filename="minha-agenda.ics"');
+
+        expect($response->headers->get('Content-Type'))->toContain('text/calendar');
+        expect($response->headers->get('Cache-Control'))->toContain('private');
+        expect($response->getContent())
+            ->toContain('Minha agenda')
+            ->toContain('MeuEventoFuturo')
+            ->toContain('MeuEventoPassado');
+    });
+
+    it('excludes unregistered, inactive, soft-deleted, and other-user seminars', function () {
+        $user = User::factory()->create(['calendar_feed_token' => str_repeat('a', 48)]);
+        $other = User::factory()->create();
+
+        Seminar::factory()->create(['active' => true, 'name' => 'EventoSemInscricao', 'scheduled_at' => now()->addDays(2)]);
+
+        $inactive = Seminar::factory()->create(['active' => false, 'name' => 'EventoInativoMeu', 'scheduled_at' => now()->addDays(3)]);
+        Registration::factory()->create(['user_id' => $user->id, 'seminar_id' => $inactive->id]);
+
+        $deleted = Seminar::factory()->create(['active' => true, 'name' => 'EventoExcluidoMeu', 'scheduled_at' => now()->addDays(4)]);
+        Registration::factory()->create(['user_id' => $user->id, 'seminar_id' => $deleted->id]);
+        $deleted->delete();
+
+        $otherSeminar = Seminar::factory()->create(['active' => true, 'name' => 'EventoDeOutro', 'scheduled_at' => now()->addDays(5)]);
+        Registration::factory()->create(['user_id' => $other->id, 'seminar_id' => $otherSeminar->id]);
+
+        $content = $this->get('/calendar/personal/'.str_repeat('a', 48).'.ics')->getContent();
+
+        expect($content)
+            ->not->toContain('EventoSemInscricao')
+            ->not->toContain('EventoInativoMeu')
+            ->not->toContain('EventoExcluidoMeu')
+            ->not->toContain('EventoDeOutro');
+    });
+
+    it('returns 404 for an unknown token', function () {
+        $this->get('/calendar/personal/'.str_repeat('z', 48).'.ics')->assertNotFound();
+    });
+
+    it('returns 404 for a malformed token', function () {
+        $this->get('/calendar/personal/abc%20def.ics')->assertNotFound();
+    });
+
+    it('applies the public throttle limiter', function () {
+        $route = Route::getRoutes()->getByName('calendar.personal-feed');
+
+        expect($route->middleware())->toContain('throttle:public');
     });
 });

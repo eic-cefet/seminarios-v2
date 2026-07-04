@@ -35,6 +35,9 @@ Route::get('/sitemap.xml', SitemapController::class)
 Route::middleware('throttle:public')->group(function () {
     Route::get('/calendar/seminars.ics', [CalendarFeedController::class, 'publicFeed'])
         ->name('calendar.public-feed');
+    Route::get('/calendar/personal/{token}.ics', [CalendarFeedController::class, 'personalFeed'])
+        ->where('token', '[A-Za-z0-9]+')
+        ->name('calendar.personal-feed');
 });
 
 // System SPA (public/student)
