@@ -102,7 +102,7 @@ describe('POST /api/admin/seminars/{seminar}/presence-link', function () {
         expect(PresenceLink::where('seminar_id', $seminar->id)->exists())->toBeTrue();
     });
 
-    it('creates presence link with default inactive state', function () {
+    it('creates presence link with default active state', function () {
         actingAsAdmin();
 
         $seminar = Seminar::factory()->upcoming()->create();
@@ -110,7 +110,7 @@ describe('POST /api/admin/seminars/{seminar}/presence-link', function () {
         $response = $this->postJson("/api/admin/seminars/{$seminar->id}/presence-link");
 
         $response->assertStatus(201)
-            ->assertJsonPath('data.active', false);
+            ->assertJsonPath('data.active', true);
     });
 
     it('sets expiration to 4 hours after scheduled_at', function () {
@@ -126,6 +126,24 @@ describe('POST /api/admin/seminars/{seminar}/presence-link', function () {
         $presenceLink = PresenceLink::where('seminar_id', $seminar->id)->first();
         expect($presenceLink->expires_at->format('Y-m-d H:i'))
             ->toBe($scheduledAt->addHours(4)->format('Y-m-d H:i'));
+    });
+
+    it('uses minimum expiry on creation when seminar scheduled time is in the past', function () {
+        actingAsAdmin();
+
+        // Seminar scheduled in the past (so scheduled_at + 4 hours is still before now + 1 hour)
+        $seminar = Seminar::factory()->create([
+            'scheduled_at' => now()->subDays(2),
+        ]);
+
+        $response = $this->postJson("/api/admin/seminars/{$seminar->id}/presence-link");
+
+        $response->assertStatus(201);
+
+        $presenceLink = PresenceLink::where('seminar_id', $seminar->id)->first();
+        // Expiry should be approximately now + 1 hour (minimum expiry)
+        expect($presenceLink->expires_at->gte(now()->addMinutes(59)))->toBeTrue();
+        expect($presenceLink->expires_at->lte(now()->addMinutes(61)))->toBeTrue();
     });
 
     it('returns 409 when presence link already exists', function () {
