@@ -121,4 +121,21 @@ describe('MySchedule', () => {
             expect(screen.getByText('Solo Event')).toBeInTheDocument();
         });
     });
+
+    it('shows plural "inscrições" when total is greater than one', async () => {
+        authenticated();
+        vi.mocked(profileApi.schedule).mockResolvedValue({
+            data: [
+                createUserRegistration({ seminar: { id: 4, name: 'Evento A', slug: 'evento-a', scheduled_at: '2026-08-15T14:00:00Z', is_expired: false, seminar_type: null, location: null } }),
+                createUserRegistration({ seminar: { id: 5, name: 'Evento B', slug: 'evento-b', scheduled_at: '2026-09-01T10:00:00Z', is_expired: false, seminar_type: null, location: null } }),
+            ],
+            meta: { current_page: 1, last_page: 1, per_page: 10, total: 2 },
+        });
+
+        render(<MySchedule />);
+
+        await waitFor(() => {
+            expect(screen.getByText('2 inscrições')).toBeInTheDocument();
+        });
+    });
 });

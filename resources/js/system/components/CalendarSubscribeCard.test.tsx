@@ -49,8 +49,9 @@ describe('CalendarSubscribeCard', () => {
         });
     });
 
-    it('copies the personal webcal url and shows feedback', async () => {
-        const user = userEvent.setup();
+    it('copies the personal webcal url, shows feedback, and clears it after 2s', async () => {
+        vi.useFakeTimers({ shouldAdvanceTime: true });
+        const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTimeAsync });
         render(<CalendarSubscribeCard />);
 
         await waitFor(() => {
@@ -69,6 +70,13 @@ describe('CalendarSubscribeCard', () => {
         await waitFor(() => {
             expect(screen.getByText('Copiado!')).toBeInTheDocument();
         });
+
+        await vi.advanceTimersByTimeAsync(2000);
+        await waitFor(() => {
+            expect(screen.queryByText('Copiado!')).not.toBeInTheDocument();
+        });
+
+        vi.useRealTimers();
     });
 
     it('shows no feedback when the clipboard write fails', async () => {
@@ -156,5 +164,41 @@ describe('CalendarSubscribeCard', () => {
         await waitFor(() => {
             expect(screen.getByText(/não foi possível carregar os links de assinatura/i)).toBeInTheDocument();
         });
+    });
+
+    it('selects all text in the url input on focus', async () => {
+        const user = userEvent.setup();
+        render(<CalendarSubscribeCard />);
+
+        const inputs = await screen.findAllByRole('textbox');
+        const select = vi.fn();
+        Object.defineProperty(inputs[0], 'select', { value: select, configurable: true });
+
+        await user.click(inputs[0]);
+
+        expect(select).toHaveBeenCalled();
+    });
+
+    it('shows a spinner on the confirm button while rotation is pending', async () => {
+        let resolveRotate: () => void;
+        vi.mocked(profileApi.rotateCalendarFeed).mockReturnValue(
+            new Promise((resolve) => {
+                resolveRotate = () => resolve({ message: 'ok', data: FEED.data });
+            }) as any,
+        );
+        const user = userEvent.setup();
+        render(<CalendarSubscribeCard />);
+
+        await waitFor(() => {
+            expect(screen.getByRole('button', { name: /gerar novo link/i })).toBeInTheDocument();
+        });
+
+        await user.click(screen.getByRole('button', { name: /gerar novo link/i }));
+        await user.click(screen.getByRole('button', { name: /^confirmar$/i }));
+
+        // While pending the confirm button should be disabled and the spinner visible
+        expect(screen.getByRole('button', { name: /^confirmar$/i })).toBeDisabled();
+
+        resolveRotate!();
     });
 });
