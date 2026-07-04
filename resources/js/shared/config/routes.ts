@@ -22,6 +22,7 @@ export const ROUTES = {
         COMPLETE_PROFILE: "/completar-perfil",
         PROFILE: "/perfil",
         CERTIFICATES: "/certificados",
+        MY_SCHEDULE: "/minha-agenda",
         ALERT_PREFERENCES: "/perfil/preferencias/alertas",
         EVALUATIONS: "/avaliar",
         BUG_REPORT: "/reportar-bug",
