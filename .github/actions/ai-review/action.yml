@@ -80,6 +80,22 @@ runs:
         export OPENCODE_CONFIG="$GENERATED_CONFIG"
         echo "Model: $MODEL | reasoning effort: ${EFFORT:-off}"
 
-        PROMPT="$(envsubst '${BASE_REF} ${PR_NUMBER} ${GITHUB_REPOSITORY}' < "${{ github.action_path }}/prompt.md")"
         cd "$GITHUB_WORKSPACE"
-        opencode run --auto --model "$MODEL" "$PROMPT"
+
+        # Pre-compute the diff so the agent never spends turns rediscovering it.
+        # Attach the full diff as a file; inline the (small) file list + stat.
+        DIFF_FILE="$RUNNER_TEMP/pr.diff"
+        git diff "origin/$BASE_REF...HEAD" | head -c 200000 > "$DIFF_FILE"
+        NAMES="$(git diff "origin/$BASE_REF...HEAD" --name-only)"
+        STAT="$(git diff "origin/$BASE_REF...HEAD" --stat)"
+
+        PROMPT="$(envsubst '${BASE_REF} ${PR_NUMBER} ${GITHUB_REPOSITORY}' < "${{ github.action_path }}/prompt.md")"
+        PROMPT="${PROMPT}
+
+## Changed files
+${NAMES}
+
+## Diffstat
+${STAT}"
+
+        opencode run --auto --model "$MODEL" --file "$DIFF_FILE" "$PROMPT"
