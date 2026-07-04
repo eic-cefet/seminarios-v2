@@ -308,6 +308,7 @@ jobs:
     if: github.event.pull_request.head.repo.full_name == github.repository && needs.gate.outputs.fast_track != 'true'
     runs-on: ubuntu-latest
     continue-on-error: true
+    timeout-minutes: 15
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -329,6 +330,7 @@ jobs:
           github-token: ${{ steps.app-token.outputs.token }}
           pr-number: ${{ github.event.pull_request.number }}
           base-ref: ${{ github.base_ref }}
+          reasoning-effort: ${{ vars.AI_REVIEW_EFFORT }}
 
   # ============================================
   # FINAL GATE (always runs, checks all jobs)

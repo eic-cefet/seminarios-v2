@@ -19,6 +19,10 @@ inputs:
     description: "Base branch to diff against"
     required: false
     default: "main"
+  reasoning-effort:
+    description: "Reasoning effort for the model (minimal, low, medium, high, xhigh). Use 'off' to leave the model at its base effort. Injected as the OpenRouter model's reasoningEffort."
+    required: false
+    default: "low"
 
 runs:
   using: "composite"
@@ -45,7 +49,8 @@ runs:
         BASE_REF: ${{ inputs.base-ref }}
         GITHUB_REPOSITORY: ${{ github.repository }}
         OPENCODE_MODEL_INPUT: ${{ inputs.openrouter-model }}
-        OPENCODE_CONFIG: ${{ github.action_path }}/opencode.json
+        REASONING_EFFORT: ${{ inputs.reasoning-effort }}
+        CONFIG_TEMPLATE: ${{ github.action_path }}/opencode.json
       run: |
         set -euo pipefail
         MODEL="${OPENCODE_MODEL_INPUT:-openrouter/anthropic/claude-sonnet-4}"
@@ -55,6 +60,26 @@ runs:
           openrouter/*) : ;;
           *) MODEL="openrouter/$MODEL" ;;
         esac
+        BARE_MODEL="${MODEL#openrouter/}"
+        EFFORT="${REASONING_EFFORT:-low}"
+
+        # Generate the runtime config from the template, injecting the reasoning
+        # effort into the selected model's options (keyed by the bare model id).
+        # 'off'/'none'/'default' leaves the model at its base effort.
+        GENERATED_CONFIG="$RUNNER_TEMP/opencode.json"
+        case "$EFFORT" in
+          off|none|default|"")
+            cp "$CONFIG_TEMPLATE" "$GENERATED_CONFIG"
+            ;;
+          *)
+            jq --arg m "$BARE_MODEL" --arg e "$EFFORT" \
+              '.provider.openrouter.models[$m].options.reasoningEffort = $e' \
+              "$CONFIG_TEMPLATE" > "$GENERATED_CONFIG"
+            ;;
+        esac
+        export OPENCODE_CONFIG="$GENERATED_CONFIG"
+        echo "Model: $MODEL | reasoning effort: ${EFFORT:-off}"
+
         PROMPT="$(envsubst '${BASE_REF} ${PR_NUMBER} ${GITHUB_REPOSITORY}' < "${{ github.action_path }}/prompt.md")"
         cd "$GITHUB_WORKSPACE"
         opencode run --auto --model "$MODEL" "$PROMPT"
