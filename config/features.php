@@ -14,4 +14,7 @@ return [
     'env_secrets_setup' => [
         'enabled' => env('FEATURE_ENV_SECRETS_SETUP', true),
     ],
+    'database_backup' => [
+        'enabled' => env('FEATURE_DATABASE_BACKUP', true),
+    ],
 ];
