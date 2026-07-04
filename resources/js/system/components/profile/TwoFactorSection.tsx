@@ -7,6 +7,7 @@ import DOMPurify from "dompurify";
 import { ShieldCheck } from "lucide-react";
 import { useState } from "react";
 import { ErrorAlert, SuccessAlert } from "./FormAlerts";
+import { Button } from "@shared/components/Button";
 
 type SetupState = {
     secret: string;
@@ -106,20 +107,21 @@ export function TwoFactorSection() {
                 {error && <ErrorAlert message={error} />}
 
                 {!isEnabled && !setup && (
-                    <button
+                    <Button
                         type="button"
+                        variant="primary"
                         onClick={() => {
                             setSuccess(null);
                             enable.mutate();
                         }}
                         disabled={enable.isPending}
                         className={cn(
-                            "rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-primary-700 transition-colors cursor-pointer",
+                            "px-4 py-2",
                             enable.isPending && "opacity-70 cursor-not-allowed",
                         )}
                     >
                         {enable.isPending ? "Gerando..." : "Ativar"}
-                    </button>
+                    </Button>
                 )}
 
                 {setup && (
@@ -180,17 +182,18 @@ export function TwoFactorSection() {
                                         setCode(e.target.value.replace(/\D/g, ""))
                                     }
                                 />
-                                <button
+                                <Button
                                     type="submit"
+                                    variant="primary"
                                     disabled={confirm.isPending || code.length !== 6}
                                     className={cn(
-                                        "rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-primary-700 transition-colors cursor-pointer",
+                                        "px-4 py-2",
                                         (confirm.isPending || code.length !== 6) &&
                                             "opacity-70 cursor-not-allowed",
                                     )}
                                 >
                                     {confirm.isPending ? "Confirmando..." : "Confirmar"}
-                                </button>
+                                </Button>
                             </form>
                         )}
 

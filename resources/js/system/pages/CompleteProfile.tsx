@@ -2,6 +2,7 @@ import { ApiRequestError, profileApi } from "@shared/api/client";
 import { ROUTES } from "@shared/config/routes";
 import { useAuth } from "@shared/contexts/AuthContext";
 import { FULL_NAME_MESSAGE, isFullName } from "@shared/lib/fullName";
+import { Button } from "@shared/components/Button";
 import { useMutation } from "@tanstack/react-query";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -80,13 +81,14 @@ export function CompleteProfile() {
                         {error}
                     </p>
                 )}
-                <button
+                <Button
                     type="submit"
+                    variant="primary"
                     disabled={mutation.isPending}
-                    className="rounded-md bg-primary-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-primary-700 disabled:opacity-60"
+                    className="px-4 py-2 font-semibold disabled:opacity-60"
                 >
                     {mutation.isPending ? "Salvando..." : "Continuar"}
-                </button>
+                </Button>
             </form>
         </main>
     );

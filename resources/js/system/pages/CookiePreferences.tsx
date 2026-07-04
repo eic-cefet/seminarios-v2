@@ -4,6 +4,7 @@ import { useConsent } from "@shared/contexts/ConsentContext";
 import { COOKIE_CATEGORIES } from "@shared/lib/consent";
 import { Layout } from "../components/Layout";
 import { cn } from "@shared/lib/utils";
+import { Button } from "@shared/components/Button";
 
 export default function CookiePreferences() {
     const { state, save } = useConsent();
@@ -90,17 +91,15 @@ export default function CookiePreferences() {
                     </div>
 
                     <div className="mt-6 flex items-center gap-4">
-                        <button
+                        <Button
                             type="button"
+                            variant="primary"
                             onClick={onSave}
                             disabled={saving}
-                            className={cn(
-                                "rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700",
-                                saving && "opacity-60",
-                            )}
+                            className={cn("px-4 py-2", saving && "opacity-60")}
                         >
                             Salvar preferências
-                        </button>
+                        </Button>
                         {savedAt && (
                             <span className="text-sm text-gray-500">
                                 Salvo em {savedAt}.
