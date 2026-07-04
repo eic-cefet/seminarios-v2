@@ -274,11 +274,6 @@ export interface UserRegistration {
     };
 }
 
-export interface CalendarFeedUrls {
-    personal_url: string;
-    public_url: string;
-}
-
 export interface UserCertificate {
     id: number;
     certificate_code: string;
@@ -291,6 +286,11 @@ export interface UserCertificate {
     > & {
         scheduled_at: string | null;
     };
+}
+
+export interface CalendarFeedUrls {
+    personal_url: string;
+    public_url: string;
 }
 
 export const profileApi = {
