@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\DataPrivacyController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\PresenceController;
 use App\Http\Controllers\Api\ProfileAlertPreferenceController;
+use App\Http\Controllers\Api\ProfileCalendarFeedController;
 use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\ProfileRatingController;
 use App\Http\Controllers\Api\ProfileRegistrationController;
@@ -102,6 +103,10 @@ Route::middleware('auth:sanctum')->group(function () {
     // Profile - Registrations & Certificates
     Route::get('/profile/registrations', [ProfileRegistrationController::class, 'registrations']);
     Route::get('/profile/certificates', [ProfileRegistrationController::class, 'certificates']);
+
+    // Profile - Calendar Feed
+    Route::get('/profile/calendar-feed', [ProfileCalendarFeedController::class, 'show']);
+    Route::post('/profile/calendar-feed/rotate', [ProfileCalendarFeedController::class, 'rotate']);
 
     // Profile - Evaluations & Ratings
     Route::get('/profile/pending-evaluations', [ProfileRatingController::class, 'pendingEvaluations']);

@@ -98,6 +98,9 @@ enum AuditEvent: string
     case AccountAnonymized = 'lgpd.account_anonymized';
     case LgpdRetentionPurged = 'lgpd.retention_purged';
 
+    // Calendar feeds
+    case CalendarFeedRotated = 'calendar_feed.token_rotated';
+
     // System configuration
     case EnvSecretsUpdated = 'system.env_secrets.updated';
 }
