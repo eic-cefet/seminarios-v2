@@ -25,7 +25,7 @@ class SeminarSlugObserver
             SeminarSlugHistory::query()->where('slug', $seminar->slug)->delete();
 
             if ($oldSlug === null || $oldSlug === $seminar->slug) {
-                return;
+                return; // @codeCoverageIgnore
             }
 
             SeminarSlugHistory::query()->updateOrCreate(
