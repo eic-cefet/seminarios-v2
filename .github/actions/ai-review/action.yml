@@ -57,13 +57,18 @@ runs:
         BOT_LOGIN="$(gh api "repos/$REPO/pulls/$PR_NUMBER/reviews" \
           --jq "[.[] | select(.body != null and (.body | contains(\"$MARKER\"))) | .user.login] | last // empty" 2>/dev/null || true)"
 
-        # Dismiss active prior reviews — collapses them but keeps them for context.
+        # Prior reviews can't be deleted or minimized, and dismissing alone leaves the
+        # full body rendered in the timeline. So OVERWRITE each prior marker review's
+        # body with a one-line note (kept for context) and dismiss it. Idempotent: once
+        # trimmed, the body no longer contains the marker, so later runs skip it.
         gh api "repos/$REPO/pulls/$PR_NUMBER/reviews" \
-          --jq ".[] | select(.body != null and (.body | contains(\"$MARKER\"))) | select(.state==\"APPROVED\" or .state==\"CHANGES_REQUESTED\") | .id" 2>/dev/null | while read -r id; do
+          --jq ".[] | select(.body != null and (.body | contains(\"$MARKER\"))) | .id" 2>/dev/null | while read -r id; do
           [ -n "$id" ] || continue
+          gh api --method PUT "repos/$REPO/pulls/$PR_NUMBER/reviews/$id" \
+            -f body="_Superseded by a newer AI review._" >/dev/null 2>&1 || true
           gh api --method PUT "repos/$REPO/pulls/$PR_NUMBER/reviews/$id/dismissals" \
-            -f message="Superseded by a newer AI review" -f event="DISMISS" >/dev/null 2>&1 \
-            && echo "dismissed review $id" || echo "could not dismiss review $id (non-fatal)"
+            -f message="Superseded by a newer AI review" -f event="DISMISS" >/dev/null 2>&1 || true
+          echo "superseded prior review $id"
         done
 
         # Minimize our prior inline review-comment threads (OUTDATED) — hidden, still readable.
