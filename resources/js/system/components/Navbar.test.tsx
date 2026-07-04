@@ -372,4 +372,16 @@ describe('Navbar', () => {
         render(<Navbar />);
         expect(screen.queryByLabelText(/notification/i)).not.toBeInTheDocument();
     });
+
+    it('shows Minha agenda link in menus for authenticated user', () => {
+        vi.mocked(useAuth).mockReturnValue({
+            user: { id: 1, name: 'Test User', email: 'test@example.com' } as any,
+            isLoading: false, isAuthenticated: true,
+            login: vi.fn(), register: vi.fn(), logout: mockLogout, exchangeCode: vi.fn(), refreshUser: vi.fn(), completeTwoFactor: vi.fn(),
+        });
+
+        render(<Navbar />);
+
+        expect(screen.getAllByText('Minha agenda').length).toBeGreaterThan(0);
+    });
 });
