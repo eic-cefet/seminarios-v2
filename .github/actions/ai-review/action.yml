@@ -82,14 +82,13 @@ runs:
 
         cd "$GITHUB_WORKSPACE"
 
-        # Pre-compute the diff so the agent never spends turns rediscovering it.
-        # Attach the full diff as a file; inline the (small) file list + stat.
-        DIFF_FILE="$RUNNER_TEMP/pr.diff"
-        git diff "origin/$BASE_REF...HEAD" | head -c 200000 > "$DIFF_FILE"
+        # Pre-compute the diff so the agent never spends turns rediscovering it,
+        # and embed it directly in the prompt (truncated to keep context bounded).
         NAMES="$(git diff "origin/$BASE_REF...HEAD" --name-only)"
         STAT="$(git diff "origin/$BASE_REF...HEAD" --stat)"
+        DIFF_CONTENT="$(git diff "origin/$BASE_REF...HEAD" | head -c 120000)"
 
         PROMPT="$(envsubst '${BASE_REF} ${PR_NUMBER} ${GITHUB_REPOSITORY}' < "${{ github.action_path }}/prompt.md")"
-        PROMPT="${PROMPT}"$'\n\n## Changed files\n'"${NAMES}"$'\n\n## Diffstat\n'"${STAT}"
+        PROMPT="${PROMPT}"$'\n\n## Changed files\n'"${NAMES}"$'\n\n## Diffstat\n'"${STAT}"$'\n\n## Full diff\n```diff\n'"${DIFF_CONTENT}"$'\n```'
 
-        opencode run --auto --model "$MODEL" --file "$DIFF_FILE" "$PROMPT"
+        opencode run --auto --model "$MODEL" "$PROMPT"

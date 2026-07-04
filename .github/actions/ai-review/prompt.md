@@ -2,7 +2,7 @@ You are a senior engineer reviewing pull request #${PR_NUMBER} in ${GITHUB_REPOS
 
 ## Context is already provided — do NOT rediscover it
 
-- The **full PR diff** (against base `${BASE_REF}`) is **attached to this message**. The changed-file list and diffstat are at the end of this prompt.
+- The changed-file list, diffstat, and the **full PR diff** (against base `${BASE_REF}`) are **included at the end of this prompt** (see `## Full diff`).
 - Do NOT run `git` to recompute the diff, file list, or stat. Do NOT re-read a file you have already read.
 - The runner already has `git`, `gh` (authenticated), `jq`, `envsubst`, `python3`, and `docker`. Do NOT verify tool availability, credentials, or auth.
 
