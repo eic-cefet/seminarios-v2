@@ -49,6 +49,12 @@ runs:
       run: |
         set -euo pipefail
         MODEL="${OPENCODE_MODEL_INPUT:-openrouter/anthropic/claude-sonnet-4}"
+        # opencode expects a provider/model id; only the openrouter provider is
+        # configured here, so prepend it when the caller passes a bare model id.
+        case "$MODEL" in
+          openrouter/*) : ;;
+          *) MODEL="openrouter/$MODEL" ;;
+        esac
         PROMPT="$(envsubst '${BASE_REF} ${PR_NUMBER} ${GITHUB_REPOSITORY}' < "${{ github.action_path }}/prompt.md")"
         cd "$GITHUB_WORKSPACE"
         opencode run --auto --model "$MODEL" "$PROMPT"
