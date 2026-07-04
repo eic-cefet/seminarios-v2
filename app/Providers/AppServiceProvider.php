@@ -6,6 +6,7 @@ use App\Listeners\AuditBackupCompleted;
 use App\Listeners\AuditBackupFailed;
 use App\Listeners\AuditEmailSent;
 use App\Listeners\AuditNotificationSent;
+use App\Listeners\CancelPendingDeletionOnLogin;
 use App\Models\AuditLog;
 use App\Models\Registration;
 use App\Models\Seminar;
@@ -27,6 +28,7 @@ use App\Services\EnvFileWriter;
 use Dedoc\Scramble\Scramble;
 use Dedoc\Scramble\Support\Generator\OpenApi;
 use Dedoc\Scramble\Support\Generator\SecurityScheme;
+use Illuminate\Auth\Events\Login;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Mail\Events\MessageSent;
@@ -89,6 +91,7 @@ class AppServiceProvider extends ServiceProvider
         Event::listen(NotificationSent::class, AuditNotificationSent::class);
         Event::listen(BackupWasSuccessful::class, AuditBackupCompleted::class);
         Event::listen(BackupHasFailed::class, AuditBackupFailed::class);
+        Event::listen(Login::class, CancelPendingDeletionOnLogin::class);
 
         Seminar::observe(SeminarAlertObserver::class);
         Seminar::observe(SeminarCertificateObserver::class);
