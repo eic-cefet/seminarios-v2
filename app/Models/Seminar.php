@@ -105,4 +105,25 @@ class Seminar extends Model
     {
         return $query->where('scheduled_at', '<', now());
     }
+
+    /**
+     * Slug-bound routes ({seminar:slug} in routes/external.php) keep
+     * resolving after a rename: when no live seminar owns the slug, fall
+     * back to slug history. The current slug always wins; trashed
+     * seminars stay unresolvable because the relation applies the
+     * SoftDeletes global scope.
+     */
+    public function resolveRouteBinding($value, $field = null)
+    {
+        $resolved = parent::resolveRouteBinding($value, $field);
+
+        if ($resolved !== null || ($field ?? $this->getRouteKeyName()) !== 'slug') {
+            return $resolved;
+        }
+
+        return SeminarSlugHistory::query()
+            ->where('slug', $value)
+            ->first()
+            ?->seminar;
+    }
 }

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Seminar;
+use App\Models\SeminarSlugHistory;
 use App\Services\IcsGenerationService;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -14,7 +15,18 @@ class SeminarCalendarController extends Controller
             ->with('seminarLocation')
             ->where('slug', $slug)
             ->active()
-            ->firstOrFail();
+            ->first();
+
+        if (! $seminar) {
+            $seminarId = SeminarSlugHistory::seminarIdFor($slug);
+            abort_if($seminarId === null, 404);
+
+            $seminar = Seminar::query()
+                ->with('seminarLocation')
+                ->whereKey($seminarId)
+                ->active()
+                ->firstOrFail();
+        }
 
         $content = $icsGenerationService->generateForSeminar($seminar);
         $filename = 'seminario-'.$seminar->slug.'.ics';

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\SeminarResource;
 use App\Models\Seminar;
+use App\Models\SeminarSlugHistory;
 use App\Models\Subject;
 use App\Services\SeminarQueryService;
 use Illuminate\Http\Request;
@@ -65,7 +66,17 @@ class SeminarController extends Controller
         $seminar = $seminars->forDetail(Seminar::query())
             ->where('slug', $slug)
             ->active()
-            ->firstOrFail();
+            ->first();
+
+        if (! $seminar) {
+            $seminarId = SeminarSlugHistory::seminarIdFor($slug);
+            abort_if($seminarId === null, 404);
+
+            $seminar = $seminars->forDetail(Seminar::query())
+                ->whereKey($seminarId)
+                ->active()
+                ->firstOrFail();
+        }
 
         return new SeminarResource($seminar);
     }
