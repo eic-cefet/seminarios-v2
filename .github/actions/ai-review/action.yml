@@ -1,0 +1,52 @@
+name: "AI Code Review"
+description: "Agentic PR review via opencode + OpenRouter, posting through the GitHub MCP server."
+
+inputs:
+  openrouter-api-key:
+    description: "OpenRouter API key"
+    required: true
+  openrouter-model:
+    description: "Model id in provider/model form (e.g. openrouter/anthropic/claude-sonnet-4)"
+    required: false
+    default: "openrouter/anthropic/claude-sonnet-4"
+  github-token:
+    description: "GitHub token used to post the review, labels, and minimize threads"
+    required: true
+  pr-number:
+    description: "Pull request number to review"
+    required: true
+  base-ref:
+    description: "Base branch to diff against"
+    required: false
+    default: "main"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Install opencode
+      shell: bash
+      run: |
+        curl -fsSL https://opencode.ai/install | bash
+        echo "$HOME/.opencode/bin" >> "$GITHUB_PATH"
+
+    - name: Fetch base branch
+      shell: bash
+      run: git fetch origin "${{ inputs.base-ref }}"
+
+    - name: Run AI review
+      shell: bash
+      env:
+        OPENROUTER_API_KEY: ${{ inputs.openrouter-api-key }}
+        GH_MCP_TOKEN: ${{ inputs.github-token }}
+        GH_TOKEN: ${{ inputs.github-token }}
+        PR_NUMBER: ${{ inputs.pr-number }}
+        BASE_REF: ${{ inputs.base-ref }}
+        GITHUB_REPOSITORY: ${{ github.repository }}
+        OPENCODE_MODEL_INPUT: ${{ inputs.openrouter-model }}
+        OPENCODE_CONFIG: ${{ github.action_path }}/opencode.json
+      run: |
+        set -euo pipefail
+        MODEL="${OPENCODE_MODEL_INPUT:-openrouter/anthropic/claude-sonnet-4}"
+        PROMPT="$(envsubst '${BASE_REF} ${PR_NUMBER} ${GITHUB_REPOSITORY}' < "${{ github.action_path }}/prompt.md")"
+        cd "$GITHUB_WORKSPACE"
+        opencode run --auto --model "$MODEL" "$PROMPT"
