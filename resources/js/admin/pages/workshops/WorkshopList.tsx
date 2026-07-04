@@ -56,6 +56,7 @@ import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
 import { MarkdownEditor } from "../../components/MarkdownEditor";
 import { PageTitle } from "@shared/components/PageTitle";
+import { Pagination } from "@shared/components/Pagination";
 import { formatDateTime } from "@shared/lib/utils";
 
 // The announcement feature shipped on 2026-04-26. Workshops created before this
@@ -395,46 +396,16 @@ export default function WorkshopList() {
                                 </TableBody>
                             </Table>
 
-                            {/* Pagination */}
-                            {meta && meta.last_page > 1 && (
-                                <div className="flex items-center justify-between mt-4 pt-4 border-t border-border">
-                                    <div className="text-sm text-muted-foreground">
-                                        Mostrando {meta.from} a {meta.to} de{" "}
-                                        {meta.total} workshops
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={() =>
-                                                setPage((p) =>
-                                                    Math.max(1, p - 1),
-                                                )
-                                            }
-                                            disabled={page === 1}
-                                        >
-                                            Anterior
-                                        </Button>
-                                        <span className="text-sm text-muted-foreground">
-                                            Pagina {page} de {meta.last_page}
-                                        </span>
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={() =>
-                                                setPage((p) =>
-                                                    Math.min(
-                                                        meta.last_page,
-                                                        p + 1,
-                                                    ),
-                                                )
-                                            }
-                                            disabled={page === meta.last_page}
-                                        >
-                                            Proxima
-                                        </Button>
-                                    </div>
-                                </div>
+                            {meta && (
+                                <Pagination
+                                    currentPage={meta.current_page}
+                                    lastPage={meta.last_page}
+                                    from={meta.from ?? 0}
+                                    to={meta.to ?? 0}
+                                    total={meta.total}
+                                    itemLabel="workshops"
+                                    onPageChange={setPage}
+                                />
                             )}
                         </>
                     )}

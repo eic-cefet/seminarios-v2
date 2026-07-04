@@ -261,8 +261,10 @@ describe('UserList', () => {
         await waitFor(() => {
             expect(screen.getByText('Anterior')).toBeInTheDocument();
         });
-        expect(screen.getByText('Proxima')).toBeInTheDocument();
-        expect(screen.getByText('Pagina 1 de 5')).toBeInTheDocument();
+        expect(screen.getByText('Próxima')).toBeInTheDocument();
+        expect(
+            screen.getByText('Mostrando 1 a 10 de 50 usuários'),
+        ).toBeInTheDocument();
     });
 
     it('shows the user role badges correctly', async () => {
@@ -548,7 +550,7 @@ describe('UserList', () => {
         render(<UserList />);
 
         await waitFor(() => {
-            expect(screen.getByText('Mostrando 1 a 10 de 50 usuarios')).toBeInTheDocument();
+            expect(screen.getByText('Mostrando 1 a 10 de 50 usuários')).toBeInTheDocument();
         });
     });
 
@@ -593,9 +595,9 @@ describe('UserList', () => {
         const user = userEvent.setup();
 
         await waitFor(() => {
-            expect(screen.getByText('Proxima')).toBeInTheDocument();
+            expect(screen.getByText('Próxima')).toBeInTheDocument();
         });
-        await user.click(screen.getByText('Proxima'));
+        await user.click(screen.getByText('Próxima'));
 
         await waitFor(() => {
             expect(usersApi.list).toHaveBeenCalled();
@@ -940,9 +942,9 @@ describe('UserList', () => {
 
         // First go to page 2 by clicking Proxima
         await waitFor(() => {
-            expect(screen.getByText('Proxima')).toBeInTheDocument();
+            expect(screen.getByText('Próxima')).toBeInTheDocument();
         });
-        await user.click(screen.getByText('Proxima'));
+        await user.click(screen.getByText('Próxima'));
 
         // Now click Anterior
         await waitFor(() => {

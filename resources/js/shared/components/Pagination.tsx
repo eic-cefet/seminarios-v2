@@ -5,6 +5,10 @@ interface PaginationProps {
     currentPage: number;
     lastPage: number;
     onPageChange: (page: number) => void;
+    from?: number;
+    to?: number;
+    total?: number;
+    itemLabel?: string;
 }
 
 const buttonBase =
@@ -14,11 +18,19 @@ export function Pagination({
     currentPage,
     lastPage,
     onPageChange,
+    from,
+    to,
+    total,
+    itemLabel = "itens",
 }: PaginationProps) {
     if (lastPage <= 1) return null;
 
     const isFirst = currentPage === 1;
     const isLast = currentPage === lastPage;
+    const showCaption =
+        typeof from === "number" &&
+        typeof to === "number" &&
+        typeof total === "number";
 
     return (
         <nav
@@ -26,7 +38,9 @@ export function Pagination({
             className="flex items-center justify-between px-6 py-3 bg-gray-50"
         >
             <span className="text-sm text-gray-500" aria-live="polite">
-                Página {currentPage} de {lastPage}
+                {showCaption
+                    ? `Mostrando ${from} a ${to} de ${total} ${itemLabel}`
+                    : `Página ${currentPage} de ${lastPage}`}
             </span>
             <div className="flex items-center gap-2">
                 <button
@@ -54,7 +68,7 @@ export function Pagination({
                             : "text-gray-700 hover:bg-gray-50",
                     )}
                 >
-                    Próximo
+                    Próxima
                     <ChevronRight className="h-4 w-4" />
                 </button>
             </div>
