@@ -211,4 +211,56 @@ describe('IcsGenerationService', function () {
 
         expect($ics)->toContain('-//'.config('mail.name').'//Seminarios//PT');
     });
+
+    describe('generateForSeminars', function () {
+        it('emits one calendar containing one event per seminar', function () {
+            $first = Seminar::factory()->create(['scheduled_at' => now()->addDay(), 'name' => 'Primeiro Evento']);
+            $second = Seminar::factory()->create(['scheduled_at' => now()->addDays(2), 'name' => 'Segundo Evento']);
+
+            $ics = app(IcsGenerationService::class)->generateForSeminars([$first, $second], 'Agenda Teste');
+
+            expect(substr_count($ics, 'BEGIN:VCALENDAR'))->toBe(1);
+            expect(substr_count($ics, 'BEGIN:VEVENT'))->toBe(2);
+            expect($ics)->toContain('Primeiro Evento');
+            expect($ics)->toContain('Segundo Evento');
+        });
+
+        it('sets the calendar name', function () {
+            $seminar = Seminar::factory()->create(['scheduled_at' => now()->addDay()]);
+
+            $ics = app(IcsGenerationService::class)->generateForSeminars([$seminar], 'Agenda Teste');
+
+            expect($ics)->toContain('X-WR-CALNAME');
+            expect($ics)->toContain('Agenda Teste');
+        });
+
+        it('keeps per-event fields intact', function () {
+            $seminar = Seminar::factory()->create([
+                'scheduled_at' => now()->addDay(),
+                'slug' => 'evento-multi',
+            ]);
+            $host = parse_url(config('app.url'), PHP_URL_HOST);
+
+            $ics = app(IcsGenerationService::class)->generateForSeminars([$seminar], 'Agenda');
+
+            expect($ics)->toContain('seminar-'.$seminar->id.'@'.$host);
+            expect($ics)->toContain('/seminario/evento-multi');
+            expect($ics)->toContain('STATUS:CONFIRMED');
+        });
+
+        it('produces a valid empty calendar for no seminars', function () {
+            $ics = app(IcsGenerationService::class)->generateForSeminars([], 'Agenda Vazia');
+
+            expect($ics)->toContain('BEGIN:VCALENDAR');
+            expect($ics)->not->toContain('BEGIN:VEVENT');
+        });
+
+        it('throws when a seminar in the list has no scheduled date', function () {
+            $seminar = Seminar::factory()->create(['scheduled_at' => now()->addDay()]);
+            $seminar->scheduled_at = null;
+
+            expect(fn () => app(IcsGenerationService::class)->generateForSeminars([$seminar], 'Agenda'))
+                ->toThrow(InvalidArgumentException::class, 'Seminar does not have a scheduled date.');
+        });
+    });
 });

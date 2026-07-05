@@ -552,3 +552,116 @@ describe('GET /api/profile/certificates', function () {
         $response->assertUnauthorized();
     });
 });
+
+describe('GET /api/profile/calendar-feed', function () {
+    it('lazily generates and persists the token', function () {
+        $user = actingAsUser();
+
+        expect($user->calendar_feed_token)->toBeNull();
+
+        $response = $this->getJson('/api/profile/calendar-feed');
+
+        $response->assertSuccessful();
+        $user->refresh();
+        expect($user->calendar_feed_token)->not->toBeNull();
+        expect($response->json('data.personal_url'))->toContain('/calendar/personal/'.$user->calendar_feed_token);
+        expect($response->json('data.public_url'))->toContain('/calendar/seminars.ics');
+    });
+
+    it('returns the same url on subsequent calls', function () {
+        actingAsUser();
+
+        $first = $this->getJson('/api/profile/calendar-feed')->json('data.personal_url');
+        $second = $this->getJson('/api/profile/calendar-feed')->json('data.personal_url');
+
+        expect($second)->toBe($first);
+    });
+
+    it('returns 401 for unauthenticated user', function () {
+        $this->getJson('/api/profile/calendar-feed')->assertUnauthorized();
+    });
+});
+
+describe('POST /api/profile/calendar-feed/rotate', function () {
+    it('replaces the token and invalidates the old feed url', function () {
+        $user = actingAsUser(User::factory()->create(['calendar_feed_token' => str_repeat('a', 48)]));
+
+        $response = $this->postJson('/api/profile/calendar-feed/rotate');
+
+        $response->assertSuccessful()
+            ->assertJsonPath('message', 'Novo link gerado com sucesso.');
+
+        $user->refresh();
+        expect($user->calendar_feed_token)->not->toBe(str_repeat('a', 48));
+        expect($response->json('data.personal_url'))->toContain($user->calendar_feed_token);
+
+        $this->get('/calendar/personal/'.str_repeat('a', 48).'.ics')->assertNotFound();
+        $this->get('/calendar/personal/'.$user->calendar_feed_token.'.ics')->assertOk();
+    });
+
+    it('records an audit event', function () {
+        actingAsUser();
+
+        $this->postJson('/api/profile/calendar-feed/rotate')->assertSuccessful();
+
+        $this->assertDatabaseHas('audit_logs', [
+            'event_name' => 'calendar_feed.token_rotated',
+        ]);
+    });
+
+    it('returns 401 for unauthenticated user', function () {
+        $this->postJson('/api/profile/calendar-feed/rotate')->assertUnauthorized();
+    });
+});
+
+describe('GET /api/profile/schedule', function () {
+    it('returns only upcoming active registrations ordered by date ascending', function () {
+        $user = actingAsUser();
+
+        $later = Seminar::factory()->create(['active' => true, 'scheduled_at' => now()->addDays(10)]);
+        $sooner = Seminar::factory()->create(['active' => true, 'scheduled_at' => now()->addDays(2)]);
+        $past = Seminar::factory()->past()->create(['active' => true]);
+        $inactive = Seminar::factory()->create(['active' => false, 'scheduled_at' => now()->addDays(5)]);
+
+        foreach ([$later, $sooner, $past, $inactive] as $seminar) {
+            Registration::factory()->create(['user_id' => $user->id, 'seminar_id' => $seminar->id]);
+        }
+
+        $response = $this->getJson('/api/profile/schedule');
+
+        $response->assertSuccessful()
+            ->assertJsonCount(2, 'data')
+            ->assertJsonPath('data.0.seminar.id', $sooner->id)
+            ->assertJsonPath('data.1.seminar.id', $later->id);
+    });
+
+    it('excludes other users registrations', function () {
+        actingAsUser();
+        $other = User::factory()->create();
+        Registration::factory()->create(['user_id' => $other->id]);
+
+        $this->getJson('/api/profile/schedule')
+            ->assertSuccessful()
+            ->assertJsonCount(0, 'data');
+    });
+
+    it('returns paginated results', function () {
+        $user = actingAsUser();
+        Registration::factory()->count(15)->create(['user_id' => $user->id]);
+
+        $past = Seminar::factory()->past()->create(['active' => true]);
+        $inactive = Seminar::factory()->create(['active' => false, 'scheduled_at' => now()->addDays(5)]);
+        Registration::factory()->create(['user_id' => $user->id, 'seminar_id' => $past->id]);
+        Registration::factory()->create(['user_id' => $user->id, 'seminar_id' => $inactive->id]);
+
+        $response = $this->getJson('/api/profile/schedule?per_page=10');
+
+        $response->assertSuccessful()
+            ->assertJsonCount(10, 'data')
+            ->assertJsonPath('meta.total', 15);
+    });
+
+    it('returns 401 for unauthenticated user', function () {
+        $this->getJson('/api/profile/schedule')->assertUnauthorized();
+    });
+});

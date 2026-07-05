@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\PresenceController;
+use App\Http\Controllers\CalendarFeedController;
 use App\Http\Controllers\CertificateController;
 use App\Http\Controllers\RobotsController;
 use App\Http\Controllers\SeminarCalendarController;
@@ -30,9 +31,18 @@ Route::get('/robots.txt', RobotsController::class)
 Route::get('/sitemap.xml', SitemapController::class)
     ->name('sitemap');
 
+// Calendar feeds (before SPA catch-all)
+Route::middleware('throttle:public')->group(function () {
+    Route::get('/calendar/seminars.ics', [CalendarFeedController::class, 'publicFeed'])
+        ->name('calendar.public-feed');
+    Route::get('/calendar/personal/{token}.ics', [CalendarFeedController::class, 'personalFeed'])
+        ->where('token', '[A-Za-z0-9]+')
+        ->name('calendar.personal-feed');
+});
+
 // System SPA (public/student)
 Route::get('/{any?}', fn () => view('system'))
-    ->where('any', '^(?!admin|api|sanctum|certificado/|auth/(?:google|github)(?:/callback)?).*$')
+    ->where('any', '^(?!admin|api|sanctum|calendar/|certificado/|auth/(?:google|github)(?:/callback)?).*$')
     ->name('system');
 
 // Admin SPA (auth handled by React SPA via API)

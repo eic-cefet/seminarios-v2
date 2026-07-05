@@ -288,6 +288,11 @@ export interface UserCertificate {
     };
 }
 
+export interface CalendarFeedUrls {
+    personal_url: string;
+    public_url: string;
+}
+
 export const profileApi = {
     get: () => {
         return fetchApi<{ user: User }>("/profile");
@@ -337,6 +342,31 @@ export const profileApi = {
                 total: number;
             };
         }>(`/profile/certificates${qs}`);
+    },
+
+    schedule: (params?: { page?: number; per_page?: number }) => {
+        const qs = buildQueryString(params ?? {});
+        return fetchApi<{
+            data: UserRegistration[];
+            meta: {
+                current_page: number;
+                last_page: number;
+                per_page: number;
+                total: number;
+            };
+        }>(`/profile/schedule${qs}`);
+    },
+
+    calendarFeed: () => {
+        return fetchApi<{ data: CalendarFeedUrls }>("/profile/calendar-feed");
+    },
+
+    rotateCalendarFeed: async () => {
+        await getCsrfCookie();
+        return fetchApi<{ message: string; data: CalendarFeedUrls }>(
+            "/profile/calendar-feed/rotate",
+            { method: "POST" },
+        );
     },
 
     updateStudentData: async (data: {

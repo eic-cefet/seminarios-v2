@@ -13,6 +13,33 @@ class IcsGenerationService
 {
     public function generateForSeminar(Seminar $seminar): string
     {
+        return Calendar::create()
+            ->productIdentifier('-//'.config('mail.name').'//Seminarios//PT')
+            ->event($this->buildEvent($seminar))
+            ->get();
+    }
+
+    /**
+     * Build a single VCALENDAR containing one VEVENT per seminar.
+     *
+     * @param  iterable<Seminar>  $seminars
+     */
+    public function generateForSeminars(iterable $seminars, string $calendarName): string
+    {
+        $events = [];
+        foreach ($seminars as $seminar) {
+            $events[] = $this->buildEvent($seminar);
+        }
+
+        return Calendar::create()
+            ->name($calendarName)
+            ->productIdentifier('-//'.config('mail.name').'//Seminarios//PT')
+            ->event($events)
+            ->get();
+    }
+
+    private function buildEvent(Seminar $seminar): Event
+    {
         if (! $seminar->scheduled_at) {
             throw new InvalidArgumentException('Seminar does not have a scheduled date.');
         }
@@ -44,9 +71,6 @@ class IcsGenerationService
             $event->description($description);
         }
 
-        return Calendar::create()
-            ->productIdentifier('-//'.config('mail.name').'//Seminarios//PT')
-            ->event($event)
-            ->get();
+        return $event;
     }
 }

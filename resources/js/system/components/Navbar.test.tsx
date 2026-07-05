@@ -372,4 +372,26 @@ describe('Navbar', () => {
         render(<Navbar />);
         expect(screen.queryByLabelText(/notification/i)).not.toBeInTheDocument();
     });
+
+    it('shows Minha agenda link in menus for authenticated user', async () => {
+        vi.mocked(useAuth).mockReturnValue({
+            user: { id: 1, name: 'Test User', email: 'test@example.com' } as any,
+            isLoading: false, isAuthenticated: true,
+            login: vi.fn(), register: vi.fn(), logout: mockLogout, exchangeCode: vi.fn(), refreshUser: vi.fn(), completeTwoFactor: vi.fn(),
+        });
+
+        const user = userEvent.setup();
+        render(<Navbar />);
+
+        // Mobile menu renders inline
+        expect(screen.getAllByText('Minha agenda').length).toBeGreaterThan(0);
+
+        // Desktop dropdown renders via Radix portal only after the trigger opens
+        const trigger = screen.getAllByText('Test User')[0].closest('button')!;
+        await user.click(trigger);
+
+        const desktopItems = await screen.findAllByRole('menuitem', { name: /minha agenda/i });
+        expect(desktopItems.length).toBeGreaterThan(0);
+        expect(screen.getAllByText('Minha agenda').length).toBeGreaterThanOrEqual(2);
+    });
 });
