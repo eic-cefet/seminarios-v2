@@ -6,7 +6,6 @@ import { analytics } from "@shared/lib/analytics";
 import { useDebouncedSearch } from "@shared/hooks/useDebouncedSearch";
 import {
     registrationsApi,
-    dashboardApi,
     type AdminRegistration,
 } from "../../api/adminClient";
 import {
@@ -28,21 +27,20 @@ import { Switch } from "../../components/ui/switch";
 import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "../../components/ui/select";
+    SeminarCombobox,
+    type SeminarOption,
+} from "../../components/SeminarCombobox";
 import { Badge } from "../../components/ui/badge";
 import { Button } from "../../components/ui/button";
 import { PageTitle } from "@shared/components/PageTitle";
 import { Pagination } from "@shared/components/Pagination";
-import { formatDateTime, compareDateDesc } from "@shared/lib/utils";
+import { formatDateTime } from "@shared/lib/utils";
 
 export default function RegistrationList() {
     const queryClient = useQueryClient();
-    const [selectedSeminarId, setSelectedSeminarId] = useState<string>("");
+    const [selectedSeminar, setSelectedSeminar] =
+        useState<SeminarOption | null>(null);
+    const selectedSeminarId = selectedSeminar ? String(selectedSeminar.id) : "";
     const [page, setPage] = useState(1);
 
     const {
@@ -52,12 +50,6 @@ export default function RegistrationList() {
         clear: clearSearch,
     } = useDebouncedSearch({
         onDebouncedChange: () => setPage(1),
-    });
-
-    // Fetch seminars for dropdown
-    const { data: seminarsData, isLoading: isLoadingSeminars } = useQuery({
-        queryKey: ["admin-seminars-list"],
-        queryFn: () => dashboardApi.seminars(),
     });
 
     // Fetch registrations
@@ -72,9 +64,7 @@ export default function RegistrationList() {
             queryFn: () =>
                 registrationsApi.list({
                     page,
-                    seminar_id: selectedSeminarId
-                        ? parseInt(selectedSeminarId, 10)
-                        : undefined,
+                    seminar_id: selectedSeminar?.id,
                     search: searchTerm || undefined,
                 }),
         });
@@ -145,22 +135,16 @@ export default function RegistrationList() {
         },
     });
 
-    const seminars = seminarsData?.data ?? [];
     const registrations = registrationsData?.data ?? [];
     const meta = registrationsData?.meta;
 
-    // Sort seminars by scheduled_at DESC for dropdown
-    const sortedSeminars = [...seminars].sort((a, b) =>
-        compareDateDesc(a.scheduled_at, b.scheduled_at),
-    );
-
-    const handleSeminarChange = (value: string) => {
-        setSelectedSeminarId(value === "all" ? "" : value);
+    const handleSeminarChange = (seminar: SeminarOption | null) => {
+        setSelectedSeminar(seminar);
         setPage(1);
     };
 
     const clearFilters = () => {
-        setSelectedSeminarId("");
+        setSelectedSeminar(null);
         clearSearch();
         setPage(1);
     };
@@ -186,36 +170,11 @@ export default function RegistrationList() {
                     <div className="flex flex-wrap items-end gap-4">
                         <div className="space-y-2 min-w-[280px]">
                             <Label htmlFor="seminar-filter">Seminario</Label>
-                            <Select
-                                value={selectedSeminarId || "all"}
-                                onValueChange={handleSeminarChange}
-                            >
-                                <SelectTrigger id="seminar-filter">
-                                    <SelectValue placeholder="Todos os seminarios" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">
-                                        Todos os seminarios
-                                    </SelectItem>
-                                    {isLoadingSeminars ? (
-                                        <SelectItem value="loading" disabled>
-                                            Carregando...
-                                        </SelectItem>
-                                    ) : (
-                                        sortedSeminars.map((seminar) => (
-                                            <SelectItem
-                                                key={seminar.id}
-                                                value={seminar.id.toString()}
-                                            >
-                                                {seminar.name} -{" "}
-                                                {formatDateTime(
-                                                    seminar.scheduled_at,
-                                                )}
-                                            </SelectItem>
-                                        ))
-                                    )}
-                                </SelectContent>
-                            </Select>
+                            <SeminarCombobox
+                                id="seminar-filter"
+                                value={selectedSeminar}
+                                onChange={handleSeminarChange}
+                            />
                         </div>
                         <div className="space-y-2 flex-1 min-w-[200px]">
                             <Label htmlFor="search">Buscar usuario</Label>

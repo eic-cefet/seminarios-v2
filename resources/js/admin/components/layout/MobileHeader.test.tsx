@@ -63,7 +63,7 @@ describe('MobileHeader', () => {
         expect(screen.getByText('Inscrições')).toBeInTheDocument();
     });
 
-    it('hides admin-only navigation for teacher users', async () => {
+    it('shows Inscrições but hides admin-only items for teacher users', async () => {
         const { useAuth } = await import('@shared/contexts/AuthContext');
         vi.mocked(useAuth).mockReturnValue({
             user: { id: 2, name: 'Teacher', email: 'teacher@test.com', roles: ['teacher'] } as any,
@@ -81,7 +81,7 @@ describe('MobileHeader', () => {
 
         expect(screen.getByText('Dashboard')).toBeInTheDocument();
         expect(screen.queryByText('Usuários')).not.toBeInTheDocument();
-        expect(screen.queryByText('Inscrições')).not.toBeInTheDocument();
+        expect(screen.getByText('Inscrições')).toBeInTheDocument();
     });
 
     it('renders the Apresentações group trigger when menu is open', () => {
@@ -290,9 +290,9 @@ describe('MobileHeader', () => {
 
         // Should see Dashboard (non-admin item)
         expect(screen.getByText('Dashboard')).toBeInTheDocument();
-        // Should not see admin-only items
+        // Admin-only items hidden; Inscrições is visible to all admin-area users
         expect(screen.queryByText('Usuários')).not.toBeInTheDocument();
-        expect(screen.queryByText('Inscrições')).not.toBeInTheDocument();
+        expect(screen.getByText('Inscrições')).toBeInTheDocument();
     });
 
     it('renders non-children NavLink items with correct active/inactive styles', async () => {

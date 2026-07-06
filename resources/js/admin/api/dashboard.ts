@@ -18,5 +18,4 @@ export interface DashboardStats {
 
 export const dashboardApi = {
     stats: () => fetchAdminApi<{ data: DashboardStats }>("/dashboard/stats"),
-    seminars: () => fetchAdminApi<{ data: AdminSeminar[] }>("/seminars"),
 };
