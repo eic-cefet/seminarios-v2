@@ -104,7 +104,6 @@ export function SeminarCombobox({
                     variant="outline"
                     role="combobox"
                     aria-expanded={open}
-                    aria-label={placeholder}
                     className={cn(
                         "w-full justify-between font-normal",
                         className,

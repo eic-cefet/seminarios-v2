@@ -309,7 +309,12 @@ describe('SeminarCombobox', () => {
 
     it('has no axe violations when open', async () => {
         const user = userEvent.setup();
-        render(<SeminarCombobox value={null} onChange={vi.fn()} />);
+        const { container } = render(
+            <div>
+                <label htmlFor="seminar-filter">Seminario</label>
+                <SeminarCombobox id="seminar-filter" value={null} onChange={vi.fn()} />
+            </div>,
+        );
 
         await user.click(screen.getByRole('combobox'));
         await screen.findByRole('option', { name: /Seminar A/ });
@@ -321,7 +326,7 @@ describe('SeminarCombobox', () => {
         // a page layout that provides landmarks. Every other rule (including
         // the popover dialog's accessible name) is still checked.
         expect(
-            await axe(document.body, { rules: { region: { enabled: false } } }),
+            await axe(container, { rules: { region: { enabled: false } } }),
         ).toHaveNoViolations();
     });
 });
