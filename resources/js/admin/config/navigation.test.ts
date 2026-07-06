@@ -45,7 +45,7 @@ describe('filterNavigation', () => {
         const labels = filtered.map((item) => item.label);
         expect(labels).toContain('Dashboard');
         expect(labels).not.toContain('Usuários');
-        expect(labels).not.toContain('Inscrições');
+        expect(labels).toContain('Inscrições');
     });
 
     it('filters adminOnly children', () => {

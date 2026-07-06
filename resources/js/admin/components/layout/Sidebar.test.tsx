@@ -112,7 +112,7 @@ describe('Sidebar', () => {
         render(<Sidebar />);
         expect(screen.getByText('Dashboard')).toBeInTheDocument();
         expect(screen.queryByText('Usuários')).not.toBeInTheDocument();
-        expect(screen.queryByText('Inscrições')).not.toBeInTheDocument();
+        expect(screen.getByText('Inscrições')).toBeInTheDocument();
     });
 
     it('renders the Apresentações collapsible menu group', () => {
@@ -270,7 +270,7 @@ describe('Sidebar', () => {
         expect(screen.getByText('Dashboard')).toBeInTheDocument();
         // Should not see admin-only items
         expect(screen.queryByText('Usuários')).not.toBeInTheDocument();
-        expect(screen.queryByText('Inscrições')).not.toBeInTheDocument();
+        expect(screen.getByText('Inscrições')).toBeInTheDocument();
     });
 
     it('renders NavLink items with correct styles at specific routes', () => {
