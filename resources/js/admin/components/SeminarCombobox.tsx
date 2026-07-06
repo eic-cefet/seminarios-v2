@@ -1,12 +1,21 @@
 import { useRef, useState, type KeyboardEvent } from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { Check, ChevronDown, Loader2, Search } from "lucide-react";
+import {
+    CalendarDays,
+    Check,
+    ChevronsUpDown,
+    ListFilter,
+    Loader2,
+    Search,
+    SearchX,
+} from "lucide-react";
 import { cn, formatDateTime } from "@shared/lib/utils";
 import { useDebouncedSearch } from "@shared/hooks/useDebouncedSearch";
 import { seminarsApi, type AdminSeminar } from "../api/adminClient";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
+import { Skeleton } from "./ui/skeleton";
 
 export type SeminarOption = Pick<AdminSeminar, "id" | "name" | "scheduled_at">;
 
@@ -83,7 +92,7 @@ export function SeminarCombobox({
 
     const optionClassName = (isSelected: boolean) =>
         cn(
-            "flex cursor-pointer items-center justify-between gap-2 rounded-sm px-2 py-1.5 hover:bg-accent focus:bg-accent focus:outline-none",
+            "flex cursor-pointer items-center justify-between gap-3 rounded-md px-2.5 py-2 transition-colors hover:bg-accent focus:bg-accent focus:outline-none",
             isSelected && "bg-accent",
         );
 
@@ -110,106 +119,153 @@ export function SeminarCombobox({
                     )}
                 >
                     {value ? (
-                        <span className="truncate">{value.name}</span>
+                        <span className="truncate font-medium">
+                            {value.name}
+                        </span>
                     ) : (
                         <span className="text-muted-foreground">
                             {placeholder}
                         </span>
                     )}
-                    <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 text-muted-foreground" />
                 </Button>
             </PopoverTrigger>
             <PopoverContent
                 aria-label={placeholder}
-                className="w-[var(--radix-popover-trigger-width)] min-w-[280px] p-0"
+                className="w-[var(--radix-popover-trigger-width)] min-w-[280px] overflow-hidden rounded-lg p-0 shadow-lg"
                 align="start"
+                sideOffset={6}
                 onOpenAutoFocus={(e) => {
                     e.preventDefault();
                     searchInputRef.current?.focus();
                 }}
             >
-                <div className="border-b p-2">
-                    <div className="relative">
-                        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                        <Input
-                            ref={searchInputRef}
-                            placeholder="Buscar seminario..."
-                            aria-label="Buscar seminario"
-                            value={inputValue}
-                            onChange={(e) => setInputValue(e.target.value)}
-                            className="pl-9"
-                        />
-                    </div>
+                <div className="relative border-b border-border">
+                    <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground/70" />
+                    <Input
+                        ref={searchInputRef}
+                        placeholder="Buscar seminario..."
+                        aria-label="Buscar seminario"
+                        value={inputValue}
+                        onChange={(e) => setInputValue(e.target.value)}
+                        className="h-10 rounded-none border-0 bg-transparent pl-9 shadow-none focus-visible:ring-0"
+                    />
                 </div>
-                <div
-                    ref={listRef}
-                    onScroll={handleScroll}
-                    data-testid="seminar-combobox-list"
-                    className="max-h-[300px] overflow-y-auto p-1"
-                >
-                    <div role="listbox" aria-label="Seminarios">
-                        <div
-                            role="option"
-                            aria-selected={value === null}
-                            tabIndex={0}
-                            className={optionClassName(value === null)}
-                            onClick={() => handleSelect(null)}
-                            onKeyDown={optionKeyDown(null)}
-                        >
-                            <span className="text-sm">
-                                Todos os seminarios
-                            </span>
-                            {value === null && (
-                                <Check className="h-4 w-4 shrink-0" />
+                <div className="relative">
+                    <div
+                        ref={listRef}
+                        onScroll={handleScroll}
+                        data-testid="seminar-combobox-list"
+                        className="max-h-[300px] overflow-y-auto overscroll-contain p-1.5"
+                    >
+                        <div role="listbox" aria-label="Seminarios">
+                            <div
+                                role="option"
+                                aria-selected={value === null}
+                                tabIndex={0}
+                                className={optionClassName(value === null)}
+                                onClick={() => handleSelect(null)}
+                                onKeyDown={optionKeyDown(null)}
+                            >
+                                <span className="flex items-center gap-2 text-sm">
+                                    <ListFilter
+                                        className="h-4 w-4 text-muted-foreground"
+                                        aria-hidden="true"
+                                    />
+                                    Todos os seminarios
+                                </span>
+                                {value === null && (
+                                    <Check className="h-4 w-4 shrink-0 text-primary" />
+                                )}
+                            </div>
+                            {seminars.length > 0 && (
+                                <div
+                                    role="group"
+                                    aria-label="Seminarios encontrados"
+                                    className="mt-1.5 border-t border-border pt-1.5"
+                                >
+                                    {seminars.map((seminar) => {
+                                        const isSelected =
+                                            value?.id === seminar.id;
+                                        return (
+                                            <div
+                                                key={seminar.id}
+                                                role="option"
+                                                aria-selected={isSelected}
+                                                tabIndex={0}
+                                                className={optionClassName(
+                                                    isSelected,
+                                                )}
+                                                onClick={() =>
+                                                    handleSelect(seminar)
+                                                }
+                                                onKeyDown={optionKeyDown(
+                                                    seminar,
+                                                )}
+                                            >
+                                                <span className="min-w-0">
+                                                    <span className="block truncate text-sm font-medium">
+                                                        {seminar.name}
+                                                    </span>
+                                                    <span className="mt-0.5 flex items-center gap-1.5 text-xs tabular-nums text-muted-foreground">
+                                                        <CalendarDays
+                                                            className="h-3 w-3 shrink-0"
+                                                            aria-hidden="true"
+                                                        />
+                                                        {formatDateTime(
+                                                            seminar.scheduled_at,
+                                                        )}
+                                                    </span>
+                                                </span>
+                                                {isSelected && (
+                                                    <Check className="h-4 w-4 shrink-0 text-primary" />
+                                                )}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
                             )}
                         </div>
-                        {seminars.map((seminar) => {
-                            const isSelected = value?.id === seminar.id;
-                            return (
-                                <div
-                                    key={seminar.id}
-                                    role="option"
-                                    aria-selected={isSelected}
-                                    tabIndex={0}
-                                    className={optionClassName(isSelected)}
-                                    onClick={() => handleSelect(seminar)}
-                                    onKeyDown={optionKeyDown(seminar)}
-                                >
-                                    <span className="min-w-0 text-sm">
-                                        <span className="block truncate">
-                                            {seminar.name}
-                                        </span>
-                                        <span className="block text-xs text-muted-foreground">
-                                            {formatDateTime(
-                                                seminar.scheduled_at,
-                                            )}
-                                        </span>
-                                    </span>
-                                    {isSelected && (
-                                        <Check className="h-4 w-4 shrink-0" />
-                                    )}
-                                </div>
-                            );
-                        })}
+                        {isLoading && (
+                            <div
+                                role="status"
+                                className="mt-1.5 space-y-3 border-t border-border px-2.5 pb-2 pt-3"
+                            >
+                                <span className="sr-only">Carregando...</span>
+                                {[0, 1, 2].map((i) => (
+                                    <div key={i} className="space-y-1.5">
+                                        <Skeleton className="h-3.5 w-3/4" />
+                                        <Skeleton className="h-3 w-2/5" />
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                        {!isLoading && seminars.length === 0 && (
+                            <div className="flex flex-col items-center gap-2 px-2 py-8 text-center">
+                                <SearchX
+                                    className="h-5 w-5 text-muted-foreground/60"
+                                    aria-hidden="true"
+                                />
+                                <p className="text-sm text-muted-foreground">
+                                    Nenhum seminario encontrado
+                                </p>
+                            </div>
+                        )}
+                        {isFetchingNextPage && (
+                            <div className="flex items-center justify-center gap-2 py-2.5 text-xs text-muted-foreground">
+                                <Loader2
+                                    className="h-3.5 w-3.5 animate-spin"
+                                    aria-hidden="true"
+                                />
+                                Carregando mais...
+                            </div>
+                        )}
                     </div>
-                    {isLoading && (
-                        <div className="px-2 py-6 text-center text-sm text-muted-foreground">
-                            Carregando...
-                        </div>
-                    )}
-                    {!isLoading && seminars.length === 0 && (
-                        <div className="px-2 py-6 text-center text-sm text-muted-foreground">
-                            Nenhum seminario encontrado
-                        </div>
-                    )}
-                    {isFetchingNextPage && (
-                        <div className="flex items-center justify-center gap-2 px-2 py-3 text-sm text-muted-foreground">
-                            <Loader2
-                                className="h-4 w-4 animate-spin"
-                                aria-hidden="true"
-                            />
-                            Carregando mais...
-                        </div>
+                    {hasNextPage && !isFetchingNextPage && (
+                        <div
+                            aria-hidden="true"
+                            className="pointer-events-none absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-popover to-transparent"
+                        />
                     )}
                 </div>
             </PopoverContent>
