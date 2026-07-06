@@ -12,7 +12,7 @@ class CalendarFeedController extends Controller
     public function publicFeed(IcsGenerationService $icsGenerationService): Response
     {
         $seminars = Seminar::query()
-            ->with('seminarLocation')
+            ->with(['seminarLocation', 'seminarType'])
             ->active()
             ->where('scheduled_at', '>=', now()->subDays(30))
             ->orderBy('scheduled_at')
@@ -34,7 +34,7 @@ class CalendarFeedController extends Controller
             ->firstOrFail();
 
         $seminars = Seminar::query()
-            ->with('seminarLocation')
+            ->with(['seminarLocation', 'seminarType'])
             ->active()
             ->whereHas('registrations', fn ($query) => $query->where('user_id', $user->id))
             ->orderBy('scheduled_at')

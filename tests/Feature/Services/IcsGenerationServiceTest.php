@@ -2,6 +2,7 @@
 
 use App\Models\Seminar;
 use App\Models\SeminarLocation;
+use App\Models\SeminarType;
 use App\Services\IcsGenerationService;
 
 describe('IcsGenerationService', function () {
@@ -66,10 +67,24 @@ describe('IcsGenerationService', function () {
         expect($ics)->toContain('America/Sao_Paulo');
     });
 
-    it('includes seminar name as summary', function () {
+    it('includes seminar name as summary prefixed with the seminar type', function () {
+        $type = SeminarType::factory()->create(['name' => 'TCC']);
         $seminar = Seminar::factory()->create([
             'scheduled_at' => now()->addDay(),
             'name' => 'AI Workshop 2026',
+            'seminar_type_id' => $type->id,
+        ]);
+
+        $ics = app(IcsGenerationService::class)->generateForSeminar($seminar);
+
+        expect($ics)->toContain('SUMMARY:[TCC] AI Workshop 2026');
+    });
+
+    it('keeps the plain name as summary when the seminar has no type', function () {
+        $seminar = Seminar::factory()->create([
+            'scheduled_at' => now()->addDay(),
+            'name' => 'AI Workshop 2026',
+            'seminar_type_id' => null,
         ]);
 
         $ics = app(IcsGenerationService::class)->generateForSeminar($seminar);
