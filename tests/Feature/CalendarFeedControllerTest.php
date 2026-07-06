@@ -2,6 +2,7 @@
 
 use App\Models\Registration;
 use App\Models\Seminar;
+use App\Models\SeminarType;
 use App\Models\User;
 use Illuminate\Support\Facades\Route;
 
@@ -46,6 +47,18 @@ describe('GET /calendar/seminars.ics', function () {
         $content = $this->get('/calendar/seminars.ics')->getContent();
 
         expect(strpos($content, 'EventoAntes'))->toBeLessThan(strpos($content, 'EventoDepois'));
+    });
+
+    it('prefixes event names with the seminar type', function () {
+        $type = SeminarType::factory()->create(['name' => 'TCC']);
+        Seminar::factory()->create(['active' => true, 'name' => 'DefesaFinal', 'scheduled_at' => now()->addDays(3), 'seminar_type_id' => $type->id]);
+        Seminar::factory()->create(['active' => true, 'name' => 'EventoSemTipo', 'scheduled_at' => now()->addDays(4), 'seminar_type_id' => null]);
+
+        $content = $this->get('/calendar/seminars.ics')->getContent();
+
+        expect($content)
+            ->toContain('[TCC] DefesaFinal')
+            ->toContain('SUMMARY:EventoSemTipo');
     });
 
     it('returns a valid empty calendar when there are no seminars', function () {
@@ -112,6 +125,17 @@ describe('GET /calendar/personal/{token}.ics', function () {
             ->not->toContain('EventoInativoMeu')
             ->not->toContain('EventoExcluidoMeu')
             ->not->toContain('EventoDeOutro');
+    });
+
+    it('prefixes event names with the seminar type', function () {
+        $user = User::factory()->create(['calendar_feed_token' => str_repeat('a', 48)]);
+        $type = SeminarType::factory()->create(['name' => 'Seminário']);
+        $seminar = Seminar::factory()->create(['active' => true, 'name' => 'MeuEvento', 'scheduled_at' => now()->addDays(2), 'seminar_type_id' => $type->id]);
+        Registration::factory()->create(['user_id' => $user->id, 'seminar_id' => $seminar->id]);
+
+        $content = $this->get('/calendar/personal/'.str_repeat('a', 48).'.ics')->getContent();
+
+        expect($content)->toContain('[Seminário] MeuEvento');
     });
 
     it('returns 404 for an unknown token', function () {

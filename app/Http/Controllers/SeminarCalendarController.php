@@ -12,7 +12,7 @@ class SeminarCalendarController extends Controller
     public function __invoke(string $slug, IcsGenerationService $icsGenerationService): Response
     {
         $seminar = Seminar::query()
-            ->with('seminarLocation')
+            ->with(['seminarLocation', 'seminarType'])
             ->where('slug', $slug)
             ->active()
             ->first();
@@ -22,7 +22,7 @@ class SeminarCalendarController extends Controller
             abort_if($seminarId === null, 404);
 
             $seminar = Seminar::query()
-                ->with('seminarLocation')
+                ->with(['seminarLocation', 'seminarType'])
                 ->whereKey($seminarId)
                 ->active()
                 ->firstOrFail();

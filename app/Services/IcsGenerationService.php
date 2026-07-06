@@ -55,7 +55,10 @@ class IcsGenerationService
             $description .= ($description ? "\n\n" : '').'Link de acesso: '.$seminar->room_link;
         }
 
-        $event = Event::create($seminar->name)
+        $typeName = $seminar->seminarType?->name;
+        $summary = $typeName ? '['.$typeName.'] '.$seminar->name : $seminar->name;
+
+        $event = Event::create($summary)
             ->uniqueIdentifier($uid)
             ->startsAt($dtStart)
             ->endsAt($dtEnd)
