@@ -29,15 +29,42 @@ vi.mock('../../api/adminClient', () => ({
         }),
         togglePresence: vi.fn(),
     },
-    dashboardApi: {
-        seminars: vi.fn().mockResolvedValue({ data: [] }),
+    seminarsApi: {
+        list: vi.fn().mockResolvedValue({
+            data: [],
+            meta: {
+                current_page: 1,
+                last_page: 1,
+                per_page: 15,
+                total: 0,
+                from: 0,
+                to: 0,
+            },
+            links: { first: '', last: '', prev: null, next: null },
+        }),
     },
     AdminApiError: class extends Error {},
 }));
 
 import RegistrationList from './RegistrationList';
-import { registrationsApi, dashboardApi } from '../../api/adminClient';
+import { registrationsApi, seminarsApi } from '../../api/adminClient';
 import { analytics } from '@shared/lib/analytics';
+
+const seminarPage = (
+    items: Array<{ id: number; name: string; scheduled_at: string }>,
+    { current = 1, last = 1 } = {},
+) => ({
+    data: items,
+    meta: {
+        current_page: current,
+        last_page: last,
+        per_page: 15,
+        total: items.length,
+        from: items.length ? 1 : 0,
+        to: items.length,
+    },
+    links: { first: '', last: '', prev: null, next: null },
+});
 
 describe('RegistrationList', () => {
     it('renders the page heading', () => {
@@ -549,44 +576,23 @@ describe('RegistrationList', () => {
         expect(screen.getByText('Buscar usuario')).toBeInTheDocument();
     });
 
-    it('renders seminar dropdown with sorted seminars when data is available', async () => {
-        vi.mocked(dashboardApi.seminars).mockResolvedValue({
-            data: [
-                { id: 1, name: 'Old Seminar', slug: 'old', scheduled_at: '2025-01-01T10:00:00Z' },
-                { id: 2, name: 'New Seminar', slug: 'new', scheduled_at: '2026-06-15T14:00:00Z' },
-            ],
-        } as any);
+    it('loads seminars only when the combobox is opened', async () => {
+        vi.mocked(seminarsApi.list).mockResolvedValue(seminarPage([
+            { id: 1, name: 'Old Seminar', scheduled_at: '2025-01-01T10:00:00Z' },
+            { id: 2, name: 'New Seminar', scheduled_at: '2026-06-15T14:00:00Z' },
+        ]) as any);
 
         render(<RegistrationList />);
+        const user = userEvent.setup();
 
-        // The seminars should be loaded and available in the select
-        await waitFor(() => {
-            expect(dashboardApi.seminars).toHaveBeenCalled();
-        });
-    });
+        expect(seminarsApi.list).not.toHaveBeenCalled();
 
-    it('covers handleSeminarChange (lines 152-153) by selecting all seminars option', async () => {
-        // handleSeminarChange sets selectedSeminarId and resets page
-        // Line 152: setSelectedSeminarId(value === "all" ? "" : value)
-        // Line 153: setPage(1)
-        // This is the Radix Select onValueChange callback which can't be triggered in jsdom.
-        // But we can verify the component renders the filter correctly.
-        vi.mocked(dashboardApi.seminars).mockResolvedValue({
-            data: [
-                { id: 1, name: 'Seminar A', slug: 'sem-a', scheduled_at: '2026-06-15T14:00:00Z' },
-                { id: 2, name: 'Seminar B', slug: 'sem-b', scheduled_at: '2025-01-01T10:00:00Z' },
-            ],
-        } as any);
+        await user.click(screen.getByRole('combobox'));
 
-        render(<RegistrationList />);
-
-        // Verify seminars loaded and sorted for dropdown
-        await waitFor(() => {
-            expect(dashboardApi.seminars).toHaveBeenCalled();
-        });
-
-        // The dropdown renders "Todos os seminarios" as default
-        expect(screen.getByText('Todos os seminarios')).toBeInTheDocument();
+        expect(
+            await screen.findByRole('option', { name: /New Seminar/ }),
+        ).toBeInTheDocument();
+        expect(seminarsApi.list).toHaveBeenCalledWith({ page: 1, search: undefined });
     });
 
     it('covers togglePresenceMutation onError rollback (lines 110-121)', async () => {
@@ -624,22 +630,6 @@ describe('RegistrationList', () => {
         });
     });
 
-    it('covers sorted seminars mapping (lines 145-149) with multiple seminars sorted by date DESC', async () => {
-        vi.mocked(dashboardApi.seminars).mockResolvedValue({
-            data: [
-                { id: 1, name: 'Old Seminar', slug: 'old', scheduled_at: '2020-01-01T10:00:00Z' },
-                { id: 2, name: 'New Seminar', slug: 'new', scheduled_at: '2026-12-15T14:00:00Z' },
-                { id: 3, name: 'Mid Seminar', slug: 'mid', scheduled_at: '2023-06-01T10:00:00Z' },
-            ],
-        } as any);
-
-        render(<RegistrationList />);
-
-        await waitFor(() => {
-            expect(dashboardApi.seminars).toHaveBeenCalled();
-        });
-    });
-
     it('renders Data Inscricao column header', async () => {
         vi.mocked(registrationsApi.list).mockResolvedValue({
             data: [
@@ -664,37 +654,17 @@ describe('RegistrationList', () => {
         });
     });
 
-    it('triggers handleSeminarChange selecting a specific seminar via Radix Select', async () => {
-        vi.mocked(dashboardApi.seminars).mockResolvedValue({
-            data: [
-                { id: 10, name: 'Seminar X', slug: 'sem-x', scheduled_at: '2026-06-15T14:00:00Z' },
-            ],
-        } as any);
+    it('filters registrations by seminar via the combobox', async () => {
+        vi.mocked(seminarsApi.list).mockResolvedValue(seminarPage([
+            { id: 10, name: 'Seminar X', scheduled_at: '2026-06-15T14:00:00Z' },
+        ]) as any);
 
         render(<RegistrationList />);
         const user = userEvent.setup();
 
-        // Wait for seminars to load
-        await waitFor(() => {
-            expect(dashboardApi.seminars).toHaveBeenCalled();
-        });
+        await user.click(screen.getByRole('combobox'));
+        await user.click(await screen.findByRole('option', { name: /Seminar X/ }));
 
-        // Open the Radix Select by clicking the trigger (combobox)
-        const trigger = screen.getByRole('combobox');
-        await user.click(trigger);
-
-        // Wait for the dropdown to be visible and click the specific seminar option
-        await waitFor(() => {
-            // Radix renders options as role="option" inside a portal
-            const options = screen.getAllByRole('option');
-            expect(options.length).toBeGreaterThanOrEqual(2); // "all" + at least one seminar
-        });
-
-        // Click the specific seminar option (not "all")
-        const seminarOption = screen.getByRole('option', { name: /Seminar X/ });
-        await user.click(seminarOption);
-
-        // Verify list was called with the selected seminar_id
         await waitFor(() => {
             expect(registrationsApi.list).toHaveBeenCalledWith(
                 expect.objectContaining({ seminar_id: 10 }),
@@ -702,50 +672,28 @@ describe('RegistrationList', () => {
         });
     });
 
-    it('triggers handleSeminarChange selecting "all" to reset seminar filter', async () => {
-        vi.mocked(dashboardApi.seminars).mockResolvedValue({
-            data: [
-                { id: 10, name: 'Seminar X', slug: 'sem-x', scheduled_at: '2026-06-15T14:00:00Z' },
-            ],
-        } as any);
+    it('resets the seminar filter by selecting "Todos os seminarios"', async () => {
+        vi.mocked(seminarsApi.list).mockResolvedValue(seminarPage([
+            { id: 10, name: 'Seminar X', scheduled_at: '2026-06-15T14:00:00Z' },
+        ]) as any);
 
         render(<RegistrationList />);
         const user = userEvent.setup();
 
-        // Wait for seminars to load
-        await waitFor(() => {
-            expect(dashboardApi.seminars).toHaveBeenCalled();
-        });
+        await user.click(screen.getByRole('combobox'));
+        await user.click(await screen.findByRole('option', { name: /Seminar X/ }));
 
-        // First select a specific seminar
-        const trigger = screen.getByRole('combobox');
-        await user.click(trigger);
-
-        await waitFor(() => {
-            expect(screen.getAllByRole('option').length).toBeGreaterThanOrEqual(2);
-        });
-
-        const seminarOption = screen.getByRole('option', { name: /Seminar X/ });
-        await user.click(seminarOption);
-
-        // Wait for the filter to take effect
         await waitFor(() => {
             expect(registrationsApi.list).toHaveBeenCalledWith(
                 expect.objectContaining({ seminar_id: 10 }),
             );
         });
 
-        // Now open again and select "Todos os seminarios" (value="all")
-        await user.click(trigger);
+        await user.click(screen.getByRole('combobox'));
+        await user.click(
+            await screen.findByRole('option', { name: /Todos os seminarios/ }),
+        );
 
-        await waitFor(() => {
-            expect(screen.getAllByRole('option').length).toBeGreaterThanOrEqual(2);
-        });
-
-        const allOption = screen.getByRole('option', { name: /Todos os seminarios/ });
-        await user.click(allOption);
-
-        // After selecting "all", seminar_id should be undefined (empty string maps to undefined)
         await waitFor(() => {
             expect(registrationsApi.list).toHaveBeenCalledWith(
                 expect.objectContaining({ seminar_id: undefined }),
@@ -974,11 +922,9 @@ describe('RegistrationList', () => {
     it('shows Limpar filtros in empty state when seminar filter is active', async () => {
         // This covers branch 282:2 - empty registrations with active filters
         // showing the "Limpar filtros" button in the empty state area
-        vi.mocked(dashboardApi.seminars).mockResolvedValue({
-            data: [
-                { id: 10, name: 'Filter Seminar', slug: 'filter-sem', scheduled_at: '2026-06-15T14:00:00Z' },
-            ],
-        } as any);
+        vi.mocked(seminarsApi.list).mockResolvedValue(seminarPage([
+            { id: 10, name: 'Filter Seminar', scheduled_at: '2026-06-15T14:00:00Z' },
+        ]) as any);
         vi.mocked(registrationsApi.list).mockResolvedValue({
             data: [],
             meta: { last_page: 1, current_page: 1, total: 0, from: 0, to: 0 },
@@ -987,21 +933,10 @@ describe('RegistrationList', () => {
         render(<RegistrationList />);
         const user = userEvent.setup();
 
-        // Wait for seminars to load
-        await waitFor(() => {
-            expect(dashboardApi.seminars).toHaveBeenCalled();
-        });
-
-        // Select a specific seminar to activate the filter
-        const trigger = screen.getByRole('combobox');
-        await user.click(trigger);
-
-        await waitFor(() => {
-            expect(screen.getAllByRole('option').length).toBeGreaterThanOrEqual(2);
-        });
-
-        const seminarOption = screen.getByRole('option', { name: /Filter Seminar/ });
-        await user.click(seminarOption);
+        await user.click(screen.getByRole('combobox'));
+        await user.click(
+            await screen.findByRole('option', { name: /Filter Seminar/ }),
+        );
 
         // Now the empty state should show "Limpar filtros" link button
         await waitFor(() => {
@@ -1013,21 +948,36 @@ describe('RegistrationList', () => {
         expect(clearButtons.length).toBeGreaterThanOrEqual(1);
     });
 
-    it('shows loading skeletons while seminars are loading', async () => {
-        // Make the seminars query never resolve to keep isLoadingSeminars=true
-        vi.mocked(dashboardApi.seminars).mockReturnValue(new Promise(() => {}));
+    it('shows Carregando... while seminars load in the combobox', async () => {
+        vi.mocked(seminarsApi.list).mockReturnValue(new Promise(() => {}) as any);
 
         render(<RegistrationList />);
-
-        // The select trigger should show the loading state
-        // When seminars are loading, the dropdown shows "Carregando..." option
-        // We need to open the dropdown to see this
         const user = userEvent.setup();
-        const trigger = screen.getByRole('combobox');
-        await user.click(trigger);
+        await user.click(screen.getByRole('combobox'));
+
+        expect(await screen.findByText('Carregando...')).toBeInTheDocument();
+    });
+
+    it('clears the seminar filter when Limpar filtros is clicked', async () => {
+        vi.mocked(seminarsApi.list).mockResolvedValue(seminarPage([
+            { id: 10, name: 'Seminar X', scheduled_at: '2026-06-15T14:00:00Z' },
+        ]) as any);
+
+        render(<RegistrationList />);
+        const user = userEvent.setup();
+
+        await user.click(screen.getByRole('combobox'));
+        await user.click(await screen.findByRole('option', { name: /Seminar X/ }));
 
         await waitFor(() => {
-            expect(screen.getByText('Carregando...')).toBeInTheDocument();
+            expect(screen.getAllByText('Limpar filtros').length).toBeGreaterThanOrEqual(1);
+        });
+        await user.click(screen.getAllByText('Limpar filtros')[0]);
+
+        await waitFor(() => {
+            expect(screen.getByRole('combobox')).toHaveTextContent(
+                'Todos os seminarios',
+            );
         });
     });
 });

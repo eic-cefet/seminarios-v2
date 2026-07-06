@@ -436,18 +436,6 @@ describe('Admin API endpoints', () => {
         });
     });
 
-    describe('dashboardApi extended', () => {
-        it('seminars fetches all seminars', async () => {
-            mockSuccess({ data: [{ id: 1, name: 'S1' }] });
-            const result = await dashboardApi.seminars();
-            expect(result.data).toHaveLength(1);
-            expect(fetchSpy).toHaveBeenCalledWith(
-                expect.stringContaining('/seminars'),
-                expect.any(Object),
-            );
-        });
-    });
-
     describe('apiTokensApi', () => {
         it('list fetches tokens', async () => {
             mockSuccess({ data: [], current_page: 1, last_page: 1, per_page: 15, total: 0 });
