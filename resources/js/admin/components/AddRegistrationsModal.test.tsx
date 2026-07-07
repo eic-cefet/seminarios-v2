@@ -1,5 +1,7 @@
 import { render, screen, waitFor, userEvent } from '@/test/test-utils';
 import { toast } from 'sonner';
+import { analytics } from '@shared/lib/analytics';
+import { createTestQueryClient } from '@/test/test-utils';
 
 vi.mock('sonner', () => ({
     toast: { success: vi.fn(), error: vi.fn() },
@@ -119,6 +121,10 @@ describe('AddRegistrationsModal', () => {
         });
         expect(toast.success).toHaveBeenCalledWith('2 inscricoes criadas');
         expect(onClose).toHaveBeenCalled();
+        expect(analytics.event).toHaveBeenCalledWith('admin_registrations_added', {
+            seminar_id: 10,
+            count: 2,
+        });
     });
 
     it('includes already-registered count in the toast', async () => {
@@ -141,6 +147,57 @@ describe('AddRegistrationsModal', () => {
         await waitFor(() => {
             expect(toast.success).toHaveBeenCalledWith(
                 '1 inscricao criada · 1 ja inscrito',
+            );
+        });
+    });
+
+    it('invalidates the registrations query on success', async () => {
+        const user = userEvent.setup();
+        const queryClient = createTestQueryClient();
+        const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
+        vi.mocked(registrationsApi.store).mockResolvedValue({
+            message: 'ok',
+            data: { created: 1, already_registered: 0, marked_present: 0 },
+        } as any);
+
+        render(
+            <AddRegistrationsModal open onClose={vi.fn()} initialSeminar={seminarX} />,
+            { queryClient },
+        );
+
+        const comboboxes = screen.getAllByRole('combobox');
+        await user.click(comboboxes[1]);
+        await user.click(await screen.findByRole('option', { name: /Ana Silva/ }));
+        await user.keyboard('{Escape}');
+        await user.click(screen.getByRole('button', { name: /^Adicionar$/ }));
+
+        await waitFor(() => {
+            expect(invalidateSpy).toHaveBeenCalledWith({
+                queryKey: ['admin-registrations'],
+            });
+        });
+    });
+
+    it('pluralizes ja inscritos for multiple already-registered users', async () => {
+        const user = userEvent.setup();
+        vi.mocked(registrationsApi.store).mockResolvedValue({
+            message: 'ok',
+            data: { created: 1, already_registered: 2, marked_present: 0 },
+        } as any);
+
+        render(
+            <AddRegistrationsModal open onClose={vi.fn()} initialSeminar={seminarX} />,
+        );
+
+        const comboboxes = screen.getAllByRole('combobox');
+        await user.click(comboboxes[1]);
+        await user.click(await screen.findByRole('option', { name: /Ana Silva/ }));
+        await user.keyboard('{Escape}');
+        await user.click(screen.getByRole('button', { name: /^Adicionar$/ }));
+
+        await waitFor(() => {
+            expect(toast.success).toHaveBeenCalledWith(
+                '1 inscricao criada · 2 ja inscritos',
             );
         });
     });
