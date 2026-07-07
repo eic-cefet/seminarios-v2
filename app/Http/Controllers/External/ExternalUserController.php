@@ -40,7 +40,7 @@ class ExternalUserController extends Controller
     #[QueryParameter('cursor', description: 'Opaque cursor token returned by a previous `paginate=cursor` response (`meta.next_cursor` / `meta.prev_cursor`)', type: 'string', example: 'eyJpZCI6MTAwLCJfcG9pbnRzVG9OZXh0SXRlbXMiOnRydWV9')]
     public function index(Request $request): ExternalResourceCollection|ExternalCursorResourceCollection
     {
-        Gate::authorize('viewAny', User::class);
+        Gate::authorize('viewAnyExternal', User::class);
 
         try {
             $mode = PaginationMode::fromQuery($request->query('paginate'));

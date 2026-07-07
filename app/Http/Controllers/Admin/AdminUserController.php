@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Enums\AuditEvent;
+use App\Enums\Role;
 use App\Http\Controllers\Concerns\EscapesLikeWildcards;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\AdminUserStoreRequest;
@@ -35,7 +36,7 @@ class AdminUserController extends Controller
         $query = User::with(['studentData', 'speakerData', 'roles'])
             ->orderByDesc('created_at');
 
-        if ($request->boolean('trashed')) {
+        if ($request->boolean('trashed') && $request->user()->hasRole(Role::Admin)) {
             $query->onlyTrashed();
         }
 

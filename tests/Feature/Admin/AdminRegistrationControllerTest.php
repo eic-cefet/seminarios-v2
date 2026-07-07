@@ -2,6 +2,7 @@
 
 use App\Enums\AuditEvent;
 use App\Mail\SeminarRegistrationConfirmation;
+use App\Models\AuditLog;
 use App\Models\Registration;
 use App\Models\Seminar;
 use App\Models\User;
@@ -361,6 +362,43 @@ describe('POST /api/admin/registrations', function () {
         $this->assertDatabaseHas('audit_logs', [
             'event_name' => AuditEvent::RegistrationsAddedByAdmin->value,
         ]);
+
+        $log = AuditLog::where('event_name', AuditEvent::RegistrationsAddedByAdmin->value)->firstOrFail();
+        expect($log->auditable_id)->toBe($seminar->id)
+            ->and($log->event_data['created'])->toBe(1)
+            ->and($log->event_data['already_registered'])->toBe(0)
+            ->and($log->event_data['marked_present'])->toBe(0);
+    });
+
+    it('rejects a soft-deleted user id', function () {
+        actingAsAdmin();
+        $seminar = Seminar::factory()->create();
+        $user = User::factory()->create();
+        $user->delete();
+
+        $this->postJson('/api/admin/registrations', [
+            'seminar_id' => $seminar->id,
+            'user_ids' => [$user->id],
+        ])->assertUnprocessable()
+            ->assertJsonValidationErrors(['user_ids.0']);
+
+        $this->assertDatabaseMissing('registrations', [
+            'seminar_id' => $seminar->id,
+            'user_id' => $user->id,
+        ]);
+    });
+
+    it('rejects a soft-deleted seminar id', function () {
+        actingAsAdmin();
+        $seminar = Seminar::factory()->create();
+        $seminar->delete();
+        $user = User::factory()->create();
+
+        $this->postJson('/api/admin/registrations', [
+            'seminar_id' => $seminar->id,
+            'user_ids' => [$user->id],
+        ])->assertUnprocessable()
+            ->assertJsonValidationErrors(['seminar_id']);
     });
 
     it('validates the payload', function (array $payload, string $errorField) {

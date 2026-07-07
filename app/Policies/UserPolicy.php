@@ -12,6 +12,11 @@ class UserPolicy
         return $user->hasAnyRole([Role::Admin, Role::Teacher]);
     }
 
+    public function viewAnyExternal(User $user): bool
+    {
+        return $user->hasRole(Role::Admin);
+    }
+
     public function view(User $user, User $model): bool
     {
         return $user->hasRole(Role::Admin);
