@@ -41,8 +41,9 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function ()
     Route::apiResource('subjects', AdminSubjectController::class)
         ->parameters(['subjects' => 'subject:slug']);
 
-    // Registrations (not a full resource — only index + custom action)
+    // Registrations (not a full resource — index + store + custom action)
     Route::get('/registrations', [AdminRegistrationController::class, 'index']);
+    Route::post('/registrations', [AdminRegistrationController::class, 'store']);
     Route::patch('/registrations/{registration}/presence', [AdminRegistrationController::class, 'togglePresence']);
 
     Route::apiResource('seminars', AdminSeminarController::class);
