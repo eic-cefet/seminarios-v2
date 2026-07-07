@@ -9,7 +9,7 @@ class UserPolicy
 {
     public function viewAny(User $user): bool
     {
-        return $user->hasRole(Role::Admin);
+        return $user->hasAnyRole([Role::Admin, Role::Teacher]);
     }
 
     public function view(User $user, User $model): bool

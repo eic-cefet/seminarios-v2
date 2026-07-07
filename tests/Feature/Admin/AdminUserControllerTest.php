@@ -35,12 +35,15 @@ describe('GET /api/admin/users', function () {
         $response->assertForbidden();
     });
 
-    it('returns 403 for teacher user', function () {
+    it('allows teacher to list users', function () {
         actingAsTeacher();
+
+        User::factory()->create(['name' => 'Aluno Presente']);
 
         $response = $this->getJson('/api/admin/users');
 
-        $response->assertForbidden();
+        $response->assertOk()
+            ->assertJsonStructure(['data' => [['id', 'name', 'email']]]);
     });
 
     it('filters users by search term', function () {
