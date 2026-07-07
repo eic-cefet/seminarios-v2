@@ -34,4 +34,19 @@ export const registrationsApi = {
             },
         );
     },
+
+    store: async (data: { seminar_id: number; user_ids: number[] }) => {
+        await getCsrfCookie();
+        return fetchAdminApi<{
+            message: string;
+            data: {
+                created: number;
+                already_registered: number;
+                marked_present: number;
+            };
+        }>("/registrations", {
+            method: "POST",
+            body: JSON.stringify(data),
+        });
+    },
 };
