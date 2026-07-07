@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Search, Calendar, User, Mail } from "lucide-react";
+import { Search, Calendar, User, Mail, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 import { analytics } from "@shared/lib/analytics";
 import { useDebouncedSearch } from "@shared/hooks/useDebouncedSearch";
@@ -30,6 +30,7 @@ import {
     SeminarCombobox,
     type SeminarOption,
 } from "../../components/SeminarCombobox";
+import { AddRegistrationsModal } from "../../components/AddRegistrationsModal";
 import { Badge } from "../../components/ui/badge";
 import { Button } from "../../components/ui/button";
 import { PageTitle } from "@shared/components/PageTitle";
@@ -42,6 +43,7 @@ export default function RegistrationList() {
         useState<SeminarOption | null>(null);
     const selectedSeminarId = selectedSeminar ? String(selectedSeminar.id) : "";
     const [page, setPage] = useState(1);
+    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
     const {
         inputValue: searchInput,
@@ -152,13 +154,19 @@ export default function RegistrationList() {
     return (
         <div className="space-y-6">
             <PageTitle title="Inscrições" />
-            <div>
-                <h1 className="text-2xl font-bold text-foreground">
-                    Inscricoes
-                </h1>
-                <p className="text-muted-foreground">
-                    Gerenciar inscricoes e presencas dos seminarios
-                </p>
+            <div className="flex flex-wrap items-start justify-between gap-4">
+                <div>
+                    <h1 className="text-2xl font-bold text-foreground">
+                        Inscricoes
+                    </h1>
+                    <p className="text-muted-foreground">
+                        Gerenciar inscricoes e presencas dos seminarios
+                    </p>
+                </div>
+                <Button onClick={() => setIsAddModalOpen(true)}>
+                    <UserPlus className="mr-2 h-4 w-4" />
+                    Adicionar inscricoes
+                </Button>
             </div>
 
             {/* Filters */}
@@ -340,6 +348,12 @@ export default function RegistrationList() {
                     )}
                 </CardContent>
             </Card>
+
+            <AddRegistrationsModal
+                open={isAddModalOpen}
+                onClose={() => setIsAddModalOpen(false)}
+                initialSeminar={selectedSeminar}
+            />
         </div>
     );
 }

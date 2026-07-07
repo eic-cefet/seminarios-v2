@@ -46,6 +46,21 @@ vi.mock('../../api/adminClient', () => ({
     AdminApiError: class extends Error {},
 }));
 
+vi.mock('../../components/AddRegistrationsModal', () => ({
+    AddRegistrationsModal: ({
+        open,
+        initialSeminar,
+    }: {
+        open: boolean;
+        initialSeminar: { name: string } | null;
+    }) =>
+        open ? (
+            <div data-testid="add-registrations-modal">
+                {initialSeminar?.name ?? 'sem seminario'}
+            </div>
+        ) : null,
+}));
+
 import RegistrationList from './RegistrationList';
 import { registrationsApi, seminarsApi } from '../../api/adminClient';
 import { analytics } from '@shared/lib/analytics';
@@ -979,5 +994,45 @@ describe('RegistrationList', () => {
                 'Todos os seminarios',
             );
         });
+    });
+
+    it('renders the Adicionar inscricoes button', () => {
+        render(<RegistrationList />);
+        expect(
+            screen.getByRole('button', { name: /Adicionar inscricoes/ }),
+        ).toBeInTheDocument();
+    });
+
+    it('opens the add-registrations modal without a seminar prefilled', async () => {
+        render(<RegistrationList />);
+        const user = userEvent.setup();
+
+        await user.click(
+            screen.getByRole('button', { name: /Adicionar inscricoes/ }),
+        );
+
+        expect(screen.getByTestId('add-registrations-modal')).toHaveTextContent(
+            'sem seminario',
+        );
+    });
+
+    it('opens the add-registrations modal with the filtered seminar prefilled', async () => {
+        vi.mocked(seminarsApi.list).mockResolvedValue(seminarPage([
+            { id: 10, name: 'Seminar X', scheduled_at: '2026-06-15T14:00:00Z' },
+        ]) as any);
+
+        render(<RegistrationList />);
+        const user = userEvent.setup();
+
+        await user.click(screen.getByRole('combobox'));
+        await user.click(await screen.findByRole('option', { name: /Seminar X/ }));
+
+        await user.click(
+            screen.getByRole('button', { name: /Adicionar inscricoes/ }),
+        );
+
+        expect(screen.getByTestId('add-registrations-modal')).toHaveTextContent(
+            'Seminar X',
+        );
     });
 });
