@@ -329,4 +329,24 @@ describe('SeminarCombobox', () => {
             await axe(document.body, { rules: { region: { enabled: false } } }),
         ).toHaveNoViolations();
     });
+
+    it('hides the "Todos os seminarios" option when withAllOption is false', async () => {
+        const user = userEvent.setup();
+        render(
+            <SeminarCombobox
+                value={null}
+                onChange={vi.fn()}
+                withAllOption={false}
+                placeholder="Selecione o seminario"
+            />,
+        );
+
+        await user.click(screen.getByRole('combobox'));
+        await screen.findByRole('option', { name: /Seminar A/ });
+
+        expect(
+            screen.queryByRole('option', { name: /Todos os seminarios/ }),
+        ).not.toBeInTheDocument();
+        expect(screen.getByText('Selecione o seminario')).toBeInTheDocument();
+    });
 });

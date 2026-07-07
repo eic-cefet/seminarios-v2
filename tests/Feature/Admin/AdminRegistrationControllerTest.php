@@ -1,8 +1,12 @@
 <?php
 
+use App\Enums\AuditEvent;
+use App\Mail\SeminarRegistrationConfirmation;
+use App\Models\AuditLog;
 use App\Models\Registration;
 use App\Models\Seminar;
 use App\Models\User;
+use Illuminate\Support\Facades\Mail;
 
 describe('GET /api/admin/registrations', function () {
     it('returns paginated list of registrations for admin', function () {
@@ -192,4 +196,228 @@ describe('PATCH /api/admin/registrations/{id}/presence', function () {
 
         $response->assertNotFound();
     });
+});
+
+describe('POST /api/admin/registrations', function () {
+    it('returns 401 for unauthenticated request', function () {
+        $this->postJson('/api/admin/registrations', [])->assertUnauthorized();
+    });
+
+    it('returns 403 for regular user', function () {
+        actingAsUser();
+        $seminar = Seminar::factory()->create();
+        $user = User::factory()->create();
+
+        $this->postJson('/api/admin/registrations', [
+            'seminar_id' => $seminar->id,
+            'user_ids' => [$user->id],
+        ])->assertForbidden();
+    });
+
+    it('returns 403 for teacher on another teacher\'s seminar', function () {
+        actingAsTeacher();
+        $otherTeacher = User::factory()->teacher()->create();
+        $seminar = Seminar::factory()->create(['created_by' => $otherTeacher->id]);
+        $user = User::factory()->create();
+
+        $this->postJson('/api/admin/registrations', [
+            'seminar_id' => $seminar->id,
+            'user_ids' => [$user->id],
+        ])->assertForbidden();
+    });
+
+    it('creates present registrations and queues confirmation for admin', function () {
+        Mail::fake();
+        actingAsAdmin();
+        $seminar = Seminar::factory()->create();
+        $users = User::factory()->count(2)->create();
+
+        $response = $this->postJson('/api/admin/registrations', [
+            'seminar_id' => $seminar->id,
+            'user_ids' => $users->pluck('id')->all(),
+        ]);
+
+        $response->assertCreated()
+            ->assertJson([
+                'message' => 'Inscrições adicionadas com sucesso',
+                'data' => ['created' => 2, 'already_registered' => 0, 'marked_present' => 0],
+            ]);
+
+        foreach ($users as $user) {
+            $this->assertDatabaseHas('registrations', [
+                'seminar_id' => $seminar->id,
+                'user_id' => $user->id,
+                'present' => true,
+            ]);
+        }
+
+        Mail::assertQueued(SeminarRegistrationConfirmation::class, 2);
+    });
+
+    it('allows teacher to add registrations to own seminar', function () {
+        Mail::fake();
+        $teacher = actingAsTeacher();
+        $seminar = Seminar::factory()->create(['created_by' => $teacher->id]);
+        $user = User::factory()->create();
+
+        $this->postJson('/api/admin/registrations', [
+            'seminar_id' => $seminar->id,
+            'user_ids' => [$user->id],
+        ])->assertCreated();
+    });
+
+    it('works for past seminars (walk-in use case)', function () {
+        Mail::fake();
+        actingAsAdmin();
+        $seminar = Seminar::factory()->past()->create();
+        $user = User::factory()->create();
+
+        $this->postJson('/api/admin/registrations', [
+            'seminar_id' => $seminar->id,
+            'user_ids' => [$user->id],
+        ])->assertCreated();
+    });
+
+    it('is idempotent for already-present registrations and sends no mail', function () {
+        Mail::fake();
+        actingAsAdmin();
+        $seminar = Seminar::factory()->create();
+        $user = User::factory()->create();
+        Registration::factory()->present()->create([
+            'seminar_id' => $seminar->id,
+            'user_id' => $user->id,
+        ]);
+
+        $response = $this->postJson('/api/admin/registrations', [
+            'seminar_id' => $seminar->id,
+            'user_ids' => [$user->id],
+        ]);
+
+        $response->assertCreated()
+            ->assertJson([
+                'data' => ['created' => 0, 'already_registered' => 1, 'marked_present' => 0],
+            ]);
+        expect(Registration::where('seminar_id', $seminar->id)->count())->toBe(1);
+        Mail::assertNothingQueued();
+    });
+
+    it('flips an absent existing registration to present without mail', function () {
+        Mail::fake();
+        actingAsAdmin();
+        $seminar = Seminar::factory()->create();
+        $user = User::factory()->create();
+        $registration = Registration::factory()->create([
+            'seminar_id' => $seminar->id,
+            'user_id' => $user->id,
+            'present' => false,
+        ]);
+
+        $response = $this->postJson('/api/admin/registrations', [
+            'seminar_id' => $seminar->id,
+            'user_ids' => [$user->id],
+        ]);
+
+        $response->assertCreated()
+            ->assertJson([
+                'data' => ['created' => 0, 'already_registered' => 1, 'marked_present' => 1],
+            ]);
+        expect($registration->refresh()->present)->toBeTrue();
+        Mail::assertNothingQueued();
+    });
+
+    it('handles a mixed batch of new and existing users', function () {
+        Mail::fake();
+        actingAsAdmin();
+        $seminar = Seminar::factory()->create();
+        $existing = User::factory()->create();
+        $new = User::factory()->create();
+        Registration::factory()->present()->create([
+            'seminar_id' => $seminar->id,
+            'user_id' => $existing->id,
+        ]);
+
+        $response = $this->postJson('/api/admin/registrations', [
+            'seminar_id' => $seminar->id,
+            'user_ids' => [$existing->id, $new->id],
+        ]);
+
+        $response->assertCreated()
+            ->assertJson([
+                'data' => ['created' => 1, 'already_registered' => 1, 'marked_present' => 0],
+            ]);
+        Mail::assertQueued(SeminarRegistrationConfirmation::class, 1);
+    });
+
+    it('records the admin audit event', function () {
+        Mail::fake();
+        actingAsAdmin();
+        $seminar = Seminar::factory()->create();
+        $user = User::factory()->create();
+
+        $this->postJson('/api/admin/registrations', [
+            'seminar_id' => $seminar->id,
+            'user_ids' => [$user->id],
+        ])->assertCreated();
+
+        $this->assertDatabaseHas('audit_logs', [
+            'event_name' => AuditEvent::RegistrationsAddedByAdmin->value,
+        ]);
+
+        $log = AuditLog::where('event_name', AuditEvent::RegistrationsAddedByAdmin->value)->firstOrFail();
+        expect($log->auditable_id)->toBe($seminar->id)
+            ->and($log->event_data['created'])->toBe(1)
+            ->and($log->event_data['already_registered'])->toBe(0)
+            ->and($log->event_data['marked_present'])->toBe(0);
+    });
+
+    it('rejects a soft-deleted user id', function () {
+        actingAsAdmin();
+        $seminar = Seminar::factory()->create();
+        $user = User::factory()->create();
+        $user->delete();
+
+        $this->postJson('/api/admin/registrations', [
+            'seminar_id' => $seminar->id,
+            'user_ids' => [$user->id],
+        ])->assertUnprocessable()
+            ->assertJsonValidationErrors(['user_ids.0']);
+
+        $this->assertDatabaseMissing('registrations', [
+            'seminar_id' => $seminar->id,
+            'user_id' => $user->id,
+        ]);
+    });
+
+    it('rejects a soft-deleted seminar id', function () {
+        actingAsAdmin();
+        $seminar = Seminar::factory()->create();
+        $seminar->delete();
+        $user = User::factory()->create();
+
+        $this->postJson('/api/admin/registrations', [
+            'seminar_id' => $seminar->id,
+            'user_ids' => [$user->id],
+        ])->assertUnprocessable()
+            ->assertJsonValidationErrors(['seminar_id']);
+    });
+
+    it('validates the payload', function (array $payload, string $errorField) {
+        actingAsAdmin();
+
+        $this->postJson('/api/admin/registrations', $payload)
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors([$errorField]);
+    })->with([
+        'missing seminar' => [['user_ids' => [1]], 'seminar_id'],
+        'nonexistent seminar' => [['seminar_id' => 999999, 'user_ids' => [1]], 'seminar_id'],
+        'missing users' => [fn () => ['seminar_id' => Seminar::factory()->create()->id], 'user_ids'],
+        'empty users' => [fn () => ['seminar_id' => Seminar::factory()->create()->id, 'user_ids' => []], 'user_ids'],
+        'nonexistent user' => [fn () => ['seminar_id' => Seminar::factory()->create()->id, 'user_ids' => [999999]], 'user_ids.0'],
+        'duplicate users' => [function () {
+            $seminar = Seminar::factory()->create();
+            $user = User::factory()->create();
+
+            return ['seminar_id' => $seminar->id, 'user_ids' => [$user->id, $user->id]];
+        }, 'user_ids.0'],
+    ]);
 });

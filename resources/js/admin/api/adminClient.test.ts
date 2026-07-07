@@ -191,6 +191,25 @@ describe('Admin API endpoints', () => {
                 expect.objectContaining({ method: 'PATCH' }),
             );
         });
+
+        it('store posts seminar and user ids', async () => {
+            mockSuccess({
+                message: 'ok',
+                data: { created: 2, already_registered: 0, marked_present: 0 },
+            });
+            const result = await registrationsApi.store({
+                seminar_id: 5,
+                user_ids: [1, 2],
+            });
+            expect(result.data.created).toBe(2);
+            expect(fetchSpy).toHaveBeenCalledWith(
+                expect.stringContaining('/registrations'),
+                expect.objectContaining({
+                    method: 'POST',
+                    body: JSON.stringify({ seminar_id: 5, user_ids: [1, 2] }),
+                }),
+            );
+        });
     });
 
     describe('seminarsApi', () => {

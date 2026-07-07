@@ -9,6 +9,11 @@ class UserPolicy
 {
     public function viewAny(User $user): bool
     {
+        return $user->hasAnyRole([Role::Admin, Role::Teacher]);
+    }
+
+    public function viewAnyExternal(User $user): bool
+    {
         return $user->hasRole(Role::Admin);
     }
 

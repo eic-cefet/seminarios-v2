@@ -9,6 +9,7 @@ describe('UserPolicy', function () {
         $this->policy = new UserPolicy;
         Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
         Role::firstOrCreate(['name' => 'user', 'guard_name' => 'web']);
+        Role::firstOrCreate(['name' => 'teacher', 'guard_name' => 'web']);
     });
 
     describe('viewAny', function () {
@@ -24,6 +25,17 @@ describe('UserPolicy', function () {
             $user->assignRole('user');
 
             expect($this->policy->viewAny($user))->toBeFalse();
+        });
+
+        it('allows teacher to view any users but not via the external API, and pins the other actions as still denied', function () {
+            $teacher = User::factory()->create();
+            $teacher->assignRole('teacher');
+            $target = User::factory()->create();
+
+            expect($this->policy->viewAny($teacher))->toBeTrue()
+                ->and($this->policy->viewAnyExternal($teacher))->toBeFalse()
+                ->and($this->policy->view($teacher, $target))->toBeFalse()
+                ->and($this->policy->create($teacher))->toBeFalse();
         });
     });
 

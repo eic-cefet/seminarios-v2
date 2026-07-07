@@ -25,6 +25,8 @@ interface SeminarComboboxProps {
     id?: string;
     placeholder?: string;
     className?: string;
+    withAllOption?: boolean;
+    modal?: boolean;
 }
 
 const SCROLL_THRESHOLD_PX = 50;
@@ -35,6 +37,8 @@ export function SeminarCombobox({
     id,
     placeholder = "Todos os seminarios",
     className,
+    withAllOption = true,
+    modal = false,
 }: SeminarComboboxProps) {
     const [open, setOpen] = useState(false);
     const listRef = useRef<HTMLDivElement>(null);
@@ -106,7 +110,7 @@ export function SeminarCombobox({
         };
 
     return (
-        <Popover open={open} onOpenChange={handleOpenChange}>
+        <Popover open={open} onOpenChange={handleOpenChange} modal={modal}>
             <PopoverTrigger asChild>
                 <Button
                     id={id}
@@ -159,25 +163,27 @@ export function SeminarCombobox({
                         className="max-h-[300px] overflow-y-auto overscroll-contain p-1.5"
                     >
                         <div role="listbox" aria-label="Seminarios">
-                            <div
-                                role="option"
-                                aria-selected={value === null}
-                                tabIndex={0}
-                                className={optionClassName(value === null)}
-                                onClick={() => handleSelect(null)}
-                                onKeyDown={optionKeyDown(null)}
-                            >
-                                <span className="flex items-center gap-2 text-sm">
-                                    <ListFilter
-                                        className="h-4 w-4 text-muted-foreground"
-                                        aria-hidden="true"
-                                    />
-                                    Todos os seminarios
-                                </span>
-                                {value === null && (
-                                    <Check className="h-4 w-4 shrink-0 text-primary" />
-                                )}
-                            </div>
+                            {withAllOption && (
+                                <div
+                                    role="option"
+                                    aria-selected={value === null}
+                                    tabIndex={0}
+                                    className={optionClassName(value === null)}
+                                    onClick={() => handleSelect(null)}
+                                    onKeyDown={optionKeyDown(null)}
+                                >
+                                    <span className="flex items-center gap-2 text-sm">
+                                        <ListFilter
+                                            className="h-4 w-4 text-muted-foreground"
+                                            aria-hidden="true"
+                                        />
+                                        Todos os seminarios
+                                    </span>
+                                    {value === null && (
+                                        <Check className="h-4 w-4 shrink-0 text-primary" />
+                                    )}
+                                </div>
+                            )}
                             {seminars.length > 0 && (
                                 <div
                                     role="group"

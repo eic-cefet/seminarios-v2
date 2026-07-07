@@ -35,12 +35,15 @@ describe('GET /api/admin/users', function () {
         $response->assertForbidden();
     });
 
-    it('returns 403 for teacher user', function () {
+    it('allows teacher to list users', function () {
         actingAsTeacher();
+
+        User::factory()->create(['name' => 'Aluno Presente']);
 
         $response = $this->getJson('/api/admin/users');
 
-        $response->assertForbidden();
+        $response->assertOk()
+            ->assertJsonStructure(['data' => [['id', 'name', 'email']]]);
     });
 
     it('filters users by search term', function () {
@@ -81,6 +84,21 @@ describe('GET /api/admin/users', function () {
         $ids = collect($response->json('data'))->pluck('id');
         expect($ids)->toContain($plainUser->id);
         expect($ids)->not->toContain($teacher->id);
+    });
+
+    it('ignores the trashed filter for teachers', function () {
+        actingAsTeacher();
+
+        $active = User::factory()->create(['name' => 'Usuario Ativo']);
+        $trashed = User::factory()->create(['name' => 'Usuario Excluido']);
+        $trashed->delete();
+
+        $response = $this->getJson('/api/admin/users?trashed=1');
+
+        $response->assertOk();
+        $names = collect($response->json('data'))->pluck('name');
+        expect($names)->toContain('Usuario Ativo')
+            ->not->toContain('Usuario Excluido');
     });
 
     it('filters trashed users', function () {
