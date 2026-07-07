@@ -261,6 +261,44 @@ describe('AddRegistrationsModal', () => {
         expect(onClose).toHaveBeenCalled();
     });
 
+    it('closes via Escape when idle', async () => {
+        const user = userEvent.setup();
+        const onClose = vi.fn();
+        render(
+            <AddRegistrationsModal open onClose={onClose} initialSeminar={null} />,
+        );
+
+        await user.keyboard('{Escape}');
+
+        expect(onClose).toHaveBeenCalled();
+    });
+
+    it('does not close via Escape while the request is pending', async () => {
+        const user = userEvent.setup();
+        const onClose = vi.fn();
+        vi.mocked(registrationsApi.store).mockReturnValue(
+            new Promise(() => {}) as any,
+        );
+
+        render(
+            <AddRegistrationsModal open onClose={onClose} initialSeminar={seminarX} />,
+        );
+
+        const comboboxes = screen.getAllByRole('combobox');
+        await user.click(comboboxes[1]);
+        await user.click(await screen.findByRole('option', { name: /Ana Silva/ }));
+        await user.keyboard('{Escape}');
+        await user.click(screen.getByRole('button', { name: /^Adicionar$/ }));
+
+        await waitFor(() => {
+            expect(screen.getByRole('button', { name: /Adicionar/ })).toBeDisabled();
+        });
+
+        await user.keyboard('{Escape}');
+
+        expect(onClose).not.toHaveBeenCalled();
+    });
+
     it('disables buttons while the request is pending', async () => {
         const user = userEvent.setup();
         vi.mocked(registrationsApi.store).mockReturnValue(

@@ -81,9 +81,11 @@ export function AddRegistrationsModal({
         seminar !== null && users.length > 0 && !addMutation.isPending;
 
     const handleSubmit = () => {
+        /* v8 ignore start -- unreachable: submit button is disabled unless canSubmit */
         if (!seminar || users.length === 0) {
             return;
         }
+        /* v8 ignore stop */
         addMutation.mutate({
             seminar_id: seminar.id,
             user_ids: users.map((user) => user.id),
@@ -94,7 +96,7 @@ export function AddRegistrationsModal({
         <Dialog
             open={open}
             onOpenChange={(nextOpen) => {
-                if (!nextOpen) {
+                if (!nextOpen && !addMutation.isPending) {
                     onClose();
                 }
             }}

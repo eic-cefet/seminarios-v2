@@ -49,14 +49,17 @@ vi.mock('../../api/adminClient', () => ({
 vi.mock('../../components/AddRegistrationsModal', () => ({
     AddRegistrationsModal: ({
         open,
+        onClose,
         initialSeminar,
     }: {
         open: boolean;
+        onClose: () => void;
         initialSeminar: { name: string } | null;
     }) =>
         open ? (
             <div data-testid="add-registrations-modal">
                 {initialSeminar?.name ?? 'sem seminario'}
+                <button onClick={onClose}>close-modal</button>
             </div>
         ) : null,
 }));
@@ -1034,5 +1037,21 @@ describe('RegistrationList', () => {
         expect(screen.getByTestId('add-registrations-modal')).toHaveTextContent(
             'Seminar X',
         );
+    });
+
+    it('closes the add-registrations modal', async () => {
+        render(<RegistrationList />);
+        const user = userEvent.setup();
+
+        await user.click(
+            screen.getByRole('button', { name: /Adicionar inscricoes/ }),
+        );
+        expect(screen.getByTestId('add-registrations-modal')).toBeInTheDocument();
+
+        await user.click(screen.getByText('close-modal'));
+
+        expect(
+            screen.queryByTestId('add-registrations-modal'),
+        ).not.toBeInTheDocument();
     });
 });
