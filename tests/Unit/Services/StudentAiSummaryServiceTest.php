@@ -93,5 +93,37 @@ it('does not cache a failed AI request', function () {
     expect(fn () => $service->summaryFor($student, $range, $admin))
         ->toThrow(RuntimeException::class);
 
-    expect(Cache::has("student_ai_summary:{$student->id}:2026.1"))->toBeFalse();
+    expect(Cache::has("student_ai_summary:{$student->id}:2026.1:all"))->toBeFalse();
+});
+
+it('caches separately per viewer scope so a teacher never receives an admin-scoped summary', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $teacher = User::factory()->create();
+    $teacher->assignRole('teacher');
+
+    $student = User::factory()->student()->create();
+    $seminar = Seminar::factory()->create(['scheduled_at' => '2026-03-01 10:00:00', 'created_by' => $teacher->id]);
+    Registration::factory()->present()->create(['user_id' => $student->id, 'seminar_id' => $seminar->id]);
+
+    Http::fake([
+        'api.openai.com/*' => Http::sequence()
+            ->push(['choices' => [['message' => ['content' => 'Resumo do admin.']]]])
+            ->push(['choices' => [['message' => ['content' => 'Resumo do professor.']]]]),
+    ]);
+
+    $service = app(StudentAiSummaryService::class);
+    $range = SemesterRange::fromString('2026.1');
+
+    $adminSummary = $service->summaryFor($student, $range, $admin);
+    $teacherSummary = $service->summaryFor($student, $range, $teacher);
+
+    expect($adminSummary)->toBe('Resumo do admin.')
+        ->and($teacherSummary)->toBe('Resumo do professor.');
+
+    Http::assertSentCount(2);
+
+    expect(Cache::has("student_ai_summary:{$student->id}:2026.1:all"))->toBeTrue()
+        ->and(Cache::has("student_ai_summary:{$student->id}:2026.1:teacher:{$teacher->id}"))->toBeTrue();
 });

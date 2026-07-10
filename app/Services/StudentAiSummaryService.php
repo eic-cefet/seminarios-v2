@@ -29,7 +29,8 @@ class StudentAiSummaryService
             return null;
         }
 
-        $cacheKey = "student_ai_summary:{$student->id}:{$range->toString()}";
+        $scope = $viewer->isAdmin() ? 'all' : "teacher:{$viewer->id}";
+        $cacheKey = "student_ai_summary:{$student->id}:{$range->toString()}:{$scope}";
 
         return Cache::remember($cacheKey, now()->addDay(), function () use ($student, $range, $viewer) {
             $data = $this->dashboard->forStudent($student, $range, $viewer);
