@@ -55,4 +55,16 @@ final class SemesterRange
     {
         return $this->end->format('Y-m-d H:i:s');
     }
+
+    public static function current(): self
+    {
+        $now = Carbon::now();
+
+        return self::fromString($now->month <= 6 ? "{$now->year}.1" : "{$now->year}.2");
+    }
+
+    public function toString(): string
+    {
+        return "{$this->year}.{$this->half}";
+    }
 }
