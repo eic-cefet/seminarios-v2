@@ -118,6 +118,21 @@ describe('GET /admin/students/{user}/dashboard', function () {
         Carbon\Carbon::setTestNow();
     });
 
+    it('marks a past non-present registration as missed', function () {
+        actingAsAdmin();
+        Carbon\Carbon::setTestNow('2026-03-15 00:00:00');
+
+        $student = User::factory()->student()->create();
+        $seminar = Seminar::factory()->create(['scheduled_at' => '2026-03-01 10:00:00']);
+        Registration::factory()->create(['user_id' => $student->id, 'seminar_id' => $seminar->id, 'present' => false]);
+
+        $response = $this->getJson("/api/admin/students/{$student->id}/dashboard?semester=2026.1");
+
+        $response->assertOk()->assertJsonPath('data.registrations.0.status', 'missed');
+
+        Carbon\Carbon::setTestNow();
+    });
+
     it('records an audit log entry', function () {
         actingAsAdmin();
         $student = User::factory()->student()->create();

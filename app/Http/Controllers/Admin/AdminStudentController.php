@@ -32,13 +32,9 @@ class AdminStudentController extends Controller
         );
 
         return response()->json([
-            'data' => $students->getCollection()->map(fn (User $student) => [
-                'id' => $student->id,
-                'name' => $student->name,
-                'email' => $student->email,
-                'course' => $student->studentData?->course?->name ?? 'N/A',
-                'course_situation' => $student->studentData?->course_situation?->value,
-            ])->all(),
+            'data' => $students->getCollection()
+                ->map(fn (User $student) => $this->mapStudentSummary($student))
+                ->all(),
             'meta' => [
                 'current_page' => $students->currentPage(),
                 'last_page' => $students->lastPage(),
@@ -89,13 +85,7 @@ class AdminStudentController extends Controller
 
         return response()->json([
             'data' => [
-                'student' => [
-                    'id' => $user->id,
-                    'name' => $user->name,
-                    'email' => $user->email,
-                    'course' => $user->studentData?->course?->name ?? 'N/A',
-                    'course_situation' => $user->studentData?->course_situation?->value,
-                ],
+                'student' => $this->mapStudentSummary($user),
                 'semester' => $range->toString(),
                 'totals' => $data['totals'],
                 'by_type' => $data['by_type'],
@@ -132,5 +122,19 @@ class AdminStudentController extends Controller
         ]);
 
         return response()->json(['data' => ['summary' => $summary]]);
+    }
+
+    /**
+     * @return array{id: int, name: string, email: string, course: string, course_situation: ?string}
+     */
+    private function mapStudentSummary(User $student): array
+    {
+        return [
+            'id' => $student->id,
+            'name' => $student->name,
+            'email' => $student->email,
+            'course' => $student->studentData?->course?->name ?? 'N/A',
+            'course_situation' => $student->studentData?->course_situation?->value,
+        ];
     }
 }
