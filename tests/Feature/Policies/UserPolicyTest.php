@@ -1,5 +1,7 @@
 <?php
 
+use App\Models\Registration;
+use App\Models\Seminar;
 use App\Models\User;
 use App\Policies\UserPolicy;
 use Spatie\Permission\Models\Role;
@@ -54,6 +56,52 @@ describe('UserPolicy', function () {
             $target = User::factory()->create();
 
             expect($this->policy->view($user, $target))->toBeFalse();
+        });
+    });
+
+    describe('viewStudentDashboard', function () {
+        it('allows admin to view any student dashboard', function () {
+            $admin = User::factory()->create();
+            $admin->assignRole('admin');
+            $student = User::factory()->student()->create();
+
+            expect($this->policy->viewStudentDashboard($admin, $student))->toBeTrue();
+        });
+
+        it('allows a teacher to view a student who registered for one of their seminars', function () {
+            $teacher = User::factory()->create();
+            $teacher->assignRole('teacher');
+            $student = User::factory()->student()->create();
+            $seminar = Seminar::factory()->create(['created_by' => $teacher->id]);
+            Registration::factory()->create([
+                'user_id' => $student->id,
+                'seminar_id' => $seminar->id,
+            ]);
+
+            expect($this->policy->viewStudentDashboard($teacher, $student))->toBeTrue();
+        });
+
+        it('denies a teacher from viewing a student with no registration to their seminars', function () {
+            $teacher = User::factory()->create();
+            $teacher->assignRole('teacher');
+            $otherTeacher = User::factory()->create();
+            $otherTeacher->assignRole('teacher');
+            $student = User::factory()->student()->create();
+            $seminar = Seminar::factory()->create(['created_by' => $otherTeacher->id]);
+            Registration::factory()->create([
+                'user_id' => $student->id,
+                'seminar_id' => $seminar->id,
+            ]);
+
+            expect($this->policy->viewStudentDashboard($teacher, $student))->toBeFalse();
+        });
+
+        it('denies a regular user from viewing a student dashboard', function () {
+            $user = User::factory()->create();
+            $user->assignRole('user');
+            $student = User::factory()->student()->create();
+
+            expect($this->policy->viewStudentDashboard($user, $student))->toBeFalse();
         });
     });
 
