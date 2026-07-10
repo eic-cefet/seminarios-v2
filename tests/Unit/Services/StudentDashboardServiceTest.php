@@ -111,6 +111,28 @@ describe('forStudent', function () {
         Carbon\Carbon::setTestNow();
     });
 
+    it('does not double-count a future registration already marked present as both attended and upcoming', function () {
+        Carbon\Carbon::setTestNow('2026-03-20 00:00:00');
+
+        $admin = User::factory()->create();
+        $admin->assignRole('admin');
+        $student = User::factory()->student()->create();
+
+        $earlyCheckInSeminar = Seminar::factory()->create(['scheduled_at' => '2026-06-01 10:00:00', 'duration_minutes' => 60]);
+        Registration::factory()->present()->create(['user_id' => $student->id, 'seminar_id' => $earlyCheckInSeminar->id]);
+
+        $result = $this->service->forStudent($student, SemesterRange::fromString('2026.1'), $admin);
+
+        expect($result['totals'])->toBe([
+            'attended' => 1,
+            'missed' => 0,
+            'upcoming' => 0,
+            'hours_attended' => 1.0,
+        ]);
+
+        Carbon\Carbon::setTestNow();
+    });
+
     it('groups hours and counts by presentation type, counting only attended hours', function () {
         Carbon\Carbon::setTestNow('2026-03-20 00:00:00');
 

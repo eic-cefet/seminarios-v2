@@ -54,7 +54,7 @@ class StudentDashboardService
             fn ($registration) => ! $registration->present && $registration->seminar->scheduled_at->isPast()
         );
         $upcoming = $registrations->filter(
-            fn ($registration) => $registration->seminar->scheduled_at->isFuture()
+            fn ($registration) => ! $registration->present && $registration->seminar->scheduled_at->isFuture()
         );
 
         $byType = $registrations
