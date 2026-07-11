@@ -173,4 +173,9 @@ runs:
 
         PROMPT="${PROMPT}"$'\n\n## Changed files\n'"${NAMES}"$'\n\n## Diffstat\n'"${STAT}"$'\n\n## Full diff'"${TRUNC_NOTE}"$'\n```diff\n'"${DIFF_CONTENT}"$'\n```'
 
-        opencode run --auto --model "$MODEL" "$PROMPT"
+        # Feed the prompt on stdin, not as an argv string: Linux caps a single
+        # argument at MAX_ARG_STRLEN (128 KiB), so a large embedded diff would fail
+        # exec with E2BIG ("Argument list too long", exit 126). opencode reads the
+        # message from stdin when it is not a TTY, so the here-string keeps the whole
+        # prompt in-process and off the command line.
+        opencode run --auto --model "$MODEL" <<<"$PROMPT"
