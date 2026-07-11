@@ -1,6 +1,16 @@
 import { useSearchParams, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Sparkles, Clock, CheckCircle2, XCircle, CalendarClock, Download } from "lucide-react";
+import {
+    ResponsiveContainer,
+    BarChart,
+    Bar,
+    Cell,
+    XAxis,
+    YAxis,
+    CartesianGrid,
+    Tooltip,
+} from "recharts";
 import { getSemester, formatDateTime, formatDurationMinutes } from "@shared/lib/utils";
 import { PageTitle } from "@shared/components/PageTitle";
 import { studentsApi, AdminApiError, type StudentRegistration, type StudentCertificate } from "../../api/adminClient";
@@ -126,6 +136,70 @@ export default function StudentProfile() {
                         value={formatDurationMinutes(dashboard.totals.hours_attended * 60)}
                         icon={Clock}
                     />
+                </div>
+
+                <div className="grid gap-6 lg:grid-cols-3">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Presença Geral</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <ResponsiveContainer width="100%" height={220}>
+                                <BarChart
+                                    data={[
+                                        { name: "Compareceu", value: dashboard.totals.attended },
+                                        { name: "Faltou", value: dashboard.totals.missed },
+                                        { name: "A ocorrer", value: dashboard.totals.upcoming },
+                                    ]}
+                                >
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                                    <XAxis dataKey="name" fontSize={12} />
+                                    <YAxis allowDecimals={false} fontSize={12} />
+                                    <Tooltip />
+                                    <Bar dataKey="value" radius={[4, 4, 0, 0]}>
+                                        <Cell fill="hsl(var(--chart-2))" />
+                                        <Cell fill="hsl(var(--destructive))" />
+                                        <Cell fill="hsl(var(--chart-4))" />
+                                    </Bar>
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </CardContent>
+                    </Card>
+
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Apresentações por Tipo</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <ResponsiveContainer width="100%" height={220}>
+                                <BarChart data={dashboard.by_type}>
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                                    <XAxis dataKey="type" fontSize={12} />
+                                    <YAxis allowDecimals={false} fontSize={12} />
+                                    <Tooltip />
+                                    <Bar dataKey="attended" name="Compareceu" fill="hsl(var(--chart-2))" radius={[4, 4, 0, 0]} />
+                                    <Bar dataKey="missed" name="Faltou" fill="hsl(var(--destructive))" radius={[4, 4, 0, 0]} />
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </CardContent>
+                    </Card>
+
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Horas por Tipo</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <ResponsiveContainer width="100%" height={220}>
+                                <BarChart data={dashboard.by_type}>
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                                    <XAxis dataKey="type" fontSize={12} />
+                                    <YAxis allowDecimals={false} fontSize={12} />
+                                    <Tooltip />
+                                    <Bar dataKey="hours" name="Horas" fill="hsl(var(--chart-1))" radius={[4, 4, 0, 0]} />
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </CardContent>
+                    </Card>
                 </div>
 
                 <Tabs defaultValue="presentations">

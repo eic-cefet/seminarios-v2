@@ -200,4 +200,12 @@ describe("StudentProfile", () => {
             expect(screen.getByText("Nenhum certificado emitido neste semestre.")).toBeInTheDocument();
         });
     });
+
+    it("renders the attendance and hours-by-type charts", async () => {
+        renderPage();
+
+        await waitFor(() => expect(screen.getByText("Presença Geral")).toBeInTheDocument());
+        expect(screen.getByText("Apresentações por Tipo")).toBeInTheDocument();
+        expect(screen.getByText("Horas por Tipo")).toBeInTheDocument();
+    });
 });
