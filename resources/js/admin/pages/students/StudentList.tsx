@@ -159,7 +159,9 @@ export default function StudentList() {
                             <Pagination
                                 currentPage={data.meta.current_page}
                                 lastPage={data.meta.last_page}
+                                total={data.meta.total}
                                 onPageChange={setPage}
+                                itemLabel="alunos"
                             />
                         )}
                     </CardContent>

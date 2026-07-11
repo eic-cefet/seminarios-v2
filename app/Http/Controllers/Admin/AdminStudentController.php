@@ -49,6 +49,8 @@ class AdminStudentController extends Controller
     {
         Gate::authorize('viewStudentDashboard', $user);
 
+        $user->loadMissing('studentData.course');
+
         $range = $request->semesterRange();
         $data = $this->dashboard->forStudent($user, $range, $request->user());
 
