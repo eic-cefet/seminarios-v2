@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\AdminLocationController;
 use App\Http\Controllers\Admin\AdminPresenceLinkController;
 use App\Http\Controllers\Admin\AdminRegistrationController;
 use App\Http\Controllers\Admin\AdminSeminarController;
+use App\Http\Controllers\Admin\AdminStudentController;
 use App\Http\Controllers\Admin\AdminSubjectController;
 use App\Http\Controllers\Admin\AdminSystemInfoController;
 use App\Http\Controllers\Admin\AdminUserController;
@@ -45,6 +46,12 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function ()
     Route::get('/registrations', [AdminRegistrationController::class, 'index']);
     Route::post('/registrations', [AdminRegistrationController::class, 'store']);
     Route::patch('/registrations/{registration}/presence', [AdminRegistrationController::class, 'togglePresence']);
+
+    // Student Dashboard
+    Route::get('/students', [AdminStudentController::class, 'index']);
+    Route::get('/students/{user}/dashboard', [AdminStudentController::class, 'show']);
+    Route::get('/students/{user}/ai-summary', [AdminStudentController::class, 'aiSummary'])
+        ->middleware('throttle:ai');
 
     Route::apiResource('seminars', AdminSeminarController::class);
 

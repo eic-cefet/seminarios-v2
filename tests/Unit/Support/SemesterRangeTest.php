@@ -31,3 +31,30 @@ it('throws on a malformed semester string', function (string $invalid) {
     'short year' => '26.1',
     'empty string' => '',
 ]);
+
+it('resolves the current semester from "now"', function () {
+    Carbon\Carbon::setTestNow('2026-03-15 10:00:00');
+
+    $range = SemesterRange::current();
+
+    expect($range->year)->toBe(2026)
+        ->and($range->half)->toBe(1);
+
+    Carbon\Carbon::setTestNow();
+});
+
+it('resolves the second half as current when past June', function () {
+    Carbon\Carbon::setTestNow('2026-09-01 10:00:00');
+
+    $range = SemesterRange::current();
+
+    expect($range->year)->toBe(2026)
+        ->and($range->half)->toBe(2);
+
+    Carbon\Carbon::setTestNow();
+});
+
+it('round-trips back to the "YYYY.H" string form', function () {
+    expect(SemesterRange::fromString('2026.1')->toString())->toBe('2026.1')
+        ->and(SemesterRange::fromString('2026.2')->toString())->toBe('2026.2');
+});

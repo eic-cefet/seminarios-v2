@@ -18,6 +18,7 @@ import { WorkshopList } from "./pages/workshops";
 import AuditLogReport from "./pages/reports/AuditLogReport";
 import FeedbackInsights from "./pages/reports/FeedbackInsights";
 import SemestralReport from "./pages/reports/SemestralReport";
+import StudentTracking from "./pages/reports/StudentTracking";
 import ApiTokenList from "./pages/api-tokens/ApiTokenList";
 import SystemInfo from "./pages/system/SystemInfo";
 import EnvSecrets from "./pages/system/EnvSecrets";
@@ -51,6 +52,10 @@ export function AppRoutes() {
                 <Route path={ROUTES.ADMIN.REPORTS_SEMESTRAL} element={<SemestralReport />} />
                 <Route path={ROUTES.ADMIN.REPORTS_FEEDBACK} element={<FeedbackInsights />} />
                 <Route path={ROUTES.ADMIN.REPORTS_AUDIT_LOGS} element={<AuditLogReport />} />
+                <Route
+                    path={ROUTES.ADMIN.REPORTS_STUDENT_TRACKING}
+                    element={<StudentTracking />}
+                />
                 <Route path={ROUTES.ADMIN.SYSTEM_INFO} element={<SystemInfo />} />
                 <Route path={ROUTES.ADMIN.ENV_SECRETS} element={<EnvSecrets />} />
                 <Route path="*" element={<NotFound />} />

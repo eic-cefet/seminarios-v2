@@ -16,3 +16,4 @@ export * from "./dropdowns";
 export * from "./reports";
 export * from "./auditLogs";
 export * from "./presenceLinks";
+export * from "./students";

@@ -50,7 +50,6 @@ export const adminNavigation: NavItem[] = [
     {
         label: "Relatórios",
         icon: FileBarChart,
-        adminOnly: true,
         children: [
             {
                 label: "Relatório Semestral",
@@ -66,6 +65,10 @@ export const adminNavigation: NavItem[] = [
                 label: "Logs de Auditoria",
                 href: "/reports/audit-logs",
                 adminOnly: true,
+            },
+            {
+                label: "Acompanhamento do Aluno",
+                href: "/reports/student-tracking",
             },
         ],
     },

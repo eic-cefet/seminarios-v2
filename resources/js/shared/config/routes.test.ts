@@ -58,6 +58,9 @@ describe("ROUTES.ADMIN", () => {
         expect(ROUTES.ADMIN.REPORTS_SEMESTRAL).toBe("/reports/semestral");
         expect(ROUTES.ADMIN.REPORTS_FEEDBACK).toBe("/reports/feedback");
         expect(ROUTES.ADMIN.REPORTS_AUDIT_LOGS).toBe("/reports/audit-logs");
+        expect(ROUTES.ADMIN.REPORTS_STUDENT_TRACKING).toBe(
+            "/reports/student-tracking",
+        );
     });
 
     it("builds dynamic admin routes", () => {

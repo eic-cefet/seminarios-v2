@@ -175,7 +175,7 @@ describe('MobileHeader', () => {
         fireEvent.click(apresentacoesTrigger!);
     });
 
-    it('hides Relatórios group for teacher users', async () => {
+    it('shows Relatórios group for teacher users (Acompanhamento do Aluno)', async () => {
         const { useAuth } = await import('@shared/contexts/AuthContext');
         vi.mocked(useAuth).mockReturnValue({
             user: { id: 2, name: 'Teacher', email: 'teacher@test.com', roles: ['teacher'] } as any,
@@ -190,7 +190,8 @@ describe('MobileHeader', () => {
 
         render(<MobileHeader />);
         fireEvent.click(screen.getByText('Abrir menu'));
-        expect(screen.queryByText('Relatórios')).not.toBeInTheDocument();
+        // Teachers now reach the Acompanhamento do Aluno report under Relatórios.
+        expect(screen.getByText('Relatórios')).toBeInTheDocument();
     });
 
     it('hides admin-only Apresentações children for teacher users', async () => {

@@ -139,7 +139,7 @@ describe('Sidebar', () => {
         expect(relatoriosButton).toBeTruthy();
     });
 
-    it('hides Relatórios menu group for teacher users', async () => {
+    it('shows Relatórios menu group for teacher users (Acompanhamento do Aluno)', async () => {
         const { useAuth } = await import('@shared/contexts/AuthContext');
         vi.mocked(useAuth).mockReturnValue({
             user: { id: 2, name: 'Teacher', email: 'teacher@test.com', roles: ['teacher'] } as any,
@@ -153,7 +153,8 @@ describe('Sidebar', () => {
         });
 
         render(<Sidebar />);
-        expect(screen.queryByText('Relatórios')).not.toBeInTheDocument();
+        // Teachers now reach the Acompanhamento do Aluno report under Relatórios.
+        expect(screen.getByText('Relatórios')).toBeInTheDocument();
     });
 
     it('toggles collapsible menu when trigger is clicked', async () => {

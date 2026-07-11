@@ -23,6 +23,7 @@ enum AuditEvent: string
     case UserRoleAssigned = 'user.role_assigned';
     case UserRoleRevoked = 'user.role_revoked';
     case UserViewedByAdmin = 'admin.user_viewed';
+    case StudentDashboardViewed = 'admin.student_dashboard_viewed';
     case UserDeletedByAdmin = 'admin.user_deleted';
     case UserRestoredByAdmin = 'admin.user_restored';
     case LgpdRecordViewedByAdmin = 'admin.lgpd_record_viewed';
@@ -44,6 +45,7 @@ enum AuditEvent: string
     case AiTextTransform = 'ai.text_transform';
     case AiSuggestMergeName = 'ai.suggest_merge_name';
     case AiSuggestSubjectTags = 'ai.suggest_subject_tags';
+    case AiStudentSummaryGenerated = 'ai.student_summary_generated';
 
     // API Tokens
     case ApiTokenCreated = 'api_token.created';

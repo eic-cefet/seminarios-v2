@@ -1,4 +1,4 @@
-import { AdminApiError, dashboardApi, usersApi, locationsApi, subjectsApi, workshopsApi, registrationsApi, seminarsApi, presenceLinkApi, aiApi, apiTokensApi, dropdownApi, auditLogsApi, adminLgpdApi, systemInfoApi, envSecretsApi } from './adminClient';
+import { AdminApiError, dashboardApi, usersApi, locationsApi, subjectsApi, workshopsApi, registrationsApi, seminarsApi, presenceLinkApi, aiApi, apiTokensApi, dropdownApi, auditLogsApi, adminLgpdApi, systemInfoApi, envSecretsApi, studentsApi } from './adminClient';
 import { getCookie, getCsrfCookie } from '@shared/api/httpUtils';
 
 vi.mock('@shared/api/httpUtils', async (importOriginal) => {
@@ -1013,6 +1013,44 @@ describe('Admin API endpoints', () => {
                     method: 'PUT',
                     body: JSON.stringify(payload),
                 }),
+            );
+        });
+    });
+
+    describe('studentsApi', () => {
+        it('list fetches paginated students for a semester', async () => {
+            mockSuccess({ data: [], meta: { current_page: 1, last_page: 1, per_page: 15, total: 0 } });
+
+            const result = await studentsApi.list({ semester: '2026.1' });
+
+            expect(result.meta.total).toBe(0);
+            expect(fetchSpy).toHaveBeenCalledWith(
+                expect.stringContaining('/students?semester=2026.1'),
+                expect.any(Object),
+            );
+        });
+
+        it('dashboard fetches a student\'s full dashboard payload', async () => {
+            mockSuccess({ data: { student: { id: 1 }, totals: {}, by_type: [], registrations: [], certificates: [] } });
+
+            const result = await studentsApi.dashboard(1, '2026.1');
+
+            expect(result.data.student.id).toBe(1);
+            expect(fetchSpy).toHaveBeenCalledWith(
+                expect.stringContaining('/students/1/dashboard?semester=2026.1'),
+                expect.any(Object),
+            );
+        });
+
+        it('aiSummary fetches the cached AI summary', async () => {
+            mockSuccess({ data: { summary: 'Resumo.' } });
+
+            const result = await studentsApi.aiSummary(1, '2026.1');
+
+            expect(result.data.summary).toBe('Resumo.');
+            expect(fetchSpy).toHaveBeenCalledWith(
+                expect.stringContaining('/students/1/ai-summary?semester=2026.1'),
+                expect.any(Object),
             );
         });
     });
