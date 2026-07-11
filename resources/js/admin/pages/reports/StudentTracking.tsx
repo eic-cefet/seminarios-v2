@@ -48,6 +48,7 @@ export default function StudentTracking() {
     };
 
     const handleVerClick = () => {
+        /* v8 ignore next 3 -- @preserve unreachable: the Ver button is disabled until a student is selected */
         if (!selectedStudent) {
             return;
         }
