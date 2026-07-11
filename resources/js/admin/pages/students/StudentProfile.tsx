@@ -32,9 +32,14 @@ export default function StudentProfile() {
     const selectedSemester = searchParams.get("semester") ?? `${year}.${semester}`;
     const studentId = Number(userId);
 
-    const { data, isLoading } = useQuery({
+    const {
+        data,
+        isLoading,
+        error: dashboardError,
+    } = useQuery({
         queryKey: ["admin-student-dashboard", studentId, selectedSemester],
         queryFn: () => studentsApi.dashboard(studentId, selectedSemester),
+        retry: false,
     });
 
     const {
@@ -64,7 +69,14 @@ export default function StudentProfile() {
 
     const dashboard = data?.data;
     if (!dashboard) {
-        return <p className="text-muted-foreground text-center py-8">Aluno não encontrado.</p>;
+        const isNotFound = dashboardError instanceof AdminApiError && dashboardError.status === 404;
+        return (
+            <p className="text-muted-foreground text-center py-8">
+                {isNotFound
+                    ? "Aluno não encontrado."
+                    : "Não foi possível carregar os dados do aluno. Tente novamente mais tarde."}
+            </p>
+        );
     }
 
     const isAiNotConfigured =
