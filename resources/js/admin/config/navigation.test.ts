@@ -28,6 +28,14 @@ describe('adminNavigation', () => {
         expect(childLabels).toContain('Relatório Semestral');
         expect(childLabels).toContain('Feedback IA');
     });
+
+    it('includes Alunos, visible to both admin and teacher', () => {
+        const labels = adminNavigation.map((item) => item.label);
+        expect(labels).toContain('Alunos');
+
+        const students = adminNavigation.find((item) => item.label === 'Alunos');
+        expect(students?.adminOnly).not.toBe(true);
+    });
 });
 
 describe('filterNavigation', () => {

@@ -12,6 +12,7 @@ import Dashboard from "./pages/Dashboard";
 import LocationList from "./pages/locations/LocationList";
 import SubjectList from "./pages/subjects/SubjectList";
 import UserList from "./pages/users/UserList";
+import { StudentList, StudentProfile } from "./pages/students";
 import RegistrationList from "./pages/registrations/RegistrationList";
 import { SeminarList, SeminarForm } from "./pages/seminars";
 import { WorkshopList } from "./pages/workshops";
@@ -40,6 +41,8 @@ export function AppRoutes() {
             <Route element={<AdminLayout />}>
                 <Route path={ROUTES.ADMIN.DASHBOARD} element={<Dashboard />} />
                 <Route path={ROUTES.ADMIN.USERS} element={<UserList />} />
+                <Route path={ROUTES.ADMIN.STUDENTS} element={<StudentList />} />
+                <Route path={ROUTES.ADMIN.STUDENT_PROFILE_PATTERN} element={<StudentProfile />} />
                 <Route path={ROUTES.ADMIN.LOCATIONS} element={<LocationList />} />
                 <Route path={ROUTES.ADMIN.SUBJECTS} element={<SubjectList />} />
                 <Route path={ROUTES.ADMIN.SEMINARS} element={<SeminarList />} />

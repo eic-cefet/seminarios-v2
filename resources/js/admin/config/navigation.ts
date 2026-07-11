@@ -1,6 +1,7 @@
 import {
     ClipboardList,
     FileBarChart,
+    GraduationCap,
     KeyRound,
     LayoutDashboard,
     Presentation,
@@ -26,6 +27,7 @@ export interface NavItem {
 export const adminNavigation: NavItem[] = [
     { label: "Dashboard", href: "/", icon: LayoutDashboard },
     { label: "Usuários", href: "/users", icon: Users, adminOnly: true },
+    { label: "Alunos", href: "/students", icon: GraduationCap },
     {
         label: "Apresentações",
         icon: Presentation,
