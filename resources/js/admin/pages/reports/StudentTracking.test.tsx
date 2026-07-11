@@ -114,7 +114,8 @@ describe("StudentTracking", () => {
             ).toBeInTheDocument();
         });
 
-        expect(studentsApi.dashboard).toHaveBeenCalledWith(1, "2026.2");
+        const { year, semester } = getSemester();
+        expect(studentsApi.dashboard).toHaveBeenCalledWith(1, `${year}.${semester}`);
         expect(
             screen.queryByText("Selecione um período e um aluno e clique em Ver."),
         ).not.toBeInTheDocument();
@@ -134,10 +135,13 @@ describe("StudentTracking", () => {
             ).toBeInTheDocument();
         });
 
+        const { year, semester } = getSemester();
+        const currentSemesterLabel = `${year}.${semester}`;
+
         await user.click(screen.getByRole("combobox", { name: "Semestre" }));
         const options = await screen.findAllByRole("option");
         const otherSemesterOption = options.find(
-            (option) => option.textContent !== "2026.2",
+            (option) => option.textContent !== currentSemesterLabel,
         );
         expect(otherSemesterOption).toBeDefined();
         await user.click(otherSemesterOption!);
