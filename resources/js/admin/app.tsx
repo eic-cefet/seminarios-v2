@@ -12,13 +12,13 @@ import Dashboard from "./pages/Dashboard";
 import LocationList from "./pages/locations/LocationList";
 import SubjectList from "./pages/subjects/SubjectList";
 import UserList from "./pages/users/UserList";
-import { StudentList, StudentProfile } from "./pages/students";
 import RegistrationList from "./pages/registrations/RegistrationList";
 import { SeminarList, SeminarForm } from "./pages/seminars";
 import { WorkshopList } from "./pages/workshops";
 import AuditLogReport from "./pages/reports/AuditLogReport";
 import FeedbackInsights from "./pages/reports/FeedbackInsights";
 import SemestralReport from "./pages/reports/SemestralReport";
+import StudentTracking from "./pages/reports/StudentTracking";
 import ApiTokenList from "./pages/api-tokens/ApiTokenList";
 import SystemInfo from "./pages/system/SystemInfo";
 import EnvSecrets from "./pages/system/EnvSecrets";
@@ -41,8 +41,6 @@ export function AppRoutes() {
             <Route element={<AdminLayout />}>
                 <Route path={ROUTES.ADMIN.DASHBOARD} element={<Dashboard />} />
                 <Route path={ROUTES.ADMIN.USERS} element={<UserList />} />
-                <Route path={ROUTES.ADMIN.STUDENTS} element={<StudentList />} />
-                <Route path={ROUTES.ADMIN.STUDENT_PROFILE_PATTERN} element={<StudentProfile />} />
                 <Route path={ROUTES.ADMIN.LOCATIONS} element={<LocationList />} />
                 <Route path={ROUTES.ADMIN.SUBJECTS} element={<SubjectList />} />
                 <Route path={ROUTES.ADMIN.SEMINARS} element={<SeminarList />} />
@@ -54,6 +52,10 @@ export function AppRoutes() {
                 <Route path={ROUTES.ADMIN.REPORTS_SEMESTRAL} element={<SemestralReport />} />
                 <Route path={ROUTES.ADMIN.REPORTS_FEEDBACK} element={<FeedbackInsights />} />
                 <Route path={ROUTES.ADMIN.REPORTS_AUDIT_LOGS} element={<AuditLogReport />} />
+                <Route
+                    path={ROUTES.ADMIN.REPORTS_STUDENT_TRACKING}
+                    element={<StudentTracking />}
+                />
                 <Route path={ROUTES.ADMIN.SYSTEM_INFO} element={<SystemInfo />} />
                 <Route path={ROUTES.ADMIN.ENV_SECRETS} element={<EnvSecrets />} />
                 <Route path="*" element={<NotFound />} />

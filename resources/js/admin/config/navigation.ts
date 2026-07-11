@@ -1,7 +1,6 @@
 import {
     ClipboardList,
     FileBarChart,
-    GraduationCap,
     KeyRound,
     LayoutDashboard,
     Presentation,
@@ -27,7 +26,6 @@ export interface NavItem {
 export const adminNavigation: NavItem[] = [
     { label: "Dashboard", href: "/", icon: LayoutDashboard },
     { label: "Usuários", href: "/users", icon: Users, adminOnly: true },
-    { label: "Alunos", href: "/students", icon: GraduationCap },
     {
         label: "Apresentações",
         icon: Presentation,
@@ -52,7 +50,6 @@ export const adminNavigation: NavItem[] = [
     {
         label: "Relatórios",
         icon: FileBarChart,
-        adminOnly: true,
         children: [
             {
                 label: "Relatório Semestral",
@@ -68,6 +65,10 @@ export const adminNavigation: NavItem[] = [
                 label: "Logs de Auditoria",
                 href: "/reports/audit-logs",
                 adminOnly: true,
+            },
+            {
+                label: "Acompanhamento do Aluno",
+                href: "/reports/student-tracking",
             },
         ],
     },

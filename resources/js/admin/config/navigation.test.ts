@@ -29,12 +29,20 @@ describe('adminNavigation', () => {
         expect(childLabels).toContain('Feedback IA');
     });
 
-    it('includes Alunos, visible to both admin and teacher', () => {
-        const labels = adminNavigation.map((item) => item.label);
-        expect(labels).toContain('Alunos');
+    it('includes Acompanhamento do Aluno under Relatórios, not adminOnly', () => {
+        const reports = adminNavigation.find((item) => item.label === 'Relatórios');
+        const studentTracking = reports?.children?.find(
+            (child) => child.label === 'Acompanhamento do Aluno',
+        );
 
-        const students = adminNavigation.find((item) => item.label === 'Alunos');
-        expect(students?.adminOnly).not.toBe(true);
+        expect(studentTracking).toBeDefined();
+        expect(studentTracking?.href).toBe('/reports/student-tracking');
+        expect(studentTracking?.adminOnly).not.toBe(true);
+    });
+
+    it('does not mark the Relatórios parent itself as adminOnly', () => {
+        const reports = adminNavigation.find((item) => item.label === 'Relatórios');
+        expect(reports?.adminOnly).not.toBe(true);
     });
 });
 
@@ -66,11 +74,14 @@ describe('filterNavigation', () => {
         expect(childLabels).not.toContain('Locais');
     });
 
-    it('removes parent items when all children are filtered out', () => {
+    it('keeps Relatórios for non-admins with only Acompanhamento do Aluno as a child', () => {
         const filtered = filterNavigation(adminNavigation, false);
-        const labels = filtered.map((item) => item.label);
-        // Relatórios has only adminOnly children, so it should be removed
-        expect(labels).not.toContain('Relatórios');
+        const reports = filtered.find((item) => item.label === 'Relatórios');
+
+        expect(reports).toBeDefined();
+        expect(reports?.children?.map((child) => child.label)).toEqual([
+            'Acompanhamento do Aluno',
+        ]);
     });
 
     it('returns null and filters out items with all adminOnly children for non-admin', () => {

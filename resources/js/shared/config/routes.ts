@@ -48,9 +48,6 @@ export const ROUTES = {
     ADMIN: {
         DASHBOARD: "/",
         USERS: "/users",
-        STUDENTS: "/students",
-        STUDENT_PROFILE_PATTERN: "/students/:userId",
-        STUDENT_PROFILE: (userId: number | string) => `/students/${userId}`,
         LOCATIONS: "/locations",
         SUBJECTS: "/subjects",
         SEMINARS: "/seminars",
@@ -63,6 +60,7 @@ export const ROUTES = {
         REPORTS_SEMESTRAL: "/reports/semestral",
         REPORTS_FEEDBACK: "/reports/feedback",
         REPORTS_AUDIT_LOGS: "/reports/audit-logs",
+        REPORTS_STUDENT_TRACKING: "/reports/student-tracking",
         SYSTEM_INFO: "/system-info",
         ENV_SECRETS: "/system/env-secrets",
     },
