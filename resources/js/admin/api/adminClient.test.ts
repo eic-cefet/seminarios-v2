@@ -1019,11 +1019,11 @@ describe('Admin API endpoints', () => {
 
     describe('studentsApi', () => {
         it('list fetches paginated students for a semester', async () => {
-            mockSuccess({ data: [], meta: { current_page: 1, last_page: 1, per_page: 15, total: 0 }, summary: { semester: '2026.1' } });
+            mockSuccess({ data: [], meta: { current_page: 1, last_page: 1, per_page: 15, total: 0 } });
 
             const result = await studentsApi.list({ semester: '2026.1' });
 
-            expect(result.summary.semester).toBe('2026.1');
+            expect(result.meta.total).toBe(0);
             expect(fetchSpy).toHaveBeenCalledWith(
                 expect.stringContaining('/students?semester=2026.1'),
                 expect.any(Object),

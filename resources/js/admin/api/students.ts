@@ -12,7 +12,6 @@ export interface AdminStudentListItem {
 export interface AdminStudentListResponse {
     data: AdminStudentListItem[];
     meta: PaginatedResponse<unknown>["meta"];
-    summary: { semester: string };
 }
 
 export type StudentRegistrationStatus = "attended" | "missed" | "upcoming";
