@@ -23,6 +23,10 @@ inputs:
     description: "Reasoning effort for the model (minimal, low, medium, high, xhigh). Use 'off' to leave the model at its base effort. Injected as the OpenRouter model's reasoningEffort."
     required: false
     default: "low"
+  max-diff-bytes:
+    description: "Max bytes of the diff embedded in the prompt (~4 bytes/token). Larger diffs are truncated and the PR is labelled 'ai-review-truncated'. Default ~1 MB (~250k tokens)."
+    required: false
+    default: "1000000"
 
 runs:
   using: "composite"
@@ -97,6 +101,7 @@ runs:
         GITHUB_REPOSITORY: ${{ github.repository }}
         OPENCODE_MODEL_INPUT: ${{ inputs.openrouter-model }}
         REASONING_EFFORT: ${{ inputs.reasoning-effort }}
+        MAX_DIFF_BYTES: ${{ inputs.max-diff-bytes }}
         CONFIG_TEMPLATE: ${{ github.action_path }}/opencode.json
       run: |
         set -euo pipefail
@@ -131,9 +136,30 @@ runs:
 
         # Pre-compute the diff so the agent never spends turns rediscovering it,
         # and embed it directly in the prompt (truncated to keep context bounded).
+        # Stage the full diff to a file first, then truncate the file — piping a
+        # large `git diff` straight into `head -c` closes the pipe early, killing
+        # git with SIGPIPE (exit 141) which `pipefail` then propagates.
+        git diff "origin/$BASE_REF...HEAD" > "$RUNNER_TEMP/pr.diff"
         NAMES="$(git diff "origin/$BASE_REF...HEAD" --name-only)"
         STAT="$(git diff "origin/$BASE_REF...HEAD" --stat)"
-        DIFF_CONTENT="$(git diff "origin/$BASE_REF...HEAD" | head -c 120000)"
+        DIFF_BYTES="$(wc -c < "$RUNNER_TEMP/pr.diff" | tr -d '[:space:]')"
+        DIFF_CONTENT="$(head -c "$MAX_DIFF_BYTES" "$RUNNER_TEMP/pr.diff")"
+
+        # When the diff exceeds the cap the reviewer only sees a prefix, so make the
+        # gap visible: tell the model (it can still open files for the rest) and tag
+        # the PR so humans know the review was partial. Idempotently drop the tag when
+        # a later push brings the diff back under the cap.
+        TRUNC_LABEL="ai-review-truncated"
+        TRUNC_NOTE=""
+        if [ "$DIFF_BYTES" -gt "$MAX_DIFF_BYTES" ]; then
+          TRUNC_NOTE=$'\n\n> ⚠️ This diff was truncated to the first '"$MAX_DIFF_BYTES"' of '"$DIFF_BYTES"$' bytes. Read the affected files directly to review anything past the cutoff before finalizing.'
+          gh label create "$TRUNC_LABEL" --color "D93F0B" \
+            --description "AI review saw only a truncated diff" --force >/dev/null 2>&1 || true
+          gh pr edit "$PR_NUMBER" --add-label "$TRUNC_LABEL" >/dev/null 2>&1 || true
+          echo "diff truncated: embedded $MAX_DIFF_BYTES of $DIFF_BYTES bytes — tagged '$TRUNC_LABEL'"
+        else
+          gh pr edit "$PR_NUMBER" --remove-label "$TRUNC_LABEL" >/dev/null 2>&1 || true
+        fi
 
         PROMPT="$(envsubst '${BASE_REF} ${PR_NUMBER} ${GITHUB_REPOSITORY}' < "${{ github.action_path }}/prompt.md")"
 
@@ -145,6 +171,6 @@ runs:
           PROMPT="${PROMPT}"$'\n\n## Your prior reviews on this PR (context from earlier runs; humans do not see these)\n'"${PRIOR}"
         fi
 
-        PROMPT="${PROMPT}"$'\n\n## Changed files\n'"${NAMES}"$'\n\n## Diffstat\n'"${STAT}"$'\n\n## Full diff\n```diff\n'"${DIFF_CONTENT}"$'\n```'
+        PROMPT="${PROMPT}"$'\n\n## Changed files\n'"${NAMES}"$'\n\n## Diffstat\n'"${STAT}"$'\n\n## Full diff'"${TRUNC_NOTE}"$'\n```diff\n'"${DIFF_CONTENT}"$'\n```'
 
         opencode run --auto --model "$MODEL" "$PROMPT"
