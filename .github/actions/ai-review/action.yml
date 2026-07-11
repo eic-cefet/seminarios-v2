@@ -131,9 +131,13 @@ runs:
 
         # Pre-compute the diff so the agent never spends turns rediscovering it,
         # and embed it directly in the prompt (truncated to keep context bounded).
+        # Stage the full diff to a file first, then truncate the file — piping a
+        # large `git diff` straight into `head -c` closes the pipe early, killing
+        # git with SIGPIPE (exit 141) which `pipefail` then propagates.
+        git diff "origin/$BASE_REF...HEAD" > "$RUNNER_TEMP/pr.diff"
         NAMES="$(git diff "origin/$BASE_REF...HEAD" --name-only)"
         STAT="$(git diff "origin/$BASE_REF...HEAD" --stat)"
-        DIFF_CONTENT="$(git diff "origin/$BASE_REF...HEAD" | head -c 120000)"
+        DIFF_CONTENT="$(head -c 120000 "$RUNNER_TEMP/pr.diff")"
 
         PROMPT="$(envsubst '${BASE_REF} ${PR_NUMBER} ${GITHUB_REPOSITORY}' < "${{ github.action_path }}/prompt.md")"
 
