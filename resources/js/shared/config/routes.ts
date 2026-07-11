@@ -48,6 +48,9 @@ export const ROUTES = {
     ADMIN: {
         DASHBOARD: "/",
         USERS: "/users",
+        STUDENTS: "/students",
+        STUDENT_PROFILE_PATTERN: "/students/:userId",
+        STUDENT_PROFILE: (userId: number | string) => `/students/${userId}`,
         LOCATIONS: "/locations",
         SUBJECTS: "/subjects",
         SEMINARS: "/seminars",

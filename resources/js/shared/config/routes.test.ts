@@ -68,4 +68,11 @@ describe("ROUTES.ADMIN", () => {
     it("exposes admin edit pattern", () => {
         expect(ROUTES.ADMIN.SEMINAR_EDIT_PATTERN).toBe("/seminars/:id/edit");
     });
+
+    it("exposes student dashboard routes", () => {
+        expect(ROUTES.ADMIN.STUDENTS).toBe("/students");
+        expect(ROUTES.ADMIN.STUDENT_PROFILE_PATTERN).toBe("/students/:userId");
+        expect(ROUTES.ADMIN.STUDENT_PROFILE(42)).toBe("/students/42");
+        expect(ROUTES.ADMIN.STUDENT_PROFILE("abc")).toBe("/students/abc");
+    });
 });
