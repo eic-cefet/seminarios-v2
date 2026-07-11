@@ -25,16 +25,37 @@ describe('GET /admin/students', function () {
         $response->assertOk()
             ->assertJsonCount(1, 'data')
             ->assertJsonPath('data.0.id', $student->id)
-            ->assertJsonPath('summary.semester', '2026.1');
+            ->assertJsonMissingPath('summary');
+    });
+
+    it('includes users with an assigned role (any user active in the period is returned)', function () {
+        actingAsAdmin();
+
+        $teacher = User::factory()->create();
+        $teacher->assignRole('teacher');
+        $seminar = Seminar::factory()->create(['scheduled_at' => '2026-03-10 10:00:00']);
+        Registration::factory()->create(['user_id' => $teacher->id, 'seminar_id' => $seminar->id]);
+
+        $response = $this->getJson('/api/admin/students?semester=2026.1');
+
+        $response->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.id', $teacher->id);
     });
 
     it('defaults to the current semester when none is given', function () {
         actingAsAdmin();
         Carbon\Carbon::setTestNow('2026-03-15 10:00:00');
 
+        $student = User::factory()->student()->create();
+        $seminar = Seminar::factory()->create(['scheduled_at' => '2026-03-10 10:00:00']);
+        Registration::factory()->create(['user_id' => $student->id, 'seminar_id' => $seminar->id]);
+
         $response = $this->getJson('/api/admin/students');
 
-        $response->assertOk()->assertJsonPath('summary.semester', '2026.1');
+        $response->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.id', $student->id);
 
         Carbon\Carbon::setTestNow();
     });

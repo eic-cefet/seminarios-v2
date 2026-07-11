@@ -14,13 +14,12 @@ class StudentDashboardService
 
     public function listStudents(SemesterRange $range, User $viewer, ?string $search, int $perPage = 15): LengthAwarePaginator
     {
-        $query = User::whereDoesntHave('roles')
-            ->whereHas('registrations', function (Builder $registrationQuery) use ($range, $viewer) {
-                $registrationQuery->whereHas('seminar', function (Builder $seminarQuery) use ($range, $viewer) {
-                    $seminarQuery->whereBetween('scheduled_at', [$range->startString(), $range->endString()]);
-                    $this->visibility->visibleSeminars($seminarQuery, $viewer);
-                });
-            })
+        $query = User::whereHas('registrations', function (Builder $registrationQuery) use ($range, $viewer) {
+            $registrationQuery->whereHas('seminar', function (Builder $seminarQuery) use ($range, $viewer) {
+                $seminarQuery->whereBetween('scheduled_at', [$range->startString(), $range->endString()]);
+                $this->visibility->visibleSeminars($seminarQuery, $viewer);
+            });
+        })
             ->with('studentData.course');
 
         if ($search) {

@@ -41,7 +41,6 @@ class AdminStudentController extends Controller
                 'per_page' => $students->perPage(),
                 'total' => $students->total(),
             ],
-            'summary' => ['semester' => $range->toString()],
         ]);
     }
 

@@ -30,7 +30,7 @@ describe('listStudents', function () {
             ->and($result->items()[0]->id)->toBe($student->id);
     });
 
-    it('excludes users with an assigned role (admin/teacher are not students)', function () {
+    it('includes users with an assigned role (any user active in the period is returned)', function () {
         $admin = User::factory()->create();
         $admin->assignRole('admin');
 
@@ -41,7 +41,8 @@ describe('listStudents', function () {
 
         $result = $this->service->listStudents(SemesterRange::fromString('2026.1'), $admin, null);
 
-        expect($result->total())->toBe(0);
+        expect($result->total())->toBe(1)
+            ->and($result->items()[0]->id)->toBe($teacher->id);
     });
 
     it('scopes the list to a teacher\'s own seminars', function () {
