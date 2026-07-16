@@ -71,3 +71,7 @@ it('shouldRun returns true when enabled and sample rate defaults to 100', functi
 
     expect(FeatureFlags::shouldRun('test_feature'))->toBeTrue();
 });
+
+it('keeps database reset disabled by default', function () {
+    expect(config('features.database_reset.enabled'))->toBeFalse();
+});

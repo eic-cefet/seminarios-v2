@@ -17,4 +17,7 @@ return [
     'database_backup' => [
         'enabled' => env('FEATURE_DATABASE_BACKUP', true),
     ],
+    'database_reset' => [
+        'enabled' => env('FEATURE_DATABASE_RESET', false),
+    ],
 ];
