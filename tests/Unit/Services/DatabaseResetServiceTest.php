@@ -16,6 +16,10 @@ afterEach(function () {
     app()->detectEnvironment(fn () => $this->originalEnvironment);
 });
 
+it('uses the exact confirmation phrase', function () {
+    expect(DatabaseResetService::CONFIRMATION_PHRASE)->toBe('APAGAR BANCO');
+});
+
 it('is unavailable when the feature flag is disabled', function () {
     config(['features.database_reset.enabled' => false]);
 
@@ -26,6 +30,14 @@ it('is unavailable in production even when the feature flag is enabled', functio
     app()->detectEnvironment(fn () => 'production');
 
     expect(app(DatabaseResetService::class)->isAvailable())->toBeFalse();
+});
+
+it('refuses to reset in production', function () {
+    app()->detectEnvironment(fn () => 'production');
+    Artisan::shouldReceive('call')->never();
+
+    expect(fn () => app(DatabaseResetService::class)->reset())
+        ->toThrow(ApiException::class);
 });
 
 it('is available in a non-production environment when enabled', function () {
@@ -62,6 +74,7 @@ it('throws when artisan returns a nonzero exit code', function () {
 it('rejects a concurrent reset through the file-store lock', function () {
     $lock = Cache::store('file')->lock(LockKey::databaseReset(), 600);
     expect($lock->get())->toBeTrue();
+    Artisan::shouldReceive('call')->never();
 
     try {
         expect(fn () => app(DatabaseResetService::class)->reset())
