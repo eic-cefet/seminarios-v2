@@ -11,10 +11,12 @@ use App\Mail\AccountDeletionCancelled;
 use App\Mail\AccountDeletionConfirmation;
 use App\Mail\AccountDeletionScheduled;
 use App\Models\AuditLog;
+use App\Models\Registration;
 use App\Models\User;
 use App\Models\UserBadge;
 use App\Models\UserExperienceEvent;
 use App\Notifications\BadgesUnlockedNotification;
+use App\Services\GamificationService;
 use App\Services\TwoFactorDeviceService;
 use App\Services\UserAnonymizationService;
 use Illuminate\Support\Facades\DB;
@@ -237,6 +239,76 @@ it('deletes only the anonymized users gamification notifications and derived aud
 
     $this->assertDatabaseHas('user_badges', ['id' => $otherBadge->id]);
     $this->assertDatabaseHas('user_experience_events', ['id' => $otherEvent->id]);
+});
+
+it('deletes historical audit traces for rewards revoked before anonymization', function () {
+    $user = User::factory()->create();
+    $otherUser = User::factory()->create();
+    $registration = Registration::factory()->present()->for($user)->create();
+    Registration::factory()->present()->for($otherUser)->create();
+    $gamification = app(GamificationService::class);
+
+    $gamification->sync($user, notify: false);
+    $gamification->sync($otherUser, notify: false);
+
+    $targetBadgeIds = $user->badges()->pluck('id')->all();
+    $targetEventIds = $user->experienceEvents()->pluck('id')->all();
+    $otherBadgeIds = $otherUser->badges()->pluck('id')->all();
+    $otherEventIds = $otherUser->experienceEvents()->pluck('id')->all();
+    $otherAuditIds = AuditLog::query()
+        ->where(function ($query) use ($otherBadgeIds, $otherEventIds): void {
+            $query->where(function ($badges) use ($otherBadgeIds): void {
+                $badges->where('auditable_type', UserBadge::class)
+                    ->whereIn('auditable_id', $otherBadgeIds);
+            })->orWhere(function ($events) use ($otherEventIds): void {
+                $events->where('auditable_type', UserExperienceEvent::class)
+                    ->whereIn('auditable_id', $otherEventIds);
+            });
+        })
+        ->pluck('id')
+        ->all();
+
+    $registration->update(['present' => false]);
+    $gamification->sync($user, notify: false);
+    AuditLog::create([
+        'user_id' => null,
+        'event_name' => 'user_experience_event.updated',
+        'event_type' => AuditEventType::System,
+        'auditable_type' => UserExperienceEvent::class,
+        'auditable_id' => $targetEventIds[0],
+        'event_data' => [
+            'old_values' => ['user_id' => $user->id, 'source_key' => "attendance:{$registration->id}"],
+            'new_values' => ['user_id' => $otherUser->id, 'source_key' => "attendance:{$registration->id}"],
+        ],
+    ]);
+
+    expect($user->badges()->exists())->toBeFalse()
+        ->and($user->experienceEvents()->exists())->toBeFalse()
+        ->and(AuditLog::query()
+            ->where('auditable_type', UserBadge::class)
+            ->whereIn('auditable_id', $targetBadgeIds)
+            ->exists())->toBeTrue()
+        ->and(AuditLog::query()
+            ->where('auditable_type', UserExperienceEvent::class)
+            ->whereIn('auditable_id', $targetEventIds)
+            ->exists())->toBeTrue();
+
+    app(UserAnonymizationService::class)->anonymize($user);
+
+    expect(AuditLog::query()
+        ->where('auditable_type', UserBadge::class)
+        ->whereIn('auditable_id', $targetBadgeIds)
+        ->exists())->toBeFalse()
+        ->and(AuditLog::query()
+            ->where('auditable_type', UserExperienceEvent::class)
+            ->whereIn('auditable_id', $targetEventIds)
+            ->exists())->toBeFalse()
+        ->and(AuditLog::query()
+            ->where('event_data', 'like', "%attendance:{$registration->id}%")
+            ->exists())->toBeFalse()
+        ->and(AuditLog::query()->whereIn('id', $otherAuditIds)->count())->toBe(count($otherAuditIds))
+        ->and($otherUser->badges()->whereIn('id', $otherBadgeIds)->count())->toBe(count($otherBadgeIds))
+        ->and($otherUser->experienceEvents()->whereIn('id', $otherEventIds)->count())->toBe(count($otherEventIds));
 });
 
 it('skips already-anonymized users in the scheduler', function () {

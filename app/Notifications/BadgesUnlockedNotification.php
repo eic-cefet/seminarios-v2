@@ -2,12 +2,22 @@
 
 namespace App\Notifications;
 
+use App\Models\User;
+
 class BadgesUnlockedNotification extends InAppNotification
 {
     /**
      * @param  array<int, array<string, mixed>>  $badges
      */
     public function __construct(public array $badges) {}
+
+    public function shouldSend(object $notifiable, string $channel): bool
+    {
+        return $notifiable instanceof User
+            && $notifiable->exists
+            && ! $notifiable->trashed()
+            && ! $notifiable->isAnonymized();
+    }
 
     protected function category(): string
     {

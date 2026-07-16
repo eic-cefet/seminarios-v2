@@ -148,10 +148,7 @@ class UserAnonymizationService
 
     private function deleteGamificationData(User $user): void
     {
-        $derivedModels = [
-            (new UserBadge)->getMorphClass() => $user->badges()->pluck('id')->all(),
-            (new UserExperienceEvent)->getMorphClass() => $user->experienceEvents()->pluck('id')->all(),
-        ];
+        $derivedModels = $this->gamificationAuditableIds($user);
 
         $user->notifications()
             ->where('type', BadgesUnlockedNotification::class)
@@ -170,6 +167,54 @@ class UserAnonymizationService
 
         $user->badges()->delete();
         $user->experienceEvents()->delete();
+    }
+
+    /**
+     * @return array<string, array<int, int>>
+     */
+    private function gamificationAuditableIds(User $user): array
+    {
+        $derivedModels = [
+            (new UserBadge)->getMorphClass() => $user->badges()->pluck('id')->all(),
+            (new UserExperienceEvent)->getMorphClass() => $user->experienceEvents()->pluck('id')->all(),
+        ];
+
+        AuditLog::query()
+            ->whereIn('auditable_type', array_keys($derivedModels))
+            ->whereNotNull('auditable_id')
+            ->select(['id', 'auditable_type', 'auditable_id', 'event_data'])
+            ->lazyById()
+            ->each(function (AuditLog $log) use (&$derivedModels, $user): void {
+                if (! $this->auditPayloadBelongsToUser($log->event_data, $user->id)) {
+                    return;
+                }
+
+                $derivedModels[$log->auditable_type][] = (int) $log->auditable_id;
+            });
+
+        foreach ($derivedModels as $auditableType => $auditableIds) {
+            $derivedModels[$auditableType] = array_values(array_unique($auditableIds));
+        }
+
+        return $derivedModels;
+    }
+
+    /**
+     * @param  array<int|string, mixed>|null  $eventData
+     */
+    private function auditPayloadBelongsToUser(?array $eventData, int $userId): bool
+    {
+        if ($eventData === null) {
+            return false;
+        }
+
+        foreach ([$eventData, $eventData['old_values'] ?? null, $eventData['new_values'] ?? null] as $values) {
+            if (is_array($values) && (int) ($values['user_id'] ?? 0) === $userId) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function scrubRatings(User $user): void
