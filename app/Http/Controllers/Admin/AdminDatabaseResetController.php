@@ -36,7 +36,7 @@ class AdminDatabaseResetController extends Controller
             throw ApiException::serverError();
         }
 
-        Auth::guard('web')->logout();
+        Auth::guard('web')->logoutCurrentDevice();
         Auth::guard('sanctum')->forgetUser();
 
         if ($request->hasSession()) {

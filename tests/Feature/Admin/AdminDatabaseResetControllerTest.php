@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Support\Locking\LockKey;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Exceptions;
 
 beforeEach(function () {
     $this->originalEnvironment = app()->environment();
@@ -97,7 +98,11 @@ it('resets, audits, invalidates the session, and returns success', function () {
         ->with('migrate:fresh', ['--seed' => true, '--force' => true])
         ->andReturn(0);
 
-    $this->actingAs($admin)
+    $this->actingAs($admin)->withSession(['session-probe' => true]);
+    $previousSessionId = session()->getId();
+    $previousCsrfToken = session()->token();
+
+    $this
         ->withHeader('Origin', 'http://localhost')
         ->postJson('/api/admin/system/database/reset', [
             'confirmation' => 'APAGAR BANCO',
@@ -112,7 +117,52 @@ it('resets, audits, invalidates the session, and returns success', function () {
         'environment' => app()->environment(),
         'triggered_by_user_id' => $admin->id,
         'triggered_by_email' => $admin->email,
-    ]);
+    ])
+        ->and(session()->getId())->not->toBe($previousSessionId)
+        ->and(session()->token())->not->toBe($previousCsrfToken);
+});
+
+it('does not persist the stale administrator while logging out after reset', function () {
+    $rememberToken = 'remembered-before-reset';
+    $admin = User::factory()->admin()->create(['remember_token' => $rememberToken]);
+    Artisan::shouldReceive('call')
+        ->once()
+        ->with('migrate:fresh', ['--seed' => true, '--force' => true])
+        ->andReturn(0);
+
+    $this->actingAs($admin)
+        ->withHeader('Origin', 'http://localhost')
+        ->postJson('/api/admin/system/database/reset', [
+            'confirmation' => 'APAGAR BANCO',
+        ])
+        ->assertSuccessful();
+
+    expect(User::query()->findOrFail($admin->id)->remember_token)->toBe($rememberToken);
+    $this->assertGuest();
+});
+
+it('reports audit failures without changing the successful reset response', function () {
+    $admin = User::factory()->admin()->create();
+    $auditException = new RuntimeException('Audit storage is unavailable.');
+    Exceptions::fake();
+    AuditLog::creating(function () use ($auditException): void {
+        throw $auditException;
+    });
+    Artisan::shouldReceive('call')
+        ->once()
+        ->with('migrate:fresh', ['--seed' => true, '--force' => true])
+        ->andReturn(0);
+
+    $this->actingAs($admin)
+        ->withHeader('Origin', 'http://localhost')
+        ->postJson('/api/admin/system/database/reset', [
+            'confirmation' => 'APAGAR BANCO',
+        ])
+        ->assertSuccessful()
+        ->assertJsonPath('message', 'Banco de dados recriado e populado com sucesso.');
+
+    Exceptions::assertReported(fn (RuntimeException $exception): bool => $exception === $auditException);
+    $this->assertGuest();
 });
 
 it('returns server error and keeps the session when artisan fails', function () {
