@@ -4,7 +4,7 @@ import type {
     GamificationSyncDelta,
 } from "@shared/types";
 import { axe } from "jest-axe";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { AchievementUnlockDialog } from "./AchievementUnlockDialog";
 
 const firstBadge: GamificationBadge = {
@@ -44,9 +44,13 @@ const delta = (
 
 function ControlledDialog({ value }: { value: GamificationSyncDelta | null }) {
     const [open, setOpen] = useState(false);
+    const returnFocusRef = useRef<HTMLHeadingElement>(null);
 
     return (
         <>
+            <h1 ref={returnFocusRef} tabIndex={-1}>
+                Resultado da ação
+            </h1>
             <button type="button" onClick={() => setOpen(true)}>
                 Mostrar resultado
             </button>
@@ -54,6 +58,7 @@ function ControlledDialog({ value }: { value: GamificationSyncDelta | null }) {
                 delta={value}
                 open={open}
                 onOpenChange={setOpen}
+                returnFocusRef={returnFocusRef}
             />
         </>
     );
@@ -138,7 +143,7 @@ describe("AchievementUnlockDialog", () => {
         expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     });
 
-    it("closes with Continue and returns focus to the opener", async () => {
+    it("closes with Continue and focuses the explicit return target", async () => {
         const user = userEvent.setup();
         render(<ControlledDialog value={delta()} />);
 
@@ -147,7 +152,11 @@ describe("AchievementUnlockDialog", () => {
         await user.click(opener);
         await user.click(screen.getByRole("button", { name: "Continuar" }));
 
-        await waitFor(() => expect(opener).toHaveFocus());
+        await waitFor(() =>
+            expect(
+                screen.getByRole("heading", { name: "Resultado da ação" }),
+            ).toHaveFocus(),
+        );
         expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     });
 
@@ -159,11 +168,18 @@ describe("AchievementUnlockDialog", () => {
         await user.click(opener);
         await user.click(screen.getByRole("button", { name: "Fechar" }));
         expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+        expect(
+            screen.getByRole("heading", { name: "Resultado da ação" }),
+        ).toHaveFocus();
 
         await user.click(opener);
         await user.keyboard("{Escape}");
 
-        await waitFor(() => expect(opener).toHaveFocus());
+        await waitFor(() =>
+            expect(
+                screen.getByRole("heading", { name: "Resultado da ação" }),
+            ).toHaveFocus(),
+        );
         expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     });
 

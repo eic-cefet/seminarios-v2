@@ -241,13 +241,20 @@ describe('Presence', () => {
             login: vi.fn(), register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(), completeTwoFactor: vi.fn(),
         });
 
+        const user = userEvent.setup();
         render(<Presence />);
 
         expect(
             await screen.findByRole('heading', { name: 'Conquista desbloqueada!' }),
         ).toBeInTheDocument();
-        expect(screen.getByText('Presença Registrada!')).toBeInTheDocument();
+        const successHeading = screen.getByText('Presença Registrada!');
+        expect(successHeading).toBeInTheDocument();
         expect(screen.getByText('+125 XP')).toBeInTheDocument();
+
+        await user.click(screen.getByRole('button', { name: 'Continuar' }));
+
+        expect(successHeading).toHaveFocus();
+        expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     });
 
     it.each([

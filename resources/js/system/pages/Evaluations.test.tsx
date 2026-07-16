@@ -395,6 +395,41 @@ describe('Evaluations', () => {
         expect(screen.getByText('+45 XP')).toBeInTheDocument();
     });
 
+    it('keeps the celebration open after the rated item is removed and returns focus to the page heading', async () => {
+        vi.mocked(profileApi.pendingEvaluations)
+            .mockResolvedValueOnce({ data: singleEvaluation() })
+            .mockResolvedValue({ data: [] });
+        vi.mocked(profileApi.submitRating).mockResolvedValue({
+            message: 'ok',
+            rating: { id: 1, score: 5, comment: null },
+            gamification: gamificationDelta(),
+        });
+        const user = userEvent.setup();
+
+        render(<Evaluations />);
+        const pageHeading = screen.getByRole('heading', {
+            name: /avaliar seminarios/i,
+            level: 1,
+        });
+        await user.click(await screen.findByRole('button', { name: /^avaliar$/i }));
+        const stars = screen.getByText(/como você avalia/i).nextElementSibling!.querySelectorAll('button');
+        await user.click(stars[4]);
+        await user.click(screen.getByRole('button', { name: /enviar avaliacao/i }));
+
+        expect(
+            await screen.findByRole('heading', { name: 'Conquista desbloqueada!' }),
+        ).toBeInTheDocument();
+        await waitFor(() => {
+            expect(screen.getByText(/nenhuma avaliacao pendente/i)).toBeInTheDocument();
+        });
+        expect(screen.getByRole('dialog')).toHaveTextContent('Voz Ativa');
+
+        await user.click(screen.getByRole('button', { name: 'Continuar' }));
+
+        expect(pageHeading).toHaveFocus();
+        expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    });
+
     it.each([
         ['null', null],
         ['zero', gamificationDelta({ xp_earned: 0, new_badges: [] })],

@@ -3,6 +3,7 @@ import { ROUTES } from "@shared/config/routes";
 import type { GamificationSyncDelta } from "@shared/types";
 import * as Dialog from "@radix-ui/react-dialog";
 import { Sparkles, X } from "lucide-react";
+import type { RefObject } from "react";
 import { useRef } from "react";
 import { Link } from "react-router-dom";
 import { BadgeCard } from "./BadgeCard";
@@ -11,12 +12,14 @@ interface AchievementUnlockDialogProps {
     delta: GamificationSyncDelta | null;
     open: boolean;
     onOpenChange: (open: boolean) => void;
+    returnFocusRef?: RefObject<HTMLElement | null>;
 }
 
 export function AchievementUnlockDialog({
     delta,
     open,
     onOpenChange,
+    returnFocusRef,
 }: AchievementUnlockDialogProps) {
     const previousFocus = useRef<HTMLElement | null>(null);
     const shouldCelebrate = Boolean(
@@ -48,7 +51,9 @@ export function AchievementUnlockDialog({
                     }}
                     onCloseAutoFocus={(event) => {
                         event.preventDefault();
-                        if (previousFocus.current?.isConnected) {
+                        if (returnFocusRef?.current?.isConnected) {
+                            returnFocusRef.current.focus();
+                        } else if (previousFocus.current?.isConnected) {
                             previousFocus.current.focus();
                         }
                     }}
