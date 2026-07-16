@@ -20,11 +20,16 @@ final class Mutex
         private readonly string $key,
         private readonly int $ttlSeconds,
         private readonly int $waitSeconds,
+        private readonly ?string $store,
     ) {}
 
-    public static function for(string $key, int $ttlSeconds = 30, int $waitSeconds = 5): self
-    {
-        return new self($key, $ttlSeconds, $waitSeconds);
+    public static function for(
+        string $key,
+        int $ttlSeconds = 30,
+        int $waitSeconds = 5,
+        ?string $store = null,
+    ): self {
+        return new self($key, $ttlSeconds, $waitSeconds, $store);
     }
 
     /** @throws LockTimeoutException */
@@ -41,7 +46,7 @@ final class Mutex
 
     public function tryProtect(callable $callback): mixed
     {
-        $lock = Cache::lock($this->key, $this->ttlSeconds);
+        $lock = $this->makeLock();
 
         if (! $lock->get()) {
             return null;
@@ -56,7 +61,7 @@ final class Mutex
 
     private function acquireOrThrow(): Lock
     {
-        $lock = Cache::lock($this->key, $this->ttlSeconds);
+        $lock = $this->makeLock();
 
         try {
             $lock->block($this->waitSeconds);
@@ -65,6 +70,15 @@ final class Mutex
         }
 
         return $lock;
+    }
+
+    private function makeLock(): Lock
+    {
+        if ($this->store !== null) {
+            return Cache::store($this->store)->lock($this->key, $this->ttlSeconds);
+        }
+
+        return Cache::lock($this->key, $this->ttlSeconds);
     }
 
     private function safeRelease(Lock $lock): void
