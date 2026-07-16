@@ -11,9 +11,11 @@ use App\Gamification\GamificationSyncResult;
 use App\Models\User;
 use App\Models\UserBadge;
 use App\Models\UserExperienceEvent;
+use App\Notifications\BadgesUnlockedNotification;
 use App\Support\Locking\LockKey;
 use App\Support\Locking\Mutex;
 use Illuminate\Support\Facades\DB;
+use Throwable;
 
 class GamificationService
 {
@@ -25,11 +27,21 @@ class GamificationService
 
     public function sync(User $user, bool $notify = true): GamificationSyncResult
     {
-        return Mutex::for(LockKey::gamificationUser($user->id))->protect(
+        $result = Mutex::for(LockKey::gamificationUser($user->id))->protect(
             fn (): GamificationSyncResult => DB::transaction(
                 fn (): GamificationSyncResult => $this->reconcile($user),
             ),
         );
+
+        if ($notify && $result->newBadges !== []) {
+            try {
+                $user->notify(new BadgesUnlockedNotification($result->newBadges));
+            } catch (Throwable $exception) {
+                report($exception);
+            }
+        }
+
+        return $result;
     }
 
     /**

@@ -6,7 +6,10 @@ use App\Models\AuditLog;
 use App\Models\Registration;
 use App\Models\Seminar;
 use App\Models\User;
+use App\Services\GamificationService;
+use Illuminate\Support\Facades\Exceptions;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Notification;
 
 describe('GET /api/admin/registrations', function () {
     it('returns paginated list of registrations for admin', function () {
@@ -144,6 +147,59 @@ describe('PATCH /api/admin/registrations/{id}/presence', function () {
 
         $registration->refresh();
         expect($registration->present)->toBeFalse();
+    });
+
+    it('reconciles progress when presence is confirmed', function () {
+        actingAsAdmin();
+
+        $user = User::factory()->create();
+        $registration = Registration::factory()->for($user)->create(['present' => false]);
+
+        $this->patchJson("/api/admin/registrations/{$registration->id}/presence")
+            ->assertSuccessful()
+            ->assertJsonMissingPath('gamification');
+
+        expect($user->experienceEvents()->where('source_key', "attendance:{$registration->id}")->value('points'))
+            ->toBe(100)
+            ->and($user->badges()->where('badge_key', 'first_presence')->exists())->toBeTrue();
+    });
+
+    it('revokes progress without notifying when presence is removed', function () {
+        actingAsAdmin();
+
+        $user = User::factory()->create();
+        $registration = Registration::factory()->present()->for($user)->create();
+        app(GamificationService::class)->sync($user, notify: false);
+        Notification::fake();
+
+        $this->patchJson("/api/admin/registrations/{$registration->id}/presence")
+            ->assertSuccessful()
+            ->assertJsonPath('data.present', false)
+            ->assertJsonMissingPath('gamification');
+
+        expect($user->experienceEvents()->count())->toBe(0)
+            ->and($user->badges()->count())->toBe(0);
+        Notification::assertNothingSent();
+    });
+
+    it('keeps a presence correction when gamification reconciliation fails', function () {
+        Exceptions::fake();
+        actingAsAdmin();
+
+        $exception = new RuntimeException('gamification unavailable');
+        $gamification = Mockery::mock(GamificationService::class);
+        $gamification->shouldReceive('sync')->once()->andThrow($exception);
+        app()->instance(GamificationService::class, $gamification);
+
+        $registration = Registration::factory()->create(['present' => false]);
+
+        $this->patchJson("/api/admin/registrations/{$registration->id}/presence")
+            ->assertSuccessful()
+            ->assertJsonPath('data.present', true)
+            ->assertJsonMissingPath('gamification');
+
+        expect($registration->fresh()->present)->toBeTrue();
+        Exceptions::assertReported(fn (RuntimeException $reported): bool => $reported === $exception);
     });
 
     it('returns 401 for unauthenticated user', function () {

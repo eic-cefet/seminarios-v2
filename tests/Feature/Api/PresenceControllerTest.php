@@ -3,6 +3,10 @@
 use App\Models\PresenceLink;
 use App\Models\Registration;
 use App\Models\User;
+use App\Notifications\BadgesUnlockedNotification;
+use App\Services\GamificationService;
+use Illuminate\Support\Facades\Exceptions;
+use Illuminate\Support\Facades\Notification;
 
 it('shows presence link info for valid uuid', function () {
     $presenceLink = PresenceLink::factory()->create();
@@ -69,6 +73,82 @@ it('registers presence for authenticated user', function () {
         'seminar_id' => $presenceLink->seminar_id,
         'present' => true,
     ]);
+});
+
+it('returns newly earned progress on the first scan and no delta on a repeated scan', function () {
+    Notification::fake();
+
+    $user = User::factory()->create();
+    $presenceLink = PresenceLink::factory()->create();
+
+    $firstResponse = $this->actingAs($user)
+        ->postJson("/api/presence/{$presenceLink->uuid}/register");
+
+    $firstResponse->assertSuccessful()
+        ->assertJsonPath('gamification.xp_earned', 125)
+        ->assertJsonPath('gamification.total_xp', 125)
+        ->assertJsonPath('gamification.new_badges.0.key', 'first_presence');
+
+    expect($firstResponse->json('gamification.level.level'))->toBeInt();
+    Notification::assertSentToTimes($user, BadgesUnlockedNotification::class, 1);
+
+    $repeatResponse = $this->postJson("/api/presence/{$presenceLink->uuid}/register");
+
+    $repeatResponse->assertSuccessful()
+        ->assertJsonPath('gamification.xp_earned', 0)
+        ->assertJsonPath('gamification.total_xp', 125)
+        ->assertJsonCount(0, 'gamification.new_badges');
+    Notification::assertSentToTimes($user, BadgesUnlockedNotification::class, 1);
+});
+
+it('keeps a registered presence when gamification reconciliation fails', function () {
+    Exceptions::fake();
+
+    $exception = new RuntimeException('gamification unavailable');
+    $gamification = Mockery::mock(GamificationService::class);
+    $gamification->shouldReceive('sync')->once()->andThrow($exception);
+    app()->instance(GamificationService::class, $gamification);
+
+    $user = User::factory()->create();
+    $presenceLink = PresenceLink::factory()->create();
+
+    $this->actingAs($user)
+        ->postJson("/api/presence/{$presenceLink->uuid}/register")
+        ->assertSuccessful()
+        ->assertJsonPath('gamification', null);
+
+    $this->assertDatabaseHas('registrations', [
+        'user_id' => $user->id,
+        'seminar_id' => $presenceLink->seminar_id,
+        'present' => true,
+    ]);
+    Exceptions::assertReported(fn (RuntimeException $reported): bool => $reported === $exception);
+});
+
+it('reports notification delivery errors without failing presence or progress', function () {
+    Exceptions::fake();
+
+    $exception = new RuntimeException('notification channel unavailable');
+    Notification::shouldReceive('send')->once()->andThrow($exception);
+
+    $user = User::factory()->create();
+    $presenceLink = PresenceLink::factory()->create();
+
+    $this->actingAs($user)
+        ->postJson("/api/presence/{$presenceLink->uuid}/register")
+        ->assertSuccessful()
+        ->assertJsonPath('gamification.new_badges.0.key', 'first_presence');
+
+    $this->assertDatabaseHas('registrations', [
+        'user_id' => $user->id,
+        'seminar_id' => $presenceLink->seminar_id,
+        'present' => true,
+    ]);
+    $this->assertDatabaseHas('user_badges', [
+        'user_id' => $user->id,
+        'badge_key' => 'first_presence',
+    ]);
+    Exceptions::assertReported(fn (RuntimeException $reported): bool => $reported === $exception);
 });
 
 it('returns success for already registered and present user (idempotent)', function () {
