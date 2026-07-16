@@ -13,6 +13,7 @@
         "barryvdh/laravel-dompdf": "^3.1",
         "chillerlan/php-qrcode": "^5.0",
         "dedoc/scramble": "^0.13",
+        "fakerphp/faker": "^1.23",
         "intervention/image": "*",
         "intervention/image-laravel": "^1.5",
         "laravel/fortify": "^1.36",
@@ -29,7 +30,6 @@
         "spatie/laravel-permission": "*"
     },
     "require-dev": {
-        "fakerphp/faker": "^1.23",
         "laravel/boost": "^1.8",
         "laravel/pail": "^1.2.2",
         "laravel/pint": "^1.24",
