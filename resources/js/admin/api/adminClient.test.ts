@@ -11,6 +11,7 @@ vi.mock('@shared/api/httpUtils', async (importOriginal) => {
 });
 
 const mockGetCookie = getCookie as ReturnType<typeof vi.fn>;
+const mockGetCsrfCookie = getCsrfCookie as ReturnType<typeof vi.fn>;
 
 describe('AdminApiError', () => {
     it('creates an error with correct properties', () => {
@@ -970,13 +971,29 @@ describe('Admin API endpoints', () => {
 
     describe('systemInfoApi', () => {
         it('get calls GET /system/info', async () => {
-            mockSuccess({ data: { runtime: {}, server: {}, memory: {}, database: {}, drivers: {}, storage: {}, extensions: [], php_config: {}, scheduler: [] } });
+            mockSuccess({ data: { runtime: {}, server: {}, memory: {}, database: {}, drivers: {}, storage: {}, extensions: [], php_config: {}, scheduler: [], actions: { database_reset_available: false } } });
 
             await systemInfoApi.get();
 
             expect(fetchSpy).toHaveBeenCalledWith(
                 expect.stringContaining('/system/info'),
                 expect.any(Object),
+            );
+        });
+
+        it('resetDatabase gets CSRF and posts the exact confirmation', async () => {
+            mockSuccess({ message: 'Banco recriado' });
+            mockGetCsrfCookie.mockClear();
+
+            await systemInfoApi.resetDatabase('APAGAR BANCO');
+
+            expect(mockGetCsrfCookie).toHaveBeenCalledOnce();
+            expect(fetchSpy).toHaveBeenCalledWith(
+                expect.stringContaining('/system/database/reset'),
+                expect.objectContaining({
+                    method: 'POST',
+                    body: JSON.stringify({ confirmation: 'APAGAR BANCO' }),
+                }),
             );
         });
     });
