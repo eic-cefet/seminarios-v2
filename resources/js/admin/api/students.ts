@@ -1,4 +1,4 @@
-import type { PaginatedResponse } from "@shared/types";
+import type { GamificationProfile, PaginatedResponse } from "@shared/types";
 import { buildQueryString, fetchAdminApi } from "./_base";
 
 export interface AdminStudentListItem {
@@ -81,6 +81,12 @@ export const studentsApi = {
         const qs = buildQueryString({ semester });
         return fetchAdminApi<{ data: { summary: string } }>(
             `/students/${userId}/ai-summary${qs}`,
+        );
+    },
+
+    gamification: (userId: number) => {
+        return fetchAdminApi<{ data: GamificationProfile }>(
+            `/students/${userId}/gamification`,
         );
     },
 };

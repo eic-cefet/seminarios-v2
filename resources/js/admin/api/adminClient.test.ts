@@ -1053,5 +1053,24 @@ describe('Admin API endpoints', () => {
                 expect.any(Object),
             );
         });
+
+        it('gamification fetches the lifetime aggregate from the exact student endpoint', async () => {
+            mockSuccess({
+                data: {
+                    progress: { total_xp: 0 },
+                    summary: { earned_badges: 0, total_badges: 30 },
+                    categories: [],
+                    recent_badges: [],
+                },
+            });
+
+            const result = await studentsApi.gamification(42);
+
+            expect(result.data.summary.total_badges).toBe(30);
+            expect(fetchSpy).toHaveBeenCalledWith(
+                'http://localhost/api/admin/students/42/gamification',
+                expect.any(Object),
+            );
+        });
     });
 });
