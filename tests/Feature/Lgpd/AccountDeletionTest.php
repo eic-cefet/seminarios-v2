@@ -2,6 +2,8 @@
 
 use App\Console\Commands\AnonymizePendingUsersCommand;
 use App\Enums\AuditEvent;
+use App\Enums\BadgeKey;
+use App\Enums\ExperienceReason;
 use App\Jobs\AnonymizeUserJob;
 use App\Mail\AccountAnonymized;
 use App\Mail\AccountDeletionCancelled;
@@ -67,6 +69,37 @@ it('anonymizes the user and emails the original address when the job runs', func
         ->and($fresh->email)->toBe("removed-{$user->id}@deleted.local");
 
     Mail::assertQueued(AccountAnonymized::class, fn ($mail) => $mail->hasTo('original@example.com'));
+});
+
+it('deletes only the anonymized users badges and experience events', function () {
+    $user = User::factory()->create();
+    $otherUser = User::factory()->create();
+
+    $userBadge = $user->badges()->create([
+        'badge_key' => BadgeKey::FirstPresence,
+        'earned_at' => now(),
+    ]);
+    $userEvent = $user->experienceEvents()->create([
+        'reason' => ExperienceReason::Attendance,
+        'source_key' => 'attendance:mine',
+        'points' => 100,
+    ]);
+    $otherBadge = $otherUser->badges()->create([
+        'badge_key' => BadgeKey::FirstPresence,
+        'earned_at' => now(),
+    ]);
+    $otherEvent = $otherUser->experienceEvents()->create([
+        'reason' => ExperienceReason::Attendance,
+        'source_key' => 'attendance:other',
+        'points' => 100,
+    ]);
+
+    app(UserAnonymizationService::class)->anonymize($user);
+
+    $this->assertDatabaseMissing('user_badges', ['id' => $userBadge->id]);
+    $this->assertDatabaseMissing('user_experience_events', ['id' => $userEvent->id]);
+    $this->assertDatabaseHas('user_badges', ['id' => $otherBadge->id, 'user_id' => $otherUser->id]);
+    $this->assertDatabaseHas('user_experience_events', ['id' => $otherEvent->id, 'user_id' => $otherUser->id]);
 });
 
 it('skips already-anonymized users in the scheduler', function () {

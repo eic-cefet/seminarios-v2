@@ -1,6 +1,8 @@
 <?php
 
 use App\Enums\AuditEvent;
+use App\Enums\BadgeKey;
+use App\Enums\ExperienceReason;
 use App\Jobs\DeleteS3FileJob;
 use App\Jobs\ExportUserDataJob;
 use App\Mail\ReportReady;
@@ -34,6 +36,50 @@ it('uploads the ZIP to S3 and emails a signed URL', function () {
     Mail::assertQueued(ReportReady::class, fn ($mail) => $mail->hasTo($user->email));
     Queue::assertPushed(DeleteS3FileJob::class);
     expect(AuditLog::where('event_name', AuditEvent::DataExportDelivered->value)->exists())->toBeTrue();
+});
+
+it('includes the users private gamification data in the exported ZIP', function () {
+    Storage::fake('s3');
+    Mail::fake();
+    Queue::fake();
+
+    $user = User::factory()->create();
+    $otherUser = User::factory()->create();
+    $user->badges()->create([
+        'badge_key' => BadgeKey::FirstPresence,
+        'earned_at' => '2026-07-15 09:00:00',
+    ]);
+    $user->experienceEvents()->create([
+        'reason' => ExperienceReason::Attendance,
+        'source_key' => 'attendance:123',
+        'points' => 100,
+    ]);
+    $otherUser->experienceEvents()->create([
+        'reason' => ExperienceReason::Attendance,
+        'source_key' => 'attendance:other',
+        'points' => 500,
+    ]);
+    $request = DataExportRequest::factory()->for($user)->create();
+
+    (new ExportUserDataJob($request->id))->handle(app(UserDataExportService::class));
+
+    $request->refresh();
+    $zip = new ZipArchive;
+    $zip->open(Storage::disk('s3')->path($request->file_path));
+    $gamification = json_decode($zip->getFromName('gamification.json'), true, flags: JSON_THROW_ON_ERROR);
+    $zip->close();
+
+    expect($gamification)->toBe([
+        'total_xp' => 100,
+        'level' => 2,
+        'rank' => 'Curioso',
+        'badges' => [
+            ['key' => 'first_presence', 'earned_at' => '2026-07-15T12:00:00+00:00'],
+        ],
+        'experience_events' => [
+            ['reason' => 'attendance', 'source_key' => 'attendance:123', 'points' => 100],
+        ],
+    ]);
 });
 
 it('honours lgpd.retention.data_export_link_hours and schedules S3 cleanup at the same offset', function () {

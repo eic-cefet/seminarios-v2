@@ -140,6 +140,8 @@ class UserAnonymizationService
         $user->speakerData()->delete();
         $user->socialIdentities()->delete();
         $user->dataExportRequests()->delete();
+        $user->badges()->delete();
+        $user->experienceEvents()->delete();
     }
 
     private function scrubRatings(User $user): void
