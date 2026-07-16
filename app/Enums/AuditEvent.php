@@ -57,6 +57,7 @@ enum AuditEvent: string
     case BugReportSubmitted = 'bug_report.submitted';
 
     // System (jobs/commands)
+    case DatabaseReset = 'system.database_reset';
     case CertificateGenerated = 'certificate.generated';
     case CertificateRegenerated = 'certificate.regenerated';
     case SentimentAnalysisCompleted = 'sentiment_analysis.completed';

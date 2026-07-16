@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\AdminApiTokenController;
 use App\Http\Controllers\Admin\AdminAuditLogController;
+use App\Http\Controllers\Admin\AdminDatabaseResetController;
 use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\AdminEnvSecretsController;
 use App\Http\Controllers\Admin\AdminLgpdController;
@@ -86,6 +87,7 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function ()
     Route::get('/system/env-secrets', [AdminEnvSecretsController::class, 'show']);
     Route::put('/system/env-secrets', [AdminEnvSecretsController::class, 'update'])
         ->middleware('throttle:5,1');
+    Route::post('/system/database/reset', AdminDatabaseResetController::class);
 
     // API Tokens
     Route::apiResource('api-tokens', AdminApiTokenController::class)
