@@ -63,7 +63,7 @@ it('limits reconciliation to an explicitly requested user', function () {
     Registration::factory()->present()->for($other)->create();
     AuditLog::query()->delete();
 
-    $this->artisan('gamification:backfill', ['--user' => $target->id])->assertSuccessful();
+    $this->artisan('gamification:backfill', ['--user' => (string) $target->id])->assertSuccessful();
 
     expect($target->experienceEvents()->exists())->toBeTrue()
         ->and($other->experienceEvents()->exists())->toBeFalse();
@@ -75,11 +75,45 @@ it('limits reconciliation to an explicitly requested user', function () {
 });
 
 it('fails with a Portuguese message for an unknown explicit user', function () {
-    $this->artisan('gamification:backfill', ['--user' => 999999])
+    $this->artisan('gamification:backfill', ['--user' => '999999'])
         ->expectsOutputToContain('Usuário não encontrado.')
         ->assertFailed();
 
     expect(AuditLog::query()->forEvent(AuditEvent::GamificationBackfilled)->exists())->toBeFalse();
+});
+
+it('rejects malformed explicit user IDs without processing a numeric prefix', function (Closure $invalidUserId) {
+    $target = User::factory()->create();
+    Registration::factory()->present()->for($target)->create();
+    AuditLog::query()->delete();
+
+    $this->artisan('gamification:backfill', ['--user' => $invalidUserId($target->id)])
+        ->expectsOutputToContain('Usuário não encontrado.')
+        ->assertFailed();
+
+    expect($target->experienceEvents()->exists())->toBeFalse()
+        ->and($target->badges()->exists())->toBeFalse()
+        ->and(AuditLog::query()->forEvent(AuditEvent::GamificationBackfilled)->exists())->toBeFalse();
+})->with([
+    'alphanumeric suffix' => fn (int $id): string => "{$id}junk",
+    'decimal suffix' => fn (int $id): string => "{$id}.9",
+    'zero' => fn (int $id): string => '0',
+    'negative' => fn (int $id): string => '-'.$id,
+    'empty value' => fn (int $id): string => '',
+]);
+
+it('rejects a bare user option instead of running an unrestricted backfill', function () {
+    $user = User::factory()->create();
+    Registration::factory()->present()->for($user)->create();
+    AuditLog::query()->delete();
+
+    $this->artisan('gamification:backfill --user')
+        ->expectsOutputToContain('Usuário não encontrado.')
+        ->assertFailed();
+
+    expect($user->experienceEvents()->exists())->toBeFalse()
+        ->and($user->badges()->exists())->toBeFalse()
+        ->and(AuditLog::query()->forEvent(AuditEvent::GamificationBackfilled)->exists())->toBeFalse();
 });
 
 it('is idempotent and never creates unlock notifications during backfill', function () {

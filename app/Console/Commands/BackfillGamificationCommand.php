@@ -21,13 +21,20 @@ class BackfillGamificationCommand extends Command
 
     public function handle(GamificationService $gamification): int
     {
+        $userOptionProvided = $this->input->hasParameterOption('--user');
         $requestedUserId = $this->option('user');
         $processedUsers = 0;
         $xpEarned = 0;
         $newBadges = 0;
 
-        if ($requestedUserId !== null) {
-            $user = User::query()->find((int) $requestedUserId);
+        if ($userOptionProvided && (! is_string($requestedUserId) || preg_match('/\A[1-9][0-9]*\z/D', $requestedUserId) !== 1)) {
+            $this->error('Usuário não encontrado.');
+
+            return self::FAILURE;
+        }
+
+        if ($userOptionProvided) {
+            $user = User::query()->find($requestedUserId);
 
             if ($user === null) {
                 $this->error('Usuário não encontrado.');
@@ -72,7 +79,7 @@ class BackfillGamificationCommand extends Command
             'processed_users' => $processedUsers,
             'xp_earned' => $xpEarned,
             'new_badges' => $newBadges,
-            'requested_user_id' => $requestedUserId === null ? null : (int) $requestedUserId,
+            'requested_user_id' => $userOptionProvided ? (int) $requestedUserId : null,
         ]);
 
         $this->info("Gamificação reconciliada para {$processedUsers} usuário(s).");
