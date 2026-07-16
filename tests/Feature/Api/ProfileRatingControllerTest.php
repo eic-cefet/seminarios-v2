@@ -4,12 +4,63 @@ use App\Jobs\AnalyzeRatingSentiment;
 use App\Models\Rating;
 use App\Models\Registration;
 use App\Models\Seminar;
+use App\Notifications\BadgesUnlockedNotification;
+use App\Services\GamificationService;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\Bus;
+use Illuminate\Support\Facades\Exceptions;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Queue;
 
 describe('POST /profile/ratings/{seminar} - sentiment dispatch', function () {
+    it('returns evaluation progress and the first evaluation badge', function () {
+        Notification::fake();
+
+        $user = actingAsUser();
+        $seminar = Seminar::factory()->create(['scheduled_at' => now()->subHour()]);
+        Registration::factory()->present()->for($user)->for($seminar)->create();
+        app(GamificationService::class)->sync($user, notify: false);
+
+        $this->postJson("/api/profile/ratings/{$seminar->id}", [
+            'score' => 5,
+            'comment' => 'Excelente apresentação.',
+        ])->assertOk()
+            ->assertJsonPath('gamification.xp_earned', 45)
+            ->assertJsonPath('gamification.new_badges.0.key', 'first_evaluation')
+            ->assertJsonPath('gamification.new_badges.0.description', 'Avalie uma apresentação.')
+            ->assertJsonMissingPath('gamification.new_badges.0.metric')
+            ->assertJsonMissingPath('gamification.new_badges.0.threshold');
+
+        Notification::assertSentToTimes($user, BadgesUnlockedNotification::class, 1);
+    });
+
+    it('keeps a submitted rating when gamification reconciliation fails', function () {
+        Exceptions::fake();
+
+        $exception = new RuntimeException('gamification unavailable');
+        $gamification = Mockery::mock(GamificationService::class);
+        $gamification->shouldReceive('sync')->once()->andThrow($exception);
+        app()->instance(GamificationService::class, $gamification);
+
+        $user = actingAsUser();
+        $seminar = Seminar::factory()->create(['scheduled_at' => now()->subHour()]);
+        Registration::factory()->present()->for($user)->for($seminar)->create();
+
+        $this->postJson("/api/profile/ratings/{$seminar->id}", [
+            'score' => 4,
+            'comment' => 'Feedback válido.',
+        ])->assertOk()
+            ->assertJsonPath('gamification', null);
+
+        $this->assertDatabaseHas('ratings', [
+            'user_id' => $user->id,
+            'seminar_id' => $seminar->id,
+            'score' => 4,
+        ]);
+        Exceptions::assertReported(fn (RuntimeException $reported): bool => $reported === $exception);
+    });
+
     it('dispatches sentiment job when comment is present and feature is enabled', function () {
         Queue::fake();
         config(['features.sentiment_analysis' => ['enabled' => true, 'sample_rate' => 100]]);

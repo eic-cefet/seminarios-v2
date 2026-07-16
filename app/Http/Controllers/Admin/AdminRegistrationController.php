@@ -12,6 +12,7 @@ use App\Models\AuditLog;
 use App\Models\Registration;
 use App\Models\Seminar;
 use App\Models\User;
+use App\Services\GamificationService;
 use App\Services\SeminarVisibilityService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -19,6 +20,7 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Mail;
+use Throwable;
 
 class AdminRegistrationController extends Controller
 {
@@ -49,7 +51,7 @@ class AdminRegistrationController extends Controller
         return AdminRegistrationResource::collection($query->paginate(15));
     }
 
-    public function store(AdminRegistrationStoreRequest $request): JsonResponse
+    public function store(AdminRegistrationStoreRequest $request, GamificationService $gamification): JsonResponse
     {
         $seminar = Seminar::findOrFail($request->integer('seminar_id'));
 
@@ -58,10 +60,11 @@ class AdminRegistrationController extends Controller
         $userIds = $request->collect('user_ids')->map(fn ($id) => (int) $id);
 
         $created = collect();
+        $presenceChangedUserIds = collect();
         $alreadyRegistered = 0;
         $markedPresent = 0;
 
-        DB::transaction(function () use ($seminar, $userIds, $created, &$alreadyRegistered, &$markedPresent): void {
+        DB::transaction(function () use ($seminar, $userIds, $created, $presenceChangedUserIds, &$alreadyRegistered, &$markedPresent): void {
             foreach ($userIds as $userId) {
                 $registration = Registration::firstOrCreate(
                     [
@@ -75,6 +78,7 @@ class AdminRegistrationController extends Controller
 
                 if ($registration->wasRecentlyCreated) {
                     $created->push($registration);
+                    $presenceChangedUserIds->push($userId);
 
                     continue;
                 }
@@ -83,10 +87,24 @@ class AdminRegistrationController extends Controller
 
                 if (! $registration->present) {
                     $registration->update(['present' => true]);
+                    $presenceChangedUserIds->push($userId);
                     $markedPresent++;
                 }
             }
         });
+
+        $changedUsers = User::query()
+            ->whereIn('id', $presenceChangedUserIds)
+            ->get()
+            ->keyBy('id');
+
+        foreach ($presenceChangedUserIds as $userId) {
+            try {
+                $gamification->sync($changedUsers->get($userId), notify: true);
+            } catch (Throwable $exception) {
+                report($exception);
+            }
+        }
 
         $users = User::whereIn('id', $created->pluck('user_id'))->get()->keyBy('id');
 
@@ -113,7 +131,7 @@ class AdminRegistrationController extends Controller
         ], 201);
     }
 
-    public function togglePresence(Registration $registration): JsonResponse
+    public function togglePresence(Registration $registration, GamificationService $gamification): JsonResponse
     {
         $registration->loadMissing('seminar');
         Gate::authorize('updatePresence', $registration);
@@ -122,6 +140,12 @@ class AdminRegistrationController extends Controller
         $registration->save();
 
         $registration->load(['user:id,name,email', 'seminar:id,name,slug,scheduled_at']);
+
+        try {
+            $gamification->sync($registration->user, notify: $registration->present);
+        } catch (Throwable $exception) {
+            report($exception);
+        }
 
         return response()->json([
             'message' => $registration->present ? 'Presença confirmada' : 'Presença removida',

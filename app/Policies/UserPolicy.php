@@ -37,6 +37,25 @@ class UserPolicy
             ->exists();
     }
 
+    public function viewGamification(User $user, User $model): bool
+    {
+        if (! $model->isUser()) {
+            return false;
+        }
+
+        if ($user->hasRole(Role::Admin)) {
+            return true;
+        }
+
+        if (! $user->hasRole(Role::Teacher)) {
+            return false;
+        }
+
+        return $model->registrations()
+            ->whereHas('seminar', fn ($query) => $query->where('created_by', $user->id))
+            ->exists();
+    }
+
     public function create(User $user): bool
     {
         return $user->hasRole(Role::Admin);

@@ -34,3 +34,7 @@ it('produces deterministic keys for external API idempotency', function () {
 it('produces deterministic keys for presence link creation', function () {
     expect(LockKey::presenceLinkCreation(123))->toBe('lock:presence_link:seminar:123');
 });
+
+it('produces deterministic keys for per-user gamification reconciliation', function () {
+    expect(LockKey::gamificationUser(456))->toBe('lock:gamification:user:456');
+});

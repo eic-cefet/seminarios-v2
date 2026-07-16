@@ -1,5 +1,6 @@
-import { render, screen, waitFor, userEvent } from '@/test/test-utils';
+import { createTestQueryClient, render, screen, waitFor, userEvent } from '@/test/test-utils';
 import { createUser } from '@/test/factories';
+import type { GamificationSyncDelta } from '@shared/types';
 import Presence from './Presence';
 
 vi.mock('@shared/contexts/AuthContext', () => ({
@@ -61,10 +62,37 @@ const validPresenceResponse = () =>
         },
     }), { status: 200, headers: { 'Content-Type': 'application/json' } });
 
-const successRegisterResponse = () =>
-    new Response(JSON.stringify({ message: 'Presença registrada com sucesso' }), {
+const successRegisterResponse = (gamification: GamificationSyncDelta | null = null) =>
+    new Response(JSON.stringify({
+        message: 'Presença registrada com sucesso',
+        gamification,
+        data: { present: true, seminar: { id: 1, name: 'Test Seminar' } },
+    }), {
         status: 200, headers: { 'Content-Type': 'application/json' },
     });
+
+const gamificationDelta = (overrides: Partial<GamificationSyncDelta> = {}): GamificationSyncDelta => ({
+    xp_earned: 125,
+    total_xp: 125,
+    level: {
+        level: 2,
+        rank: 'Participante',
+        current_level_xp: 25,
+        next_level_xp: 100,
+        progress_percent: 25,
+    },
+    new_badges: [{
+        key: 'first_presence',
+        name: 'Primeiro Passo',
+        description: 'Participe de uma apresentação.',
+        category: 'participation',
+        tier: 'bronze',
+        icon: 'Footprints',
+        earned: true,
+        earned_at: '2026-07-15T12:00:00-03:00',
+    }],
+    ...overrides,
+});
 
 describe('Presence', () => {
     beforeEach(() => {
@@ -201,6 +229,54 @@ describe('Presence', () => {
         await waitFor(() => {
             expect(screen.getByText('Test Seminar')).toBeInTheDocument();
             expect(screen.getByRole('heading', { name: /presença registrada/i })).toBeInTheDocument();
+        });
+    });
+
+    it('keeps the presence success card and celebrates the returned gamification delta', async () => {
+        vi.spyOn(globalThis, 'fetch')
+            .mockResolvedValueOnce(validPresenceResponse())
+            .mockResolvedValueOnce(successRegisterResponse(gamificationDelta()));
+        vi.mocked(useAuth).mockReturnValue({
+            user: createUser({ name: 'John Doe' }), isLoading: false, isAuthenticated: true,
+            login: vi.fn(), register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(), completeTwoFactor: vi.fn(),
+        });
+
+        const user = userEvent.setup();
+        render(<Presence />);
+
+        expect(
+            await screen.findByRole('heading', { name: 'Conquista desbloqueada!' }),
+        ).toBeInTheDocument();
+        const successHeading = screen.getByText('Presença Registrada!');
+        expect(successHeading).toBeInTheDocument();
+        expect(screen.getByText('+125 XP')).toBeInTheDocument();
+
+        await user.click(screen.getByRole('button', { name: 'Continuar' }));
+
+        expect(successHeading).toHaveFocus();
+        expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    });
+
+    it.each([
+        ['null', null],
+        ['zero', gamificationDelta({ xp_earned: 0, new_badges: [] })],
+    ])('suppresses a %s celebration but still invalidates gamification', async (_label, gamification) => {
+        vi.spyOn(globalThis, 'fetch')
+            .mockResolvedValueOnce(validPresenceResponse())
+            .mockResolvedValueOnce(successRegisterResponse(gamification));
+        vi.mocked(useAuth).mockReturnValue({
+            user: createUser({ name: 'John Doe' }), isLoading: false, isAuthenticated: true,
+            login: vi.fn(), register: vi.fn(), logout: vi.fn(), exchangeCode: vi.fn(), refreshUser: vi.fn(), completeTwoFactor: vi.fn(),
+        });
+        const queryClient = createTestQueryClient();
+        const invalidateQueries = vi.spyOn(queryClient, 'invalidateQueries');
+
+        render(<Presence />, { queryClient });
+
+        await screen.findByRole('heading', { name: /presença registrada/i });
+        expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+        expect(invalidateQueries).toHaveBeenCalledWith({
+            queryKey: ['profile', 'gamification'],
         });
     });
 

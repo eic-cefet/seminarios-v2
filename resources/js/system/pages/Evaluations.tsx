@@ -1,4 +1,5 @@
 import { PendingEvaluation, profileApi } from "@shared/api/client";
+import type { GamificationSyncDelta } from "@shared/types";
 import { PageTitle } from "@shared/components/PageTitle";
 import { ROUTES } from "@shared/config/routes";
 import { getErrorMessage } from "@shared/lib/errors";
@@ -14,21 +15,38 @@ import {
     MessageSquare,
     Star,
 } from "lucide-react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { Badge } from "../components/Badge";
 import { Layout } from "../components/Layout";
 import { ProtectedRoute } from "../components/ProtectedRoute";
 import { Button } from "@shared/components/Button";
+import { AchievementUnlockDialog } from "../components/gamification/AchievementUnlockDialog";
 
 export default function Evaluations() {
+    const [achievementDelta, setAchievementDelta] =
+        useState<GamificationSyncDelta | null>(null);
+    const [showAchievementDialog, setShowAchievementDialog] = useState(false);
+    const pageHeadingRef = useRef<HTMLHeadingElement>(null);
+
+    const handleGamificationResult = (delta: GamificationSyncDelta | null) => {
+        setAchievementDelta(delta);
+        setShowAchievementDialog(
+            Boolean(delta && (delta.xp_earned > 0 || delta.new_badges.length > 0)),
+        );
+    };
+
     return (
         <ProtectedRoute>
             <PageTitle title="Avaliar Seminarios" />
             <Layout>
                 <div className="bg-white border-b border-gray-200">
                     <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
-                        <h1 className="text-2xl font-bold text-gray-900">
+                        <h1
+                            ref={pageHeadingRef}
+                            tabIndex={-1}
+                            className="text-2xl font-bold text-gray-900"
+                        >
                             Avaliar Seminarios
                         </h1>
                         <p className="mt-1 text-sm text-gray-500">
@@ -39,14 +57,28 @@ export default function Evaluations() {
                 </div>
 
                 <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
-                    <PendingEvaluationsList />
+                    <PendingEvaluationsList
+                        onGamificationResult={handleGamificationResult}
+                    />
                 </div>
             </Layout>
+            <AchievementUnlockDialog
+                delta={achievementDelta}
+                open={showAchievementDialog}
+                onOpenChange={setShowAchievementDialog}
+                returnFocusRef={pageHeadingRef}
+            />
         </ProtectedRoute>
     );
 }
 
-function PendingEvaluationsList() {
+interface PendingEvaluationsListProps {
+    onGamificationResult: (delta: GamificationSyncDelta | null) => void;
+}
+
+function PendingEvaluationsList({
+    onGamificationResult,
+}: PendingEvaluationsListProps) {
     const {
         data,
         isLoading,
@@ -108,6 +140,7 @@ function PendingEvaluationsList() {
                             key={evaluation.id}
                             evaluation={evaluation}
                             onRated={() => refetchEvaluations()}
+                            onGamificationResult={onGamificationResult}
                         />
                     ))}
                 </div>
@@ -119,9 +152,14 @@ function PendingEvaluationsList() {
 interface EvaluationItemProps {
     evaluation: PendingEvaluation;
     onRated: () => void;
+    onGamificationResult: (delta: GamificationSyncDelta | null) => void;
 }
 
-function EvaluationItem({ evaluation, onRated }: EvaluationItemProps) {
+function EvaluationItem({
+    evaluation,
+    onRated,
+    onGamificationResult,
+}: EvaluationItemProps) {
     const [isExpanded, setIsExpanded] = useState(false);
     const [score, setScore] = useState(0);
     const [hoveredScore, setHoveredScore] = useState(0);
@@ -139,15 +177,19 @@ function EvaluationItem({ evaluation, onRated }: EvaluationItemProps) {
                 comment: comment.trim() || undefined,
                 ai_analysis_consent: aiConsent,
             }),
-        onSuccess: () => {
+        onSuccess: (data) => {
             setError(null);
             setSuccess(true);
+            onGamificationResult(data.gamification);
             analytics.event("evaluation_submit", {
                 seminar_id: evaluation.seminar.id,
                 score,
             });
             queryClient.invalidateQueries({
                 queryKey: ["profile", "pending-evaluations"],
+            });
+            queryClient.invalidateQueries({
+                queryKey: ["profile", "gamification"],
             });
             setTimeout(() => {
                 onRated();

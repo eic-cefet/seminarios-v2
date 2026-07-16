@@ -8,11 +8,13 @@ use App\Http\Controllers\Controller;
 use App\Models\AuditLog;
 use App\Models\PresenceLink;
 use App\Models\Registration;
+use App\Services\GamificationService;
 use App\Services\QrCodeService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
+use Throwable;
 
 class PresenceController extends Controller
 {
@@ -37,7 +39,7 @@ class PresenceController extends Controller
         ]);
     }
 
-    public function register(Request $request, string $uuid): JsonResponse
+    public function register(Request $request, GamificationService $gamification, string $uuid): JsonResponse
     {
         if (! $request->user()) {
             return response()->json([
@@ -72,8 +74,22 @@ class PresenceController extends Controller
             'user_id' => $user->id,
         ]);
 
+        try {
+            $sync = $gamification->sync($user);
+            $gamificationDelta = [
+                'xp_earned' => $sync->xpEarned,
+                'total_xp' => $sync->totalXp,
+                'level' => $sync->level,
+                'new_badges' => $sync->newBadges,
+            ];
+        } catch (Throwable $exception) {
+            report($exception);
+            $gamificationDelta = null;
+        }
+
         return response()->json([
             'message' => 'Presença registrada com sucesso!',
+            'gamification' => $gamificationDelta,
             'data' => [
                 'present' => true,
                 'seminar' => [

@@ -2,6 +2,7 @@ import { render, screen, userEvent, fireEvent } from '@/test/test-utils';
 import { Navbar } from './Navbar';
 import { useAuth } from '@shared/contexts/AuthContext';
 import { analytics } from '@shared/lib/analytics';
+import { createUser } from '@/test/factories';
 
 vi.mock('@shared/hooks/useNotifications', () => ({
     useNotifications: () => ({
@@ -58,6 +59,28 @@ describe('Navbar', () => {
         // "Entrar" appears in both desktop and mobile views
         expect(screen.getAllByText('Entrar').length).toBeGreaterThan(0);
         expect(screen.getAllByText('Criar conta').length).toBeGreaterThan(0);
+        expect(screen.queryByText('Conquistas')).not.toBeInTheDocument();
+    });
+
+    it('shows Conquistas in authenticated desktop and mobile user menus', async () => {
+        vi.mocked(useAuth).mockReturnValue({
+            user: createUser({ id: 1, name: 'Test User', email: 'test@example.com' }),
+            isLoading: false, isAuthenticated: true,
+            login: vi.fn(), register: vi.fn(), logout: mockLogout, exchangeCode: vi.fn(), refreshUser: vi.fn(), completeTwoFactor: vi.fn(),
+        });
+        const user = userEvent.setup();
+
+        render(<Navbar />);
+
+        const mobileLink = screen.getByRole('link', { name: 'Conquistas' });
+        expect(mobileLink).toHaveAttribute('href', '/conquistas');
+
+        const trigger = screen.getAllByText('Test User')[0].closest('button')!;
+        await user.click(trigger);
+
+        const desktopItems = await screen.findAllByRole('menuitem', { name: /conquistas/i });
+        expect(desktopItems).toHaveLength(1);
+        expect(desktopItems[0]).toHaveAttribute('href', '/conquistas');
     });
 
     it('renders mobile menu button', () => {

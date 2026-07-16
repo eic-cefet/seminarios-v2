@@ -20,6 +20,7 @@ import { Badge } from "../../components/ui/badge";
 import { Skeleton } from "../../components/ui/skeleton";
 import { Button } from "../../components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "../../components/ui/tabs";
+import { StudentGamificationPanel } from "../../components/students/StudentGamificationPanel";
 import {
     Table,
     TableBody,
@@ -207,6 +208,7 @@ export default function StudentDashboardView({ studentId, semester }: StudentDas
                 <TabsList>
                     <TabsTrigger value="presentations">Apresentações</TabsTrigger>
                     <TabsTrigger value="certificates">Certificados</TabsTrigger>
+                    <TabsTrigger value="achievements">Conquistas</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="presentations">
@@ -292,6 +294,10 @@ export default function StudentDashboardView({ studentId, semester }: StudentDas
                             )}
                         </CardContent>
                     </Card>
+                </TabsContent>
+
+                <TabsContent value="achievements">
+                    <StudentGamificationPanel userId={studentId} />
                 </TabsContent>
             </Tabs>
         </div>

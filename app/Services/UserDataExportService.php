@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Gamification\ExperienceLevel;
 use App\Models\AuditLog;
 use App\Models\User;
 use Illuminate\Support\Str;
@@ -9,6 +10,8 @@ use ZipArchive;
 
 class UserDataExportService
 {
+    public function __construct(private readonly ExperienceLevel $experienceLevel) {}
+
     /**
      * Build the structured export payload for a user.
      *
@@ -24,7 +27,12 @@ class UserDataExportService
             'ratings.seminar:id,slug,name',
             'consents',
             'socialIdentities:id,user_id,provider,provider_id,token_expires_at,created_at',
+            'badges:id,user_id,badge_key,earned_at',
+            'experienceEvents:id,user_id,reason,source_key,points',
         ]);
+
+        $totalXp = (int) $user->experienceEvents->sum('points');
+        $level = $this->experienceLevel->fromXp($totalXp);
 
         return [
             'profile' => [
@@ -78,6 +86,31 @@ class UserDataExportService
                 'token_expires_at' => $s->token_expires_at?->toIso8601String(),
                 'linked_at' => $s->created_at?->toIso8601String(),
             ])->values()->all(),
+            'gamification' => [
+                'total_xp' => $totalXp,
+                'level' => $level['level'],
+                'rank' => $level['rank'],
+                'badges' => $user->badges
+                    ->sortBy([
+                        ['earned_at', 'asc'],
+                        ['id', 'asc'],
+                    ])
+                    ->map(fn ($badge) => [
+                        'key' => $badge->badge_key->value,
+                        'earned_at' => $badge->earned_at?->toImmutable()->utc()->toIso8601String(),
+                    ])
+                    ->values()
+                    ->all(),
+                'experience_events' => $user->experienceEvents
+                    ->sortBy('id')
+                    ->map(fn ($event) => [
+                        'reason' => $event->reason->value,
+                        'source_key' => $event->source_key,
+                        'points' => (int) $event->points,
+                    ])
+                    ->values()
+                    ->all(),
+            ],
             'audit_events' => AuditLog::query()
                 ->where('user_id', $user->id)
                 ->where('created_at', '>=', now()->subDays(
@@ -124,6 +157,7 @@ class UserDataExportService
         $zip->addFromString('ratings.json', $encode($payload['ratings']));
         $zip->addFromString('consents.json', $encode($payload['consents']));
         $zip->addFromString('social_identities.json', $encode($payload['social_identities']));
+        $zip->addFromString('gamification.json', $encode($payload['gamification']));
         $zip->addFromString('audit_events.json', $encode($payload['audit_events']));
         $zip->addFromString('README.txt', $this->readme($user, $payload['exported_at']));
         $zip->close();
@@ -149,6 +183,7 @@ organizados nos seguintes arquivos JSON:
 - ratings.json — avaliações e comentários enviados.
 - consents.json — histórico completo de consentimentos.
 - social_identities.json — vínculos com provedores OAuth (sem tokens).
+- gamification.json — conquistas e histórico de pontos de experiência.
 - audit_events.json — eventos de auditoria dos últimos 90 dias.
 
 Este arquivo atende ao direito de portabilidade previsto no Art. 18, V da LGPD.

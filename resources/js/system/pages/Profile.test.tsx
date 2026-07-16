@@ -86,5 +86,9 @@ describe('Profile', () => {
         expect(screen.getByText('RegistrationsSection')).toBeInTheDocument();
         expect(screen.getByText('CertificatesSection')).toBeInTheDocument();
         expect(screen.getByText('PrivacySection')).toBeInTheDocument();
+        expect(screen.getByRole('link', { name: /ver minhas conquistas/i })).toHaveAttribute(
+            'href',
+            '/conquistas',
+        );
     });
 });

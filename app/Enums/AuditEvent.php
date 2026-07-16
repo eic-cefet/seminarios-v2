@@ -76,6 +76,7 @@ enum AuditEvent: string
     case S3FileDeleted = 's3.file_deleted';
     case EmailSent = 'email.sent';
     case NotificationSent = 'notification.sent';
+    case GamificationBackfilled = 'command.gamification_backfilled';
 
     // MFA
     case UserMfaEnabled = 'user.mfa_enabled';

@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
     ArrowRight,
     Calendar,
@@ -8,7 +8,7 @@ import {
     User,
     XCircle,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { presenceApi } from "@shared/api/client";
 import { ROUTES } from "@shared/config/routes";
@@ -17,12 +17,16 @@ import { formatDateTimeLong } from "@shared/lib/utils";
 import { Layout } from "../components/Layout";
 import { LoginModal } from "../components/LoginModal";
 import { Button } from "@shared/components/Button";
+import { AchievementUnlockDialog } from "../components/gamification/AchievementUnlockDialog";
 
 export default function Presence() {
     const { uuid } = useParams<{ uuid: string }>();
     const { user } = useAuth();
     const [showLoginModal, setShowLoginModal] = useState(false);
+    const [showAchievementDialog, setShowAchievementDialog] = useState(false);
     const [registrationAttempted, setRegistrationAttempted] = useState(false);
+    const successHeadingRef = useRef<HTMLHeadingElement>(null);
+    const queryClient = useQueryClient();
 
     const {
         data: linkData,
@@ -36,6 +40,12 @@ export default function Presence() {
 
     const registerMutation = useMutation({
         mutationFn: () => presenceApi.register(uuid!),
+        onSuccess: () => {
+            queryClient.invalidateQueries({
+                queryKey: ["profile", "gamification"],
+            });
+            setShowAchievementDialog(true);
+        },
     });
 
     // Auto-register when user is authenticated and link is valid
@@ -238,7 +248,11 @@ export default function Presence() {
                                 <CheckCircle className="h-8 w-8 text-green-600" />
                             </div>
                             <div className="space-y-2">
-                                <h1 className="text-2xl font-bold text-gray-900">
+                                <h1
+                                    ref={successHeadingRef}
+                                    tabIndex={-1}
+                                    className="text-2xl font-bold text-gray-900"
+                                >
                                     Presença Registrada!
                                 </h1>
                                 <p className="text-gray-500">
@@ -284,6 +298,12 @@ export default function Presence() {
                         </div>
                     </div>
                 </div>
+                <AchievementUnlockDialog
+                    delta={registerMutation.data.gamification}
+                    open={showAchievementDialog}
+                    onOpenChange={setShowAchievementDialog}
+                    returnFocusRef={successHeadingRef}
+                />
             </Layout>
         );
     }

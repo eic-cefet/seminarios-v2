@@ -10,6 +10,54 @@ export interface User {
     needs_profile_completion?: boolean;
 }
 
+export type BadgeTier = "bronze" | "silver" | "gold" | "platinum" | "special";
+
+export interface GamificationBadge {
+    key: string;
+    name: string;
+    description: string;
+    category: string;
+    tier: BadgeTier;
+    icon: string;
+    earned: boolean;
+    earned_at: string | null;
+}
+
+export interface GamificationProgress {
+    total_xp: number;
+    level: number;
+    rank: string;
+    current_level_xp: number;
+    next_level_xp: number;
+    progress_percent: number;
+}
+
+export interface GamificationLevelProgress {
+    level: number;
+    rank: string;
+    current_level_xp: number;
+    next_level_xp: number;
+    progress_percent: number;
+}
+
+export interface GamificationSyncDelta {
+    xp_earned: number;
+    total_xp: number;
+    level: GamificationLevelProgress;
+    new_badges: GamificationBadge[];
+}
+
+export interface GamificationProfile {
+    progress: GamificationProgress;
+    summary: { earned_badges: number; total_badges: number };
+    categories: Array<{
+        key: string;
+        label: string;
+        badges: GamificationBadge[];
+    }>;
+    recent_badges: GamificationBadge[];
+}
+
 export interface TwoFactorChallenge {
     challenge_token: string;
 }

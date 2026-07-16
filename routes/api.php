@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\PresenceController;
 use App\Http\Controllers\Api\ProfileAlertPreferenceController;
 use App\Http\Controllers\Api\ProfileCalendarFeedController;
 use App\Http\Controllers\Api\ProfileController;
+use App\Http\Controllers\Api\ProfileGamificationController;
 use App\Http\Controllers\Api\ProfileRatingController;
 use App\Http\Controllers\Api\ProfileRegistrationController;
 use App\Http\Controllers\Api\RegistrationController;
@@ -92,6 +93,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Profile
     Route::get('/profile', [ProfileController::class, 'show']);
+    Route::get('/profile/gamification', ProfileGamificationController::class);
     Route::put('/profile', [ProfileController::class, 'update']);
     Route::put('/profile/student-data', [ProfileController::class, 'updateStudentData']);
     Route::put('/profile/password', [ProfileController::class, 'updatePassword']);

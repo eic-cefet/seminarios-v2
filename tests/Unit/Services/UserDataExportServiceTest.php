@@ -1,6 +1,8 @@
 <?php
 
+use App\Enums\BadgeKey;
 use App\Enums\ConsentType;
+use App\Enums\ExperienceReason;
 use App\Models\Rating;
 use App\Models\Registration;
 use App\Models\Seminar;
@@ -27,6 +29,63 @@ it('collects profile, registrations, ratings, consents for a user', function () 
         ->and($payload['ratings'])->toHaveCount(1)
         ->and($payload['ratings'][0]['comment'])->toBe('Excelente')
         ->and($payload['consents'])->toHaveCount(1);
+});
+
+it('exports only the users gamification rows in deterministic order', function () {
+    $user = User::factory()->create();
+    $otherUser = User::factory()->create();
+
+    $user->badges()->create([
+        'badge_key' => BadgeKey::FirstPresence,
+        'earned_at' => '2026-07-15 09:00:00',
+    ]);
+    $user->badges()->create([
+        'badge_key' => BadgeKey::Attendance5,
+        'earned_at' => '2026-07-15 08:00:00',
+    ]);
+    $otherUser->badges()->create([
+        'badge_key' => BadgeKey::Attendance10,
+        'earned_at' => '2026-07-15 07:00:00',
+    ]);
+
+    $user->experienceEvents()->create([
+        'reason' => ExperienceReason::Evaluation,
+        'source_key' => 'evaluation:456',
+        'points' => 20,
+    ]);
+    $otherUser->experienceEvents()->create([
+        'reason' => ExperienceReason::Attendance,
+        'source_key' => 'attendance:other',
+        'points' => 999,
+    ]);
+    $user->experienceEvents()->create([
+        'reason' => ExperienceReason::Attendance,
+        'source_key' => 'attendance:123',
+        'points' => 100,
+    ]);
+    $user->experienceEvents()->create([
+        'reason' => ExperienceReason::BadgeBonus,
+        'source_key' => 'badge:first_presence',
+        'points' => 155,
+    ]);
+
+    $payload = $this->service->collect($user);
+
+    expect($payload['gamification'])->toBe([
+        'total_xp' => 275,
+        'level' => 2,
+        'rank' => 'Curioso',
+        'badges' => [
+            ['key' => 'attendance_5', 'earned_at' => '2026-07-15T11:00:00+00:00'],
+            ['key' => 'first_presence', 'earned_at' => '2026-07-15T12:00:00+00:00'],
+        ],
+        'experience_events' => [
+            ['reason' => 'evaluation', 'source_key' => 'evaluation:456', 'points' => 20],
+            ['reason' => 'attendance', 'source_key' => 'attendance:123', 'points' => 100],
+            ['reason' => 'badge_bonus', 'source_key' => 'badge:first_presence', 'points' => 155],
+        ],
+    ])->and($user->relationLoaded('badges'))->toBeTrue()
+        ->and($user->relationLoaded('experienceEvents'))->toBeTrue();
 });
 
 it('builds a ZIP containing JSON files and a README', function () {

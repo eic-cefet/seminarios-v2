@@ -9,6 +9,7 @@ use App\Http\Resources\PendingEvaluationResource;
 use App\Jobs\AnalyzeRatingSentiment;
 use App\Models\Rating;
 use App\Services\FeatureFlags;
+use App\Services\GamificationService;
 use App\Services\RatingService;
 use App\Support\Locking\LockKey;
 use App\Support\Locking\Mutex;
@@ -28,8 +29,12 @@ class ProfileRatingController extends Controller
         ]);
     }
 
-    public function submitRating(SubmitRatingRequest $request, RatingService $ratings, int $seminarId): JsonResponse
-    {
+    public function submitRating(
+        SubmitRatingRequest $request,
+        RatingService $ratings,
+        GamificationService $gamification,
+        int $seminarId,
+    ): JsonResponse {
         $user = $request->user();
 
         $validated = $request->validated();
@@ -76,6 +81,19 @@ class ProfileRatingController extends Controller
                 }
             });
 
+        try {
+            $sync = $gamification->sync($user);
+            $gamificationDelta = [
+                'xp_earned' => $sync->xpEarned,
+                'total_xp' => $sync->totalXp,
+                'level' => $sync->level,
+                'new_badges' => $sync->newBadges,
+            ];
+        } catch (Throwable $exception) {
+            report($exception);
+            $gamificationDelta = null;
+        }
+
         $lgpdOptInEnabled = config('lgpd.features.ai_sentiment_opt_in', true);
         $consentGranted = ! $lgpdOptInEnabled || $rating->ai_analysis_consent;
 
@@ -89,6 +107,7 @@ class ProfileRatingController extends Controller
 
         return response()->json([
             'message' => 'Avaliação enviada com sucesso!',
+            'gamification' => $gamificationDelta,
             'rating' => [
                 'id' => $rating->id,
                 'score' => $rating->score,

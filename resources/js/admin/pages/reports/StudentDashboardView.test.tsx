@@ -1,4 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import { QueryClient } from "@tanstack/react-query";
+import type { GamificationProfile } from "@shared/types";
 import { render, screen, waitFor, userEvent } from "@/test/test-utils";
 import StudentDashboardView from "./StudentDashboardView";
 import { studentsApi, AdminApiError } from "../../api/adminClient";
@@ -7,7 +9,7 @@ vi.mock("../../api/adminClient", async (importOriginal) => {
     const actual = await importOriginal<typeof import("../../api/adminClient")>();
     return {
         ...actual,
-        studentsApi: { dashboard: vi.fn(), aiSummary: vi.fn() },
+        studentsApi: { dashboard: vi.fn(), aiSummary: vi.fn(), gamification: vi.fn() },
     };
 });
 
@@ -32,6 +34,37 @@ const baseDashboard = {
     },
 };
 
+const gamificationProfile: GamificationProfile = {
+    progress: {
+        total_xp: 650,
+        level: 4,
+        rank: "Curioso",
+        current_level_xp: 600,
+        next_level_xp: 1000,
+        progress_percent: 12,
+    },
+    summary: { earned_badges: 1, total_badges: 30 },
+    categories: [
+        {
+            key: "participacao",
+            label: "Participação",
+            badges: [
+                {
+                    key: "first_presence",
+                    name: "Primeiro Passo",
+                    description: "Participe de uma apresentação.",
+                    category: "Participação",
+                    tier: "bronze",
+                    icon: "Footprints",
+                    earned: true,
+                    earned_at: "2026-07-15T12:00:00-03:00",
+                },
+            ],
+        },
+    ],
+    recent_badges: [],
+};
+
 function renderView(studentId = 1, semester = "2026.1") {
     return render(<StudentDashboardView studentId={studentId} semester={semester} />);
 }
@@ -41,6 +74,7 @@ describe("StudentDashboardView", () => {
         vi.clearAllMocks();
         vi.mocked(studentsApi.dashboard).mockResolvedValue(baseDashboard);
         vi.mocked(studentsApi.aiSummary).mockResolvedValue({ data: { summary: "Resumo gerado pela IA." } });
+        vi.mocked(studentsApi.gamification).mockResolvedValue({ data: gamificationProfile });
     });
 
     it("renders student header, stats and the AI summary, fetching by the given props", async () => {
@@ -72,11 +106,19 @@ describe("StudentDashboardView", () => {
         expect(container.querySelector("strong")).not.toBeNull();
     });
 
-    it("lists presentations and certificates in their tabs", async () => {
+    it("preserves presentations and certificates in their tabs", async () => {
         renderView();
 
         await waitFor(() => expect(screen.getByText("Seminário X")).toBeInTheDocument());
-        expect(screen.getAllByText(/Seminário X/).length).toBeGreaterThan(0);
+        expect(screen.getByRole("tab", { name: "Apresentações" })).toHaveAttribute("data-state", "active");
+
+        const user = userEvent.setup();
+        await user.click(screen.getByRole("tab", { name: "Certificados" }));
+
+        expect(await screen.findByRole("link", { name: "Baixar" })).toHaveAttribute(
+            "href",
+            "https://example.test/certificado/abc-123",
+        );
     });
 
     it("shows a muted message when the AI summary is not configured", async () => {
@@ -215,5 +257,39 @@ describe("StudentDashboardView", () => {
         await waitFor(() => expect(screen.getByText("Presença Geral")).toBeInTheDocument());
         expect(screen.getByText("Apresentações por Tipo")).toBeInTheDocument();
         expect(screen.getByText("Horas por Tipo")).toBeInTheDocument();
+    });
+
+    it("adds a lifetime Conquistas tab without adding the semester to its query key", async () => {
+        const queryClient = new QueryClient({
+            defaultOptions: { queries: { retry: false } },
+        });
+        const user = userEvent.setup();
+        const { rerender } = render(
+            <StudentDashboardView studentId={42} semester="2026.1" />,
+            { queryClient },
+        );
+
+        await screen.findByRole("heading", { level: 2, name: "Maria Estudante" });
+        await user.click(screen.getByRole("tab", { name: "Conquistas" }));
+
+        expect(await screen.findByText("1 de 30 conquistas")).toBeInTheDocument();
+        expect(studentsApi.gamification).toHaveBeenCalledWith(42);
+        expect(queryClient.getQueryData(["admin-student-gamification", 42]))
+            .toEqual({ data: gamificationProfile });
+        expect(queryClient.getQueryData(["admin-student-gamification", 42, "2026.1"]))
+            .toBeUndefined();
+
+        rerender(<StudentDashboardView studentId={42} semester="2025.2" />);
+
+        await waitFor(() => {
+            expect(studentsApi.dashboard).toHaveBeenCalledWith(42, "2025.2");
+            expect(studentsApi.aiSummary).toHaveBeenCalledWith(42, "2025.2");
+        });
+        await screen.findByRole("heading", { level: 2, name: "Maria Estudante" });
+        expect(await screen.findByText("Resumo gerado pela IA.")).toBeInTheDocument();
+        await user.click(screen.getByRole("tab", { name: "Conquistas" }));
+
+        expect(studentsApi.gamification).toHaveBeenCalledTimes(1);
+        expect(await screen.findByText("1 de 30 conquistas")).toBeInTheDocument();
     });
 });
