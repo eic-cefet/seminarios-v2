@@ -1,6 +1,6 @@
 import { QueryClient } from "@tanstack/react-query";
 import type { BadgeTier, GamificationProfile } from "@shared/types";
-import { render, screen, userEvent, waitFor } from "@/test/test-utils";
+import { render, screen, userEvent, waitFor, within } from "@/test/test-utils";
 import { AdminApiError, studentsApi } from "../../api/adminClient";
 import { StudentGamificationPanel } from "./StudentGamificationPanel";
 
@@ -85,10 +85,18 @@ describe("StudentGamificationPanel", () => {
             expect(screen.getByRole("heading", { name: label })).toBeInTheDocument();
         }
         expect(screen.getAllByRole("article")).toHaveLength(30);
-        expect(screen.getByRole("article", { name: "Conquista 1, Conquistada" }))
-            .toHaveTextContent("Bronze");
-        expect(screen.getByRole("article", { name: "Conquista 1, Conquistada" }))
+        const earnedCard = screen.getByRole("article", { name: "Conquista 1, Conquistada" });
+        expect(earnedCard).toHaveTextContent("Bronze");
+        expect(earnedCard)
             .toHaveTextContent("Conquistada em 15/07/2026");
+        const earnedStatus = within(earnedCard).getByText("Conquistada");
+        expect(earnedStatus).toHaveClass(
+            "bg-green-800",
+            "text-white",
+            "dark:bg-green-300",
+            "dark:text-green-950",
+        );
+        expect(earnedStatus).not.toHaveClass("bg-green-600");
         expect(screen.getByRole("article", { name: "Conquista 3, Bloqueada" }))
             .toHaveTextContent("Requisito: Complete o requisito 3.");
         expect(screen.getAllByText("Prata").length).toBeGreaterThan(0);

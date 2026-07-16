@@ -82,7 +82,12 @@ function AchievementCard({ badge }: { badge: GamificationBadge }) {
                             <Badge variant="outline" className={tier.className}>
                                 {tier.label}
                             </Badge>
-                            <Badge variant={badge.earned ? "success" : "secondary"}>
+                            <Badge
+                                variant={badge.earned ? "success" : "secondary"}
+                                className={badge.earned
+                                    ? "bg-green-800 text-white dark:bg-green-300 dark:text-green-950"
+                                    : undefined}
+                            >
                                 {status}
                             </Badge>
                         </div>
