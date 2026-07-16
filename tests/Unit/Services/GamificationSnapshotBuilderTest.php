@@ -10,7 +10,6 @@ use App\Models\User;
 use App\Models\Workshop;
 use App\Services\GamificationSnapshotBuilder;
 use Carbon\CarbonImmutable;
-use Illuminate\Support\Facades\DB;
 
 beforeEach(function () {
     CarbonImmutable::setTestNow(CarbonImmutable::parse('2026-07-15 12:00:00', 'America/Sao_Paulo'));
@@ -110,13 +109,12 @@ it('uses local calendar day ISO week month semester and year attendance maxima',
         ->and($snapshot->metric('active_semesters'))->toBe(2);
 });
 
-it('converts presentation dates to the application timezone before grouping', function () {
+it('normalizes timezone-bearing presentation dates through regular model persistence before grouping', function () {
     $user = User::factory()->create();
 
-    foreach (['2026-01-01 02:30:00', '2026-01-01 03:30:00'] as $utcDate) {
-        $seminar = Seminar::factory()->create();
-        DB::table('seminars')->where('id', $seminar->id)->update([
-            'scheduled_at' => CarbonImmutable::parse($utcDate, 'UTC')->toIso8601String(),
+    foreach (['2026-01-01T02:30:00Z', '2026-01-01T03:30:00Z'] as $scheduledAt) {
+        $seminar = Seminar::factory()->create([
+            'scheduled_at' => $scheduledAt,
         ]);
         Registration::factory()->present()->for($user)->for($seminar)->create();
     }

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Concerns\Auditable;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -39,6 +40,17 @@ class Seminar extends Model
             'duration_minutes' => 'integer',
             'active' => 'boolean',
         ];
+    }
+
+    protected function scheduledAt(): Attribute
+    {
+        return Attribute::set(
+            fn (mixed $value): mixed => empty($value)
+                ? $value
+                : $this->asDateTime($value)
+                    ->setTimezone(config('app.timezone'))
+                    ->format($this->getDateFormat()),
+        );
     }
 
     public function creator(): BelongsTo
