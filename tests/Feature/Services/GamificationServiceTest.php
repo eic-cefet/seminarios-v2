@@ -13,6 +13,7 @@ use App\Models\UserExperienceEvent;
 use App\Services\GamificationService;
 use App\Services\GamificationSnapshotBuilder;
 use Carbon\CarbonImmutable;
+use Illuminate\Support\Arr;
 
 beforeEach(function () {
     CarbonImmutable::setTestNow(CarbonImmutable::parse('2026-07-15 12:00:00', 'America/Sao_Paulo'));
@@ -222,13 +223,16 @@ it('serializes all badges grouped by category with locked state and five recent 
     ])->and($profile['summary'])->toBe([
         'earned_badges' => 6,
         'total_badges' => 30,
-    ])->and(array_column($profile['categories'], 'name'))->toBe([
-        'Participação',
-        'Exploração',
-        'Ritmo',
-        'Constância',
-        'Workshops',
-        'Contribuição',
+    ])->and(array_map(
+        fn (array $category): array => Arr::only($category, ['key', 'label']),
+        $profile['categories'],
+    ))->toBe([
+        ['key' => 'participacao', 'label' => 'Participação'],
+        ['key' => 'exploracao', 'label' => 'Exploração'],
+        ['key' => 'ritmo', 'label' => 'Ritmo'],
+        ['key' => 'constancia', 'label' => 'Constância'],
+        ['key' => 'workshops', 'label' => 'Workshops'],
+        ['key' => 'contribuicao', 'label' => 'Contribuição'],
     ])->and($serializedBadges)->toHaveCount(30)
         ->and($serializedBadges->firstWhere('key', 'first_presence')['earned'])->toBeTrue()
         ->and($serializedBadges->firstWhere('key', 'subjects_3'))->toMatchArray([

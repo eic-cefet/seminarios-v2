@@ -19,6 +19,15 @@ use Throwable;
 
 class GamificationService
 {
+    private const array CATEGORY_KEYS = [
+        'Participação' => 'participacao',
+        'Exploração' => 'exploracao',
+        'Ritmo' => 'ritmo',
+        'Constância' => 'constancia',
+        'Workshops' => 'workshops',
+        'Contribuição' => 'contribuicao',
+    ];
+
     public function __construct(
         private readonly GamificationSnapshotBuilder $snapshotBuilder,
         private readonly BadgeCatalog $badgeCatalog,
@@ -48,7 +57,7 @@ class GamificationService
      * @return array{
      *     progress: array{total_xp: int, level: int, rank: string, current_level_xp: int, next_level_xp: int, progress_percent: int},
      *     summary: array{earned_badges: int, total_badges: int},
-     *     categories: array<int, array{name: string, badges: array<int, array<string, mixed>>}>,
+     *     categories: array<int, array{key: string, label: string, badges: array<int, array<string, mixed>>}>,
      *     recent_badges: array<int, array<string, mixed>>
      * }
      */
@@ -62,7 +71,8 @@ class GamificationService
 
         foreach ($definitions as $definition) {
             $categories[$definition->category] ??= [
-                'name' => $definition->category,
+                'key' => self::CATEGORY_KEYS[$definition->category],
+                'label' => $definition->category,
                 'badges' => [],
             ];
             $categories[$definition->category]['badges'][] = $this->serializeBadge(

@@ -5,6 +5,7 @@ use App\Enums\ExperienceReason;
 use App\Models\AuditLog;
 use App\Models\User;
 use Carbon\CarbonImmutable;
+use Illuminate\Support\Arr;
 
 afterEach(function () {
     CarbonImmutable::setTestNow();
@@ -40,13 +41,15 @@ describe('GET /api/profile/gamification', function () {
 
         $categories = collect($response->json('data.categories'));
 
-        expect($categories->pluck('name')->all())->toBe([
-            'Participação',
-            'Exploração',
-            'Ritmo',
-            'Constância',
-            'Workshops',
-            'Contribuição',
+        expect($categories->map(
+            fn (array $category): array => Arr::only($category, ['key', 'label']),
+        )->all())->toBe([
+            ['key' => 'participacao', 'label' => 'Participação'],
+            ['key' => 'exploracao', 'label' => 'Exploração'],
+            ['key' => 'ritmo', 'label' => 'Ritmo'],
+            ['key' => 'constancia', 'label' => 'Constância'],
+            ['key' => 'workshops', 'label' => 'Workshops'],
+            ['key' => 'contribuicao', 'label' => 'Contribuição'],
         ])->and($categories->flatMap(fn (array $category): array => $category['badges']))
             ->toHaveCount(30)
             ->each->toMatchArray([
@@ -96,8 +99,10 @@ describe('GET /api/profile/gamification', function () {
                 'earned_badges' => 6,
                 'total_badges' => 30,
             ])
-            ->assertJsonPath('data.categories.0.name', 'Participação')
-            ->assertJsonPath('data.categories.5.name', 'Contribuição')
+            ->assertJsonPath('data.categories.0.key', 'participacao')
+            ->assertJsonPath('data.categories.0.label', 'Participação')
+            ->assertJsonPath('data.categories.5.key', 'contribuicao')
+            ->assertJsonPath('data.categories.5.label', 'Contribuição')
             ->assertJsonPath('data.recent_badges.0.key', 'attendance_100')
             ->assertJsonPath('data.recent_badges.4.key', 'attendance_5')
             ->assertJsonCount(5, 'data.recent_badges')
