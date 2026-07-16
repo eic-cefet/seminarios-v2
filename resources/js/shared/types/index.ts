@@ -40,6 +40,13 @@ export interface GamificationLevelProgress {
     progress_percent: number;
 }
 
+export interface GamificationSyncDelta {
+    xp_earned: number;
+    total_xp: number;
+    level: GamificationLevelProgress;
+    new_badges: GamificationBadge[];
+}
+
 export interface GamificationProfile {
     progress: GamificationProgress;
     summary: { earned_badges: number; total_badges: number };

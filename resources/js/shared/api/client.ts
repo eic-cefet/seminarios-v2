@@ -1,6 +1,7 @@
 import type {
     Course,
     GamificationProfile,
+    GamificationSyncDelta,
     PaginatedResponse,
     PublicSeminarSummary,
     Seminar,
@@ -402,6 +403,7 @@ export const profileApi = {
         await getCsrfCookie();
         return fetchApi<{
             message: string;
+            gamification: GamificationSyncDelta | null;
             rating: { id: number; score: number; comment: string | null };
         }>(`/profile/ratings/${seminarId}`, {
             method: "POST",
@@ -494,7 +496,14 @@ export const presenceApi = {
 
     register: async (uuid: string) => {
         await getCsrfCookie();
-        return fetchApi<{ message: string }>(`/presence/${uuid}/register`, {
+        return fetchApi<{
+            message: string;
+            gamification: GamificationSyncDelta | null;
+            data: {
+                present: boolean;
+                seminar: { id: number; name: string };
+            };
+        }>(`/presence/${uuid}/register`, {
             method: "POST",
         });
     },

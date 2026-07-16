@@ -20,6 +20,7 @@ import { Badge } from "../components/Badge";
 import { Layout } from "../components/Layout";
 import { ProtectedRoute } from "../components/ProtectedRoute";
 import { Button } from "@shared/components/Button";
+import { AchievementUnlockDialog } from "../components/gamification/AchievementUnlockDialog";
 
 export default function Evaluations() {
     return (
@@ -129,6 +130,7 @@ function EvaluationItem({ evaluation, onRated }: EvaluationItemProps) {
     const [aiConsent, setAiConsent] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState(false);
+    const [showAchievementDialog, setShowAchievementDialog] = useState(false);
     const queryClient = useQueryClient();
     const grammar = presentationGrammar(evaluation.seminar.seminar_type);
 
@@ -142,12 +144,16 @@ function EvaluationItem({ evaluation, onRated }: EvaluationItemProps) {
         onSuccess: () => {
             setError(null);
             setSuccess(true);
+            setShowAchievementDialog(true);
             analytics.event("evaluation_submit", {
                 seminar_id: evaluation.seminar.id,
                 score,
             });
             queryClient.invalidateQueries({
                 queryKey: ["profile", "pending-evaluations"],
+            });
+            queryClient.invalidateQueries({
+                queryKey: ["profile", "gamification"],
             });
             setTimeout(() => {
                 onRated();
@@ -177,14 +183,21 @@ function EvaluationItem({ evaluation, onRated }: EvaluationItemProps) {
 
     if (success) {
         return (
-            <div className="px-6 py-6 bg-green-50">
-                <div className="flex items-center gap-3 text-green-700">
-                    <Check className="h-5 w-5" />
-                    <span className="font-medium">
-                        Avaliacao enviada com sucesso!
-                    </span>
+            <>
+                <div className="px-6 py-6 bg-green-50">
+                    <div className="flex items-center gap-3 text-green-700">
+                        <Check className="h-5 w-5" />
+                        <span className="font-medium">
+                            Avaliacao enviada com sucesso!
+                        </span>
+                    </div>
                 </div>
-            </div>
+                <AchievementUnlockDialog
+                    delta={mutation.data?.gamification ?? null}
+                    open={showAchievementDialog}
+                    onOpenChange={setShowAchievementDialog}
+                />
+            </>
         );
     }
 

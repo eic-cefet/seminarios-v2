@@ -1,5 +1,6 @@
-import { render, screen, waitFor, userEvent, fireEvent } from '@/test/test-utils';
+import { createTestQueryClient, render, screen, waitFor, userEvent, fireEvent } from '@/test/test-utils';
 import { createUser, createPendingEvaluation } from '@/test/factories';
+import type { GamificationSyncDelta } from '@shared/types';
 import Evaluations from './Evaluations';
 
 vi.mock('@shared/contexts/AuthContext', () => ({
@@ -17,7 +18,7 @@ vi.mock('@shared/lib/analytics', () => ({
 vi.mock('@shared/api/client', () => ({
     profileApi: {
         pendingEvaluations: vi.fn().mockResolvedValue({ data: [] }),
-        submitRating: vi.fn().mockResolvedValue({ message: 'ok', rating: { id: 1, score: 5, comment: null } }),
+        submitRating: vi.fn().mockResolvedValue({ message: 'ok', gamification: null, rating: { id: 1, score: 5, comment: null } }),
     },
     authApi: { forgotPassword: vi.fn() },
     ApiRequestError: class extends Error {},
@@ -38,6 +39,29 @@ const singleEvaluation = () => [
         },
     }),
 ];
+
+const gamificationDelta = (overrides: Partial<GamificationSyncDelta> = {}): GamificationSyncDelta => ({
+    xp_earned: 45,
+    total_xp: 45,
+    level: {
+        level: 1,
+        rank: 'Calouro',
+        current_level_xp: 45,
+        next_level_xp: 100,
+        progress_percent: 45,
+    },
+    new_badges: [{
+        key: 'first_evaluation',
+        name: 'Voz Ativa',
+        description: 'Avalie uma apresentação.',
+        category: 'feedback',
+        tier: 'bronze',
+        icon: 'MessageSquare',
+        earned: true,
+        earned_at: '2026-07-15T12:00:00-03:00',
+    }],
+    ...overrides,
+});
 
 describe('Evaluations', () => {
     beforeEach(() => {
@@ -327,7 +351,7 @@ describe('Evaluations', () => {
 
     it('shows success message after submitting a valid evaluation', async () => {
         vi.mocked(profileApi.pendingEvaluations).mockResolvedValue({ data: singleEvaluation() });
-        vi.mocked(profileApi.submitRating).mockResolvedValue({ message: 'ok', rating: { id: 1, score: 5, comment: null } });
+        vi.mocked(profileApi.submitRating).mockResolvedValue({ message: 'ok', gamification: null, rating: { id: 1, score: 5, comment: null } });
         const user = userEvent.setup();
 
         render(<Evaluations />);
@@ -349,9 +373,58 @@ describe('Evaluations', () => {
         });
     });
 
+    it('keeps the evaluation success feedback and celebrates the returned gamification delta', async () => {
+        vi.mocked(profileApi.pendingEvaluations).mockResolvedValue({ data: singleEvaluation() });
+        vi.mocked(profileApi.submitRating).mockResolvedValue({
+            message: 'ok',
+            rating: { id: 1, score: 5, comment: null },
+            gamification: gamificationDelta(),
+        });
+        const user = userEvent.setup();
+
+        render(<Evaluations />);
+        await user.click(await screen.findByRole('button', { name: /^avaliar$/i }));
+        const stars = screen.getByText(/como você avalia/i).nextElementSibling!.querySelectorAll('button');
+        await user.click(stars[4]);
+        await user.click(screen.getByRole('button', { name: /enviar avaliacao/i }));
+
+        expect(
+            await screen.findByRole('heading', { name: 'Conquista desbloqueada!' }),
+        ).toBeInTheDocument();
+        expect(screen.getByText(/avaliacao enviada com sucesso/i)).toBeInTheDocument();
+        expect(screen.getByText('+45 XP')).toBeInTheDocument();
+    });
+
+    it.each([
+        ['null', null],
+        ['zero', gamificationDelta({ xp_earned: 0, new_badges: [] })],
+    ])('suppresses a %s celebration but still invalidates gamification', async (_label, gamification) => {
+        vi.mocked(profileApi.pendingEvaluations).mockResolvedValue({ data: singleEvaluation() });
+        vi.mocked(profileApi.submitRating).mockResolvedValue({
+            message: 'ok',
+            rating: { id: 1, score: 5, comment: null },
+            gamification,
+        });
+        const queryClient = createTestQueryClient();
+        const invalidateQueries = vi.spyOn(queryClient, 'invalidateQueries');
+        const user = userEvent.setup();
+
+        render(<Evaluations />, { queryClient });
+        await user.click(await screen.findByRole('button', { name: /^avaliar$/i }));
+        const stars = screen.getByText(/como você avalia/i).nextElementSibling!.querySelectorAll('button');
+        await user.click(stars[4]);
+        await user.click(screen.getByRole('button', { name: /enviar avaliacao/i }));
+
+        await screen.findByText(/avaliacao enviada com sucesso/i);
+        expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+        expect(invalidateQueries).toHaveBeenCalledWith({
+            queryKey: ['profile', 'gamification'],
+        });
+    });
+
     it('fires analytics event on successful submission', async () => {
         vi.mocked(profileApi.pendingEvaluations).mockResolvedValue({ data: singleEvaluation() });
-        vi.mocked(profileApi.submitRating).mockResolvedValue({ message: 'ok', rating: { id: 1, score: 5, comment: null } });
+        vi.mocked(profileApi.submitRating).mockResolvedValue({ message: 'ok', gamification: null, rating: { id: 1, score: 5, comment: null } });
         const user = userEvent.setup();
 
         render(<Evaluations />);
@@ -504,7 +577,7 @@ describe('Evaluations', () => {
 
     it('submits with comment when score <= 3 and comment is provided', async () => {
         vi.mocked(profileApi.pendingEvaluations).mockResolvedValue({ data: singleEvaluation() });
-        vi.mocked(profileApi.submitRating).mockResolvedValue({ message: 'ok', rating: { id: 1, score: 2, comment: 'Needs improvement' } });
+        vi.mocked(profileApi.submitRating).mockResolvedValue({ message: 'ok', gamification: null, rating: { id: 1, score: 2, comment: 'Needs improvement' } });
         const user = userEvent.setup();
 
         render(<Evaluations />);
@@ -540,7 +613,7 @@ describe('Evaluations', () => {
     it('calls onRated (refetch) after successful submission via setTimeout', async () => {
         vi.useFakeTimers({ shouldAdvanceTime: true });
         vi.mocked(profileApi.pendingEvaluations).mockResolvedValue({ data: singleEvaluation() });
-        vi.mocked(profileApi.submitRating).mockResolvedValue({ message: 'ok', rating: { id: 1, score: 5, comment: null } });
+        vi.mocked(profileApi.submitRating).mockResolvedValue({ message: 'ok', gamification: null, rating: { id: 1, score: 5, comment: null } });
         const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
 
         render(<Evaluations />);
@@ -626,7 +699,7 @@ describe('Evaluations', () => {
 
     it('submits with ai_analysis_consent=true when the checkbox is checked', async () => {
         vi.mocked(profileApi.pendingEvaluations).mockResolvedValue({ data: singleEvaluation() });
-        vi.mocked(profileApi.submitRating).mockResolvedValue({ message: 'ok', rating: { id: 1, score: 5, comment: null } });
+        vi.mocked(profileApi.submitRating).mockResolvedValue({ message: 'ok', gamification: null, rating: { id: 1, score: 5, comment: null } });
         const user = userEvent.setup();
 
         render(<Evaluations />);

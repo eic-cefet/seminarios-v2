@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
     ArrowRight,
     Calendar,
@@ -17,12 +17,15 @@ import { formatDateTimeLong } from "@shared/lib/utils";
 import { Layout } from "../components/Layout";
 import { LoginModal } from "../components/LoginModal";
 import { Button } from "@shared/components/Button";
+import { AchievementUnlockDialog } from "../components/gamification/AchievementUnlockDialog";
 
 export default function Presence() {
     const { uuid } = useParams<{ uuid: string }>();
     const { user } = useAuth();
     const [showLoginModal, setShowLoginModal] = useState(false);
+    const [showAchievementDialog, setShowAchievementDialog] = useState(false);
     const [registrationAttempted, setRegistrationAttempted] = useState(false);
+    const queryClient = useQueryClient();
 
     const {
         data: linkData,
@@ -36,6 +39,12 @@ export default function Presence() {
 
     const registerMutation = useMutation({
         mutationFn: () => presenceApi.register(uuid!),
+        onSuccess: () => {
+            queryClient.invalidateQueries({
+                queryKey: ["profile", "gamification"],
+            });
+            setShowAchievementDialog(true);
+        },
     });
 
     // Auto-register when user is authenticated and link is valid
@@ -284,6 +293,11 @@ export default function Presence() {
                         </div>
                     </div>
                 </div>
+                <AchievementUnlockDialog
+                    delta={registerMutation.data.gamification}
+                    open={showAchievementDialog}
+                    onOpenChange={setShowAchievementDialog}
+                />
             </Layout>
         );
     }
