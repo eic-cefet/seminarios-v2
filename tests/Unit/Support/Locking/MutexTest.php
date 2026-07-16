@@ -41,3 +41,17 @@ it('swallows exceptions when releasing an already-expired lock', function () {
 
     expect(Mutex::for('test:expired')->protect(fn () => 'value'))->toBe('value');
 });
+
+it('may acquire a lock from a named cache store', function () {
+    $key = 'test:named-store';
+    $defaultLock = Cache::lock($key, 60);
+    $defaultLock->get();
+
+    try {
+        expect(
+            Mutex::for($key, store: 'file')->protect(fn () => 'file-store')
+        )->toBe('file-store');
+    } finally {
+        $defaultLock->release();
+    }
+});

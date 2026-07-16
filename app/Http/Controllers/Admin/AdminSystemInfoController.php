@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Enums\Role;
 use App\Exceptions\ApiException;
 use App\Http\Controllers\Controller;
+use App\Services\DatabaseResetService;
 use App\Services\SystemInfoService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -16,7 +17,10 @@ class AdminSystemInfoController extends Controller
 
     private const CACHE_TTL_SECONDS = 30;
 
-    public function __construct(private readonly SystemInfoService $systemInfo) {}
+    public function __construct(
+        private readonly SystemInfoService $systemInfo,
+        private readonly DatabaseResetService $databaseReset,
+    ) {}
 
     public function show(Request $request): JsonResponse
     {
@@ -29,6 +33,10 @@ class AdminSystemInfoController extends Controller
             self::CACHE_TTL_SECONDS,
             fn () => $this->systemInfo->collect(),
         );
+
+        $data['actions'] = [
+            'database_reset_available' => $this->databaseReset->isAvailable(),
+        ];
 
         return response()->json(['data' => $data]);
     }

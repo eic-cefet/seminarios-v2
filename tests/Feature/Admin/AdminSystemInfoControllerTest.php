@@ -23,6 +23,7 @@ describe('GET /admin/system/info', function () {
                     'extensions',
                     'php_config' => ['max_execution_time', 'post_max_size', 'upload_max_filesize', 'opcache_enabled'],
                     'scheduler',
+                    'actions' => ['database_reset_available'],
                 ],
             ]);
 
@@ -56,4 +57,37 @@ describe('GET /admin/system/info', function () {
             ->getJson('/api/admin/system/info')
             ->assertForbidden();
     });
+});
+
+it('reports database reset unavailable by default', function () {
+    actingAsAdmin();
+    config(['features.database_reset.enabled' => false]);
+
+    $this->getJson('/api/admin/system/info')
+        ->assertSuccessful()
+        ->assertJsonPath('data.actions.database_reset_available', false);
+});
+
+it('reports database reset available when enabled outside production', function () {
+    actingAsAdmin();
+    config(['features.database_reset.enabled' => true]);
+
+    $this->getJson('/api/admin/system/info')
+        ->assertSuccessful()
+        ->assertJsonPath('data.actions.database_reset_available', true);
+});
+
+it('never reports database reset available in production', function () {
+    $originalEnvironment = app()->environment();
+    app()->detectEnvironment(fn () => 'production');
+    config(['features.database_reset.enabled' => true]);
+    actingAsAdmin();
+
+    try {
+        $this->getJson('/api/admin/system/info')
+            ->assertSuccessful()
+            ->assertJsonPath('data.actions.database_reset_available', false);
+    } finally {
+        app()->detectEnvironment(fn () => $originalEnvironment);
+    }
 });

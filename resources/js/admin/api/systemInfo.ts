@@ -1,6 +1,9 @@
-import { fetchAdminApi } from "./_base";
+import { fetchAdminApi, getCsrfCookie } from "./_base";
 
 export interface AdminSystemInfo {
+    actions: {
+        database_reset_available: boolean;
+    };
     runtime: {
         php_version: string;
         laravel_version: string;
@@ -60,4 +63,12 @@ export interface AdminSystemInfo {
 
 export const systemInfoApi = {
     get: () => fetchAdminApi<{ data: AdminSystemInfo }>("/system/info"),
+    resetDatabase: async (confirmation: string) => {
+        await getCsrfCookie();
+
+        return fetchAdminApi<{ message: string }>("/system/database/reset", {
+            method: "POST",
+            body: JSON.stringify({ confirmation }),
+        });
+    },
 };

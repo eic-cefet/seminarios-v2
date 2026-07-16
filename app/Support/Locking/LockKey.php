@@ -59,4 +59,9 @@ final class LockKey
     {
         return self::PREFIX.':certificate:regeneration:seminar:'.$seminarId;
     }
+
+    public static function databaseReset(): string
+    {
+        return self::PREFIX.':system:database_reset';
+    }
 }

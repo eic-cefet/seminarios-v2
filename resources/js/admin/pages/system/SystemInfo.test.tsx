@@ -4,6 +4,7 @@ import { describe, it, vi, expect, beforeEach } from 'vitest';
 vi.mock('../../api/adminClient', () => ({
     systemInfoApi: {
         get: vi.fn(),
+        resetDatabase: vi.fn(),
     },
 }));
 
@@ -78,6 +79,9 @@ const mockPayload = {
                 next_run_at: '2026-04-27T04:00:00-03:00',
             },
         ],
+        actions: {
+            database_reset_available: false,
+        },
     },
 };
 
@@ -249,5 +253,28 @@ describe('SystemInfo page', function () {
         await waitFor(() => {
             expect(screen.getByText(/não foi possível/i)).toBeInTheDocument();
         });
+    });
+
+    it('hides the danger zone when database reset is unavailable', async () => {
+        render(<SystemInfo />);
+
+        await waitFor(() => expect(screen.getByText('8.3.30')).toBeInTheDocument());
+        expect(screen.queryByText(/zona de perigo/i)).not.toBeInTheDocument();
+    });
+
+    it('renders the danger zone when database reset is available', async () => {
+        vi.mocked(systemInfoApi.get).mockResolvedValue({
+            data: {
+                ...mockPayload.data,
+                actions: { database_reset_available: true },
+            },
+        });
+
+        render(<SystemInfo />);
+
+        expect(await screen.findByText(/zona de perigo/i)).toBeInTheDocument();
+        expect(
+            screen.getByRole('button', { name: /recriar banco de dados/i }),
+        ).toBeInTheDocument();
     });
 });
