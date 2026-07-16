@@ -14,6 +14,7 @@ import { systemInfoApi } from '../../api/adminClient';
 import { DatabaseResetDangerZone } from './DatabaseResetDangerZone';
 
 const originalLocation = window.location;
+const originalLocationDescriptor = Object.getOwnPropertyDescriptor(window, 'location');
 
 describe('DatabaseResetDangerZone', () => {
     beforeEach(() => {
@@ -22,10 +23,9 @@ describe('DatabaseResetDangerZone', () => {
 
     afterEach(() => {
         vi.useRealTimers();
-        Object.defineProperty(window, 'location', {
-            writable: true,
-            value: originalLocation,
-        });
+        if (originalLocationDescriptor) {
+            Object.defineProperty(window, 'location', originalLocationDescriptor);
+        }
     });
 
     it('shows the destructive warning and requires the exact confirmation phrase', async () => {
@@ -104,5 +104,35 @@ describe('DatabaseResetDangerZone', () => {
         vi.advanceTimersByTime(1_000);
 
         expect(window.location.href).toContain('/login');
+    });
+
+    it('locks the modal after success and does not submit again while redirecting', async () => {
+        vi.useFakeTimers({ shouldAdvanceTime: true });
+        const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+        Object.defineProperty(window, 'location', {
+            writable: true,
+            value: { ...originalLocation, href: '' },
+        });
+        vi.mocked(systemInfoApi.resetDatabase).mockResolvedValue({ message: 'Banco recriado' });
+        render(<DatabaseResetDangerZone />);
+
+        await user.click(screen.getByRole('button', { name: /recriar banco de dados/i }));
+        const input = screen.getByLabelText(/digite apagar banco/i);
+        await user.type(input, 'APAGAR BANCO');
+        await user.click(screen.getByRole('button', { name: /^recriar banco$/i }));
+
+        await waitFor(() => expect(toast.success).toHaveBeenCalledWith('Banco recriado'));
+
+        const redirectingAction = screen.getByRole('button', {
+            name: /recriar banco|redirecionando/i,
+        });
+        await user.click(redirectingAction);
+
+        expect(systemInfoApi.resetDatabase).toHaveBeenCalledTimes(1);
+        expect(redirectingAction).toBeDisabled();
+        expect(redirectingAction).toHaveTextContent('Redirecionando...');
+        expect(screen.getByRole('button', { name: /cancelar/i })).toBeDisabled();
+        expect(input).toBeDisabled();
+        expect(screen.getByRole('alertdialog')).toBeInTheDocument();
     });
 });

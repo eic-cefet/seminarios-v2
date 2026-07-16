@@ -48,9 +48,10 @@ export function DatabaseResetDangerZone() {
             );
         },
     });
+    const isLocked = resetMutation.isPending || resetMutation.isSuccess;
 
     const handleOpenChange = (nextOpen: boolean) => {
-        if (resetMutation.isPending) {
+        if (isLocked) {
             return;
         }
 
@@ -76,7 +77,7 @@ export function DatabaseResetDangerZone() {
                     <AlertDialogTrigger asChild>
                         <Button
                             variant="destructive"
-                            disabled={resetMutation.isPending}
+                            disabled={isLocked}
                         >
                             Recriar banco de dados
                         </Button>
@@ -101,13 +102,13 @@ export function DatabaseResetDangerZone() {
                                 id="database-reset-confirmation"
                                 value={confirmation}
                                 onChange={(event) => setConfirmation(event.target.value)}
-                                disabled={resetMutation.isPending}
+                                disabled={isLocked}
                                 autoComplete="off"
                             />
                         </div>
 
                         <AlertDialogFooter>
-                            <AlertDialogCancel disabled={resetMutation.isPending}>
+                            <AlertDialogCancel disabled={isLocked}>
                                 Cancelar
                             </AlertDialogCancel>
                             <AlertDialogAction asChild>
@@ -115,16 +116,22 @@ export function DatabaseResetDangerZone() {
                                     variant="destructive"
                                     disabled={
                                         confirmation !== CONFIRMATION_PHRASE ||
-                                        resetMutation.isPending
+                                        isLocked
                                     }
                                     onClick={(event) => {
                                         event.preventDefault();
+                                        if (isLocked) {
+                                            return;
+                                        }
+
                                         resetMutation.mutate();
                                     }}
                                 >
                                     {resetMutation.isPending
                                         ? "Recriando banco..."
-                                        : "Recriar banco"}
+                                        : resetMutation.isSuccess
+                                          ? "Redirecionando..."
+                                          : "Recriar banco"}
                                 </Button>
                             </AlertDialogAction>
                         </AlertDialogFooter>
