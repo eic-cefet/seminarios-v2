@@ -28,6 +28,7 @@ import {
     TableRow,
 } from "../../components/ui/table";
 import { systemInfoApi, type AdminSystemInfo } from "../../api/adminClient";
+import { DatabaseResetDangerZone } from "./DatabaseResetDangerZone";
 
 function formatBytes(bytes: number): string {
     if (bytes < 0) return "Sem limite";
@@ -311,6 +312,10 @@ export default function SystemInfo() {
                     </div>
                 </CardContent>
             </Card>
+
+            {info.actions.database_reset_available ? (
+                <DatabaseResetDangerZone />
+            ) : null}
         </div>
     );
 }
