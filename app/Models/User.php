@@ -88,6 +88,16 @@ class User extends Authenticatable implements CanResetPassword
         return $this->hasMany(Rating::class);
     }
 
+    public function badges(): HasMany
+    {
+        return $this->hasMany(UserBadge::class);
+    }
+
+    public function experienceEvents(): HasMany
+    {
+        return $this->hasMany(UserExperienceEvent::class);
+    }
+
     public function socialIdentities(): HasMany
     {
         return $this->hasMany(SocialIdentity::class);
