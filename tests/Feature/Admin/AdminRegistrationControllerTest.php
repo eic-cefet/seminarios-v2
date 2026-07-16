@@ -6,6 +6,7 @@ use App\Models\AuditLog;
 use App\Models\Registration;
 use App\Models\Seminar;
 use App\Models\User;
+use App\Notifications\BadgesUnlockedNotification;
 use App\Services\GamificationService;
 use Illuminate\Support\Facades\Exceptions;
 use Illuminate\Support\Facades\Mail;
@@ -402,6 +403,72 @@ describe('POST /api/admin/registrations', function () {
                 'data' => ['created' => 1, 'already_registered' => 1, 'marked_present' => 0],
             ]);
         Mail::assertQueued(SeminarRegistrationConfirmation::class, 1);
+    });
+
+    it('reconciles only users whose authoritative presence changed in a mixed batch', function () {
+        Mail::fake();
+        Notification::fake();
+        actingAsAdmin();
+        $seminar = Seminar::factory()->create();
+        $newUser = User::factory()->create();
+        $restoredUser = User::factory()->create();
+        $alreadyPresentUser = User::factory()->create();
+        Registration::factory()->for($restoredUser)->for($seminar)->create(['present' => false]);
+        Registration::factory()->present()->for($alreadyPresentUser)->for($seminar)->create();
+
+        $this->postJson('/api/admin/registrations', [
+            'seminar_id' => $seminar->id,
+            'user_ids' => [$newUser->id, $restoredUser->id, $alreadyPresentUser->id],
+        ])->assertCreated()
+            ->assertJson([
+                'data' => ['created' => 1, 'already_registered' => 2, 'marked_present' => 1],
+            ]);
+
+        expect($newUser->experienceEvents()->where('reason', 'attendance')->exists())->toBeTrue()
+            ->and($restoredUser->experienceEvents()->where('reason', 'attendance')->exists())->toBeTrue()
+            ->and($alreadyPresentUser->experienceEvents()->exists())->toBeFalse();
+        Notification::assertSentTo($newUser, BadgesUnlockedNotification::class);
+        Notification::assertSentTo($restoredUser, BadgesUnlockedNotification::class);
+        Notification::assertNotSentTo($alreadyPresentUser, BadgesUnlockedNotification::class);
+    });
+
+    it('keeps the batch and continues reconciliation after one user sync fails', function () {
+        Exceptions::fake();
+        Mail::fake();
+        actingAsAdmin();
+        $seminar = Seminar::factory()->create();
+        $failedUser = User::factory()->create();
+        $reconciledUser = User::factory()->create();
+        $exception = new RuntimeException('gamification unavailable');
+        $realGamification = app(GamificationService::class);
+        $gamification = Mockery::mock(GamificationService::class);
+        $gamification->shouldReceive('sync')
+            ->twice()
+            ->with(Mockery::type(User::class), true)
+            ->andReturnUsing(function (User $user, bool $notify) use ($exception, $failedUser, $realGamification) {
+                if ($user->is($failedUser)) {
+                    throw $exception;
+                }
+
+                return $realGamification->sync($user, $notify);
+            });
+        app()->instance(GamificationService::class, $gamification);
+
+        $this->postJson('/api/admin/registrations', [
+            'seminar_id' => $seminar->id,
+            'user_ids' => [$failedUser->id, $reconciledUser->id],
+        ])->assertCreated()
+            ->assertJson([
+                'data' => ['created' => 2, 'already_registered' => 0, 'marked_present' => 0],
+            ]);
+
+        expect(Registration::query()
+            ->where('seminar_id', $seminar->id)
+            ->whereIn('user_id', [$failedUser->id, $reconciledUser->id])
+            ->where('present', true)
+            ->count())->toBe(2)
+            ->and($reconciledUser->experienceEvents()->where('reason', 'attendance')->exists())->toBeTrue();
+        Exceptions::assertReported(fn (RuntimeException $reported): bool => $reported === $exception);
     });
 
     it('records the admin audit event', function () {

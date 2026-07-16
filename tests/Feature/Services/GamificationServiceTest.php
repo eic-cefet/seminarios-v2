@@ -212,6 +212,7 @@ it('serializes all badges grouped by category with locked state and five recent 
 
     $profile = app(GamificationService::class)->profileFor($user);
     $serializedBadges = collect($profile['categories'])->flatMap(fn (array $category): array => $category['badges']);
+    $firstPresence = $serializedBadges->firstWhere('key', 'first_presence');
 
     expect($profile['progress'])->toBe([
         'total_xp' => 650,
@@ -234,7 +235,18 @@ it('serializes all badges grouped by category with locked state and five recent 
         ['key' => 'workshops', 'label' => 'Workshops'],
         ['key' => 'contribuicao', 'label' => 'Contribuição'],
     ])->and($serializedBadges)->toHaveCount(30)
-        ->and($serializedBadges->firstWhere('key', 'first_presence')['earned'])->toBeTrue()
+        ->and(array_keys($firstPresence))->toBe([
+            'key',
+            'name',
+            'description',
+            'category',
+            'tier',
+            'icon',
+            'earned',
+            'earned_at',
+        ])
+        ->and($firstPresence['description'])->toBe('Participe de uma apresentação.')
+        ->and($firstPresence['earned'])->toBeTrue()
         ->and($serializedBadges->firstWhere('key', 'subjects_3'))->toMatchArray([
             'earned' => false,
             'earned_at' => null,

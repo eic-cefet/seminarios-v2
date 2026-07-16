@@ -37,6 +37,9 @@ describe('GET /api/profile/gamification', function () {
             ->assertJsonCount(6, 'data.categories')
             ->assertJsonCount(6, 'data.categories.0.badges')
             ->assertJsonCount(0, 'data.recent_badges')
+            ->assertJsonPath('data.categories.0.badges.0.description', 'Participe de uma apresentação.')
+            ->assertJsonMissingPath('data.categories.0.badges.0.metric')
+            ->assertJsonMissingPath('data.categories.0.badges.0.threshold')
             ->assertJsonMissingPath('data.experience_events');
 
         $categories = collect($response->json('data.categories'));
@@ -104,8 +107,11 @@ describe('GET /api/profile/gamification', function () {
             ->assertJsonPath('data.categories.5.key', 'contribuicao')
             ->assertJsonPath('data.categories.5.label', 'Contribuição')
             ->assertJsonPath('data.recent_badges.0.key', 'attendance_100')
+            ->assertJsonPath('data.recent_badges.0.description', 'Participe de 100 apresentações.')
             ->assertJsonPath('data.recent_badges.4.key', 'attendance_5')
             ->assertJsonCount(5, 'data.recent_badges')
+            ->assertJsonMissingPath('data.recent_badges.0.metric')
+            ->assertJsonMissingPath('data.recent_badges.0.threshold')
             ->assertJsonMissingPath('data.experience_events')
             ->assertJsonMissingPath('data.events');
 

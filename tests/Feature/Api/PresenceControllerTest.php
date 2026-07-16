@@ -87,7 +87,10 @@ it('returns newly earned progress on the first scan and no delta on a repeated s
     $firstResponse->assertSuccessful()
         ->assertJsonPath('gamification.xp_earned', 125)
         ->assertJsonPath('gamification.total_xp', 125)
-        ->assertJsonPath('gamification.new_badges.0.key', 'first_presence');
+        ->assertJsonPath('gamification.new_badges.0.key', 'first_presence')
+        ->assertJsonPath('gamification.new_badges.0.description', 'Participe de uma apresentação.')
+        ->assertJsonMissingPath('gamification.new_badges.0.metric')
+        ->assertJsonMissingPath('gamification.new_badges.0.threshold');
 
     expect($firstResponse->json('gamification.level.level'))->toBeInt();
     Notification::assertSentToTimes($user, BadgesUnlockedNotification::class, 1);

@@ -27,7 +27,10 @@ describe('POST /profile/ratings/{seminar} - sentiment dispatch', function () {
             'comment' => 'Excelente apresentação.',
         ])->assertOk()
             ->assertJsonPath('gamification.xp_earned', 45)
-            ->assertJsonPath('gamification.new_badges.0.key', 'first_evaluation');
+            ->assertJsonPath('gamification.new_badges.0.key', 'first_evaluation')
+            ->assertJsonPath('gamification.new_badges.0.description', 'Avalie uma apresentação.')
+            ->assertJsonMissingPath('gamification.new_badges.0.metric')
+            ->assertJsonMissingPath('gamification.new_badges.0.threshold');
 
         Notification::assertSentToTimes($user, BadgesUnlockedNotification::class, 1);
     });

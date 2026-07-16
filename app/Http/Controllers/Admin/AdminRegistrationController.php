@@ -51,7 +51,7 @@ class AdminRegistrationController extends Controller
         return AdminRegistrationResource::collection($query->paginate(15));
     }
 
-    public function store(AdminRegistrationStoreRequest $request): JsonResponse
+    public function store(AdminRegistrationStoreRequest $request, GamificationService $gamification): JsonResponse
     {
         $seminar = Seminar::findOrFail($request->integer('seminar_id'));
 
@@ -60,10 +60,11 @@ class AdminRegistrationController extends Controller
         $userIds = $request->collect('user_ids')->map(fn ($id) => (int) $id);
 
         $created = collect();
+        $presenceChangedUserIds = collect();
         $alreadyRegistered = 0;
         $markedPresent = 0;
 
-        DB::transaction(function () use ($seminar, $userIds, $created, &$alreadyRegistered, &$markedPresent): void {
+        DB::transaction(function () use ($seminar, $userIds, $created, $presenceChangedUserIds, &$alreadyRegistered, &$markedPresent): void {
             foreach ($userIds as $userId) {
                 $registration = Registration::firstOrCreate(
                     [
@@ -77,6 +78,7 @@ class AdminRegistrationController extends Controller
 
                 if ($registration->wasRecentlyCreated) {
                     $created->push($registration);
+                    $presenceChangedUserIds->push($userId);
 
                     continue;
                 }
@@ -85,10 +87,24 @@ class AdminRegistrationController extends Controller
 
                 if (! $registration->present) {
                     $registration->update(['present' => true]);
+                    $presenceChangedUserIds->push($userId);
                     $markedPresent++;
                 }
             }
         });
+
+        $changedUsers = User::query()
+            ->whereIn('id', $presenceChangedUserIds)
+            ->get()
+            ->keyBy('id');
+
+        foreach ($presenceChangedUserIds as $userId) {
+            try {
+                $gamification->sync($changedUsers->get($userId), notify: true);
+            } catch (Throwable $exception) {
+                report($exception);
+            }
+        }
 
         $users = User::whereIn('id', $created->pluck('user_id'))->get()->keyBy('id');
 

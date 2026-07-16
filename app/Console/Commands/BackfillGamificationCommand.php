@@ -52,7 +52,9 @@ class BackfillGamificationCommand extends Command
             $query = User::query()
                 ->where(function (Builder $query): void {
                     $query->whereHas('registrations', fn (Builder $registrations): Builder => $registrations->where('present', true))
-                        ->orWhereHas('ratings');
+                        ->orWhereHas('ratings')
+                        ->orWhereHas('badges')
+                        ->orWhereHas('experienceEvents');
                 })
                 ->orderBy('id');
             $progressBar = $this->output->createProgressBar((clone $query)->count());

@@ -222,7 +222,7 @@ class GamificationService
     }
 
     /**
-     * @return array{key: string, name: string, description: string, category: string, tier: string, metric: string, threshold: int, icon: string, earned: bool, earned_at: ?string}
+     * @return array{key: string, name: string, description: string, category: string, tier: string, icon: string, earned: bool, earned_at: ?string}
      */
     private function serializeBadge(BadgeDefinition $definition, ?UserBadge $badge): array
     {
@@ -232,8 +232,6 @@ class GamificationService
             'description' => $definition->description,
             'category' => $definition->category,
             'tier' => $definition->tier,
-            'metric' => $definition->metric,
-            'threshold' => $definition->threshold,
             'icon' => $definition->icon,
             'earned' => $badge !== null,
             'earned_at' => $badge?->earned_at?->toIso8601String(),

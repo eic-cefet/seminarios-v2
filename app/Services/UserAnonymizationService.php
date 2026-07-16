@@ -5,6 +5,9 @@ namespace App\Services;
 use App\Enums\AuditEvent;
 use App\Models\AuditLog;
 use App\Models\User;
+use App\Models\UserBadge;
+use App\Models\UserExperienceEvent;
+use App\Notifications\BadgesUnlockedNotification;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -140,6 +143,31 @@ class UserAnonymizationService
         $user->speakerData()->delete();
         $user->socialIdentities()->delete();
         $user->dataExportRequests()->delete();
+        $this->deleteGamificationData($user);
+    }
+
+    private function deleteGamificationData(User $user): void
+    {
+        $derivedModels = [
+            (new UserBadge)->getMorphClass() => $user->badges()->pluck('id')->all(),
+            (new UserExperienceEvent)->getMorphClass() => $user->experienceEvents()->pluck('id')->all(),
+        ];
+
+        $user->notifications()
+            ->where('type', BadgesUnlockedNotification::class)
+            ->delete();
+
+        foreach ($derivedModels as $auditableType => $auditableIds) {
+            if ($auditableIds === []) {
+                continue;
+            }
+
+            AuditLog::query()
+                ->where('auditable_type', $auditableType)
+                ->whereIn('auditable_id', $auditableIds)
+                ->delete();
+        }
+
         $user->badges()->delete();
         $user->experienceEvents()->delete();
     }

@@ -25,6 +25,9 @@ describe('GET /api/admin/students/{student}/gamification', function () {
             ->assertJsonPath('data.progress.total_xp', 100)
             ->assertJsonPath('data.summary.earned_badges', 1)
             ->assertJsonPath('data.recent_badges.0.key', 'first_presence')
+            ->assertJsonPath('data.recent_badges.0.description', 'Participe de uma apresentação.')
+            ->assertJsonMissingPath('data.recent_badges.0.metric')
+            ->assertJsonMissingPath('data.recent_badges.0.threshold')
             ->assertJsonMissingPath('data.experience_events')
             ->assertJsonMissingPath('data.events');
     });

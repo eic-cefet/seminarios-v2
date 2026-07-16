@@ -2,6 +2,7 @@
 
 use App\Console\Commands\AnonymizePendingUsersCommand;
 use App\Enums\AuditEvent;
+use App\Enums\AuditEventType;
 use App\Enums\BadgeKey;
 use App\Enums\ExperienceReason;
 use App\Jobs\AnonymizeUserJob;
@@ -11,11 +12,16 @@ use App\Mail\AccountDeletionConfirmation;
 use App\Mail\AccountDeletionScheduled;
 use App\Models\AuditLog;
 use App\Models\User;
+use App\Models\UserBadge;
+use App\Models\UserExperienceEvent;
+use App\Notifications\BadgesUnlockedNotification;
 use App\Services\TwoFactorDeviceService;
 use App\Services\UserAnonymizationService;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Str;
 use PragmaRX\Google2FA\Google2FA;
 
 use function Pest\Laravel\artisan;
@@ -100,6 +106,137 @@ it('deletes only the anonymized users badges and experience events', function ()
     $this->assertDatabaseMissing('user_experience_events', ['id' => $userEvent->id]);
     $this->assertDatabaseHas('user_badges', ['id' => $otherBadge->id, 'user_id' => $otherUser->id]);
     $this->assertDatabaseHas('user_experience_events', ['id' => $otherEvent->id, 'user_id' => $otherUser->id]);
+});
+
+it('deletes only the anonymized users gamification notifications and derived audit history', function () {
+    $user = User::factory()->create();
+    $otherUser = User::factory()->create();
+    $admin = User::factory()->admin()->create();
+    $userBadge = $user->badges()->create([
+        'badge_key' => BadgeKey::FirstPresence,
+        'earned_at' => now(),
+    ]);
+    $userEvent = $user->experienceEvents()->create([
+        'reason' => ExperienceReason::Attendance,
+        'source_key' => 'attendance:privacy-target',
+        'points' => 100,
+    ]);
+    $otherBadge = $otherUser->badges()->create([
+        'badge_key' => BadgeKey::FirstPresence,
+        'earned_at' => now(),
+    ]);
+    $otherEvent = $otherUser->experienceEvents()->create([
+        'reason' => ExperienceReason::Attendance,
+        'source_key' => 'attendance:privacy-other',
+        'points' => 100,
+    ]);
+    AuditLog::query()->delete();
+
+    $targetAuditIds = [
+        AuditLog::create([
+            'user_id' => null,
+            'event_name' => 'user_badge.created',
+            'event_type' => AuditEventType::System,
+            'auditable_type' => UserBadge::class,
+            'auditable_id' => $userBadge->id,
+            'event_data' => [
+                'user_id' => $user->id,
+                'badge_key' => BadgeKey::FirstPresence->value,
+            ],
+        ])->id,
+        AuditLog::create([
+            'user_id' => $admin->id,
+            'event_name' => 'user_experience_event.updated',
+            'event_type' => AuditEventType::System,
+            'auditable_type' => UserExperienceEvent::class,
+            'auditable_id' => $userEvent->id,
+            'event_data' => [
+                'old_values' => ['source_key' => 'attendance:privacy-target', 'points' => 1],
+                'new_values' => ['source_key' => 'attendance:privacy-target', 'points' => 100],
+            ],
+        ])->id,
+        AuditLog::create([
+            'user_id' => $user->id,
+            'event_name' => 'user_badge.updated',
+            'event_type' => AuditEventType::System,
+            'auditable_type' => UserBadge::class,
+            'auditable_id' => $userBadge->id,
+            'event_data' => [
+                'old_values' => ['badge_key' => BadgeKey::FirstPresence->value],
+                'new_values' => ['badge_key' => BadgeKey::Attendance5->value],
+            ],
+        ])->id,
+    ];
+    $otherAudit = AuditLog::create([
+        'user_id' => $admin->id,
+        'event_name' => 'user_experience_event.updated',
+        'event_type' => AuditEventType::System,
+        'auditable_type' => UserExperienceEvent::class,
+        'auditable_id' => $otherEvent->id,
+        'event_data' => [
+            'old_values' => ['source_key' => 'attendance:privacy-other', 'points' => 1],
+            'new_values' => ['source_key' => 'attendance:privacy-other', 'points' => 100],
+        ],
+    ]);
+
+    $notificationRows = [
+        [
+            'id' => (string) Str::uuid(),
+            'type' => BadgesUnlockedNotification::class,
+            'notifiable_type' => User::class,
+            'notifiable_id' => $user->id,
+            'data' => json_encode(['category' => 'gamification', 'body' => 'privacy target']),
+            'read_at' => null,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ],
+        [
+            'id' => (string) Str::uuid(),
+            'type' => 'App\\Notifications\\SeminarReminderNotification',
+            'notifiable_type' => User::class,
+            'notifiable_id' => $user->id,
+            'data' => json_encode(['category' => 'seminar', 'body' => 'keep target notification']),
+            'read_at' => null,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ],
+        [
+            'id' => (string) Str::uuid(),
+            'type' => BadgesUnlockedNotification::class,
+            'notifiable_type' => User::class,
+            'notifiable_id' => $otherUser->id,
+            'data' => json_encode(['category' => 'gamification', 'body' => 'keep other notification']),
+            'read_at' => null,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ],
+    ];
+    DB::table('notifications')->insert($notificationRows);
+
+    app(UserAnonymizationService::class)->anonymize($user);
+
+    expect(AuditLog::query()->whereIn('id', $targetAuditIds)->exists())->toBeFalse()
+        ->and(AuditLog::query()->where('event_data', 'like', '%attendance:privacy-target%')->exists())->toBeFalse()
+        ->and(AuditLog::query()->whereKey($otherAudit->id)->exists())->toBeTrue()
+        ->and(AuditLog::query()->forEvent(AuditEvent::AccountAnonymized)->exists())->toBeTrue()
+        ->and(DB::table('notifications')
+            ->where('notifiable_type', User::class)
+            ->where('notifiable_id', $user->id)
+            ->where('type', BadgesUnlockedNotification::class)
+            ->exists())->toBeFalse()
+        ->and(DB::table('notifications')
+            ->where('notifiable_type', User::class)
+            ->where('notifiable_id', $user->id)
+            ->where('type', 'App\\Notifications\\SeminarReminderNotification')
+            ->exists())->toBeTrue()
+        ->and(DB::table('notifications')
+            ->where('notifiable_type', User::class)
+            ->where('notifiable_id', $otherUser->id)
+            ->where('type', BadgesUnlockedNotification::class)
+            ->exists())->toBeTrue();
+
+    $this->assertDatabaseHas('user_badges', ['id' => $otherBadge->id]);
+    $this->assertDatabaseHas('user_experience_events', ['id' => $otherEvent->id]);
 });
 
 it('skips already-anonymized users in the scheduler', function () {

@@ -2,6 +2,7 @@
 
 use App\Enums\AuditEvent;
 use App\Enums\AuditEventType;
+use App\Enums\BadgeKey;
 use App\Enums\ExperienceReason;
 use App\Models\AuditLog;
 use App\Models\Rating;
@@ -54,6 +55,30 @@ it('processes more than one hundred historical users across chunks', function ()
     expect($users->sum(fn (User $user): int => $user->badges()->count()))->toBe(101)
         ->and(AuditLog::query()->forEvent(AuditEvent::GamificationBackfilled)->sole()->event_data['processed_users'])
         ->toBe(101);
+});
+
+it('reconciles users whose only remaining history is stale derived rewards', function () {
+    $staleUser = User::factory()->create();
+    $unrelatedUser = User::factory()->create();
+    $staleBadge = $staleUser->badges()->create([
+        'badge_key' => BadgeKey::FirstPresence,
+        'earned_at' => now(),
+    ]);
+    $staleEvent = $staleUser->experienceEvents()->create([
+        'reason' => ExperienceReason::Attendance,
+        'source_key' => 'attendance:removed-history',
+        'points' => 100,
+    ]);
+    AuditLog::query()->delete();
+
+    $this->artisan('gamification:backfill')->assertSuccessful();
+
+    $this->assertDatabaseMissing('user_badges', ['id' => $staleBadge->id]);
+    $this->assertDatabaseMissing('user_experience_events', ['id' => $staleEvent->id]);
+    expect($unrelatedUser->badges()->exists())->toBeFalse()
+        ->and($unrelatedUser->experienceEvents()->exists())->toBeFalse()
+        ->and(AuditLog::query()->forEvent(AuditEvent::GamificationBackfilled)->sole()->event_data['processed_users'])
+        ->toBe(1);
 });
 
 it('limits reconciliation to an explicitly requested user', function () {
