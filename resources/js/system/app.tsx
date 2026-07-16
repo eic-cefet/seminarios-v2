@@ -15,6 +15,7 @@ import TwoFactorChallenge from "./pages/TwoFactorChallenge";
 import Register from "./pages/Register";
 import AuthCallback from "./pages/AuthCallback";
 import Profile from "./pages/Profile";
+import Achievements from "./pages/Achievements";
 import Certificates from "./pages/Certificates";
 import MySchedule from "./pages/MySchedule";
 import AlertPreferences from "./pages/AlertPreferences";
@@ -66,6 +67,7 @@ function AppRoutes() {
             <Route path={ROUTES.SYSTEM.AUTH_CALLBACK} element={<AuthCallback />} />
             <Route path={ROUTES.SYSTEM.COMPLETE_PROFILE} element={<CompleteProfile />} />
             <Route path={ROUTES.SYSTEM.PROFILE} element={withCompleteProfile(<Profile />)} />
+            <Route path={ROUTES.SYSTEM.ACHIEVEMENTS} element={withCompleteProfile(<Achievements />)} />
             <Route path={ROUTES.SYSTEM.CERTIFICATES} element={withCompleteProfile(<Certificates />)} />
             <Route path={ROUTES.SYSTEM.MY_SCHEDULE} element={withCompleteProfile(<MySchedule />)} />
             <Route path={ROUTES.SYSTEM.ALERT_PREFERENCES} element={withCompleteProfile(<AlertPreferences />)} />

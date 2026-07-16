@@ -1,5 +1,6 @@
 import type {
     Course,
+    GamificationProfile,
     PaginatedResponse,
     PublicSeminarSummary,
     Seminar,
@@ -294,6 +295,10 @@ export interface CalendarFeedUrls {
 }
 
 export const profileApi = {
+    gamification: () => {
+        return fetchApi<{ data: GamificationProfile }>("/profile/gamification");
+    },
+
     get: () => {
         return fetchApi<{ user: User }>("/profile");
     },

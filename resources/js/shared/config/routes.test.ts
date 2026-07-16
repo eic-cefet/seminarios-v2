@@ -9,6 +9,7 @@ describe("ROUTES.SYSTEM", () => {
         expect(ROUTES.SYSTEM.FORGOT_PASSWORD).toBe("/recuperar-senha");
         expect(ROUTES.SYSTEM.RESET_PASSWORD).toBe("/redefinir-senha");
         expect(ROUTES.SYSTEM.PROFILE).toBe("/perfil");
+        expect(ROUTES.SYSTEM.ACHIEVEMENTS).toBe("/conquistas");
         expect(ROUTES.SYSTEM.CERTIFICATES).toBe("/certificados");
         expect(ROUTES.SYSTEM.EVALUATIONS).toBe("/avaliar");
         expect(ROUTES.SYSTEM.PRESENTATIONS).toBe("/apresentacoes");

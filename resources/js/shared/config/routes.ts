@@ -21,6 +21,7 @@ export const ROUTES = {
         AUTH_CALLBACK: "/auth/callback",
         COMPLETE_PROFILE: "/completar-perfil",
         PROFILE: "/perfil",
+        ACHIEVEMENTS: "/conquistas",
         CERTIFICATES: "/certificados",
         MY_SCHEDULE: "/minha-agenda",
         ALERT_PREFERENCES: "/perfil/preferencias/alertas",

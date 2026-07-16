@@ -239,6 +239,38 @@ describe('fetchApi (via API namespaces)', () => {
     });
 
     describe('profileApi', () => {
+        it('gamification fetches the authenticated achievement profile', async () => {
+            mockFetchSuccess({
+                data: {
+                    progress: {
+                        total_xp: 650,
+                        level: 4,
+                        rank: 'Curioso',
+                        current_level_xp: 600,
+                        next_level_xp: 1000,
+                        progress_percent: 12,
+                    },
+                    summary: { earned_badges: 0, total_badges: 30 },
+                    categories: [
+                        { key: 'participacao', label: 'Participação', badges: [] },
+                    ],
+                    recent_badges: [],
+                },
+            });
+
+            const result = await profileApi.gamification();
+
+            expect(result.data.progress.total_xp).toBe(650);
+            expect(result.data.categories[0]).toMatchObject({
+                key: 'participacao',
+                label: 'Participação',
+            });
+            expect(fetchSpy).toHaveBeenCalledWith(
+                expect.stringMatching(/\/profile\/gamification$/),
+                expect.any(Object),
+            );
+        });
+
         it('get fetches profile', async () => {
             mockFetchSuccess({ user: { id: 1, name: 'Test', email: 'test@test.com' } });
             const result = await profileApi.get();
