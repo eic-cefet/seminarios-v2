@@ -120,10 +120,6 @@ export function DatabaseResetDangerZone() {
                                     }
                                     onClick={(event) => {
                                         event.preventDefault();
-                                        if (isLocked) {
-                                            return;
-                                        }
-
                                         resetMutation.mutate();
                                     }}
                                 >

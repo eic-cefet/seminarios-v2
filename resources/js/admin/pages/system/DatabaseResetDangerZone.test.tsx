@@ -67,10 +67,27 @@ describe('DatabaseResetDangerZone', () => {
         expect(input).toBeDisabled();
         expect(screen.getByRole('alertdialog')).toBeInTheDocument();
 
+        await user.keyboard('{Escape}');
+        expect(screen.getByRole('alertdialog')).toBeInTheDocument();
+
         await user.click(pendingAction);
 
         expect(systemInfoApi.resetDatabase).toHaveBeenCalledTimes(1);
         expect(systemInfoApi.resetDatabase).toHaveBeenCalledWith('APAGAR BANCO');
+    });
+
+    it('clears the confirmation after cancelling the modal', async () => {
+        const user = userEvent.setup();
+        render(<DatabaseResetDangerZone />);
+
+        await user.click(screen.getByRole('button', { name: /recriar banco de dados/i }));
+        await user.type(screen.getByLabelText(/digite apagar banco/i), 'APAGAR BANCO');
+        await user.click(screen.getByRole('button', { name: /cancelar/i }));
+
+        await waitFor(() => expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument());
+        await user.click(screen.getByRole('button', { name: /recriar banco de dados/i }));
+
+        expect(screen.getByLabelText(/digite apagar banco/i)).toHaveValue('');
     });
 
     it('keeps the modal open and shows the API error', async () => {
@@ -84,6 +101,22 @@ describe('DatabaseResetDangerZone', () => {
 
         await waitFor(() => expect(toast.error).toHaveBeenCalledWith('Falha controlada'));
         expect(screen.getByRole('alertdialog')).toBeInTheDocument();
+    });
+
+    it('shows a fallback error for non-Error failures', async () => {
+        const user = userEvent.setup();
+        vi.mocked(systemInfoApi.resetDatabase).mockRejectedValue('Falha inesperada');
+        render(<DatabaseResetDangerZone />);
+
+        await user.click(screen.getByRole('button', { name: /recriar banco de dados/i }));
+        await user.type(screen.getByLabelText(/digite apagar banco/i), 'APAGAR BANCO');
+        await user.click(screen.getByRole('button', { name: /^recriar banco$/i }));
+
+        await waitFor(() =>
+            expect(toast.error).toHaveBeenCalledWith(
+                'Não foi possível recriar o banco de dados.',
+            ),
+        );
     });
 
     it('shows success and redirects to login after one second', async () => {
