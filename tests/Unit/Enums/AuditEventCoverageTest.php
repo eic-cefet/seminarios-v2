@@ -15,4 +15,5 @@ it('exposes new coverage events', function (string $caseName, string $value) {
     'admin_user_restored' => ['UserRestoredByAdmin', 'admin.user_restored'],
     'admin_lgpd_viewed' => ['LgpdRecordViewedByAdmin', 'admin.lgpd_record_viewed'],
     'authorization_denied' => ['AuthorizationDenied', 'security.authorization_denied'],
+    'gamification_backfilled' => ['GamificationBackfilled', 'command.gamification_backfilled'],
 ]);
