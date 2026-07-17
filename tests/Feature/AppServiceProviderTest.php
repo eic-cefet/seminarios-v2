@@ -11,7 +11,7 @@ use App\Policies\SeminarPolicy;
 use App\Policies\SubjectPolicy;
 use App\Policies\UserPolicy;
 use App\Providers\AppServiceProvider;
-use App\Mail\WelcomeUser;
+use App\Mail\ReportReady;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Mail;
@@ -150,9 +150,9 @@ it('redirects all outgoing emails when mail forwarding is enabled', function () 
 
     $user = User::factory()->create(['email' => 'john.doe@example.com']);
 
-    Mail::to($user->email)->send(new WelcomeUser($user));
+    Mail::to($user->email)->send(new ReportReady('Seminário de Teste', 'https://example.com/report.pdf'));
 
-    Mail::assertQueued(WelcomeUser::class, fn (WelcomeUser $mail): bool => $mail->hasTo('sandbox@example.com'));
+    Mail::assertSent(ReportReady::class, fn (ReportReady $mail): bool => $mail->hasTo('sandbox@example.com'));
 });
 
 it('does not redirect email recipients when mail forwarding is disabled', function () {
@@ -167,7 +167,7 @@ it('does not redirect email recipients when mail forwarding is disabled', functi
 
     $user = User::factory()->create(['email' => 'john.doe@example.com']);
 
-    Mail::to($user->email)->send(new WelcomeUser($user));
+    Mail::to($user->email)->send(new ReportReady('Seminário de Teste', 'https://example.com/report.pdf'));
 
-    Mail::assertQueued(WelcomeUser::class, fn (WelcomeUser $mail): bool => $mail->hasTo($user->email));
+    Mail::assertSent(ReportReady::class, fn (ReportReady $mail): bool => $mail->hasTo($user->email));
 });
