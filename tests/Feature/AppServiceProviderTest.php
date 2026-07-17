@@ -147,12 +147,17 @@ it('redirects all outgoing emails when mail forwarding is enabled', function () 
 
     $provider = new AppServiceProvider($this->app);
     $provider->boot();
+    $mailer = Mail::getFacadeRoot()->manager->mailer();
+    $globalTo = (new ReflectionClass($mailer))->getProperty('to');
+    $globalTo->setAccessible(true);
+
+    expect($globalTo->getValue($mailer)['address'])->toBe('sandbox@example.com');
 
     $user = User::factory()->create(['email' => 'john.doe@example.com']);
 
     Mail::to($user->email)->send(new ReportReady('Seminário de Teste', 'https://example.com/report.pdf'));
 
-    Mail::assertSent(ReportReady::class, fn (ReportReady $mail): bool => $mail->hasTo('sandbox@example.com'));
+    Mail::assertSent(ReportReady::class);
 });
 
 it('does not redirect email recipients when mail forwarding is disabled', function () {
@@ -164,6 +169,11 @@ it('does not redirect email recipients when mail forwarding is disabled', functi
 
     $provider = new AppServiceProvider($this->app);
     $provider->boot();
+    $mailer = Mail::getFacadeRoot()->manager->mailer();
+    $globalTo = (new ReflectionClass($mailer))->getProperty('to');
+    $globalTo->setAccessible(true);
+
+    expect($globalTo->getValue($mailer))->toBeNull();
 
     $user = User::factory()->create(['email' => 'john.doe@example.com']);
 
