@@ -14,6 +14,9 @@ return [
     'env_secrets_setup' => [
         'enabled' => env('FEATURE_ENV_SECRETS_SETUP', true),
     ],
+    'mail_forwarding' => [
+        'enabled' => env('FEATURE_MAIL_FORWARDING', false),
+    ],
     'database_backup' => [
         'enabled' => env('FEATURE_DATABASE_BACKUP', true),
     ],

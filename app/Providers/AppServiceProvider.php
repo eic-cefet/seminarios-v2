@@ -39,6 +39,7 @@ use Illuminate\Notifications\Events\NotificationSent;
 use Illuminate\Queue\Events\JobProcessing;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
@@ -90,6 +91,10 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(SeminarLocation::class, SeminarLocationPolicy::class);
         Gate::policy(Registration::class, RegistrationPolicy::class);
         Gate::policy(AuditLog::class, AuditLogPolicy::class);
+
+        if ((bool) config('features.mail_forwarding.enabled') && config('mail.force_recipient')) {
+            Mail::alwaysTo((string) config('mail.force_recipient'));
+        }
 
         Event::listen(MessageSent::class, AuditEmailSent::class);
         Event::listen(NotificationSent::class, AuditNotificationSent::class);
