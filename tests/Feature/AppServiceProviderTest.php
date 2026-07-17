@@ -11,8 +11,10 @@ use App\Policies\SeminarPolicy;
 use App\Policies\SubjectPolicy;
 use App\Policies\UserPolicy;
 use App\Providers\AppServiceProvider;
+use App\Mail\WelcomeUser;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\URL;
 
@@ -134,4 +136,38 @@ it('registers gate policies on boot', function () {
         ->toBeInstanceOf(SeminarLocationPolicy::class);
     expect(Gate::getPolicyFor(Registration::class))
         ->toBeInstanceOf(RegistrationPolicy::class);
+});
+
+it('redirects all outgoing emails when mail forwarding is enabled', function () {
+    config([
+        'features.mail_forwarding.enabled' => true,
+        'mail.force_recipient' => 'sandbox@example.com',
+    ]);
+    Mail::fake();
+
+    $provider = new AppServiceProvider($this->app);
+    $provider->boot();
+
+    $user = User::factory()->create(['email' => 'john.doe@example.com']);
+
+    Mail::to($user->email)->send(new WelcomeUser($user));
+
+    Mail::assertQueued(WelcomeUser::class, fn (WelcomeUser $mail): bool => $mail->hasTo('sandbox@example.com'));
+});
+
+it('does not redirect email recipients when mail forwarding is disabled', function () {
+    config([
+        'features.mail_forwarding.enabled' => false,
+        'mail.force_recipient' => 'sandbox@example.com',
+    ]);
+    Mail::fake();
+
+    $provider = new AppServiceProvider($this->app);
+    $provider->boot();
+
+    $user = User::factory()->create(['email' => 'john.doe@example.com']);
+
+    Mail::to($user->email)->send(new WelcomeUser($user));
+
+    Mail::assertQueued(WelcomeUser::class, fn (WelcomeUser $mail): bool => $mail->hasTo($user->email));
 });
