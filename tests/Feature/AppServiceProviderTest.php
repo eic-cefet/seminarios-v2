@@ -152,7 +152,7 @@ it('redirects all outgoing emails when mail forwarding is enabled', function () 
 
     Mail::to($user->email)->send(new WelcomeUser($user));
 
-    Mail::assertQueued(WelcomeUser::class, fn (WelcomeUser $mail): bool => $mail->hasTo($user->email));
+    Mail::assertQueued(WelcomeUser::class, fn (WelcomeUser $mail): bool => $mail->hasTo('sandbox@example.com'));
 });
 
 it('does not redirect email recipients when mail forwarding is disabled', function () {
