@@ -188,6 +188,17 @@ describe('fetchApi (via API namespaces)', () => {
             expect(result.message).toBe('Logged out');
         });
 
+        it('stopImpersonation sends a CSRF-protected POST without an administrator id', async () => {
+            mockFetchSuccess({ user: { id: 1 } });
+            const result = await authApi.stopImpersonation();
+            expect(result.user.id).toBe(1);
+            expect(mockGetCsrfCookie).toHaveBeenCalled();
+            expect(fetchSpy).toHaveBeenCalledWith(
+                expect.stringContaining('/auth/impersonation/stop'),
+                expect.objectContaining({ method: 'POST', credentials: 'same-origin' }),
+            );
+        });
+
         it('me fetches current user', async () => {
             mockFetchSuccess({ user: { id: 1, name: 'Test', email: 'test@test.com' } });
             const result = await authApi.me();

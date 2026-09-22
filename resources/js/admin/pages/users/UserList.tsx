@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, Pencil, Trash2, RotateCcw, Archive, Search, ShieldCheck } from "lucide-react";
+import { Plus, Archive, Search } from "lucide-react";
 import { toast } from "sonner";
 import { analytics } from "@shared/lib/analytics";
 import { useDebouncedSearch } from "@shared/hooks/useDebouncedSearch";
 import { usersApi, type AdminUser } from "../../api/adminClient";
+import { UserActionsMenu } from "./UserActionsMenu";
 import { UserDialogForm } from "./UserDialogForm";
 import { Button } from "../../components/ui/button";
 import {
@@ -328,8 +329,8 @@ export default function UserList() {
                                         <TableHead>Email</TableHead>
                                         <TableHead>Funcao</TableHead>
                                         <TableHead>Criado em</TableHead>
-                                        <TableHead className="w-24">
-                                            Acoes
+                                        <TableHead className="w-16 text-right">
+                                            Ações
                                         </TableHead>
                                     </TableRow>
                                 </TableHeader>
@@ -360,61 +361,19 @@ export default function UserList() {
                                                     user.created_at,
                                                 )}
                                             </TableCell>
-                                            <TableCell>
-                                                <div className="flex items-center gap-2">
-                                                    {showTrashed ? (
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="icon"
-                                                            onClick={() =>
-                                                                restoreMutation.mutate(
-                                                                    user.id,
-                                                                )
-                                                            }
-                                                            disabled={
-                                                                restoreMutation.isPending
-                                                            }
-                                                        >
-                                                            <RotateCcw className="h-4 w-4 text-green-500" />
-                                                        </Button>
-                                                    ) : (
-                                                        <>
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="icon"
-                                                                onClick={() =>
-                                                                    openEditDialog(
-                                                                        user,
-                                                                    )
-                                                                }
-                                                            >
-                                                                <Pencil className="h-4 w-4" />
-                                                            </Button>
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="icon"
-                                                                title="Dados LGPD"
-                                                                onClick={() => {
-                                                                    setLgpdUser(user);
-                                                                    setIsLgpdDialogOpen(true);
-                                                                }}
-                                                            >
-                                                                <ShieldCheck className="h-4 w-4 text-blue-500" />
-                                                            </Button>
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="icon"
-                                                                onClick={() =>
-                                                                    openDeleteDialog(
-                                                                        user,
-                                                                    )
-                                                                }
-                                                            >
-                                                                <Trash2 className="h-4 w-4 text-red-500" />
-                                                            </Button>
-                                                        </>
-                                                    )}
-                                                </div>
+                                            <TableCell className="text-right">
+                                                <UserActionsMenu
+                                                    user={user}
+                                                    archived={showTrashed}
+                                                    restoring={restoreMutation.isPending}
+                                                    onEdit={openEditDialog}
+                                                    onDelete={openDeleteDialog}
+                                                    onLgpd={(selectedUser) => {
+                                                        setLgpdUser(selectedUser);
+                                                        setIsLgpdDialogOpen(true);
+                                                    }}
+                                                    onRestore={(selectedUser) => restoreMutation.mutate(selectedUser.id)}
+                                                />
                                             </TableCell>
                                         </TableRow>
                                     ))}

@@ -1,4 +1,4 @@
-import type { PaginatedResponse } from "@shared/types";
+import type { PaginatedResponse, User } from "@shared/types";
 import { buildQueryString, fetchAdminApi, getCsrfCookie } from "./_base";
 
 export interface AdminUser {
@@ -88,6 +88,11 @@ export const usersApi = {
         return fetchAdminApi<{ message: string }>(`/users/${id}`, {
             method: "DELETE",
         });
+    },
+
+    impersonate: async (id: number) => {
+        await getCsrfCookie();
+        return fetchAdminApi<{ user: User }>(`/users/${id}/impersonate`, { method: "POST" });
     },
 
     restore: async (id: number) => {

@@ -1,3 +1,4 @@
+import { ImpersonationBanner } from "@shared/components/ImpersonationBanner";
 import { ReactNode } from "react";
 import { Favicon } from "@shared/components/Favicon";
 import { Navbar } from "./Navbar";
@@ -12,6 +13,7 @@ export function Layout({ children }: LayoutProps) {
     return (
         <div className="min-h-screen flex flex-col bg-gray-50">
             <Favicon />
+            <ImpersonationBanner />
             <SkipLink />
             <Navbar />
             <main id="main-content" tabIndex={-1} className="flex-1">

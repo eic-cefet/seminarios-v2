@@ -1,3 +1,4 @@
+import { ImpersonationBanner } from "@shared/components/ImpersonationBanner";
 import { Favicon } from "@shared/components/Favicon";
 import { NotificationBell } from "@shared/components/NotificationBell";
 import { useAuth } from "@shared/contexts/AuthContext";
@@ -48,6 +49,7 @@ export function AdminLayout() {
     return (
         <div className="flex h-screen flex-col overflow-hidden bg-background">
             <Favicon />
+            <ImpersonationBanner />
             {/* Mobile header - visible on mobile only */}
             <MobileHeader />
 

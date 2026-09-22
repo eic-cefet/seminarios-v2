@@ -1,5 +1,7 @@
 import { render, screen, waitFor, userEvent, act } from '@/test/test-utils';
 
+vi.mock('@shared/contexts/AuthContext', () => ({ useAuth: () => ({ user: { id: 999, roles: ['admin'] } }) }));
+
 vi.mock('@shared/lib/analytics', () => ({
     analytics: { event: vi.fn(), pageview: vi.fn() },
 }));
@@ -20,6 +22,7 @@ vi.mock('../../api/adminClient', () => ({
         update: vi.fn(),
         delete: vi.fn(),
         restore: vi.fn(),
+        impersonate: vi.fn(),
     },
     aiApi: {
         transformText: vi.fn(),
@@ -39,6 +42,7 @@ vi.mock('@tanstack/react-query', async () => {
     return {
         ...actual,
         useMutation: (options: any) => {
+            if (options.mutationKey?.[0] === "impersonate-user") return (actual as any).useMutation(options);
             userMutationCallCount++;
             const idx = ((userMutationCallCount - 1) % 4) + 1;
             if (idx === 1) capturedUserCreateOptions = options;
@@ -190,10 +194,9 @@ describe('UserList', () => {
             expect(screen.getByText('Jane Doe')).toBeInTheDocument();
         });
 
-        // Click the edit (pencil) button - first action button in the row
         const row = screen.getByText('Jane Doe').closest('tr')!;
-        const buttons = row.querySelectorAll('button');
-        await user.click(buttons[0]); // first button is edit
+        await user.click(row.querySelector('button')!);
+        await user.click(screen.getByRole('menuitem', { name: 'Editar' }));
 
         await waitFor(() => {
             expect(screen.getByText('Editar Usuario')).toBeInTheDocument();
@@ -224,8 +227,8 @@ describe('UserList', () => {
         });
 
         const row = screen.getByText('Delete Me').closest('tr')!;
-        const buttons = row.querySelectorAll('button');
-        await user.click(buttons[buttons.length - 1]); // last button is delete
+        await user.click(row.querySelector('button')!);
+        await user.click(screen.getByRole('menuitem', { name: 'Excluir' }));
 
         await waitFor(() => {
             expect(screen.getByText('Excluir usuario?')).toBeInTheDocument();
@@ -357,8 +360,8 @@ describe('UserList', () => {
         });
 
         const row = screen.getByText('Edit User').closest('tr')!;
-        const buttons = row.querySelectorAll('button');
-        await user.click(buttons[0]); // edit button
+        await user.click(row.querySelector('button')!);
+        await user.click(screen.getByRole('menuitem', { name: 'Editar' }));
 
         await waitFor(() => {
             expect(screen.getByText('Editar Usuario')).toBeInTheDocument();
@@ -399,8 +402,8 @@ describe('UserList', () => {
         });
 
         const row = screen.getByText('To Delete').closest('tr')!;
-        const buttons = row.querySelectorAll('button');
-        await user.click(buttons[buttons.length - 1]); // delete button
+        await user.click(row.querySelector('button')!);
+        await user.click(screen.getByRole('menuitem', { name: 'Excluir' }));
 
         await waitFor(() => {
             expect(screen.getByText('Excluir usuario?')).toBeInTheDocument();
@@ -667,8 +670,8 @@ describe('UserList', () => {
         });
 
         const row = screen.getByText('Delete Target').closest('tr')!;
-        const buttons = row.querySelectorAll('button');
-        await user.click(buttons[buttons.length - 1]);
+        await user.click(row.querySelector('button')!);
+        await user.click(screen.getByRole('menuitem', { name: 'Excluir' }));
 
         await waitFor(() => {
             expect(screen.getByText('Excluir usuario?')).toBeInTheDocument();
@@ -699,8 +702,8 @@ describe('UserList', () => {
         });
 
         const row = screen.getByText('Edit Me').closest('tr')!;
-        const buttons = row.querySelectorAll('button');
-        await user.click(buttons[0]); // edit button
+        await user.click(row.querySelector('button')!);
+        await user.click(screen.getByRole('menuitem', { name: 'Editar' }));
 
         await waitFor(() => {
             expect(screen.getByText(/deixe vazio para manter/)).toBeInTheDocument();
@@ -846,8 +849,8 @@ describe('UserList', () => {
 
         // Click edit
         const row = screen.getByText('Full User').closest('tr')!;
-        const buttons = row.querySelectorAll('button');
-        await user.click(buttons[0]); // edit button
+        await user.click(row.querySelector('button')!);
+        await user.click(screen.getByRole('menuitem', { name: 'Editar' }));
 
         await waitFor(() => {
             expect(screen.getByText('Editar Usuario')).toBeInTheDocument();
@@ -898,10 +901,9 @@ describe('UserList', () => {
             expect(screen.getByText('Restore Me')).toBeInTheDocument();
         });
 
-        // Click the restore button (the only button in the actions for trashed users)
         const row = screen.getByText('Restore Me').closest('tr')!;
-        const buttons = row.querySelectorAll('button');
-        await user.click(buttons[0]); // restore button
+        await user.click(row.querySelector('button')!);
+        await user.click(screen.getByRole('menuitem', { name: 'Restaurar' }));
 
         await waitFor(() => {
             expect(usersApi.restore).toHaveBeenCalledWith(77);
@@ -1200,10 +1202,9 @@ describe('UserList', () => {
             expect(screen.getByText('No Role User')).toBeInTheDocument();
         });
 
-        // Click edit button - the fallback (user.roles[0] || "user") triggers branch 211:1
         const row = screen.getByText('No Role User').closest('tr')!;
-        const buttons = row.querySelectorAll('button');
-        await user.click(buttons[0]); // edit button
+        await user.click(row.querySelector('button')!);
+        await user.click(screen.getByRole('menuitem', { name: 'Editar' }));
 
         await waitFor(() => {
             expect(screen.getByText('Editar Usuario')).toBeInTheDocument();
@@ -1287,9 +1288,8 @@ describe('UserList', () => {
         });
 
         const row = screen.getByText('LGPD Target').closest('tr')!;
-        const buttons = row.querySelectorAll('button');
-        // buttons[0]=edit, buttons[1]=lgpd, buttons[2]=delete
-        await user.click(buttons[1]);
+        await user.click(row.querySelector('button')!);
+        await user.click(screen.getByRole('menuitem', { name: 'Dados LGPD' }));
 
         await waitFor(() => {
             expect(screen.getByTestId('user-lgpd-panel')).toBeInTheDocument();
@@ -1461,8 +1461,8 @@ describe('UserList', () => {
         });
 
         const row = screen.getByText('Admin And Teacher').closest('tr')!;
-        const buttons = row.querySelectorAll('button');
-        await user.click(buttons[0]);
+        await user.click(row.querySelector('button')!);
+        await user.click(screen.getByRole('menuitem', { name: 'Editar' }));
 
         await waitFor(() => {
             expect(screen.getByText('Editar Usuario')).toBeInTheDocument();
@@ -1503,8 +1503,8 @@ describe('UserList', () => {
         });
 
         const row = screen.getByText('Teacher Only').closest('tr')!;
-        const buttons = row.querySelectorAll('button');
-        await user.click(buttons[0]);
+        await user.click(row.querySelector('button')!);
+        await user.click(screen.getByRole('menuitem', { name: 'Editar' }));
 
         await waitFor(() => {
             expect(screen.getByText('Editar Usuario')).toBeInTheDocument();
@@ -1572,8 +1572,8 @@ describe('UserList', () => {
 
         // Open the edit dialog for an existing user
         const row = screen.getByText('Edit Without Password').closest('tr')!;
-        const buttons = row.querySelectorAll('button');
-        await user.click(buttons[0]); // edit button
+        await user.click(row.querySelector('button')!);
+        await user.click(screen.getByRole('menuitem', { name: 'Editar' }));
 
         await waitFor(() => {
             expect(screen.getByText('Editar Usuario')).toBeInTheDocument();
@@ -1624,8 +1624,8 @@ describe('UserList', () => {
 
         // 1) Open edit dialog (uses update schema — password optional)
         const row = screen.getByText('Switch Test User').closest('tr')!;
-        const buttons = row.querySelectorAll('button');
-        await user.click(buttons[0]); // edit
+        await user.click(row.querySelector('button')!);
+        await user.click(screen.getByRole('menuitem', { name: 'Editar' }));
         await waitFor(() => {
             expect(screen.getByText('Editar Usuario')).toBeInTheDocument();
         });

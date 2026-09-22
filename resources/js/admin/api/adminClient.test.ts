@@ -107,6 +107,17 @@ describe('Admin API endpoints', () => {
             );
         });
 
+        it('impersonate sends a CSRF-protected POST for the selected user', async () => {
+            mockSuccess({ user: { id: 2 } });
+            const result = await usersApi.impersonate(2);
+            expect(result.user.id).toBe(2);
+            expect(mockGetCsrfCookie).toHaveBeenCalled();
+            expect(fetchSpy).toHaveBeenCalledWith(
+                expect.stringContaining('/users/2/impersonate'),
+                expect.objectContaining({ method: 'POST', credentials: 'same-origin' }),
+            );
+        });
+
         it('restore sends POST', async () => {
             mockSuccess({ message: 'Restored', data: { id: 1 } });
             await usersApi.restore(1);
