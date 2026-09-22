@@ -176,3 +176,11 @@ it('does not restore an administrator whose password changed during impersonatio
     $this->postJson('/api/auth/impersonation/stop')->assertForbidden();
     $this->assertGuest('web');
 });
+
+it('does not revoke the target remember token when logging out of impersonation', function () {
+    $admin = User::factory()->admin()->create();
+    $target = User::factory()->create(['remember_token' => 'target-remember-token']);
+    $this->actingAs($admin, 'web')->postJson("/api/admin/users/{$target->id}/impersonate")->assertOk();
+    $this->postJson('/api/auth/logout')->assertOk();
+    expect($target->fresh()->remember_token)->toBe('target-remember-token');
+});

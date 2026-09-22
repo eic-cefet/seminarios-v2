@@ -100,7 +100,11 @@ class AuthController extends Controller
 
         AuditLog::record(AuditEvent::UserLogout, auditable: $user, userId: $user?->id);
 
-        Auth::logout();
+        if ($request->session()->has('impersonation')) {
+            Auth::guard('web')->logoutCurrentDevice();
+        } else {
+            Auth::guard('web')->logout();
+        }
 
         $request->session()->invalidate();
         $request->session()->regenerateToken();
