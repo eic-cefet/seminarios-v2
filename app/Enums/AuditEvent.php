@@ -28,6 +28,9 @@ enum AuditEvent: string
     case UserRestoredByAdmin = 'admin.user_restored';
     case LgpdRecordViewedByAdmin = 'admin.lgpd_record_viewed';
 
+    case ImpersonationStarted = 'admin.impersonation_started';
+    case ImpersonationStopped = 'admin.impersonation_stopped';
+
     // Security
     case AuthorizationDenied = 'security.authorization_denied';
 

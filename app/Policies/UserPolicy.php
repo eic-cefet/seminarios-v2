@@ -52,6 +52,15 @@ class UserPolicy
         return $user->hasRole(Role::Admin) && $user->id !== $model->id;
     }
 
+    public function impersonate(User $user, User $model): bool
+    {
+        return $user->hasRole(Role::Admin)
+            && $user->id !== $model->id
+            && ! $model->hasRole(Role::Admin)
+            && ! $model->trashed()
+            && ! $model->isAnonymized();
+    }
+
     public function restore(User $user, User $model): bool
     {
         return $user->hasRole(Role::Admin);

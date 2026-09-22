@@ -98,12 +98,12 @@ class AuthController extends Controller
     {
         $user = $request->user();
 
+        AuditLog::record(AuditEvent::UserLogout, auditable: $user, userId: $user?->id);
+
         Auth::logout();
 
         $request->session()->invalidate();
         $request->session()->regenerateToken();
-
-        AuditLog::record(AuditEvent::UserLogout, auditable: $user, userId: $user?->id);
 
         return response()->json([
             'message' => 'Logout realizado com sucesso',

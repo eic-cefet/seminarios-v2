@@ -95,6 +95,10 @@ class AuditLog extends Model
 
         $ipHash = Context::get('audit.ip_hash');
 
+        if (request()->hasSession() && request()->session()->has('impersonation.admin_id')) {
+            $eventData['impersonator_id'] = request()->session()->get('impersonation.admin_id');
+        }
+
         return self::create([
             'user_id' => $userId ?? auth()->id(),
             'event_name' => $eventName,

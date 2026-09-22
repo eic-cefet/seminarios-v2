@@ -16,6 +16,9 @@ class MeUserResource extends JsonResource
 
         return [
             'id' => $this->id,
+            'is_impersonating' => $request->hasSession()
+                && $request->session()->has('impersonation.admin_id')
+                && (int) $request->session()->get('impersonation.user_id') === $this->id,
             'name' => $this->name,
             'email' => $this->email,
             'email_verified_at' => $this->email_verified_at?->toISOString(),
