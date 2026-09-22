@@ -1,7 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent, act } from "@testing-library/react";
-import { MemoryRouter } from "react-router-dom";
-import { HelmetProvider } from "react-helmet-async";
+import { render, screen, fireEvent, act } from "@/test/test-utils";
 import { ConsentProvider } from "@shared/contexts/ConsentContext";
 import CookiePreferences from "./CookiePreferences";
 
@@ -29,13 +27,9 @@ vi.mock("@shared/contexts/AuthContext", () => ({
 
 function renderPage() {
     return render(
-        <HelmetProvider>
-            <MemoryRouter>
-                <ConsentProvider>
-                    <CookiePreferences />
-                </ConsentProvider>
-            </MemoryRouter>
-        </HelmetProvider>,
+        <ConsentProvider>
+            <CookiePreferences />
+        </ConsentProvider>,
     );
 }
 
