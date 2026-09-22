@@ -3,6 +3,7 @@
 use App\Models\AuditLog;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Mail;
 
 beforeEach(function () {
     config(['app.key' => 'base64:'.base64_encode(str_repeat('a', 32))]);
@@ -87,7 +88,7 @@ it('rejects token authentication without a browser session', function () {
 it('restores only the original administrator and rotates the session', function () {
     $admin = User::factory()->admin()->create();
     $target = User::factory()->create();
-    $this->actingAs($target, 'web')->withSession(['impersonation' => ['admin_id' => $admin->id, 'user_id' => $target->id]]);
+    $this->actingAs($target, 'web')->withSession(['impersonation' => ['admin_id' => $admin->id, 'credential_fingerprint' => hash_hmac('sha256', $admin->getAuthPassword(), config('app.key')), 'user_id' => $target->id]]);
     $oldSession = session()->getId();
     $this->postJson('/api/auth/impersonation/stop', ['admin_id' => 999])->assertOk()->assertJsonPath('user.id', $admin->id);
     $this->assertAuthenticatedAs($admin, 'web');
@@ -100,7 +101,7 @@ it('rejects stopping without a matching impersonation session', function () {
     $target = User::factory()->create();
     $this->actingAs($target, 'web')->postJson('/api/auth/impersonation/stop')->assertForbidden();
     $admin = User::factory()->admin()->create();
-    $this->withSession(['impersonation' => ['admin_id' => $admin->id, 'user_id' => $target->id + 1]])
+    $this->withSession(['impersonation' => ['admin_id' => $admin->id, 'credential_fingerprint' => hash_hmac('sha256', $admin->getAuthPassword(), config('app.key')), 'user_id' => $target->id + 1]])
         ->postJson('/api/auth/impersonation/stop')->assertForbidden();
 });
 
@@ -112,7 +113,7 @@ it('does not restore a deleted or demoted administrator', function (bool $delete
     } else {
         $admin->syncRoles([]);
     }
-    $this->actingAs($target, 'web')->withSession(['impersonation' => ['admin_id' => $admin->id, 'user_id' => $target->id]])
+    $this->actingAs($target, 'web')->withSession(['impersonation' => ['admin_id' => $admin->id, 'credential_fingerprint' => hash_hmac('sha256', $admin->getAuthPassword(), config('app.key')), 'user_id' => $target->id]])
         ->postJson('/api/auth/impersonation/stop')->assertForbidden();
     $this->assertGuest('web');
     expect(session('impersonation'))->toBeNull();
@@ -121,7 +122,7 @@ it('does not restore a deleted or demoted administrator', function (bool $delete
 it('attributes actions taken during impersonation to the original administrator', function () {
     $admin = User::factory()->admin()->create();
     $target = User::factory()->create();
-    $this->actingAs($target, 'web')->withSession(['impersonation' => ['admin_id' => $admin->id, 'user_id' => $target->id]]);
+    $this->actingAs($target, 'web')->withSession(['impersonation' => ['admin_id' => $admin->id, 'credential_fingerprint' => hash_hmac('sha256', $admin->getAuthPassword(), config('app.key')), 'user_id' => $target->id]]);
     $this->putJson('/api/profile', ['name' => 'Updated name', 'email' => $target->email])->assertOk();
     $log = AuditLog::where('event_name', 'user.updated')->latest('id')->firstOrFail();
     expect($log->user_id)->toBe($target->id)->and($log->event_data['impersonator_id'])->toBe($admin->id);
@@ -130,7 +131,7 @@ it('attributes actions taken during impersonation to the original administrator'
 it('clears impersonation when logging out', function () {
     $admin = User::factory()->admin()->create();
     $target = User::factory()->create();
-    $this->actingAs($target, 'web')->withSession(['impersonation' => ['admin_id' => $admin->id, 'user_id' => $target->id]])
+    $this->actingAs($target, 'web')->withSession(['impersonation' => ['admin_id' => $admin->id, 'credential_fingerprint' => hash_hmac('sha256', $admin->getAuthPassword(), config('app.key')), 'user_id' => $target->id]])
         ->postJson('/api/auth/logout')->assertOk();
     $this->assertGuest('web');
     expect(session('impersonation'))->toBeNull();
@@ -154,4 +155,24 @@ it('expires the remember cookie without changing either account remember token',
     $response->assertOk()->assertCookieExpired(Auth::guard('web')->getRecallerName());
     expect($admin->fresh()->remember_token)->toBe('admin-token')
         ->and($target->fresh()->remember_token)->toBe('target-token');
+});
+
+it('preserves pending account deletion while switching identities', function () {
+    Mail::fake();
+    $admin = User::factory()->admin()->create(['anonymization_requested_at' => now()]);
+    $target = User::factory()->create(['anonymization_requested_at' => now()]);
+    $this->actingAs($admin, 'web')->postJson("/api/admin/users/{$target->id}/impersonate")->assertOk();
+    expect($target->fresh()->anonymization_requested_at)->not->toBeNull();
+    $this->postJson('/api/auth/impersonation/stop')->assertOk();
+    expect($admin->fresh()->anonymization_requested_at)->not->toBeNull();
+    Mail::assertNothingQueued();
+});
+
+it('does not restore an administrator whose password changed during impersonation', function () {
+    $admin = User::factory()->admin()->create();
+    $target = User::factory()->create();
+    $this->actingAs($admin, 'web')->postJson("/api/admin/users/{$target->id}/impersonate")->assertOk();
+    $admin->forceFill(['password' => 'changed-password'])->save();
+    $this->postJson('/api/auth/impersonation/stop')->assertForbidden();
+    $this->assertGuest('web');
 });

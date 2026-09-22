@@ -29,9 +29,9 @@ class ImpersonationController extends Controller
 
         AuditLog::record(AuditEvent::ImpersonationStarted, auditable: $user, userId: $admin->id);
 
-        $this->switchUser($request, $user);
-        $request->session()->put('impersonation', [
+        $this->switchUser($request, $user, [
             'admin_id' => $admin->id,
+            'credential_fingerprint' => hash_hmac('sha256', $admin->getAuthPassword(), config('app.key')),
             'user_id' => $user->id,
         ]);
 
@@ -49,7 +49,8 @@ class ImpersonationController extends Controller
         }
 
         $admin = User::find($impersonation['admin_id']);
-        if (! $admin || ! $admin->hasRole(Role::Admin) || $admin->isAnonymized()) {
+        if (! $admin || ! $admin->hasRole(Role::Admin) || $admin->isAnonymized()
+            || ! hash_equals(hash_hmac('sha256', $admin->getAuthPassword(), config('app.key')), $impersonation['credential_fingerprint'] ?? '')) {
             $guard->logoutCurrentDevice();
             $request->session()->invalidate();
             $request->session()->regenerateToken();
@@ -68,14 +69,26 @@ class ImpersonationController extends Controller
         return response()->json(['user' => (new MeUserResource($admin))->resolve()]);
     }
 
-    private function switchUser(Request $request, User $user): void
+    /**
+     * @param  array{admin_id: int, user_id: int, credential_fingerprint: string}|array{}  $impersonation
+     */
+    private function switchUser(Request $request, User $user, array $impersonation = []): void
     {
         $guard = Auth::guard('web');
         $guard->logoutCurrentDevice();
         Cookie::queue(Cookie::forget($guard->getRecallerName()));
         $request->session()->invalidate();
         $request->session()->regenerateToken();
-        $guard->login($user);
+        if ($impersonation !== []) {
+            $request->session()->put('impersonation', $impersonation);
+        }
+
+        $request->attributes->set('impersonation.switching', true);
+        try {
+            $guard->login($user);
+        } finally {
+            $request->attributes->remove('impersonation.switching');
+        }
         Auth::forgetGuards();
     }
 }
