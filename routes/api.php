@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\BugReportController;
 use App\Http\Controllers\Api\ConsentController;
 use App\Http\Controllers\Api\CourseController;
 use App\Http\Controllers\Api\DataPrivacyController;
+use App\Http\Controllers\Api\ImpersonationController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\PresenceController;
 use App\Http\Controllers\Api\ProfileAlertPreferenceController;
@@ -36,6 +37,8 @@ Route::post('/auth/forgot-password', [AuthController::class, 'forgotPassword'])-
 Route::post('/auth/reset-password', [AuthController::class, 'resetPassword'])->middleware('throttle:5,1');
 Route::post('/auth/exchange', [SocialAuthController::class, 'exchange'])->middleware('throttle:5,1');
 Route::post('/auth/two-factor-challenge', [TwoFactorChallengeController::class, '__invoke'])->middleware('throttle:5,1');
+
+Route::post('/auth/impersonation/stop', [ImpersonationController::class, 'destroy'])->middleware('throttle:5,1');
 
 // Bug Report (tightest throttle)
 Route::post('/bug-report', [BugReportController::class, 'store'])->middleware('throttle:3,1');

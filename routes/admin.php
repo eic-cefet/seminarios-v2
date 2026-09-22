@@ -2,8 +2,8 @@
 
 use App\Http\Controllers\Admin\AdminApiTokenController;
 use App\Http\Controllers\Admin\AdminAuditLogController;
-use App\Http\Controllers\Admin\AdminDatabaseResetController;
 use App\Http\Controllers\Admin\AdminDashboardController;
+use App\Http\Controllers\Admin\AdminDatabaseResetController;
 use App\Http\Controllers\Admin\AdminEnvSecretsController;
 use App\Http\Controllers\Admin\AdminLgpdController;
 use App\Http\Controllers\Admin\AdminLocationController;
@@ -18,6 +18,7 @@ use App\Http\Controllers\Admin\AdminWorkshopController;
 use App\Http\Controllers\Admin\AiTextController;
 use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\WorkshopAnnouncementController;
+use App\Http\Controllers\Api\ImpersonationController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function () {
@@ -27,6 +28,7 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function ()
     // CRUD Resources
     // apiResource registers both PUT and PATCH for update routes.
     // All update requests use 'sometimes' validation, supporting partial payloads.
+    Route::post('/users/{user}/impersonate', [ImpersonationController::class, 'store'])->middleware('throttle:5,1');
     Route::apiResource('users', AdminUserController::class);
     Route::post('/users/{user}/restore', [AdminUserController::class, 'restore'])->withTrashed();
 

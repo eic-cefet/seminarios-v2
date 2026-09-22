@@ -98,12 +98,16 @@ class AuthController extends Controller
     {
         $user = $request->user();
 
-        Auth::logout();
+        AuditLog::record(AuditEvent::UserLogout, auditable: $user, userId: $user?->id);
+
+        if ($request->session()->has('impersonation')) {
+            Auth::guard('web')->logoutCurrentDevice();
+        } else {
+            Auth::guard('web')->logout();
+        }
 
         $request->session()->invalidate();
         $request->session()->regenerateToken();
-
-        AuditLog::record(AuditEvent::UserLogout, auditable: $user, userId: $user?->id);
 
         return response()->json([
             'message' => 'Logout realizado com sucesso',

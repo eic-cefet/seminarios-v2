@@ -16,7 +16,8 @@ class CancelPendingDeletionOnLogin
     {
         $user = $event->user;
 
-        if (! $user instanceof User || ! $user->isAnonymizationPending()) {
+        if (request()->attributes->get('impersonation.switching') === true
+            || ! $user instanceof User || ! $user->isAnonymizationPending()) {
             return;
         }
 

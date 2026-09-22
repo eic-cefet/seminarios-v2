@@ -6,6 +6,7 @@ export interface User {
     anonymization_requested_at?: string | null;
     student_data?: UserStudentData;
     roles?: string[];
+    is_impersonating?: boolean;
     two_factor_enabled?: boolean;
     needs_profile_completion?: boolean;
 }

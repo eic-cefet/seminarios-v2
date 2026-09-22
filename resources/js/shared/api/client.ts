@@ -186,6 +186,11 @@ export const authApi = {
         });
     },
 
+    stopImpersonation: async () => {
+        await getCsrfCookie();
+        return fetchApi<{ user: User }>("/auth/impersonation/stop", { method: "POST" });
+    },
+
     me: () => {
         return fetchApi<{ user: User }>("/auth/me");
     },
