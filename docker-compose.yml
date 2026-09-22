@@ -42,7 +42,7 @@ services:
       - "8025:8025"
 
   minio:
-    image: minio/minio:latest
+    image: docker.io/pgsty/silo:RELEASE.2026-09-16T00-00-00Z
     container_name: seminarios_minio
     restart: unless-stopped
     environment:
@@ -55,22 +55,22 @@ services:
       - minio_data:/data
     command: server /data --console-address ":9001"
     healthcheck:
-      test: ["CMD", "mc", "ready", "local"]
+      test: ["CMD", "silo", "healthcheck", "ready"]
       start_period: 5s
       interval: 10s
       timeout: 5s
       retries: 3
 
   minio-setup:
-    image: minio/mc:latest
+    image: docker.io/pgsty/silo:RELEASE.2026-09-16T00-00-00Z
     container_name: seminarios_minio_setup
     depends_on:
       minio:
         condition: service_healthy
     entrypoint: >
       /bin/sh -c "
-      mc alias set local http://minio:9000 minioadmin minioadmin &&
-      mc mb --ignore-existing local/seminarios-eic &&
+      mcli alias set local http://minio:9000 minioadmin minioadmin &&
+      mcli mb --ignore-existing local/seminarios-eic &&
       echo 'Bucket seminarios-eic created successfully'
       "
 
