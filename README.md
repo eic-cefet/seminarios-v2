@@ -163,9 +163,20 @@ The `docker-compose.yml` provides all infrastructure for local development:
 | **MySQL** (MariaDB 10.11) | `3306` | Database (`seminarios` / `seminarios`) |
 | **phpMyAdmin** | [`8080`](http://localhost:8080) | Database web UI |
 | **Mailhog** | [`8025`](http://localhost:8025) | Email testing UI (SMTP on `1025`) |
-| **MinIO** | [`9000`](http://localhost:9000) / [`9001`](http://localhost:9001) | S3-compatible storage (API / web console) |
+| **[Silo](https://github.com/pgsty/silo)** | [`9000`](http://localhost:9000) / [`9001`](http://localhost:9001) | S3-compatible storage (API / web console) |
 
-MinIO credentials: `minioadmin` / `minioadmin`. The `seminarios-eic` bucket is created automatically on first startup.
+Local Silo credentials: `minioadmin` / `minioadmin`. The `seminarios-eic` bucket is created automatically on startup; setup can safely run again when the bucket already exists.
+
+Silo replaces the MinIO images. Both storage and bucket setup use the same pinned Silo release, which includes the `mcli` client. The Compose service names (`minio`, `minio-setup`), `minio_data` volume, ports, and credentials stay the same so existing local configuration continues to work.
+
+To update an existing checkout, back up any local object data you need to keep, then run from the same Compose project:
+
+```bash
+docker compose pull minio minio-setup
+docker compose up -d minio minio-setup
+```
+
+Keep the existing volume when switching images. Do not use `docker compose down -v`, which deletes the stored data. See the [Silo migration guide](https://silo.pgsty.com/compatibility/migration/) for compatibility details.
 
 The `.env.example` ships pre-configured for all these services -- just `cp .env.example .env` and everything connects out of the box.
 
