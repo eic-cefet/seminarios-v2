@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Route;
 // Certificate routes (before SPA catch-all)
 Route::middleware('throttle:certificate')->group(function () {
     Route::get('/certificado/{code}', [CertificateController::class, 'show'])->name('certificate.show');
+    Route::get('/certificado/{code}/pdf', [CertificateController::class, 'show'])->name('certificate.show.pdf');
     Route::get('/certificado/{code}/jpg', [CertificateController::class, 'showJpg'])->name('certificate.show.jpg');
 });
 

@@ -18,7 +18,7 @@ class ProcessMissingCertificatesCommand extends Command
                             {--sync : Process synchronously instead of queuing}
                             {--seminar= : Process only certificates for a specific seminar ID}';
 
-    protected $description = 'Process and generate missing certificates (JPG and PDF) for all registrations with presence';
+    protected $description = 'Check S3 for missing certificates (JPG and PDF) and generate them for confirmed attendees';
 
     public function __construct(
         protected CertificateService $certificateService
@@ -38,23 +38,23 @@ class ProcessMissingCertificatesCommand extends Command
             $query->where('seminar_id', $seminarId);
         }
 
-        $registrations = $query->get();
+        $total = $query->count();
 
-        $this->info("Encontrados {$registrations->count()} registros.");
+        $this->info("Encontrados {$total} registros.");
 
-        $bar = $this->output->createProgressBar($registrations->count());
+        $bar = $this->output->createProgressBar($total);
         $bar->start();
 
         $processed = 0;
         $skipped = 0;
         $errors = 0;
 
-        foreach ($registrations as $registration) {
+        foreach ($query->lazyById(100) as $registration) {
             try {
                 $this->certificateService->ensureCertificateCode($registration);
 
-                $jpgMissing = ! $this->certificateService->jpgExists($registration);
-                $pdfMissing = ! $this->certificateService->pdfExists($registration);
+                $jpgMissing = ! $this->certificateService->jpgExists($registration, fresh: true);
+                $pdfMissing = ! $this->certificateService->pdfExists($registration, fresh: true);
 
                 if (! $jpgMissing && ! $pdfMissing) {
                     $skipped++;
@@ -101,7 +101,7 @@ class ProcessMissingCertificatesCommand extends Command
         $this->table(
             ['Métrica', 'Quantidade'],
             [
-                ['Total de registros', $registrations->count()],
+                ['Total de registros', $total],
                 ['Processados/Enfileirados', $processed],
                 ['Já existentes (ignorados)', $skipped],
                 ['Erros', $errors],
@@ -116,6 +116,6 @@ class ProcessMissingCertificatesCommand extends Command
             ]);
         }
 
-        return Command::SUCCESS;
+        return $errors > 0 ? Command::FAILURE : Command::SUCCESS;
     }
 }

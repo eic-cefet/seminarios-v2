@@ -5,6 +5,8 @@ use App\Models\Seminar;
 use App\Services\CertificateService;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
+use League\Flysystem\UnableToCopyFile;
+use League\Flysystem\UnableToWriteFile;
 
 beforeEach(function () {
     Storage::fake('s3');
@@ -374,4 +376,32 @@ describe('CertificateService signed URLs', function () {
 
         expect($url)->toBeString();
     });
+});
+
+it('does not mark a failed upload as an existing certificate', function (string $format) {
+    $registration = Registration::factory()->create(['certificate_code' => 'failed-upload']);
+    $service = new CertificateService;
+    if ($format === 'pdf') {
+        $service->generateJpg($registration);
+    }
+    $disk = Mockery::mock(Storage::disk('s3'))->makePartial();
+    $disk->shouldReceive('put')->with('certificates/failed-upload.'.$format, Mockery::type('string'), ['ACL' => 'bucket-owner-full-control'])->andReturn(false);
+    Storage::shouldReceive('disk')->with('s3')->andReturn($disk);
+
+    expect(fn () => $service->{'generate'.ucfirst($format)}($registration))
+        ->toThrow(UnableToWriteFile::class);
+    expect(Cache::get('certificate_exists_'.$format.':failed-upload'))->not->toBeTrue();
+})->with(['jpg', 'pdf']);
+
+it('does not report a certificate as present when legacy migration fails', function () {
+    $registration = Registration::factory()->create(['certificate_code' => 'failed-copy']);
+    $legacyPath = 'certificates/'.$registration->seminar->scheduled_at->year.'/'.$registration->seminar->slug.'/failed-copy.jpg';
+    Storage::disk('s3')->put($legacyPath, 'original');
+    $disk = Mockery::mock(Storage::disk('s3'))->makePartial();
+    $disk->shouldReceive('copy')->with($legacyPath, 'certificates/failed-copy.jpg')->andReturn(false);
+    Storage::shouldReceive('disk')->with('s3')->andReturn($disk);
+
+    expect(fn () => (new CertificateService)->jpgExists($registration))
+        ->toThrow(UnableToCopyFile::class);
+    expect(Cache::get('certificate_exists_jpg:failed-copy'))->not->toBeTrue();
 });

@@ -113,7 +113,7 @@ it('stores new certificates under the immutable code-keyed path', function () {
         ->and($service->getPdfPath($registration))->toBe('certificates/test-code-immutable.pdf');
 });
 
-it('lazily moves a legacy-path certificate to the immutable path on existence check', function () {
+it('copies a legacy certificate to the immutable path while preserving the original', function () {
     Storage::fake('s3');
 
     $seminar = Seminar::factory()->create([
@@ -133,7 +133,7 @@ it('lazily moves a legacy-path certificate to the immutable path on existence ch
 
     expect($service->jpgExists($registration))->toBeTrue();
     Storage::disk('s3')->assertExists('certificates/legacy-code.jpg');
-    Storage::disk('s3')->assertMissing('certificates/2026/apresentacao-teste/legacy-code.jpg');
+    Storage::disk('s3')->assertExists('certificates/2026/apresentacao-teste/legacy-code.jpg');
 });
 
 it('reports missing when the certificate exists at neither path', function () {
