@@ -10,6 +10,8 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Intervention\Image\Laravel\Facades\Image;
 use Intervention\Image\Typography\FontFactory;
+use League\Flysystem\UnableToMoveFile;
+use League\Flysystem\UnableToWriteFile;
 
 class CertificateService
 {
@@ -56,9 +58,13 @@ class CertificateService
         return $this->getCertificatePath($registration).'.pdf';
     }
 
-    public function jpgExists(Registration $registration): bool
+    public function jpgExists(Registration $registration, bool $fresh = false): bool
     {
         $cacheKey = "certificate_exists_jpg:{$registration->certificate_code}";
+
+        if ($fresh) {
+            Cache::forget($cacheKey);
+        }
 
         return Cache::remember($cacheKey, now()->addDay(), function () use ($registration) {
             return $this->existsOrMigrateLegacy(
@@ -68,9 +74,13 @@ class CertificateService
         });
     }
 
-    public function pdfExists(Registration $registration): bool
+    public function pdfExists(Registration $registration, bool $fresh = false): bool
     {
         $cacheKey = "certificate_exists_pdf:{$registration->certificate_code}";
+
+        if ($fresh) {
+            Cache::forget($cacheKey);
+        }
 
         return Cache::remember($cacheKey, now()->addDay(), function () use ($registration) {
             return $this->existsOrMigrateLegacy(
@@ -84,12 +94,14 @@ class CertificateService
     {
         $disk = Storage::disk('s3');
 
-        if ($disk->exists($path)) {
+        if ($disk->fileExists($path)) {
             return true;
         }
 
-        if ($disk->exists($legacyPath)) {
-            $disk->move($legacyPath, $path);
+        if ($disk->fileExists($legacyPath)) {
+            if (! $disk->move($legacyPath, $path)) {
+                throw UnableToMoveFile::fromLocationTo($legacyPath, $path);
+            }
 
             Log::info('Certificate artefact migrated from legacy path', [
                 'from' => $legacyPath,
@@ -251,7 +263,9 @@ class CertificateService
         });
 
         $jpgContent = $certificate->toJpeg(100)->toString();
-        Storage::disk('s3')->put($this->getJpgPath($registration), $jpgContent, 'private');
+        if (! Storage::disk('s3')->put($this->getJpgPath($registration), $jpgContent, 'private')) {
+            throw UnableToWriteFile::atLocation($this->getJpgPath($registration));
+        }
         $this->markJpgExists($registration);
 
         Log::info('JPG generated and uploaded to S3', [
@@ -304,7 +318,9 @@ HTML;
 
         $pdfContent = $pdf->output();
 
-        Storage::disk('s3')->put($this->getPdfPath($registration), $pdfContent, 'private');
+        if (! Storage::disk('s3')->put($this->getPdfPath($registration), $pdfContent, 'private')) {
+            throw UnableToWriteFile::atLocation($this->getPdfPath($registration));
+        }
         $this->markPdfExists($registration);
 
         Log::info('PDF generated and uploaded to S3', [

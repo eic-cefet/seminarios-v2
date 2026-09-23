@@ -18,8 +18,8 @@ class CertificateController extends Controller
             ->with(['seminar', 'user'])
             ->firstOrFail();
 
-        if (! $this->certificateService->pdfExists($registration)) {
-            if (! $this->certificateService->jpgExists($registration)) {
+        if (! $this->certificateService->pdfExists($registration, fresh: true)) {
+            if (! $this->certificateService->jpgExists($registration, fresh: true)) {
                 $this->certificateService->generateJpg($registration);
             }
             $this->certificateService->generatePdf($registration);
@@ -36,7 +36,7 @@ class CertificateController extends Controller
             ->with(['seminar', 'user'])
             ->firstOrFail();
 
-        if (! $this->certificateService->jpgExists($registration)) {
+        if (! $this->certificateService->jpgExists($registration, fresh: true)) {
             $this->certificateService->generateJpg($registration);
         }
 

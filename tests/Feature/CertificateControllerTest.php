@@ -3,6 +3,7 @@
 use App\Models\Registration;
 use App\Models\Seminar;
 use App\Services\CertificateService;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 
 describe('GET /certificado/{code}', function () {
@@ -169,3 +170,40 @@ describe('GET /certificado/{code}/jpg', function () {
         expect($target)->toContain('certificado-apresentacao-y.jpg');
     });
 });
+
+it('repairs a missing certificate before redirecting even when existence is cached', function (string $suffix, string $format) {
+    Storage::fake('s3');
+    Storage::disk('s3')->buildTemporaryUrlsUsing(
+        fn (string $path): string => 'https://s3.example.test/'.$path,
+    );
+    $registration = Registration::factory()->create([
+        'present' => true,
+        'certificate_code' => 'stale-certificate',
+    ]);
+    Cache::put('certificate_exists_jpg:stale-certificate', true, 3600);
+    Cache::put('certificate_exists_pdf:stale-certificate', true, 3600);
+
+    $this->get('/certificado/stale-certificate'.$suffix)
+        ->assertRedirect('https://s3.example.test/certificates/stale-certificate.'.$format);
+
+    Storage::disk('s3')->assertExists('certificates/stale-certificate.'.$format);
+    expect($registration->fresh()->certificate_code)->toBe('stale-certificate');
+})->with([
+    'default PDF' => ['', 'pdf'],
+    'explicit PDF' => ['/pdf', 'pdf'],
+    'JPG' => ['/jpg', 'jpg'],
+]);
+
+it('preserves an existing certificate despite a cached missing result', function (string $format) {
+    Storage::fake('s3');
+    Storage::disk('s3')->buildTemporaryUrlsUsing(
+        fn (string $path): string => 'https://s3.example.test/'.$path,
+    );
+    Registration::factory()->create(['certificate_code' => 'already-uploaded', 'present' => true]);
+    Storage::disk('s3')->put('certificates/already-uploaded.'.$format, 'original certificate');
+    Cache::put('certificate_exists_'.$format.':already-uploaded', false, 3600);
+
+    $this->get('/certificado/already-uploaded/'.$format)->assertRedirect();
+
+    expect(Storage::disk('s3')->get('certificates/already-uploaded.'.$format))->toBe('original certificate');
+})->with(['jpg', 'pdf']);
