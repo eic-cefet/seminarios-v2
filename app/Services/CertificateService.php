@@ -4,14 +4,18 @@ namespace App\Services;
 
 use App\Models\Registration;
 use App\Support\CertificatePresentationClause;
+use Aws\S3\S3Client;
+use Illuminate\Filesystem\AwsS3V3Adapter;
+use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Intervention\Image\Laravel\Facades\Image;
 use Intervention\Image\Typography\FontFactory;
-use League\Flysystem\UnableToMoveFile;
+use League\Flysystem\UnableToCopyFile;
 use League\Flysystem\UnableToWriteFile;
+use Throwable;
 
 class CertificateService
 {
@@ -99,11 +103,9 @@ class CertificateService
         }
 
         if ($disk->fileExists($legacyPath)) {
-            if (! $disk->move($legacyPath, $path)) {
-                throw UnableToMoveFile::fromLocationTo($legacyPath, $path);
-            }
+            $this->copyLegacyCertificate($disk, $legacyPath, $path);
 
-            Log::info('Certificate artefact migrated from legacy path', [
+            Log::info('Certificate artefact copied from legacy path', [
                 'from' => $legacyPath,
                 'to' => $path,
             ]);
@@ -112,6 +114,32 @@ class CertificateService
         }
 
         return false;
+    }
+
+    /**
+     * Copy within S3 without Flysystem's ACL lookup or its default private ACL.
+     */
+    protected function copyLegacyCertificate(FilesystemAdapter $disk, string $source, string $destination): void
+    {
+        if (! $disk instanceof AwsS3V3Adapter) {
+            if (! $disk->copy($source, $destination)) {
+                throw UnableToCopyFile::fromLocationTo($source, $destination);
+            }
+
+            return;
+        }
+
+        try {
+            $bucket = $disk->getConfig()['bucket'];
+            $disk->getClient()->copyObject([
+                'Bucket' => $bucket,
+                'Key' => $disk->path($destination),
+                'CopySource' => $bucket.'/'.S3Client::encodeKey($disk->path($source)),
+                'MetadataDirective' => 'COPY',
+            ]);
+        } catch (Throwable $exception) {
+            throw UnableToCopyFile::fromLocationTo($source, $destination, $exception);
+        }
     }
 
     public function markJpgExists(Registration $registration): void
@@ -263,7 +291,7 @@ class CertificateService
         });
 
         $jpgContent = $certificate->toJpeg(100)->toString();
-        if (! Storage::disk('s3')->put($this->getJpgPath($registration), $jpgContent, 'private')) {
+        if (! Storage::disk('s3')->put($this->getJpgPath($registration), $jpgContent, ['ACL' => 'bucket-owner-full-control'])) {
             throw UnableToWriteFile::atLocation($this->getJpgPath($registration));
         }
         $this->markJpgExists($registration);
@@ -318,7 +346,7 @@ HTML;
 
         $pdfContent = $pdf->output();
 
-        if (! Storage::disk('s3')->put($this->getPdfPath($registration), $pdfContent, 'private')) {
+        if (! Storage::disk('s3')->put($this->getPdfPath($registration), $pdfContent, ['ACL' => 'bucket-owner-full-control'])) {
             throw UnableToWriteFile::atLocation($this->getPdfPath($registration));
         }
         $this->markPdfExists($registration);
